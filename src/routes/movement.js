@@ -11,12 +11,16 @@ const movement = [
       tags: ['movements'],
       description: 'Create a new waste input with a receipt movement',
       validate: {
-        payload: receiptMovementSchema
+        payload: receiptMovementSchema,
+        params: Joi.object({
+          wasteTrackingId: Joi.string().required()
+        })
       },
       plugins: {
         'hapi-swagger': {
+          params: {},
           responses: {
-            200: {
+            204: {
               description: 'Successfully created waste input'
             },
             400: {
