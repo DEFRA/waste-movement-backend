@@ -41,7 +41,7 @@ const movement = [
       wasteInput.wasteTrackingId = wasteTrackingId
       wasteInput.receipt = request.payload
       await createWasteInput(request.db, wasteInput)
-      return h.response()
+      return h.response().code(204)
     }
   }
 ]

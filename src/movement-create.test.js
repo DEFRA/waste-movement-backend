@@ -1,6 +1,6 @@
-import { createMovement } from './movement-create.js'
+import { createWasteInput } from './movement-create.js'
 
-describe('createMovement', () => {
+describe('createWasteInput', () => {
   let mockDb
   let mockCollection
   let mockInsertOne
@@ -18,24 +18,20 @@ describe('createMovement', () => {
 
   it('should create a movement and return it with the inserted ID', async () => {
     // Arrange
-    const mockMovement = {
-      carrierId: 'CARRIER123',
-      carrierMovementId: 'MOVEMENT123',
-      wasteType: 'hazardous',
-      quantity: 100,
-      unit: 'kg'
-    }
     const mockInsertedId = '123456789'
+    const mockMovement = {
+      wasteTrackingId: mockInsertedId
+    }
+
     mockInsertOne.mockResolvedValueOnce({ insertedId: mockInsertedId })
 
     // Act
-    const result = await createMovement(mockDb, mockMovement)
+    const result = await createWasteInput(mockDb, mockMovement)
 
     // Assert
-    expect(mockDb.collection).toHaveBeenCalledWith('movements')
+    expect(mockDb.collection).toHaveBeenCalledWith('waste-inputs')
     expect(mockInsertOne).toHaveBeenCalledWith(mockMovement)
     expect(result).toEqual({
-      ...mockMovement,
       _id: mockInsertedId
     })
   })
@@ -43,44 +39,16 @@ describe('createMovement', () => {
   it('should handle database errors', async () => {
     // Arrange
     const mockMovement = {
-      carrierId: 'CARRIER123',
-      carrierMovementId: 'MOVEMENT123'
+      wasteTrackingId: '124453465'
     }
     const mockError = new Error('Database error')
     mockInsertOne.mockRejectedValueOnce(mockError)
 
     // Act & Assert
-    await expect(createMovement(mockDb, mockMovement)).rejects.toThrow(
+    await expect(createWasteInput(mockDb, mockMovement)).rejects.toThrow(
       mockError
     )
-    expect(mockDb.collection).toHaveBeenCalledWith('movements')
+    expect(mockDb.collection).toHaveBeenCalledWith('waste-inputs')
     expect(mockInsertOne).toHaveBeenCalledWith(mockMovement)
-  })
-
-  it('should preserve all movement properties in the result', async () => {
-    // Arrange
-    const mockMovement = {
-      carrierId: 'CARRIER123',
-      carrierMovementId: 'MOVEMENT123',
-      wasteType: 'hazardous',
-      quantity: 100,
-      unit: 'kg',
-      additionalInfo: {
-        notes: 'Test notes',
-        priority: 'high'
-      }
-    }
-    const mockInsertedId = '123456789'
-    mockInsertOne.mockResolvedValueOnce({ insertedId: mockInsertedId })
-
-    // Act
-    const result = await createMovement(mockDb, mockMovement)
-
-    // Assert
-    expect(result).toEqual({
-      ...mockMovement,
-      _id: mockInsertedId
-    })
-    expect(result.additionalInfo).toEqual(mockMovement.additionalInfo)
   })
 })
