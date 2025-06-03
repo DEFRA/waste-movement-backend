@@ -83,7 +83,7 @@ describe('movementUpdate Route Tests', () => {
       payload: updatePayload
     })
 
-    expect(statusCode).toEqual(204)
+    expect(statusCode).toEqual(200)
     expect(result).toEqual(null)
 
     expect(updateWasteInput).toHaveBeenCalledWith(undefined, wasteTrackingId, {

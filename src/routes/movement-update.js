@@ -19,7 +19,7 @@ const movementUpdate = {
       'hapi-swagger': {
         params: {},
         responses: {
-          204: {
+          200: {
             description: 'Successfully updated waste input'
           },
           400: {
@@ -61,7 +61,7 @@ const movementUpdate = {
         .code(404)
     }
 
-    return h.response().code(204)
+    return h.response().code(200)
   }
 }
 
