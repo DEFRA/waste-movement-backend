@@ -1,16 +1,16 @@
 import hapi from '@hapi/hapi'
-import { movement } from './movement.js'
-import { createWasteInput } from '../movement-create.js'
+import { createReceiptMovement } from './create-receipt-movement.js'
+import { createWasteInput } from '../services/movement-create.js'
 import { WasteInput } from '../domain/wasteInput.js'
 
-jest.mock('../movement-create.js')
+jest.mock('../services/movement-create.js')
 
 describe('movement Route Tests', () => {
   let server
 
   beforeAll(async () => {
     server = hapi.server()
-    server.route(movement)
+    server.route(createReceiptMovement)
     await server.initialize()
   })
 

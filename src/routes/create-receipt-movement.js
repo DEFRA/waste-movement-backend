@@ -1,9 +1,9 @@
-import { createWasteInput } from '../movement-create.js'
+import { createWasteInput } from '../services/movement-create.js'
 import { receiptMovementSchema } from '../schemas/receipt.js'
 import { WasteInput } from '../domain/wasteInput.js'
 import Joi from 'joi'
 
-const movement = [
+const createReceiptMovement = [
   {
     method: 'POST',
     path: '/movements/{wasteTrackingId}/receive',
@@ -46,4 +46,4 @@ const movement = [
   }
 ]
 
-export { movement }
+export { createReceiptMovement }
