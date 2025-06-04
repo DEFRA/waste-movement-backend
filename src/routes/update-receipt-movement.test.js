@@ -1,8 +1,8 @@
 import hapi from '@hapi/hapi'
 import { updateReceiptMovement } from './update-receipt-movement.js'
-import { updateWasteInput } from '../movement-update.js'
+import { updateWasteInput } from '../services/movement-update.js'
 
-jest.mock('../movement-update.js')
+jest.mock('../services/movement-update.js')
 
 describe('movementUpdate Route Tests', () => {
   let server

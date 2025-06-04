@@ -1,4 +1,4 @@
-import { createWasteInput } from '../movement-create.js'
+import { createWasteInput } from '../services/movement-create.js'
 import { receiptMovementSchema } from '../schemas/receipt.js'
 import { WasteInput } from '../domain/wasteInput.js'
 import Joi from 'joi'

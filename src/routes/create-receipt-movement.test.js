@@ -1,9 +1,9 @@
 import hapi from '@hapi/hapi'
 import { createReceiptMovement } from './create-receipt-movement.js'
-import { createWasteInput } from '../movement-create.js'
+import { createWasteInput } from '../services/movement-create.js'
 import { WasteInput } from '../domain/wasteInput.js'
 
-jest.mock('../movement-create.js')
+jest.mock('../services/movement-create.js')
 
 describe('movement Route Tests', () => {
   let server

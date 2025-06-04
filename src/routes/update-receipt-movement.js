@@ -1,4 +1,4 @@
-import { updateWasteInput } from '../movement-update.js'
+import { updateWasteInput } from '../services/movement-update.js'
 import { receiptMovementSchema } from '../schemas/receipt.js'
 import Joi from 'joi'
 
