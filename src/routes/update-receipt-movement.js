@@ -2,7 +2,7 @@ import { updateWasteInput } from '../movement-update.js'
 import { receiptMovementSchema } from '../schemas/receipt.js'
 import Joi from 'joi'
 
-const movementUpdate = {
+const updateReceiptMovement = {
   method: 'PUT',
   path: '/movements/{wasteTrackingId}/receive',
   options: {
@@ -65,4 +65,4 @@ const movementUpdate = {
   }
 }
 
-export { movementUpdate }
+export { updateReceiptMovement }

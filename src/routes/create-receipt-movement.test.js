@@ -1,5 +1,5 @@
 import hapi from '@hapi/hapi'
-import { movement } from './movement.js'
+import { createReceiptMovement } from './create-receipt-movement.js'
 import { createWasteInput } from '../movement-create.js'
 import { WasteInput } from '../domain/wasteInput.js'
 
@@ -10,7 +10,7 @@ describe('movement Route Tests', () => {
 
   beforeAll(async () => {
     server = hapi.server()
-    server.route(movement)
+    server.route(createReceiptMovement)
     await server.initialize()
   })
 

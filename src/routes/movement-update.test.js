@@ -1,5 +1,5 @@
 import hapi from '@hapi/hapi'
-import { movementUpdate } from './movement-update.js'
+import { updateReceiptMovement } from './update-receipt-movement.js'
 import { updateWasteInput } from '../movement-update.js'
 
 jest.mock('../movement-update.js')
@@ -9,7 +9,7 @@ describe('movementUpdate Route Tests', () => {
 
   beforeAll(async () => {
     server = hapi.server()
-    server.route(movementUpdate)
+    server.route(updateReceiptMovement)
     await server.initialize()
   })
 
