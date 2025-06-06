@@ -2,6 +2,7 @@ import { createWasteInput } from '../services/movement-create.js'
 import { receiptMovementSchema } from '../schemas/receipt.js'
 import { WasteInput } from '../domain/wasteInput.js'
 import Joi from 'joi'
+import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 
 const createReceiptMovement = [
   {
@@ -20,13 +21,13 @@ const createReceiptMovement = [
         'hapi-swagger': {
           params: {},
           responses: {
-            204: {
+            [HTTP_STATUS_CODES.NO_CONTENT]: {
               description: 'Successfully created waste input'
             },
-            400: {
+            [HTTP_STATUS_CODES.BAD_REQUEST]: {
               description: 'Bad Request',
               schema: Joi.object({
-                statusCode: Joi.number().valid(400),
+                statusCode: Joi.number().valid(HTTP_STATUS_CODES.BAD_REQUEST),
                 error: Joi.string(),
                 message: Joi.string()
               }).label('BadRequestResponse')
@@ -41,7 +42,7 @@ const createReceiptMovement = [
       wasteInput.wasteTrackingId = wasteTrackingId
       wasteInput.receipt = request.payload
       await createWasteInput(request.db, wasteInput)
-      return h.response().code(204)
+      return h.response().code(HTTP_STATUS_CODES.NO_CONTENT)
     }
   }
 ]

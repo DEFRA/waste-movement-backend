@@ -1,6 +1,7 @@
 import { updateWasteInput } from '../services/movement-update.js'
 import { receiptMovementSchema } from '../schemas/receipt.js'
 import Joi from 'joi'
+import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 
 const updateReceiptMovement = {
   method: 'PUT',
@@ -19,21 +20,21 @@ const updateReceiptMovement = {
       'hapi-swagger': {
         params: {},
         responses: {
-          200: {
+          [HTTP_STATUS_CODES.OK]: {
             description: 'Successfully updated waste input'
           },
-          400: {
+          [HTTP_STATUS_CODES.BAD_REQUEST]: {
             description: 'Bad Request',
             schema: Joi.object({
-              statusCode: Joi.number().valid(400),
+              statusCode: Joi.number().valid(HTTP_STATUS_CODES.BAD_REQUEST),
               error: Joi.string(),
               message: Joi.string()
             }).label('BadRequestResponse')
           },
-          404: {
+          [HTTP_STATUS_CODES.NOT_FOUND]: {
             description: 'Waste input not found',
             schema: Joi.object({
-              statusCode: Joi.number().valid(404),
+              statusCode: Joi.number().valid(HTTP_STATUS_CODES.NOT_FOUND),
               error: Joi.string(),
               message: Joi.string()
             }).label('NotFoundResponse')
@@ -54,14 +55,14 @@ const updateReceiptMovement = {
     if (result.matchedCount === 0) {
       return h
         .response({
-          statusCode: 404,
+          statusCode: HTTP_STATUS_CODES.NOT_FOUND,
           error: 'Not Found',
           message: `Waste input with ID ${wasteTrackingId} not found`
         })
-        .code(404)
+        .code(HTTP_STATUS_CODES.NOT_FOUND)
     }
 
-    return h.response().code(200)
+    return h.response().code(HTTP_STATUS_CODES.OK)
   }
 }
 
