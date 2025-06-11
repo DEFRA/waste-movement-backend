@@ -1,18 +1,17 @@
 import { updateWasteInput } from '../services/movement-update.js'
-import { receiptMovementSchema } from '../schemas/receipt.js'
+import { updateHazardousWasteSchema } from '../schemas/hazardous-waste.js'
 import Joi from 'joi'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { updatePlugins } from './update-plugins.js'
 
-const updateReceiptMovement = {
+const updateHazardousWaste = {
   method: 'PUT',
-  path: '/movements/{wasteTrackingId}/receive',
+  path: '/movements/{wasteTrackingId}/receive/hazardous',
   options: {
     tags: ['movements'],
-    description:
-      'Update an existing waste input with new receipt movement data',
+    description: 'Update an existing waste input with hazardous waste details',
     validate: {
-      payload: receiptMovementSchema,
+      payload: updateHazardousWasteSchema,
       params: Joi.object({
         wasteTrackingId: Joi.string().required()
       })
@@ -21,7 +20,10 @@ const updateReceiptMovement = {
   },
   handler: async (request, h) => {
     const { wasteTrackingId } = request.params
-    const updateData = { receipt: request.payload }
+    const updateData = {
+      'receipt.hazardousWaste': request.payload.receipt.hazardousWaste
+    }
+
     const result = await updateWasteInput(
       request.db,
       wasteTrackingId,
@@ -42,4 +44,4 @@ const updateReceiptMovement = {
   }
 }
 
-export { updateReceiptMovement }
+export { updateHazardousWaste }
