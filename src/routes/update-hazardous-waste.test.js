@@ -25,7 +25,7 @@ describe('updateHazardousWaste Route Tests', () => {
       receipt: {
         hazardousWaste: {
           // Sample hazardous waste data
-          hazardCode: 'H3-A',
+          hazardPropertyCode: 'H3',
           components: [
             {
               name: 'Toxic substance',
@@ -63,7 +63,7 @@ describe('updateHazardousWaste Route Tests', () => {
       receipt: {
         hazardousWaste: {
           // Minimal payload for test
-          hazardCode: 'H3-A'
+          hazardPropertyCode: 'H5'
         }
       }
     }
@@ -89,5 +89,32 @@ describe('updateHazardousWaste Route Tests', () => {
     expect(updateWasteInput).toHaveBeenCalledWith(undefined, wasteTrackingId, {
       'receipt.hazardousWaste': updatePayload.receipt.hazardousWaste
     })
+  })
+
+  it('returns 400 when updating hazardous waste with an invalid hazardPropertyCode', async () => {
+    const wasteTrackingId = '238ut324'
+    const updatePayload = {
+      receipt: {
+        hazardousWaste: {
+          hazardPropertyCode: 'H16',
+          components: [
+            {
+              name: 'Toxic substance',
+              concentration: '10%'
+            }
+          ]
+        }
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/movements/${wasteTrackingId}/receive/hazardous`,
+      payload: updatePayload
+    })
+
+    expect(statusCode).toEqual(400)
+    expect(result.message).toEqual('Invalid request payload input')
+    expect(updateWasteInput).not.toHaveBeenCalled()
   })
 })
