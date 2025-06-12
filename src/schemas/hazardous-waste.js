@@ -6,6 +6,9 @@ export const hazardousWasteSchema = Joi.object({
   // The schema is intentionally left open to accept any properties
   // as per the issue description which states:
   // "The hazardousWaste in the input is the entire request sent to the External API by the receiver"
+  hazardPropertyCode: Joi.string()
+    .pattern(/^H([1-9]|1[0-5])$/)
+    .required()
 })
   .unknown(true)
   .label('HazardousWaste')
