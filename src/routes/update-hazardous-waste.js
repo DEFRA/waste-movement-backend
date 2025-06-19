@@ -21,7 +21,7 @@ const updateHazardousWaste = {
   handler: async (request, h) => {
     const { wasteTrackingId } = request.params
     const updateData = {
-      'receipt.hazardousWaste': request.payload.receipt.hazardousWaste
+      'receipt.hazardousWaste': request.payload
     }
 
     const result = await updateWasteInput(

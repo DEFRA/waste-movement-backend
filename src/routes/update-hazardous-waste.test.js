@@ -53,7 +53,7 @@ describe('updateHazardousWaste Route Tests', () => {
     expect(result).toEqual(null)
 
     expect(updateWasteInput).toHaveBeenCalledWith(undefined, wasteTrackingId, {
-      'receipt.hazardousWaste': updatePayload.receipt.hazardousWaste
+      'receipt.hazardousWaste': updatePayload
     })
   })
 
@@ -87,7 +87,7 @@ describe('updateHazardousWaste Route Tests', () => {
     })
 
     expect(updateWasteInput).toHaveBeenCalledWith(undefined, wasteTrackingId, {
-      'receipt.hazardousWaste': updatePayload.receipt.hazardousWaste
+      'receipt.hazardousWaste': updatePayload
     })
   })
 })
