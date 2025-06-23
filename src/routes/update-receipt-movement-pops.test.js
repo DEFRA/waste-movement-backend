@@ -1,6 +1,7 @@
 import hapi from '@hapi/hapi'
 import { updateReceiptMovementPops } from './update-receipt-movement-pops.js'
 import { updateWasteInput } from '../services/movement-update.js'
+import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 
 jest.mock('../services/movement-update.js')
 
@@ -20,7 +21,7 @@ describe('updateReceiptMovementPops Route Tests', () => {
   beforeEach(async () => {})
 
   it('updates POPs details', async () => {
-    const wasteTrackingId = '238ut324'
+    const wasteTrackingId = generateWasteTrackingId()
     const updatePayload = {
       receipt: {
         pops: {

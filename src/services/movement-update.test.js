@@ -1,37 +1,31 @@
+import { MongoClient } from 'mongodb'
 import { updateWasteInput } from './movement-update.js'
 
 describe('updateWasteInput', () => {
-  let mockDb
-  let mockWasteInputsCollection
-  let mockWasteInputsHistoryCollection
-  let mockInvalidSubmissionsCollection
+  let client
+  let db
+  let wasteInputsCollection
+  let wasteInputsHistoryCollection
+  let invalidSubmissionsCollection
 
-  beforeEach(() => {
-    mockWasteInputsCollection = {
-      findOne: jest.fn(),
-      updateOne: jest
-        .fn()
-        .mockResolvedValue({ matchedCount: 1, modifiedCount: 1 })
-    }
-    mockWasteInputsHistoryCollection = {
-      insertOne: jest.fn().mockResolvedValue({})
-    }
-    mockInvalidSubmissionsCollection = {
-      insertOne: jest.fn().mockResolvedValue({})
-    }
+  beforeAll(async () => {
+    client = new MongoClient(process.env.MONGO_URI)
+    await client.connect()
+    db = client.db()
+  })
 
-    mockDb = {
-      collection: jest.fn((name) => {
-        if (name === 'waste-inputs') return mockWasteInputsCollection
-        if (name === 'waste-inputs-history') {
-          return mockWasteInputsHistoryCollection
-        }
-        if (name === 'invalid-submissions') {
-          return mockInvalidSubmissionsCollection
-        }
-        return null
-      })
-    }
+  afterAll(async () => {
+    await client.close()
+  })
+
+  beforeEach(async () => {
+    wasteInputsCollection = db.collection('waste-inputs')
+    wasteInputsHistoryCollection = db.collection('waste-inputs-history')
+    invalidSubmissionsCollection = db.collection('invalid-submissions')
+
+    await wasteInputsCollection.deleteMany({})
+    await wasteInputsHistoryCollection.deleteMany({})
+    await invalidSubmissionsCollection.deleteMany({})
   })
 
   it('should update waste input when it exists', async () => {
@@ -39,35 +33,27 @@ describe('updateWasteInput', () => {
     const updateData = { receipt: { test: 'data' } }
     const existingWasteInput = { _id: wasteTrackingId, someData: 'value' }
 
-    mockWasteInputsCollection.findOne.mockResolvedValue(existingWasteInput)
+    await wasteInputsCollection.insertOne(existingWasteInput)
 
-    const result = await updateWasteInput(mockDb, wasteTrackingId, updateData)
+    const result = await updateWasteInput(db, wasteTrackingId, updateData)
 
-    expect(mockDb.collection).toHaveBeenCalledWith('waste-inputs')
-    expect(mockDb.collection).toHaveBeenCalledWith('waste-inputs-history')
-    expect(mockDb.collection).toHaveBeenCalledWith('invalid-submissions')
-
-    expect(mockWasteInputsCollection.findOne).toHaveBeenCalledWith({
+    const updatedWasteInput = await wasteInputsCollection.findOne({
       _id: wasteTrackingId
     })
+    expect(updatedWasteInput).toMatchObject({
+      ...existingWasteInput,
+      ...updateData,
+      revision: 1
+    })
 
-    const historyEntry = {
+    const historyEntry = await wasteInputsHistoryCollection.findOne({
+      wasteTrackingId
+    })
+    expect(historyEntry).toMatchObject({
       ...existingWasteInput,
       wasteTrackingId,
       timestamp: expect.any(Date)
-    }
-
-    expect(mockWasteInputsHistoryCollection.insertOne).toHaveBeenCalledWith(
-      historyEntry
-    )
-
-    expect(mockWasteInputsCollection.updateOne).toHaveBeenCalledWith(
-      { _id: wasteTrackingId },
-      {
-        $set: updateData,
-        $inc: { revision: 1 }
-      }
-    )
+    })
 
     expect(result).toEqual({
       matchedCount: 1,
@@ -79,26 +65,27 @@ describe('updateWasteInput', () => {
     const wasteTrackingId = 'non-existent-id'
     const updateData = { receipt: { test: 'data' } }
 
-    mockWasteInputsCollection.findOne.mockResolvedValue(null)
+    const result = await updateWasteInput(db, wasteTrackingId, updateData)
 
-    const result = await updateWasteInput(mockDb, wasteTrackingId, updateData)
-
-    expect(mockDb.collection).toHaveBeenCalledWith('waste-inputs')
-    expect(mockDb.collection).toHaveBeenCalledWith('waste-inputs-history')
-    expect(mockDb.collection).toHaveBeenCalledWith('invalid-submissions')
-
-    expect(mockWasteInputsCollection.findOne).toHaveBeenCalledWith({
+    const wasteInput = await wasteInputsCollection.findOne({
       _id: wasteTrackingId
     })
-    expect(mockInvalidSubmissionsCollection.insertOne).toHaveBeenCalledWith({
+    expect(wasteInput).toBeNull()
+
+    const invalidSubmission = await invalidSubmissionsCollection.findOne({
+      wasteTrackingId
+    })
+    expect(invalidSubmission).toMatchObject({
       wasteTrackingId,
       updateData,
       timestamp: expect.any(Date),
       reason: 'Waste input not found'
     })
 
-    expect(mockWasteInputsCollection.updateOne).not.toHaveBeenCalled()
-    expect(mockWasteInputsHistoryCollection.insertOne).not.toHaveBeenCalled()
+    const historyEntries = await wasteInputsHistoryCollection
+      .find({ wasteTrackingId })
+      .toArray()
+    expect(historyEntries.length).toBe(0)
 
     expect(result).toEqual({
       matchedCount: 0,
@@ -115,31 +102,27 @@ describe('updateWasteInput', () => {
       revision: 3 // Document already has revision 3
     }
 
-    mockWasteInputsCollection.findOne.mockResolvedValue(existingWasteInput)
+    await wasteInputsCollection.insertOne(existingWasteInput)
 
-    const result = await updateWasteInput(mockDb, wasteTrackingId, updateData)
+    const result = await updateWasteInput(db, wasteTrackingId, updateData)
 
-    expect(mockWasteInputsCollection.findOne).toHaveBeenCalledWith({
+    const updatedWasteInput = await wasteInputsCollection.findOne({
       _id: wasteTrackingId
     })
+    expect(updatedWasteInput).toMatchObject({
+      ...existingWasteInput,
+      ...updateData,
+      revision: 6 // 3 + 3 = 6
+    })
 
-    const historyEntry = {
+    const historyEntry = await wasteInputsHistoryCollection.findOne({
+      wasteTrackingId
+    })
+    expect(historyEntry).toMatchObject({
       ...existingWasteInput,
       wasteTrackingId,
       timestamp: expect.any(Date)
-    }
-
-    expect(mockWasteInputsHistoryCollection.insertOne).toHaveBeenCalledWith(
-      historyEntry
-    )
-
-    expect(mockWasteInputsCollection.updateOne).toHaveBeenCalledWith(
-      { _id: wasteTrackingId },
-      {
-        $set: updateData,
-        $inc: { revision: 3 }
-      }
-    )
+    })
 
     expect(result).toEqual({
       matchedCount: 1,
