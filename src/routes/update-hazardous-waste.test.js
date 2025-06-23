@@ -4,7 +4,8 @@ import {
   beforeAll,
   afterAll,
   beforeEach,
-  it
+  it,
+  jest
 } from '@jest/globals'
 import hapi from '@hapi/hapi'
 import { updateHazardousWaste } from './update-hazardous-waste.js'
@@ -14,6 +15,15 @@ import { createReceiptMovement } from './create-receipt-movement.js'
 import { createMovementPostBody } from '../test/create-movement-post-body.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
+import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { updateWasteInput } from '../services/movement-update.js'
+
+jest.mock('../services/movement-update.js', () => {
+  const { updateWasteInput: actualUpdateWasteInput } = jest.requireActual(
+    '../services/movement-update.js'
+  )
+  return { updateWasteInput: jest.fn(actualUpdateWasteInput) }
+})
 
 describe('updateHazardousWaste Route Tests', () => {
   let server
@@ -36,7 +46,9 @@ describe('updateHazardousWaste Route Tests', () => {
     await mongoClient.close()
   })
 
-  beforeEach(async () => {})
+  beforeEach(async () => {
+    jest.clearAllMocks()
+  })
 
   it('updates hazardous waste details', async () => {
     const wasteTrackingId = generateWasteTrackingId()
@@ -70,6 +82,7 @@ describe('updateHazardousWaste Route Tests', () => {
       payload: updatePayload
     })
 
+    console.log(updateResult.payload)
     expect(updateResult.statusCode).toEqual(200)
     expect(updateResult.result).toEqual(null)
 
@@ -116,5 +129,40 @@ describe('updateHazardousWaste Route Tests', () => {
       .findOne({ _id: wasteTrackingId })
 
     expect(actualWasteInput).toEqual(null)
+  })
+
+  it('returns 500 when an unexpected error occurs', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const updatePayload = {
+      hazardousWaste: {
+        hazardCode: 'H3-A',
+        components: [
+          {
+            name: 'Toxic substance',
+            concentration: '10%'
+          }
+        ],
+        physicalForm: 'Liquid',
+        handlingInstructions: 'Handle with care'
+      }
+    }
+
+    const errorMessage = 'Database connection error'
+
+    // but return error for the specific wasteTrackingId
+    updateWasteInput.mockRejectedValueOnce(new Error(errorMessage))
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/movements/${wasteTrackingId}/receive/hazardous`,
+      payload: updatePayload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR)
+    expect(result).toEqual({
+      statusCode: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+      error: 'Unexpected error',
+      message: errorMessage
+    })
   })
 })
