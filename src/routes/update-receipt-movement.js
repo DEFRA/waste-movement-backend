@@ -21,11 +21,11 @@ const updateReceiptMovement = {
   },
   handler: async (request, h) => {
     const { wasteTrackingId } = request.params
-    const updateData = { receipt: request.payload }
     const result = await updateWasteInput(
       request.db,
       wasteTrackingId,
-      updateData
+      request.payload,
+      'receipt.movement'
     )
 
     if (result.matchedCount === 0) {

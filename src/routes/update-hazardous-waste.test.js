@@ -67,10 +67,12 @@ describe('updateHazardousWaste Route Tests', () => {
       }
     }
 
+    const movementPayload = createMovementPostBody()
+
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      payload: createMovementPostBody()
+      payload: movementPayload
     })
 
     expect(createResult.statusCode).toEqual(204)
@@ -91,7 +93,10 @@ describe('updateHazardousWaste Route Tests', () => {
       .findOne({ _id: wasteTrackingId })
     console.log(movementUpdated)
     console.log(updateResult.payload)
-    expect(movementUpdated.receipt.hazardousWaste).toEqual(updatePayload)
+    expect(movementUpdated.receipt).toEqual({
+      ...movementPayload,
+      ...updatePayload
+    })
   })
 
   it('returns 404 when updating hazardous waste for a non-existent waste input', async () => {

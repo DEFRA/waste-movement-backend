@@ -71,7 +71,7 @@ describe('movementUpdate Route Tests', () => {
       .collection('waste-inputs')
       .findOne({ _id: wasteTrackingId })
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
-    expect(actualWasteInput.receipt).toEqual(updatePayload)
+    expect(actualWasteInput.receipt.movement).toEqual(updatePayload)
   })
 
   it('returns 404 when updating a non-existent waste input', async () => {

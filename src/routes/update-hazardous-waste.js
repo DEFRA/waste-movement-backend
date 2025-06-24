@@ -21,14 +21,12 @@ const updateHazardousWaste = {
   handler: async (request, h) => {
     try {
       const { wasteTrackingId } = request.params
-      const updateData = {
-        'receipt.hazardousWaste': request.payload
-      }
 
       const result = await updateWasteInput(
         request.db,
         wasteTrackingId,
-        updateData
+        request.payload.hazardousWaste,
+        'receipt.hazardousWaste'
       )
 
       if (result.matchedCount === 0) {
