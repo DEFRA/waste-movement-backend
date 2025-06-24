@@ -1,81 +1,62 @@
 import hapi from '@hapi/hapi'
 import { updateReceiptMovement } from './update-receipt-movement.js'
-import { updateWasteInput } from '../services/movement-update.js'
-
-jest.mock('../services/movement-update.js')
+import { createReceiptMovement } from './create-receipt-movement.js'
+import { requestLogger } from '../common/helpers/logging/request-logger.js'
+import { mongoDb } from '../common/helpers/mongodb.js'
+import { createTestMongoDb } from '../test/create-test-mongo-db.js'
+import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
+import { expect } from '@jest/globals'
 
 describe('movementUpdate Route Tests', () => {
   let server
+  let mongoClient
+  let testMongoDb
 
   beforeAll(async () => {
     server = hapi.server()
+    server.route(createReceiptMovement)
     server.route(updateReceiptMovement)
+    await server.register([requestLogger, mongoDb])
     await server.initialize()
+    const testMongo = await createTestMongoDb()
+    mongoClient = testMongo.client
+    testMongoDb = testMongo.db
   })
 
   afterAll(async () => {
     await server.stop()
+    await mongoClient.close()
   })
 
   beforeEach(async () => {})
 
   it('updates a waste input', async () => {
-    const wasteTrackingId = '238ut324'
+    const wasteTrackingId = generateWasteTrackingId()
+    const createPayload = {
+      movement: {
+        receivingSiteId: 'test',
+        receiverReference: 'test',
+        specialHandlingRequirements: 'test'
+      }
+    }
+
+    const createResult = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: createPayload
+    })
+
+    console.log('!!!!!' + createResult.payload)
+    expect(createResult.statusCode).toEqual(204)
+    expect(createResult.result).toEqual(null)
+
     const updatePayload = {
       movement: {
         receivingSiteId: 'updated-site',
         receiverReference: 'updated-ref',
-        specialHandlingRequirements: 'updated-requirements',
-        waste: [
-          {
-            ewcCode: 'updated-code',
-            description: 'updated-description',
-            form: 'Liquid',
-            containers: 'updated-containers',
-            quantity: {
-              value: 10,
-              unit: 'kg',
-              isEstimate: false
-            }
-          }
-        ],
-        carrier: {
-          registrationNumber: 'updated-reg',
-          organisationName: 'updated-org',
-          address: 'updated-address',
-          emailAddress: 'updated@email.com',
-          companiesHouseNumber: 'updated-ch',
-          phoneNumber: 'updated-phone',
-          vehicleRegistration: 'updated-vehicle',
-          meansOfTransport: 'Rail'
-        },
-        acceptance: {
-          acceptingAll: true
-        },
-        receiver: {
-          authorisationType: 'updated-type',
-          authorisationNumber: 'updated-number',
-          regulatoryPositionStatement: 'updated-statement'
-        },
-        receipt: {
-          estimateOrActual: 'Actual',
-          dateTimeReceived: new Date(2025, 6, 15),
-          disposalOrRecoveryCode: {
-            code: 'updated-code',
-            quantity: {
-              value: 10,
-              unit: 'kg',
-              isEstimate: false
-            }
-          }
-        }
+        specialHandlingRequirements: 'updated-requirements'
       }
     }
-
-    updateWasteInput.mockResolvedValueOnce({
-      matchedCount: 1,
-      modifiedCount: 1
-    })
 
     const { statusCode, result } = await server.inject({
       method: 'PUT',
@@ -86,9 +67,11 @@ describe('movementUpdate Route Tests', () => {
     expect(statusCode).toEqual(200)
     expect(result).toEqual(null)
 
-    expect(updateWasteInput).toHaveBeenCalledWith(undefined, wasteTrackingId, {
-      receipt: updatePayload
-    })
+    const actualWasteInput = await testMongoDb
+      .collection('waste-inputs')
+      .findOne({ _id: wasteTrackingId })
+    expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
+    expect(actualWasteInput.receipt).toEqual(updatePayload)
   })
 
   it('returns 404 when updating a non-existent waste input', async () => {
@@ -121,11 +104,6 @@ describe('movementUpdate Route Tests', () => {
       }
     }
 
-    updateWasteInput.mockResolvedValueOnce({
-      matchedCount: 0,
-      modifiedCount: 0
-    })
-
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
@@ -139,8 +117,10 @@ describe('movementUpdate Route Tests', () => {
       message: `Waste input with ID ${wasteTrackingId} not found`
     })
 
-    expect(updateWasteInput).toHaveBeenCalledWith(undefined, wasteTrackingId, {
-      receipt: updatePayload
-    })
+    const actualWasteInput = await testMongoDb
+      .collection('waste-inputs')
+      .findOne({ _id: wasteTrackingId })
+
+    expect(actualWasteInput).toEqual(null)
   })
 })

@@ -12,7 +12,5 @@ export const hazardousWasteSchema = Joi.object({
 
 // Schema for updating hazardous waste details in a receipt
 export const updateHazardousWasteSchema = Joi.object({
-  receipt: Joi.object({
-    hazardousWaste: hazardousWasteSchema.required()
-  }).required()
+  hazardousWaste: hazardousWasteSchema.required()
 }).label('UpdateHazardousWaste')

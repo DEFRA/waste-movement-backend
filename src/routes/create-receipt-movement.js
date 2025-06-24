@@ -37,12 +37,22 @@ const createReceiptMovement = [
       }
     },
     handler: async (request, h) => {
-      const { wasteTrackingId } = request.params
-      const wasteInput = new WasteInput()
-      wasteInput.wasteTrackingId = wasteTrackingId
-      wasteInput.receipt = request.payload
-      await createWasteInput(request.db, wasteInput)
-      return h.response().code(HTTP_STATUS_CODES.NO_CONTENT)
+      try {
+        const { wasteTrackingId } = request.params
+        const wasteInput = new WasteInput()
+        wasteInput.wasteTrackingId = wasteTrackingId
+        wasteInput.receipt = request.payload
+        await createWasteInput(request.db, wasteInput)
+        return h.response().code(HTTP_STATUS_CODES.NO_CONTENT)
+      } catch (error) {
+        return h
+          .response({
+            statusCode: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            error: 'Unexpected error',
+            message: error.message
+          })
+          .code(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR)
+      }
     }
   }
 ]

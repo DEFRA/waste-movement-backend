@@ -19,28 +19,38 @@ const updateHazardousWaste = {
     plugins: updatePlugins
   },
   handler: async (request, h) => {
-    const { wasteTrackingId } = request.params
-    const updateData = {
-      'receipt.hazardousWaste': request.payload
-    }
+    try {
+      const { wasteTrackingId } = request.params
+      const updateData = {
+        'receipt.hazardousWaste': request.payload
+      }
 
-    const result = await updateWasteInput(
-      request.db,
-      wasteTrackingId,
-      updateData
-    )
+      const result = await updateWasteInput(
+        request.db,
+        wasteTrackingId,
+        updateData
+      )
 
-    if (result.matchedCount === 0) {
+      if (result.matchedCount === 0) {
+        return h
+          .response({
+            statusCode: HTTP_STATUS_CODES.NOT_FOUND,
+            error: 'Not Found',
+            message: `Waste input with ID ${wasteTrackingId} not found`
+          })
+          .code(HTTP_STATUS_CODES.NOT_FOUND)
+      }
+
+      return h.response().code(HTTP_STATUS_CODES.OK)
+    } catch (error) {
       return h
         .response({
-          statusCode: HTTP_STATUS_CODES.NOT_FOUND,
-          error: 'Not Found',
-          message: `Waste input with ID ${wasteTrackingId} not found`
+          statusCode: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+          error: 'Unexpected error',
+          message: error.message
         })
-        .code(HTTP_STATUS_CODES.NOT_FOUND)
+        .code(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR)
     }
-
-    return h.response().code(HTTP_STATUS_CODES.OK)
   }
 }
 
