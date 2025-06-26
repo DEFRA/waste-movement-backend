@@ -1,4 +1,9 @@
-export async function updateWasteInput(db, wasteTrackingId, updateData) {
+export async function updateWasteInput(
+  db,
+  wasteTrackingId,
+  updateData,
+  fieldToUpdate
+) {
   const wasteInputsCollection = db.collection('waste-inputs')
   const wasteInputsHistoryCollection = db.collection('waste-inputs-history')
   const invalidSubmissionsCollection = db.collection('invalid-submissions')
@@ -31,13 +36,24 @@ export async function updateWasteInput(db, wasteTrackingId, updateData) {
 
   await wasteInputsHistoryCollection.insertOne(historyEntry)
 
-  const result = await wasteInputsCollection.updateOne(
-    { _id: wasteTrackingId },
-    {
-      $set: updateData,
-      $inc: { revision: currentRevision }
-    }
-  )
+  let result
+  if (fieldToUpdate) {
+    result = await wasteInputsCollection.updateOne(
+      { _id: wasteTrackingId },
+      {
+        $set: { [fieldToUpdate]: { ...updateData } },
+        $inc: { revision: currentRevision }
+      }
+    )
+  } else {
+    result = await wasteInputsCollection.updateOne(
+      { _id: wasteTrackingId },
+      {
+        $set: updateData,
+        $inc: { revision: currentRevision }
+      }
+    )
+  }
 
   return {
     matchedCount: result.matchedCount,

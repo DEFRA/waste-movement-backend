@@ -35,7 +35,7 @@ export const createMovementPostBody = () => ({
     },
     receipt: {
       estimateOrActual: 'Estimate',
-      dateTimeReceived: new Date(2025, 5, 30),
+      dateTimeReceived: '2025-06-29T23:00:00.000Z',
       disposalOrRecoveryCode: {
         code: 'test',
         quantity: {
