@@ -28,8 +28,10 @@ export async function updateWasteInput(
 
   const currentRevision = existingWasteInput.revision || 1
 
+  // Create history entry without the _id so MongoDB can auto-generate it
+  const { _id, ...existingWasteInputWithoutId } = existingWasteInput
   const historyEntry = {
-    ...existingWasteInput,
+    ...existingWasteInputWithoutId,
     wasteTrackingId, // Add reference to original document
     timestamp: new Date()
   }
