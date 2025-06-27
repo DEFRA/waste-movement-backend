@@ -26,13 +26,13 @@ export async function updateWasteInput(
     }
   }
 
-  const currentRevision = existingWasteInput.revision || 1
-
   const historyEntry = {
     ...existingWasteInput,
     wasteTrackingId, // Add reference to original document
     timestamp: new Date()
   }
+
+  delete historyEntry._id
 
   await wasteInputsHistoryCollection.insertOne(historyEntry)
 
@@ -42,7 +42,7 @@ export async function updateWasteInput(
       { _id: wasteTrackingId },
       {
         $set: { [fieldToUpdate]: { ...updateData } },
-        $inc: { revision: currentRevision }
+        $inc: { revision: 1 }
       }
     )
   } else {
@@ -50,7 +50,7 @@ export async function updateWasteInput(
       { _id: wasteTrackingId },
       {
         $set: updateData,
-        $inc: { revision: currentRevision }
+        $inc: { revision: 1 }
       }
     )
   }

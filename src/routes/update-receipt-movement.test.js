@@ -71,7 +71,78 @@ describe('movementUpdate Route Tests', () => {
       .collection('waste-inputs')
       .findOne({ _id: wasteTrackingId })
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
-    expect(actualWasteInput.receipt.movement).toEqual(updatePayload)
+    expect(actualWasteInput.revision).toEqual(2)
+    expect(actualWasteInput.receipt.movement).toEqual(updatePayload.movement)
+
+    const historicState = await getHistoricState(wasteTrackingId).toArray()
+    expect(historicState.length).toEqual(1)
+    expect(historicState[0]._id).toBeDefined()
+    expect(historicState[0].wasteTrackingId).toEqual(wasteTrackingId)
+    expect(historicState[0].revision).toEqual(1)
+    expect(historicState[0].receipt.movement).toEqual(createPayload.movement)
+  })
+
+  async function getCurrentWasteInput(wasteTrackingId) {
+    return testMongoDb
+      .collection('waste-inputs')
+      .findOne({ _id: wasteTrackingId })
+  }
+
+  it('updates a waste input twice and stores all history', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const createPayload = {
+      movement: {
+        receivingSiteId: 'test',
+        receiverReference: 'test',
+        specialHandlingRequirements: 'test'
+      }
+    }
+
+    const createResult = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: createPayload
+    })
+
+    expect(createResult.statusCode).toEqual(204)
+    expect(createResult.result).toEqual(null)
+
+    const updatePayload = {
+      movement: {
+        receivingSiteId: 'updated-site',
+        receiverReference: 'updated-ref',
+        specialHandlingRequirements: 'updated-requirements'
+      }
+    }
+    await updateReceipt(wasteTrackingId, updatePayload)
+    console.log(await getCurrentWasteInput(wasteTrackingId))
+
+    const updatePayload2 = {
+      movement: {
+        receivingSiteId: 'updated-site2',
+        receiverReference: 'updated-ref2',
+        specialHandlingRequirements: 'updated-requirements2'
+      }
+    }
+    await updateReceipt(wasteTrackingId, updatePayload2)
+    console.log(await getCurrentWasteInput(wasteTrackingId))
+
+    const actualWasteInput = await getCurrentWasteInput(wasteTrackingId)
+    expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
+    expect(actualWasteInput.revision).toEqual(3)
+    expect(actualWasteInput.receipt.movement).toEqual(updatePayload2.movement)
+
+    const historicState = await getHistoricState(wasteTrackingId).toArray()
+
+    expect(historicState.length).toEqual(2)
+    expect(historicState[0]._id).toBeDefined()
+    expect(historicState[0].wasteTrackingId).toEqual(wasteTrackingId)
+    expect(historicState[0].revision).toEqual(1)
+    expect(historicState[0].receipt.movement).toEqual(createPayload.movement)
+    expect(historicState[1]._id).toBeDefined()
+    expect(historicState[1].wasteTrackingId).toEqual(wasteTrackingId)
+    expect(historicState[1].revision).toEqual(2)
+    expect(historicState[1].receipt.movement).toEqual(updatePayload.movement)
   })
 
   it('returns 404 when updating a non-existent waste input', async () => {
@@ -123,4 +194,21 @@ describe('movementUpdate Route Tests', () => {
 
     expect(actualWasteInput).toEqual(null)
   })
+
+  async function updateReceipt(wasteTrackingId, updatePayload) {
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: updatePayload
+    })
+
+    expect(statusCode).toEqual(200)
+    expect(result).toEqual(null)
+  }
+
+  function getHistoricState(wasteTrackingId) {
+    return testMongoDb
+      .collection('waste-inputs-history')
+      .find({ wasteTrackingId })
+  }
 })
