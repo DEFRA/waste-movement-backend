@@ -69,6 +69,7 @@ describe('movement Route Tests', () => {
       .findOne({ _id: wasteTrackingId })
 
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
+    expect(actualWasteInput.revision).toEqual(1)
     expect(actualWasteInput.receipt).toEqual(expectedPayload)
   })
 

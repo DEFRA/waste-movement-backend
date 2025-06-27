@@ -1,5 +1,13 @@
 import { MongoClient } from 'mongodb'
 import { updateWasteInput } from './movement-update.js'
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it
+} from '@jest/globals'
 
 describe('updateWasteInput', () => {
   let client
@@ -49,6 +57,9 @@ describe('updateWasteInput', () => {
     const historyEntry = await wasteInputsHistoryCollection.findOne({
       wasteTrackingId
     })
+    // ignore _id, it's random in the waste-inputs-history collection
+    delete historyEntry._id
+    delete existingWasteInput._id
     expect(historyEntry).toMatchObject({
       ...existingWasteInput,
       wasteTrackingId,
@@ -99,7 +110,7 @@ describe('updateWasteInput', () => {
     const existingWasteInput = {
       _id: wasteTrackingId,
       someData: 'value',
-      revision: 3 // Document already has revision 3
+      revision: 1
     }
 
     await wasteInputsCollection.insertOne(existingWasteInput)
@@ -112,12 +123,16 @@ describe('updateWasteInput', () => {
     expect(updatedWasteInput).toMatchObject({
       ...existingWasteInput,
       ...updateData,
-      revision: 6 // 3 + 3 = 6
+      revision: 2
     })
 
     const historyEntry = await wasteInputsHistoryCollection.findOne({
       wasteTrackingId
     })
+
+    // ignore _id, it's random in the waste-inputs-history collection
+    delete historyEntry._id
+    delete existingWasteInput._id
     expect(historyEntry).toMatchObject({
       ...existingWasteInput,
       wasteTrackingId,

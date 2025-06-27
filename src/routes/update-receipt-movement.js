@@ -24,7 +24,7 @@ const updateReceiptMovement = {
     const result = await updateWasteInput(
       request.db,
       wasteTrackingId,
-      request.payload,
+      request.payload.movement,
       'receipt.movement'
     )
 
