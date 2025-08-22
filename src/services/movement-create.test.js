@@ -51,4 +51,21 @@ describe('createWasteInput', () => {
     expect(mockDb.collection).toHaveBeenCalledWith('waste-inputs')
     expect(mockInsertOne).toHaveBeenCalledWith(mockMovement)
   })
+
+  it('should test untested code', async () => {
+    // Arrange
+    const mockInsertedId = '123456789'
+    const mockMovement = {
+      wasteTrackingId: mockInsertedId,
+      michaelTest: 'test'
+    }
+
+    mockInsertOne.mockResolvedValueOnce({ insertedId: mockInsertedId })
+
+    // Act
+    const result = await createWasteInput(mockDb, mockMovement)
+
+    // Assert
+    expect(result).toEqual('untested')
+  })
 })
