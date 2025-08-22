@@ -66,6 +66,6 @@ describe('createWasteInput', () => {
     const result = await createWasteInput(mockDb, mockMovement)
 
     // Assert
-    expect(result).toEqual('untested')
+    expect(result).toEqual('Untested')
   })
 })
