@@ -46,9 +46,13 @@ describe('movementUpdate Route Tests', () => {
       payload: createPayload
     })
 
-    console.log('!!!!!' + createResult.payload)
     expect(createResult.statusCode).toEqual(204)
     expect(createResult.result).toEqual(null)
+
+    const beforeUpdate = await testMongoDb
+      .collection('waste-inputs')
+      .findOne({ _id: wasteTrackingId })
+    const timestampBeforeUpdate = beforeUpdate.lastUpdatedAt
 
     const updatePayload = {
       movement: {
@@ -73,6 +77,11 @@ describe('movementUpdate Route Tests', () => {
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
     expect(actualWasteInput.revision).toEqual(2)
     expect(actualWasteInput.receipt.movement).toEqual(updatePayload.movement)
+    expect(actualWasteInput.createdAt).toBeInstanceOf(Date)
+    expect(actualWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
+    expect(actualWasteInput.lastUpdatedAt.getTime()).toBeGreaterThan(
+      timestampBeforeUpdate.getTime()
+    )
 
     const historicState = await getHistoricState(wasteTrackingId).toArray()
     expect(historicState.length).toEqual(1)
@@ -115,7 +124,9 @@ describe('movementUpdate Route Tests', () => {
       }
     }
     await updateReceipt(wasteTrackingId, updatePayload)
-    console.log(await getCurrentWasteInput(wasteTrackingId))
+
+    const afterFirstUpdate = await getCurrentWasteInput(wasteTrackingId)
+    const timestampAfterFirstUpdate = afterFirstUpdate.lastUpdatedAt
 
     const updatePayload2 = {
       movement: {
@@ -125,12 +136,16 @@ describe('movementUpdate Route Tests', () => {
       }
     }
     await updateReceipt(wasteTrackingId, updatePayload2)
-    console.log(await getCurrentWasteInput(wasteTrackingId))
 
     const actualWasteInput = await getCurrentWasteInput(wasteTrackingId)
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
     expect(actualWasteInput.revision).toEqual(3)
     expect(actualWasteInput.receipt.movement).toEqual(updatePayload2.movement)
+    expect(actualWasteInput.createdAt).toBeInstanceOf(Date)
+    expect(actualWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
+    expect(actualWasteInput.lastUpdatedAt.getTime()).toBeGreaterThan(
+      timestampAfterFirstUpdate.getTime()
+    )
 
     const historicState = await getHistoricState(wasteTrackingId).toArray()
 

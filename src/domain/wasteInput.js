@@ -3,4 +3,6 @@ export class WasteInput {
   creation
   collection
   receipt
+  createdAt
+  lastUpdatedAt
 }

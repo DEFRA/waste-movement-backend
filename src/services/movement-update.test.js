@@ -53,6 +53,7 @@ describe('updateWasteInput', () => {
       ...updateData,
       revision: 1
     })
+    expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
 
     const historyEntry = await wasteInputsHistoryCollection.findOne({
       wasteTrackingId
@@ -125,6 +126,7 @@ describe('updateWasteInput', () => {
       ...updateData,
       revision: 2
     })
+    expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
 
     const historyEntry = await wasteInputsHistoryCollection.findOne({
       wasteTrackingId

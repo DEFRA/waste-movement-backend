@@ -31,6 +31,9 @@ describe('createWasteInput', () => {
     // Assert
     expect(mockDb.collection).toHaveBeenCalledWith('waste-inputs')
     expect(mockInsertOne).toHaveBeenCalledWith(mockMovement)
+    expect(mockMovement.createdAt).toBeInstanceOf(Date)
+    expect(mockMovement.lastUpdatedAt).toBeInstanceOf(Date)
+    expect(mockMovement.createdAt).toEqual(mockMovement.lastUpdatedAt)
     expect(result).toEqual({
       _id: mockInsertedId
     })
@@ -50,5 +53,7 @@ describe('createWasteInput', () => {
     )
     expect(mockDb.collection).toHaveBeenCalledWith('waste-inputs')
     expect(mockInsertOne).toHaveBeenCalledWith(mockMovement)
+    expect(mockMovement.createdAt).toBeInstanceOf(Date)
+    expect(mockMovement.lastUpdatedAt).toBeInstanceOf(Date)
   })
 })
