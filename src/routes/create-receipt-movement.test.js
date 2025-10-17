@@ -71,6 +71,9 @@ describe('movement Route Tests', () => {
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
     expect(actualWasteInput.revision).toEqual(1)
     expect(actualWasteInput.receipt).toEqual(expectedPayload)
+    expect(actualWasteInput.createdAt).toBeInstanceOf(Date)
+    expect(actualWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
+    expect(actualWasteInput.createdAt).toEqual(actualWasteInput.lastUpdatedAt)
   })
 
   it('handles error when creating a waste input fails', async () => {
@@ -99,5 +102,26 @@ describe('movement Route Tests', () => {
       error: 'Unexpected error',
       message: errorMessage
     })
+  })
+
+  it('does not create waste input when validation fails', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const invalidPayload = {
+      // Missing required 'movement' field
+    }
+
+    const { statusCode } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: invalidPayload
+    })
+
+    expect(statusCode).toEqual(400)
+
+    const actualWasteInput = await testMongoDb
+      .collection('waste-inputs')
+      .findOne({ _id: wasteTrackingId })
+
+    expect(actualWasteInput).toBeNull()
   })
 })
