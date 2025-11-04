@@ -4,7 +4,7 @@ export function validateRequestApiCode(requestApiCode, orgApiCodes) {
   const requestOrgid = getOrganisationIdForApiCode(orgApiCodes, requestApiCode)
 
   if (!requestOrgid) {
-    throw new ValidationError('apiCode must be valid')
+    throw new ValidationError('the API Code supplied is invalid')
   }
 
   return requestOrgid
@@ -41,7 +41,7 @@ export async function validateRequestOrgIdMatchesOriginalOrgId(
 
     if (requestOrgid !== originalWasteInputOrgId) {
       throw new ValidationError(
-        'apiCode must relate to the same Organisation that created the original waste item record'
+        'the API Code supplied does not relate to the same Organisation as created the original waste item record'
       )
     }
   }

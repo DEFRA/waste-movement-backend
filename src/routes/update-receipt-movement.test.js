@@ -276,7 +276,7 @@ describe('movementUpdate Route Tests', () => {
     expect(result).toEqual({
       statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
       error: 'ValidationError',
-      message: 'apiCode must be valid'
+      message: 'the API Code supplied is invalid'
     })
   })
 
@@ -319,7 +319,7 @@ describe('movementUpdate Route Tests', () => {
     expect(result).toEqual({
       statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
       error: 'ValidationError',
-      message: 'apiCode must be valid'
+      message: 'the API Code supplied is invalid'
     })
   })
 
@@ -366,7 +366,7 @@ describe('movementUpdate Route Tests', () => {
       expect(result).toEqual({
         statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
         error: 'ValidationError',
-        message: 'apiCode must be valid'
+        message: 'the API Code supplied is invalid'
       })
     }
   )
@@ -411,7 +411,7 @@ describe('movementUpdate Route Tests', () => {
       statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
       error: 'ValidationError',
       message:
-        'apiCode must relate to the same Organisation that created the original waste item record'
+        'the API Code supplied does not relate to the same Organisation as created the original waste item record'
     })
   })
 })
