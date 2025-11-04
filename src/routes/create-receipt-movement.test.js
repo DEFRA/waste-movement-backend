@@ -15,6 +15,8 @@ import { requestLogger } from '../common/helpers/logging/request-logger.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { createWasteInput } from '../services/movement-create.js'
+import { config } from '../config.js'
+import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 
 jest.mock('../services/movement-create.js', () => {
   const { createWasteInput: actualFunction } = jest.requireActual(
@@ -36,6 +38,7 @@ describe('movement Route Tests', () => {
     const testMongo = await createTestMongoDb()
     mongoClient = testMongo.client
     testMongoDb = testMongo.db
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
   })
 
   afterAll(async () => {
@@ -51,7 +54,8 @@ describe('movement Route Tests', () => {
       movement: {
         receivingSiteId: 'string',
         receiverReference: 'string',
-        specialHandlingRequirements: 'string'
+        specialHandlingRequirements: 'string',
+        apiCode: apiCode1
       }
     }
 
@@ -82,7 +86,8 @@ describe('movement Route Tests', () => {
       movement: {
         receivingSiteId: 'string',
         receiverReference: 'string',
-        specialHandlingRequirements: 'string'
+        specialHandlingRequirements: 'string',
+        apiCode: apiCode1
       }
     }
 
@@ -99,7 +104,7 @@ describe('movement Route Tests', () => {
     expect(statusCode).toEqual(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
       statusCode: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-      error: 'Unexpected error',
+      error: 'Error',
       message: errorMessage
     })
   })
@@ -124,4 +129,83 @@ describe('movement Route Tests', () => {
 
     expect(actualWasteInput).toBeNull()
   })
+
+  it('rejects when apiCode is missing', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const payload = {
+      movement: {
+        receivingSiteId: 'string',
+        receiverReference: 'string',
+        specialHandlingRequirements: 'string'
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual({
+      statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
+      error: 'ValidationError',
+      message: 'apiCode must be valid'
+    })
+  })
+
+  it('rejects when apiCode is invalid', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const payload = {
+      movement: {
+        receivingSiteId: 'string',
+        receiverReference: 'string',
+        specialHandlingRequirements: 'string',
+        apiCode: 'invalid'
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual({
+      statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
+      error: 'ValidationError',
+      message: 'apiCode must be valid'
+    })
+  })
+
+  it.each([undefined, null, ''])(
+    'rejects when ORG_API_CODES secret does not have a value: "%s"',
+    async (value) => {
+      config.set('orgApiCodes', value)
+
+      const wasteTrackingId = generateWasteTrackingId()
+      const payload = {
+        movement: {
+          receivingSiteId: 'string',
+          receiverReference: 'string',
+          specialHandlingRequirements: 'string',
+          apiCode: apiCode1
+        }
+      }
+
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url: `/movements/${wasteTrackingId}/receive`,
+        payload
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+      expect(result).toEqual({
+        statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
+        error: 'ValidationError',
+        message: 'apiCode must be valid'
+      })
+    }
+  )
 })
