@@ -2,8 +2,10 @@ import convict from 'convict'
 import convictFormatWithValidator from 'convict-format-with-validator'
 
 import { convictValidateMongoUri } from './common/helpers/convict/validate-mongo-uri.js'
+import { convictValidateOrgApiCodes } from './common/helpers/convict/validate-org-api-codes.js'
 
 convict.addFormat(convictValidateMongoUri)
+convict.addFormat(convictValidateOrgApiCodes)
 convict.addFormats(convictFormatWithValidator)
 
 const isProduction = process.env.NODE_ENV === 'production'
@@ -116,6 +118,14 @@ const config = convict({
       default: 'x-cdp-request-id',
       env: 'TRACING_HEADER'
     }
+  },
+  orgApiCodes: {
+    doc: 'The Org API Codes given to external developers, this variable is stored as a comma separated, base64 encoded secret and is injected into the docker container in CDP environments',
+    format: 'org-api-codes',
+    default: btoa(
+      '00000000-0000-0000-0000-000000000000=00000000-0000-0000-0000-000000000000'
+    ),
+    env: 'ORG_API_CODES'
   }
 })
 
