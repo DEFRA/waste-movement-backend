@@ -6,6 +6,9 @@ import { mongoDb } from '../common/helpers/mongodb.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { expect } from '@jest/globals'
+import { config } from '../config.js'
+import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 
 describe('movementUpdate Route Tests', () => {
   let server
@@ -28,7 +31,9 @@ describe('movementUpdate Route Tests', () => {
     await mongoClient.close()
   })
 
-  beforeEach(async () => {})
+  beforeEach(async () => {
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
+  })
 
   it('updates a waste input', async () => {
     const wasteTrackingId = generateWasteTrackingId()
@@ -36,7 +41,8 @@ describe('movementUpdate Route Tests', () => {
       movement: {
         receivingSiteId: 'test',
         receiverReference: 'test',
-        specialHandlingRequirements: 'test'
+        specialHandlingRequirements: 'test',
+        apiCode: apiCode1
       }
     }
 
@@ -58,7 +64,8 @@ describe('movementUpdate Route Tests', () => {
       movement: {
         receivingSiteId: 'updated-site',
         receiverReference: 'updated-ref',
-        specialHandlingRequirements: 'updated-requirements'
+        specialHandlingRequirements: 'updated-requirements',
+        apiCode: apiCode1
       }
     }
 
@@ -103,7 +110,8 @@ describe('movementUpdate Route Tests', () => {
       movement: {
         receivingSiteId: 'test',
         receiverReference: 'test',
-        specialHandlingRequirements: 'test'
+        specialHandlingRequirements: 'test',
+        apiCode: apiCode1
       }
     }
 
@@ -120,7 +128,8 @@ describe('movementUpdate Route Tests', () => {
       movement: {
         receivingSiteId: 'updated-site',
         receiverReference: 'updated-ref',
-        specialHandlingRequirements: 'updated-requirements'
+        specialHandlingRequirements: 'updated-requirements',
+        apiCode: apiCode1
       }
     }
     await updateReceipt(wasteTrackingId, updatePayload)
@@ -132,7 +141,8 @@ describe('movementUpdate Route Tests', () => {
       movement: {
         receivingSiteId: 'updated-site2',
         receiverReference: 'updated-ref2',
-        specialHandlingRequirements: 'updated-requirements2'
+        specialHandlingRequirements: 'updated-requirements2',
+        apiCode: apiCode1
       }
     }
     await updateReceipt(wasteTrackingId, updatePayload2)
@@ -166,6 +176,7 @@ describe('movementUpdate Route Tests', () => {
       movement: {
         receivingSiteId: 'updated-site',
         receiverReference: 'updated-ref',
+        apiCode: apiCode1,
         // Minimal payload for test
         carrier: {
           registrationNumber: 'updated-reg',
@@ -226,4 +237,181 @@ describe('movementUpdate Route Tests', () => {
       .collection('waste-inputs-history')
       .find({ wasteTrackingId })
   }
+
+  it('rejects when the api code is missing', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const createPayload = {
+      movement: {
+        receivingSiteId: 'test',
+        receiverReference: 'test',
+        specialHandlingRequirements: 'test',
+        apiCode: apiCode1
+      }
+    }
+
+    const createResult = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: createPayload
+    })
+
+    expect(createResult.statusCode).toEqual(204)
+    expect(createResult.result).toEqual(null)
+
+    const updatePayload = {
+      movement: {
+        receivingSiteId: 'updated-site',
+        receiverReference: 'updated-ref',
+        specialHandlingRequirements: 'updated-requirements'
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: updatePayload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual({
+      statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
+      error: 'ValidationError',
+      message: 'the API Code supplied is invalid'
+    })
+  })
+
+  it('rejects when the api code is invalid', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const createPayload = {
+      movement: {
+        receivingSiteId: 'test',
+        receiverReference: 'test',
+        specialHandlingRequirements: 'test',
+        apiCode: apiCode1
+      }
+    }
+
+    const createResult = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: createPayload
+    })
+
+    expect(createResult.statusCode).toEqual(204)
+    expect(createResult.result).toEqual(null)
+
+    const updatePayload = {
+      movement: {
+        receivingSiteId: 'updated-site',
+        receiverReference: 'updated-ref',
+        specialHandlingRequirements: 'updated-requirements',
+        apiCode: 'invalid'
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: updatePayload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual({
+      statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
+      error: 'ValidationError',
+      message: 'the API Code supplied is invalid'
+    })
+  })
+
+  it.each([undefined, null, ''])(
+    'rejects when ORG_API_CODES secret does not have a value: "%s"',
+    async (value) => {
+      const wasteTrackingId = generateWasteTrackingId()
+      const createPayload = {
+        movement: {
+          receivingSiteId: 'test',
+          receiverReference: 'test',
+          specialHandlingRequirements: 'test',
+          apiCode: apiCode1
+        }
+      }
+
+      const createResult = await server.inject({
+        method: 'POST',
+        url: `/movements/${wasteTrackingId}/receive`,
+        payload: createPayload
+      })
+
+      expect(createResult.statusCode).toEqual(204)
+      expect(createResult.result).toEqual(null)
+
+      config.set('orgApiCodes', value)
+
+      const updatePayload = {
+        movement: {
+          receivingSiteId: 'updated-site',
+          receiverReference: 'updated-ref',
+          specialHandlingRequirements: 'updated-requirements',
+          apiCode: apiCode1
+        }
+      }
+
+      const { statusCode, result } = await server.inject({
+        method: 'PUT',
+        url: `/movements/${wasteTrackingId}/receive`,
+        payload: updatePayload
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+      expect(result).toEqual({
+        statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
+        error: 'ValidationError',
+        message: 'the API Code supplied is invalid'
+      })
+    }
+  )
+
+  it('rejects when the org id of the updated entry does not match the org id of the original entry', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const createPayload = {
+      movement: {
+        receivingSiteId: 'test',
+        receiverReference: 'test',
+        specialHandlingRequirements: 'test',
+        apiCode: apiCode1
+      }
+    }
+
+    const createResult = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: createPayload
+    })
+
+    expect(createResult.statusCode).toEqual(204)
+    expect(createResult.result).toEqual(null)
+
+    const updatePayload = {
+      movement: {
+        receivingSiteId: 'updated-site',
+        receiverReference: 'updated-ref',
+        specialHandlingRequirements: 'updated-requirements',
+        apiCode: 'bc05d1ce-5a80-4624-b2ae-e7227c8c6c41'
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: updatePayload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual({
+      statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
+      error: 'ValidationError',
+      message:
+        'the API Code supplied does not relate to the same Organisation as created the original waste item record'
+    })
+  })
 })
