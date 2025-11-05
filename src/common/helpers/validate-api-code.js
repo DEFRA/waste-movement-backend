@@ -1,13 +1,13 @@
 import { ValidationError } from '../helpers/errors/validation-error.js'
 
 export function validateRequestApiCode(requestApiCode, orgApiCodes) {
-  const requestOrgid = getOrganisationIdForApiCode(orgApiCodes, requestApiCode)
+  const requestOrgId = getOrganisationIdForApiCode(orgApiCodes, requestApiCode)
 
-  if (!requestOrgid) {
+  if (!requestOrgId) {
     throw new ValidationError('apiCode', 'the API Code supplied is invalid')
   }
 
-  return requestOrgid
+  return requestOrgId
 }
 
 export async function validateRequestOrgIdMatchesOriginalOrgId(
@@ -16,7 +16,7 @@ export async function validateRequestOrgIdMatchesOriginalOrgId(
   db,
   orgApiCodes
 ) {
-  const requestOrgid = validateRequestApiCode(requestApiCode, orgApiCodes)
+  const requestOrgId = validateRequestApiCode(requestApiCode, orgApiCodes)
 
   // If this is the first update then there won't be a history entry
   let result = await db
@@ -39,7 +39,7 @@ export async function validateRequestOrgIdMatchesOriginalOrgId(
       originalWasteInputApiCode
     )
 
-    if (requestOrgid !== originalWasteInputOrgId) {
+    if (requestOrgId !== originalWasteInputOrgId) {
       throw new ValidationError(
         'apiCode',
         'the API Code supplied does not relate to the same Organisation as created the original waste item record'
