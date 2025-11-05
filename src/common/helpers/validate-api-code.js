@@ -41,6 +41,7 @@ export async function validateRequestOrgIdMatchesOriginalOrgId(
 
     if (requestOrgid !== originalWasteInputOrgId) {
       throw new ValidationError(
+        'apiCode',
         'the API Code supplied does not relate to the same Organisation as created the original waste item record'
       )
     }
