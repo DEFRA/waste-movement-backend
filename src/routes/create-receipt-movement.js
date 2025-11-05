@@ -56,11 +56,15 @@ const createReceiptMovement = [
           error.statusCode || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR
 
         return h
-          .response({
-            statusCode,
-            error: error.name,
-            message: error.message
-          })
+          .response(
+            typeof error.response === 'function'
+              ? error.response()
+              : {
+                  statusCode,
+                  error: error.name,
+                  message: error.message
+                }
+          )
           .code(statusCode)
       }
     }

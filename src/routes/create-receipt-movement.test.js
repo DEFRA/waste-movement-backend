@@ -148,9 +148,15 @@ describe('movement Route Tests', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
-      error: 'ValidationError',
-      message: 'the API Code supplied is invalid'
+      validation: {
+        errors: [
+          {
+            key: 'apiCode',
+            errorType: 'UnexpectedError',
+            message: 'the API Code supplied is invalid'
+          }
+        ]
+      }
     })
   })
 
@@ -173,9 +179,15 @@ describe('movement Route Tests', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
-      error: 'ValidationError',
-      message: 'the API Code supplied is invalid'
+      validation: {
+        errors: [
+          {
+            key: 'apiCode',
+            errorType: 'UnexpectedError',
+            message: 'the API Code supplied is invalid'
+          }
+        ]
+      }
     })
   })
 
@@ -202,9 +214,15 @@ describe('movement Route Tests', () => {
 
       expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
       expect(result).toEqual({
-        statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
-        error: 'ValidationError',
-        message: 'the API Code supplied is invalid'
+        validation: {
+          errors: [
+            {
+              key: 'apiCode',
+              errorType: 'UnexpectedError',
+              message: 'the API Code supplied is invalid'
+            }
+          ]
+        }
       })
     }
   )

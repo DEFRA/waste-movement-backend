@@ -4,7 +4,7 @@ export function validateRequestApiCode(requestApiCode, orgApiCodes) {
   const requestOrgid = getOrganisationIdForApiCode(orgApiCodes, requestApiCode)
 
   if (!requestOrgid) {
-    throw new ValidationError('the API Code supplied is invalid')
+    throw new ValidationError('apiCode', 'the API Code supplied is invalid')
   }
 
   return requestOrgid
