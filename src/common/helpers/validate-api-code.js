@@ -1,13 +1,15 @@
 import { ValidationError } from '../helpers/errors/validation-error.js'
 
-export function validateRequestApiCode(requestApiCode, orgApiCodes) {
-  const requestOrgId = getOrganisationIdForApiCode(orgApiCodes, requestApiCode)
+export function getOrgIdForApiCode(apiCode, orgApiCodes) {
+  const orgId = (orgApiCodes || []).find(
+    (orgApiCode) => orgApiCode.apiCode === apiCode
+  )?.orgId
 
-  if (!requestOrgId) {
+  if (!orgId) {
     throw new ValidationError('apiCode', 'the API Code supplied is invalid')
   }
 
-  return requestOrgId
+  return orgId
 }
 
 export async function validateRequestOrgIdMatchesOriginalOrgId(
@@ -16,7 +18,7 @@ export async function validateRequestOrgIdMatchesOriginalOrgId(
   db,
   orgApiCodes
 ) {
-  const requestOrgId = validateRequestApiCode(requestApiCode, orgApiCodes)
+  const requestOrgId = getOrgIdForApiCode(requestApiCode, orgApiCodes)
 
   // If this is the first update then there won't be a history entry
   let result = await db
@@ -32,26 +34,12 @@ export async function validateRequestOrgIdMatchesOriginalOrgId(
 
   // Run check if entry was found, if not then don't need to throw an error as
   // the update process handles it
-  if (result) {
-    const originalWasteInputApiCode = result.receipt.movement.apiCode
-    const originalWasteInputOrgId = getOrganisationIdForApiCode(
-      orgApiCodes,
-      originalWasteInputApiCode
+  if (result && requestOrgId !== result.orgId) {
+    throw new ValidationError(
+      'apiCode',
+      'the API Code supplied does not relate to the same Organisation as created the original waste item record'
     )
-
-    if (requestOrgId !== originalWasteInputOrgId) {
-      throw new ValidationError(
-        'apiCode',
-        'the API Code supplied does not relate to the same Organisation as created the original waste item record'
-      )
-    }
   }
 
   return true
-}
-
-function getOrganisationIdForApiCode(orgApiCodes, apiCode) {
-  return (orgApiCodes || []).find(
-    (orgApiCode) => orgApiCode.apiCode === apiCode
-  )?.orgId
 }

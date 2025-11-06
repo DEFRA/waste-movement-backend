@@ -78,6 +78,7 @@ describe('movement Route Tests', () => {
     expect(actualWasteInput.createdAt).toBeInstanceOf(Date)
     expect(actualWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
     expect(actualWasteInput.createdAt).toEqual(actualWasteInput.lastUpdatedAt)
+    expect(actualWasteInput.orgId).toBeDefined()
   })
 
   it('handles error when creating a waste input fails', async () => {
