@@ -3,7 +3,7 @@ import { receiptMovementSchema } from '../schemas/receipt.js'
 import { WasteInput } from '../domain/wasteInput.js'
 import Joi from 'joi'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
-import { validateRequestApiCode } from '../common/helpers/validate-api-code.js'
+import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
 import { config } from '../config.js'
 
 const createReceiptMovement = [
@@ -40,14 +40,18 @@ const createReceiptMovement = [
     },
     handler: async (request, h) => {
       try {
+        const orgApiCodes = config.get('orgApiCodes')
+        const requestOrgId = getOrgIdForApiCode(
+          request.payload.movement.apiCode,
+          orgApiCodes
+        )
+
         const { wasteTrackingId } = request.params
         const wasteInput = new WasteInput()
-        const orgApiCodes = config.get('orgApiCodes')
 
         wasteInput.wasteTrackingId = wasteTrackingId
         wasteInput.receipt = request.payload
-
-        validateRequestApiCode(request.payload.movement.apiCode, orgApiCodes)
+        wasteInput.orgId = requestOrgId
 
         await createWasteInput(request.db, wasteInput)
         return h.response().code(HTTP_STATUS_CODES.NO_CONTENT)
@@ -56,11 +60,15 @@ const createReceiptMovement = [
           error.statusCode || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR
 
         return h
-          .response({
-            statusCode,
-            error: error.name,
-            message: error.message
-          })
+          .response(
+            typeof error.response === 'function'
+              ? error.response()
+              : {
+                  statusCode,
+                  error: error.name,
+                  message: error.message
+                }
+          )
           .code(statusCode)
       }
     }

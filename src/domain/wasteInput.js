@@ -5,4 +5,5 @@ export class WasteInput {
   receipt
   createdAt
   lastUpdatedAt
+  orgId
 }
