@@ -90,6 +90,12 @@ const config = convict({
       format: String,
       default: 'waste-movement-backend',
       env: 'MONGO_DATABASE'
+    },
+    timeoutMs: {
+      doc: 'Timeout in ms for mongodb',
+      format: Number,
+      default: 5000,
+      env: 'MONGO_TIMEOUT_MS'
     }
   },
   httpProxy: {

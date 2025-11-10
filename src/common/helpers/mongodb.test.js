@@ -2,6 +2,7 @@ import { Db, MongoClient } from 'mongodb'
 import { LockManager } from 'mongo-locks'
 
 import { createServer } from '../../server.js'
+import { config } from '../../config.js'
 
 describe('#mongoDb', () => {
   let server
@@ -42,6 +43,16 @@ describe('#mongoDb', () => {
       await server.stop({ timeout: 0 })
 
       expect(closeSpy).toHaveBeenCalledWith(true)
+    })
+  })
+
+  describe('Handles errors', () => {
+    test('Server should throw an error if MongoDB times out whilst connecting', async () => {
+      config.set('mongo.timeoutMs', 1)
+
+      await expect(() => createServer()).rejects.toThrowError(
+        'Failed to connect to MongoDB'
+      )
     })
   })
 })
