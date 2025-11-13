@@ -9,6 +9,11 @@ import {
   it
 } from '@jest/globals'
 import * as exponentialBackoff from '../common/helpers/exponential-backoff-delay.js'
+import { MongoMemoryReplSet } from 'mongodb-memory-server'
+
+jest.mock('@hapi/hoek', () => ({
+  wait: jest.fn()
+}))
 
 describe('updateWasteInput', () => {
   let client
@@ -16,14 +21,31 @@ describe('updateWasteInput', () => {
   let wasteInputsCollection
   let wasteInputsHistoryCollection
   let invalidSubmissionsCollection
+  let replicaSet
 
   beforeAll(async () => {
-    client = new MongoClient(process.env.MONGO_URI)
+    // Need to use mongodb-memory-server for testing transactions as jest-mongodb
+    // doesn't support that, see https://github.com/shelfio/jest-mongodb/issues/152
+    replicaSet = await MongoMemoryReplSet.create({
+      instanceOpts: [
+        {
+          port: 17017
+        }
+      ],
+      replSet: {
+        dbName: 'waste-movement-backend',
+        count: 1,
+        storageEngine: 'wiredTiger'
+      }
+    })
+
+    client = new MongoClient(replicaSet.getUri())
     await client.connect()
     db = client.db()
   })
 
   afterAll(async () => {
+    await replicaSet.stop()
     await client.close()
   })
 
@@ -44,7 +66,14 @@ describe('updateWasteInput', () => {
 
     await wasteInputsCollection.insertOne(existingWasteInput)
 
-    const result = await updateWasteInput(db, wasteTrackingId, updateData)
+    const result = await updateWasteInput(
+      db,
+      wasteTrackingId,
+      updateData,
+      undefined,
+      0,
+      client
+    )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({
       _id: wasteTrackingId
@@ -86,7 +115,9 @@ describe('updateWasteInput', () => {
       db,
       wasteTrackingId,
       updateData,
-      'receipt.movement'
+      'receipt.movement',
+      0,
+      client
     )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({
@@ -124,7 +155,14 @@ describe('updateWasteInput', () => {
     const wasteTrackingId = 'non-existent-id'
     const updateData = { receipt: { test: 'data' } }
 
-    const result = await updateWasteInput(db, wasteTrackingId, updateData)
+    const result = await updateWasteInput(
+      db,
+      wasteTrackingId,
+      updateData,
+      'receipt.movement',
+      0,
+      client
+    )
 
     const wasteInput = await wasteInputsCollection.findOne({
       _id: wasteTrackingId
@@ -163,7 +201,14 @@ describe('updateWasteInput', () => {
 
     await wasteInputsCollection.insertOne(existingWasteInput)
 
-    const result = await updateWasteInput(db, wasteTrackingId, updateData)
+    const result = await updateWasteInput(
+      db,
+      wasteTrackingId,
+      updateData,
+      undefined,
+      0,
+      client
+    )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({
       _id: wasteTrackingId
@@ -206,7 +251,7 @@ describe('updateWasteInput', () => {
     }
 
     await expect(
-      updateWasteInput(mockDb, 1, mockMovement, '', 6)
+      updateWasteInput(mockDb, 1, mockMovement, '', 6, client)
     ).rejects.toThrow(mockError.message)
   })
 
@@ -235,7 +280,7 @@ describe('updateWasteInput', () => {
       'calculateExponentialBackoffDelay'
     )
 
-    await updateWasteInput(mockDb, 1, mockMovement, '')
+    await updateWasteInput(mockDb, 1, mockMovement, '', 0, client)
 
     expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledWith(0)
     expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledWith(1)
