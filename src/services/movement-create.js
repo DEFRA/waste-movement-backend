@@ -23,9 +23,10 @@ export async function createWasteInput(db, wasteInput, depth = 0) {
       logger.error(
         `Waiting ${delay}ms to retry createWasteInput() with a depth of ${depth}`
       )
-      return wait(delay, createWasteInput(db, wasteInput, depth + 1))
+      await wait(delay)
+      return createWasteInput(db, wasteInput, depth + 1)
     }
 
-    throw new Error(error)
+    throw error
   }
 }

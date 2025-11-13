@@ -74,18 +74,16 @@ export async function updateWasteInput(
       logger.error(
         `Waiting ${delay}ms to retry updateWasteInput() with a depth of ${depth}`
       )
-      return wait(
-        delay,
-        updateWasteInput(
-          db,
-          wasteTrackingId,
-          updateData,
-          fieldToUpdate,
-          depth + 1
-        )
+      await wait(delay)
+      return updateWasteInput(
+        db,
+        wasteTrackingId,
+        updateData,
+        fieldToUpdate,
+        depth + 1
       )
     }
 
-    throw new Error(error)
+    throw error
   }
 }

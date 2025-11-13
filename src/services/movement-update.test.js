@@ -194,5 +194,5 @@ describe('updateWasteInput', () => {
     expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledWith(0)
     expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledWith(1)
     expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledTimes(2)
-  }, 16000)
+  })
 })
