@@ -42,24 +42,19 @@ export async function updateWasteInput(
     await wasteInputsHistoryCollection.insertOne(historyEntry)
 
     const now = new Date()
-    let result
-    if (fieldToUpdate) {
-      result = await wasteInputsCollection.updateOne(
-        { _id: wasteTrackingId },
-        {
-          $set: { [fieldToUpdate]: { ...updateData }, lastUpdatedAt: now },
-          $inc: { revision: 1 }
-        }
-      )
-    } else {
-      result = await wasteInputsCollection.updateOne(
-        { _id: wasteTrackingId },
-        {
-          $set: { ...updateData, lastUpdatedAt: now },
-          $inc: { revision: 1 }
-        }
-      )
-    }
+
+    const result = await wasteInputsCollection.updateOne(
+      { _id: wasteTrackingId },
+      {
+        $set: {
+          ...(fieldToUpdate
+            ? { [fieldToUpdate]: { ...updateData } }
+            : updateData),
+          lastUpdatedAt: now
+        },
+        $inc: { revision: 1 }
+      }
+    )
 
     return {
       matchedCount: result.matchedCount,

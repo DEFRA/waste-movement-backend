@@ -37,7 +37,7 @@ describe('updateWasteInput', () => {
     await invalidSubmissionsCollection.deleteMany({})
   })
 
-  it('should update waste input when it exists', async () => {
+  it('should update waste input when it exists and when fieldToUpdate is not present', async () => {
     const wasteTrackingId = 'test-id'
     const updateData = { receipt: { test: 'data' } }
     const existingWasteInput = { _id: wasteTrackingId, someData: 'value' }
@@ -49,6 +49,7 @@ describe('updateWasteInput', () => {
     const updatedWasteInput = await wasteInputsCollection.findOne({
       _id: wasteTrackingId
     })
+
     expect(updatedWasteInput).toMatchObject({
       ...existingWasteInput,
       ...updateData,
@@ -62,12 +63,57 @@ describe('updateWasteInput', () => {
     // ignore _id, it's random in the waste-inputs-history collection
     delete historyEntry._id
     delete existingWasteInput._id
+
     expect(historyEntry).toMatchObject({
       ...existingWasteInput,
       wasteTrackingId,
       timestamp: expect.any(Date)
     })
+    expect(result).toEqual({
+      matchedCount: 1,
+      modifiedCount: 1
+    })
+  })
 
+  it('should update waste input when it exists and when fieldToUpdate is present', async () => {
+    const wasteTrackingId = 'test-id'
+    const updateData = { receipt: { test: 'data' } }
+    const existingWasteInput = { _id: wasteTrackingId, someData: 'value' }
+
+    await wasteInputsCollection.insertOne(existingWasteInput)
+
+    const result = await updateWasteInput(
+      db,
+      wasteTrackingId,
+      updateData,
+      'receipt.movement'
+    )
+
+    const updatedWasteInput = await wasteInputsCollection.findOne({
+      _id: wasteTrackingId
+    })
+
+    expect(updatedWasteInput).toMatchObject({
+      ...existingWasteInput,
+      receipt: {
+        movement: updateData
+      },
+      revision: 1
+    })
+    expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
+
+    const historyEntry = await wasteInputsHistoryCollection.findOne({
+      wasteTrackingId
+    })
+    // ignore _id, it's random in the waste-inputs-history collection
+    delete historyEntry._id
+    delete existingWasteInput._id
+
+    expect(historyEntry).toMatchObject({
+      ...existingWasteInput,
+      wasteTrackingId,
+      timestamp: expect.any(Date)
+    })
     expect(result).toEqual({
       matchedCount: 1,
       modifiedCount: 1
