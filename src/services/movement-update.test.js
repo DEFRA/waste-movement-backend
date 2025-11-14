@@ -1,4 +1,3 @@
-import { MongoClient } from 'mongodb'
 import { updateWasteInput } from './movement-update.js'
 import {
   afterAll,
@@ -9,7 +8,7 @@ import {
   it
 } from '@jest/globals'
 import * as exponentialBackoff from '../common/helpers/exponential-backoff-delay.js'
-import { MongoMemoryReplSet } from 'mongodb-memory-server'
+import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 
 jest.mock('@hapi/hoek', () => ({
   wait: jest.fn()
@@ -24,28 +23,16 @@ describe('updateWasteInput', () => {
   let replicaSet
 
   beforeAll(async () => {
-    // Need to use mongodb-memory-server for testing transactions as jest-mongodb
-    // doesn't support that, see https://github.com/shelfio/jest-mongodb/issues/152
-    replicaSet = await MongoMemoryReplSet.create({
-      instanceOpts: [
-        {
-          port: 17017
-        }
-      ],
-      replSet: {
-        dbName: 'waste-movement-backend',
-        count: 1,
-        storageEngine: 'wiredTiger'
-      }
-    })
-
-    client = new MongoClient(replicaSet.getUri())
-    await client.connect()
-    db = client.db()
+    const testMongo = await createTestMongoDb(true)
+    client = testMongo.client
+    db = testMongo.db
+    replicaSet = testMongo.replicaSet
   })
 
   afterAll(async () => {
-    await replicaSet.stop()
+    if (replicaSet) {
+      await replicaSet.stop()
+    }
     await client.close()
   })
 

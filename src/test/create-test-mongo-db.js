@@ -17,7 +17,7 @@ export const createTestMongoDb = async (useReplicaSet) => {
         }
       ],
       replSet: {
-        dbName: 'waste-movement-backend',
+        dbName: mongoConfig.databaseName,
         count: 1,
         storageEngine: 'wiredTiger'
       }
