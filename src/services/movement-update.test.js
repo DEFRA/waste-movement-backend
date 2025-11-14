@@ -1,4 +1,3 @@
-import { MongoClient } from 'mongodb'
 import { updateWasteInput } from './movement-update.js'
 import {
   afterAll,
@@ -8,6 +7,12 @@ import {
   expect,
   it
 } from '@jest/globals'
+import * as exponentialBackoff from '../common/helpers/exponential-backoff-delay.js'
+import { createTestMongoDb } from '../test/create-test-mongo-db.js'
+
+jest.mock('@hapi/hoek', () => ({
+  wait: jest.fn()
+}))
 
 describe('updateWasteInput', () => {
   let client
@@ -15,14 +20,19 @@ describe('updateWasteInput', () => {
   let wasteInputsCollection
   let wasteInputsHistoryCollection
   let invalidSubmissionsCollection
+  let replicaSet
 
   beforeAll(async () => {
-    client = new MongoClient(process.env.MONGO_URI)
-    await client.connect()
-    db = client.db()
+    const testMongo = await createTestMongoDb(true)
+    client = testMongo.client
+    db = testMongo.db
+    replicaSet = testMongo.replicaSet
   })
 
   afterAll(async () => {
+    if (replicaSet) {
+      await replicaSet.stop()
+    }
     await client.close()
   })
 
@@ -36,18 +46,26 @@ describe('updateWasteInput', () => {
     await invalidSubmissionsCollection.deleteMany({})
   })
 
-  it('should update waste input when it exists', async () => {
+  it('should update waste input when it exists and when fieldToUpdate is not present', async () => {
     const wasteTrackingId = 'test-id'
     const updateData = { receipt: { test: 'data' } }
     const existingWasteInput = { _id: wasteTrackingId, someData: 'value' }
 
     await wasteInputsCollection.insertOne(existingWasteInput)
 
-    const result = await updateWasteInput(db, wasteTrackingId, updateData)
+    const result = await updateWasteInput(
+      db,
+      wasteTrackingId,
+      updateData,
+      client,
+      undefined,
+      0
+    )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({
       _id: wasteTrackingId
     })
+
     expect(updatedWasteInput).toMatchObject({
       ...existingWasteInput,
       ...updateData,
@@ -61,12 +79,59 @@ describe('updateWasteInput', () => {
     // ignore _id, it's random in the waste-inputs-history collection
     delete historyEntry._id
     delete existingWasteInput._id
+
     expect(historyEntry).toMatchObject({
       ...existingWasteInput,
       wasteTrackingId,
       timestamp: expect.any(Date)
     })
+    expect(result).toEqual({
+      matchedCount: 1,
+      modifiedCount: 1
+    })
+  })
 
+  it('should update waste input when it exists and when fieldToUpdate is present', async () => {
+    const wasteTrackingId = 'test-id'
+    const updateData = { receipt: { test: 'data' } }
+    const existingWasteInput = { _id: wasteTrackingId, someData: 'value' }
+
+    await wasteInputsCollection.insertOne(existingWasteInput)
+
+    const result = await updateWasteInput(
+      db,
+      wasteTrackingId,
+      updateData,
+      client,
+      'receipt.movement',
+      0
+    )
+
+    const updatedWasteInput = await wasteInputsCollection.findOne({
+      _id: wasteTrackingId
+    })
+
+    expect(updatedWasteInput).toMatchObject({
+      ...existingWasteInput,
+      receipt: {
+        movement: updateData
+      },
+      revision: 1
+    })
+    expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
+
+    const historyEntry = await wasteInputsHistoryCollection.findOne({
+      wasteTrackingId
+    })
+    // ignore _id, it's random in the waste-inputs-history collection
+    delete historyEntry._id
+    delete existingWasteInput._id
+
+    expect(historyEntry).toMatchObject({
+      ...existingWasteInput,
+      wasteTrackingId,
+      timestamp: expect.any(Date)
+    })
     expect(result).toEqual({
       matchedCount: 1,
       modifiedCount: 1
@@ -77,7 +142,14 @@ describe('updateWasteInput', () => {
     const wasteTrackingId = 'non-existent-id'
     const updateData = { receipt: { test: 'data' } }
 
-    const result = await updateWasteInput(db, wasteTrackingId, updateData)
+    const result = await updateWasteInput(
+      db,
+      wasteTrackingId,
+      updateData,
+      client,
+      'receipt.movement',
+      0
+    )
 
     const wasteInput = await wasteInputsCollection.findOne({
       _id: wasteTrackingId
@@ -116,7 +188,14 @@ describe('updateWasteInput', () => {
 
     await wasteInputsCollection.insertOne(existingWasteInput)
 
-    const result = await updateWasteInput(db, wasteTrackingId, updateData)
+    const result = await updateWasteInput(
+      db,
+      wasteTrackingId,
+      updateData,
+      client,
+      undefined,
+      0
+    )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({
       _id: wasteTrackingId
@@ -145,5 +224,60 @@ describe('updateWasteInput', () => {
       matchedCount: 1,
       modifiedCount: 1
     })
+  })
+
+  it('should handle database errors', async () => {
+    const mockMovement = {
+      wasteTrackingId: '124453465'
+    }
+    const mockError = new Error('Database error')
+    const mockDb = {
+      collection: () => ({
+        findOne: jest.fn().mockRejectedValueOnce(mockError)
+      })
+    }
+
+    await expect(
+      updateWasteInput(mockDb, 1, mockMovement, client, 'receipt.movement', 6)
+    ).rejects.toThrow(mockError.message)
+  })
+
+  it('should handle exponential backoff twice', async () => {
+    const mockMovement = {
+      wasteTrackingId: '124453465'
+    }
+    const mockError = new Error('Database error')
+    const mockDb = {
+      collection: jest
+        .fn()
+        .mockImplementationOnce(() => {
+          throw new Error(mockError)
+        })
+        .mockImplementationOnce(() => {
+          throw new Error(mockError)
+        })
+        .mockImplementation(() => ({
+          findOne: () => true,
+          insertOne: () => ({ insertedId: 1 }),
+          updateOne: () => ({ matchedCount: 1, modifiedCount: 1 })
+        }))
+    }
+    const calculateExponentialBackoffDelaySpy = jest.spyOn(
+      exponentialBackoff,
+      'calculateExponentialBackoffDelay'
+    )
+
+    await updateWasteInput(
+      mockDb,
+      1,
+      mockMovement,
+      client,
+      'receipt.movement',
+      0
+    )
+
+    expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledWith(0)
+    expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledWith(1)
+    expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledTimes(2)
   })
 })
