@@ -25,6 +25,10 @@ jest.mock('../services/movement-create.js', () => {
   return { createWasteInput: jest.fn(actualFunction) }
 })
 
+jest.mock('../common/constants/exponential-backoff-delay.js', () => ({
+  BACKOFF_OPTIONS: { numOfAttempts: 1 }
+}))
+
 describe('movement Route Tests', () => {
   let server
   let mongoClient
@@ -94,7 +98,7 @@ describe('movement Route Tests', () => {
 
     const errorMessage = 'Database connection failed'
 
-    createWasteInput.mockRejectedValueOnce(new Error(errorMessage))
+    createWasteInput.mockRejectedValue(new Error(errorMessage))
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
