@@ -98,7 +98,7 @@ const config = convict({
       env: 'MONGO_TIMEOUT_MS'
     },
     readPreference: {
-      doc: 'Timeout in ms for mongodb',
+      doc: 'Read preference for mongodb',
       format: String,
       default: 'secondary',
       env: 'MONGO_READ_PREFERENCE'
