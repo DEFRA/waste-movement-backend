@@ -1,6 +1,41 @@
 # waste-movement-backend
 
-Core delivery platform Node.js Backend Template.
+Internal backend service for DEFRA's Digital Waste Tracking Service. This service provides the data persistence layer for waste receipt movements, storing and managing waste tracking data in MongoDB.
+
+## Overview
+
+The waste-movement-backend is an internal service that:
+
+- Persists waste receipt movement data to MongoDB
+- Manages waste input records with unique tracking IDs
+- Maintains complete history of all changes to waste movements
+- Tracks invalid submissions for audit purposes
+- Provides organizational validation via API codes
+
+This service is **not directly accessible externally**. It is called by the `waste-movement-external-api` service, which handles public-facing REST endpoints and authentication.
+
+### Architecture
+
+The waste tracking system follows a 3-tier architecture:
+
+```
+External Clients
+       ↓
+waste-movement-external-api (Port 3001)
+  - JWT authentication via AWS Cognito
+  - Public REST endpoints
+  - Generates tracking IDs via waste-tracking-id-backend
+       ↓
+waste-movement-backend (Internal)
+  - Data persistence layer
+  - MongoDB operations
+  - History tracking
+       ↓
+MongoDB (Database)
+  - waste-inputs (current state)
+  - waste-inputs-history (audit trail)
+  - invalid-submissions (failed submissions)
+```
 
 - [Requirements](#requirements)
   - [Node.js](#nodejs)
@@ -213,11 +248,8 @@ docker run -e PORT=3001 -p 3001:3001 waste-movement-backend
 
 A local environment with:
 
-- Localstack for AWS services (S3, SQS)
-- Redis
-- MongoDB
-- This service.
-- A commented out frontend example.
+- MongoDB (required for this service)
+- This service
 
 ```bash
 docker compose up --build -d
