@@ -1,5 +1,4 @@
 import { createWasteInput } from './movement-create.js'
-import * as exponentialBackoff from '../common/helpers/exponential-backoff-delay.js'
 
 describe('createWasteInput', () => {
   let mockDb
@@ -43,7 +42,7 @@ describe('createWasteInput', () => {
     const mockError = new Error('Database error')
     mockInsertOne.mockRejectedValueOnce(mockError)
 
-    await expect(createWasteInput(mockDb, mockMovement, 6)).rejects.toThrow(
+    await expect(createWasteInput(mockDb, mockMovement)).rejects.toThrow(
       mockError.message
     )
 
@@ -51,37 +50,5 @@ describe('createWasteInput', () => {
     expect(mockInsertOne).toHaveBeenCalledWith(mockMovement)
     expect(mockMovement.createdAt).toBeInstanceOf(Date)
     expect(mockMovement.lastUpdatedAt).toBeInstanceOf(Date)
-  })
-
-  it('should handle exponential backoff twice', async () => {
-    const mockMovement = {
-      wasteTrackingId: '124453465'
-    }
-    const mockError = new Error('Database error')
-
-    mockDb = {
-      collection: jest
-        .fn()
-        .mockImplementationOnce(() => {
-          throw new Error(mockError)
-        })
-        .mockImplementationOnce(() => {
-          throw new Error(mockError)
-        })
-        .mockImplementation(() => ({
-          insertOne: () => ({ insertedId: 1 })
-        }))
-    }
-
-    const calculateExponentialBackoffDelaySpy = jest.spyOn(
-      exponentialBackoff,
-      'calculateExponentialBackoffDelay'
-    )
-
-    await createWasteInput(mockDb, mockMovement)
-
-    expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledWith(0)
-    expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledWith(1)
-    expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledTimes(2)
   })
 })
