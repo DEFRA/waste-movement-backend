@@ -14,19 +14,30 @@ describe('movementUpdate Route Tests', () => {
   let server
   let mongoClient
   let testMongoDb
+  let replicaSet
+  let mongoUri
 
   beforeAll(async () => {
+    const testMongo = await createTestMongoDb(true)
+    mongoClient = testMongo.client
+    testMongoDb = testMongo.db
+    mongoUri = testMongo.mongoUri
+    replicaSet = testMongo.replicaSet
+
+    config.set('mongo.uri', mongoUri)
+    config.set('mongo.readPreference', 'primary')
+
     server = hapi.server()
     server.route(createReceiptMovement)
     server.route(updateReceiptMovement)
     await server.register([requestLogger, mongoDb])
     await server.initialize()
-    const testMongo = await createTestMongoDb()
-    mongoClient = testMongo.client
-    testMongoDb = testMongo.db
   })
 
   afterAll(async () => {
+    if (replicaSet) {
+      await replicaSet.stop()
+    }
     await server.stop()
     await mongoClient.close()
   })

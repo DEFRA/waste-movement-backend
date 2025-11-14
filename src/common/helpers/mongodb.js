@@ -4,7 +4,7 @@ import { LockManager } from 'mongo-locks'
 import { config } from '../../config.js'
 import Boom from '@hapi/boom'
 
-const mongoConfig = config.get('mongo')
+let mongoConfig = config.get('mongo')
 
 export const mongoDb = {
   plugin: {
@@ -18,14 +18,14 @@ export const mongoDb = {
       try {
         // Set mongo config value explicitly again so it picks up changes to the config
         // set elsewhere in the code which doesn't happen if it's set in options
-        const timeoutMs = config.get('mongo').timeoutMs
+        mongoConfig = config.get('mongo')
 
-        client = await MongoClient.connect(options.mongoUri, {
+        client = await MongoClient.connect(mongoConfig.uri, {
           retryWrites: options.retryWrites,
-          readPreference: options.readPreference,
-          serverSelectionTimeoutMS: timeoutMs,
-          connectTimeoutMS: timeoutMs,
-          socketTimeoutMS: timeoutMs,
+          readPreference: mongoConfig.readPreference,
+          serverSelectionTimeoutMS: mongoConfig.timeoutMs,
+          connectTimeoutMS: mongoConfig.timeoutMs,
+          socketTimeoutMS: mongoConfig.timeoutMs,
           ...(server.secureContext && { secureContext: server.secureContext })
         })
 
@@ -57,7 +57,7 @@ export const mongoDb = {
     mongoUri: mongoConfig.uri,
     databaseName: mongoConfig.databaseName,
     retryWrites: false,
-    readPreference: 'secondary'
+    readPreference: mongoConfig.readPreference
   }
 }
 

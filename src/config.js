@@ -96,6 +96,12 @@ const config = convict({
       format: Number,
       default: 5000,
       env: 'MONGO_TIMEOUT_MS'
+    },
+    readPreference: {
+      doc: 'Timeout in ms for mongodb',
+      format: String,
+      default: 'secondary',
+      env: 'MONGO_READ_PREFERENCE'
     }
   },
   httpProxy: {

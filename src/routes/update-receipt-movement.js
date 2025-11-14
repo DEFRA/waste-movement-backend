@@ -38,6 +38,7 @@ const updateReceiptMovement = {
         wasteTrackingId,
         request.payload.movement,
         'receipt.movement',
+        0,
         request.mongoClient
       )
 
