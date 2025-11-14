@@ -49,6 +49,10 @@ export const mongoDb = {
           await client.close(true)
         })
       } catch (error) {
+        if (client) {
+          await client.close(true)
+        }
+        server.logger.error('Failed to connect to MongoDB')
         throw Boom.internal('Failed to connect to MongoDB')
       }
     }
