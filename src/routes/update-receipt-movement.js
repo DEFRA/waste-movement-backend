@@ -37,9 +37,9 @@ const updateReceiptMovement = {
         request.db,
         wasteTrackingId,
         request.payload.movement,
+        request.mongoClient,
         'receipt.movement',
-        0,
-        request.mongoClient
+        0
       )
 
       if (result.matchedCount === 0) {

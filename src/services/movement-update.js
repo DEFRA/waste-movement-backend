@@ -8,9 +8,9 @@ export async function updateWasteInput(
   db,
   wasteTrackingId,
   updateData,
+  mongoClient,
   fieldToUpdate = undefined,
-  depth = 0,
-  mongoClient
+  depth = 0
 ) {
   const session = mongoClient.startSession()
 
@@ -79,9 +79,9 @@ export async function updateWasteInput(
         db,
         wasteTrackingId,
         updateData,
+        mongoClient,
         fieldToUpdate,
-        depth + 1,
-        mongoClient
+        depth + 1
       )
     }
 

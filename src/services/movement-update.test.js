@@ -57,9 +57,9 @@ describe('updateWasteInput', () => {
       db,
       wasteTrackingId,
       updateData,
+      client,
       undefined,
-      0,
-      client
+      0
     )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({
@@ -102,9 +102,9 @@ describe('updateWasteInput', () => {
       db,
       wasteTrackingId,
       updateData,
+      client,
       'receipt.movement',
-      0,
-      client
+      0
     )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({
@@ -146,9 +146,9 @@ describe('updateWasteInput', () => {
       db,
       wasteTrackingId,
       updateData,
+      client,
       'receipt.movement',
-      0,
-      client
+      0
     )
 
     const wasteInput = await wasteInputsCollection.findOne({
@@ -192,9 +192,9 @@ describe('updateWasteInput', () => {
       db,
       wasteTrackingId,
       updateData,
+      client,
       undefined,
-      0,
-      client
+      0
     )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({
@@ -238,7 +238,7 @@ describe('updateWasteInput', () => {
     }
 
     await expect(
-      updateWasteInput(mockDb, 1, mockMovement, '', 6, client)
+      updateWasteInput(mockDb, 1, mockMovement, client, 'receipt.movement', 6)
     ).rejects.toThrow(mockError.message)
   })
 
@@ -267,7 +267,14 @@ describe('updateWasteInput', () => {
       'calculateExponentialBackoffDelay'
     )
 
-    await updateWasteInput(mockDb, 1, mockMovement, '', 0, client)
+    await updateWasteInput(
+      mockDb,
+      1,
+      mockMovement,
+      client,
+      'receipt.movement',
+      0
+    )
 
     expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledWith(0)
     expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledWith(1)
