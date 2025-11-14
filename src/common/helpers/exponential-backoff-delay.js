@@ -1,7 +1,7 @@
 import {
   INITIAL_DELAY_MS,
   MAX_DELAY_MS
-} from '../constants/exponential-backoff-delay'
+} from '../constants/exponential-backoff-delay.js'
 
 /**
  * Calculates an exponential backoff delay in milliseconds using the given retry depth
