@@ -5,6 +5,8 @@ import Joi from 'joi'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
 import { config } from '../config.js'
+import { backOff } from 'exponential-backoff'
+import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
 
 const createReceiptMovement = [
   {
@@ -53,7 +55,11 @@ const createReceiptMovement = [
         wasteInput.receipt = request.payload
         wasteInput.orgId = requestOrgId
 
-        await createWasteInput(request.db, wasteInput)
+        await backOff(
+          () => createWasteInput(request.db, wasteInput),
+          BACKOFF_OPTIONS
+        )
+
         return h.response().code(HTTP_STATUS_CODES.NO_CONTENT)
       } catch (error) {
         const statusCode =

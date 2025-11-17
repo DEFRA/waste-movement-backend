@@ -7,7 +7,6 @@ import {
   expect,
   it
 } from '@jest/globals'
-import * as exponentialBackoff from '../common/helpers/exponential-backoff-delay.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 
 jest.mock('@hapi/hoek', () => ({
@@ -58,8 +57,7 @@ describe('updateWasteInput', () => {
       wasteTrackingId,
       updateData,
       client,
-      undefined,
-      0
+      undefined
     )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({
@@ -103,8 +101,7 @@ describe('updateWasteInput', () => {
       wasteTrackingId,
       updateData,
       client,
-      'receipt.movement',
-      0
+      'receipt.movement'
     )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({
@@ -147,8 +144,7 @@ describe('updateWasteInput', () => {
       wasteTrackingId,
       updateData,
       client,
-      'receipt.movement',
-      0
+      'receipt.movement'
     )
 
     const wasteInput = await wasteInputsCollection.findOne({
@@ -193,8 +189,7 @@ describe('updateWasteInput', () => {
       wasteTrackingId,
       updateData,
       client,
-      undefined,
-      0
+      undefined
     )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({
@@ -238,46 +233,7 @@ describe('updateWasteInput', () => {
     }
 
     await expect(
-      updateWasteInput(mockDb, 1, mockMovement, client, 'receipt.movement', 6)
+      updateWasteInput(mockDb, 1, mockMovement, client, 'receipt.movement')
     ).rejects.toThrow(mockError.message)
-  })
-
-  it('should handle exponential backoff twice', async () => {
-    const mockMovement = {
-      wasteTrackingId: '124453465'
-    }
-    const mockError = new Error('Database error')
-    const mockDb = {
-      collection: jest
-        .fn()
-        .mockImplementationOnce(() => {
-          throw new Error(mockError)
-        })
-        .mockImplementationOnce(() => {
-          throw new Error(mockError)
-        })
-        .mockImplementation(() => ({
-          findOne: () => true,
-          insertOne: () => ({ insertedId: 1 }),
-          updateOne: () => ({ matchedCount: 1, modifiedCount: 1 })
-        }))
-    }
-    const calculateExponentialBackoffDelaySpy = jest.spyOn(
-      exponentialBackoff,
-      'calculateExponentialBackoffDelay'
-    )
-
-    await updateWasteInput(
-      mockDb,
-      1,
-      mockMovement,
-      client,
-      'receipt.movement',
-      0
-    )
-
-    expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledWith(0)
-    expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledWith(1)
-    expect(calculateExponentialBackoffDelaySpy).toHaveBeenCalledTimes(2)
   })
 })

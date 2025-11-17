@@ -14,7 +14,7 @@ import { mongoDb } from '../common/helpers/mongodb.js'
 import { requestLogger } from '../common/helpers/logging/request-logger.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
-import { createWasteInput } from '../services/movement-create.js'
+import * as movementCreate from '../services/movement-create.js'
 import { config } from '../config.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 
@@ -25,10 +25,19 @@ jest.mock('../services/movement-create.js', () => {
   return { createWasteInput: jest.fn(actualFunction) }
 })
 
+jest.mock('../common/constants/exponential-backoff.js', () => ({
+  BACKOFF_OPTIONS: {
+    numOfAttempts: 3,
+    startingDelay: 1
+  }
+}))
+
 describe('movement Route Tests', () => {
   let server
   let mongoClient
   let testMongoDb
+
+  const errorMessage = 'Database connection failed'
 
   beforeAll(async () => {
     server = hapi.server()
@@ -58,6 +67,15 @@ describe('movement Route Tests', () => {
         apiCode: apiCode1
       }
     }
+    const createWasteInputSpy = jest.spyOn(movementCreate, 'createWasteInput')
+
+    movementCreate.createWasteInput
+      .mockImplementationOnce(() => {
+        throw new Error(errorMessage)
+      })
+      .mockImplementationOnce(() => {
+        throw new Error(errorMessage)
+      })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -79,6 +97,7 @@ describe('movement Route Tests', () => {
     expect(actualWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
     expect(actualWasteInput.createdAt).toEqual(actualWasteInput.lastUpdatedAt)
     expect(actualWasteInput.orgId).toBeDefined()
+    expect(createWasteInputSpy).toHaveBeenCalledTimes(3)
   })
 
   it('handles error when creating a waste input fails', async () => {
@@ -91,10 +110,9 @@ describe('movement Route Tests', () => {
         apiCode: apiCode1
       }
     }
+    const createWasteInputSpy = jest.spyOn(movementCreate, 'createWasteInput')
 
-    const errorMessage = 'Database connection failed'
-
-    createWasteInput.mockRejectedValueOnce(new Error(errorMessage))
+    movementCreate.createWasteInput.mockRejectedValue(new Error(errorMessage))
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -108,6 +126,7 @@ describe('movement Route Tests', () => {
       error: 'Error',
       message: errorMessage
     })
+    expect(createWasteInputSpy).toHaveBeenCalledTimes(3)
   })
 
   it('does not create waste input when validation fails', async () => {
