@@ -1,6 +1,4 @@
-import { calculateExponentialBackoffDelay } from '../common/helpers/exponential-backoff-delay.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
-import { wait } from '@hapi/hoek'
 
 const logger = createLogger()
 
@@ -9,8 +7,7 @@ export async function updateWasteInput(
   wasteTrackingId,
   updateData,
   mongoClient,
-  fieldToUpdate = undefined,
-  depth = 0
+  fieldToUpdate = undefined
 ) {
   const session = mongoClient.startSession()
 
@@ -67,24 +64,6 @@ export async function updateWasteInput(
     }
   } catch (error) {
     logger.error(`Failed to update waste input: ${error.message}`)
-
-    const { hasDelay, delay } = calculateExponentialBackoffDelay(depth)
-
-    if (hasDelay) {
-      logger.error(
-        `Waiting ${delay}ms to retry updateWasteInput() with a depth of ${depth}`
-      )
-      await wait(delay)
-      return updateWasteInput(
-        db,
-        wasteTrackingId,
-        updateData,
-        mongoClient,
-        fieldToUpdate,
-        depth + 1
-      )
-    }
-
     throw error
   } finally {
     await session.endSession()

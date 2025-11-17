@@ -9,6 +9,18 @@ import { expect } from '@jest/globals'
 import { config } from '../config.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
+import { updateWasteInput } from '../services/movement-update.js'
+
+jest.mock('../services/movement-update.js', () => {
+  const { updateWasteInput: actualFunction } = jest.requireActual(
+    '../services/movement-update.js'
+  )
+  return { updateWasteInput: jest.fn(actualFunction) }
+})
+
+jest.mock('../common/constants/exponential-backoff-delay.js', () => ({
+  BACKOFF_OPTIONS: { numOfAttempts: 1 }
+}))
 
 describe('movementUpdate Route Tests', () => {
   let server
@@ -447,6 +459,35 @@ describe('movementUpdate Route Tests', () => {
           }
         ]
       }
+    })
+  })
+
+  it('handles error when updating a waste input fails', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const payload = {
+      movement: {
+        receivingSiteId: 'string',
+        receiverReference: 'string',
+        specialHandlingRequirements: 'string',
+        apiCode: apiCode1
+      }
+    }
+
+    const errorMessage = 'Database connection failed'
+
+    updateWasteInput.mockRejectedValue(new Error(errorMessage))
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR)
+    expect(result).toEqual({
+      statusCode: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+      error: 'Error',
+      message: errorMessage
     })
   })
 })
