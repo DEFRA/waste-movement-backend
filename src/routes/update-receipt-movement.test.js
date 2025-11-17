@@ -18,7 +18,7 @@ jest.mock('../services/movement-update.js', () => {
   return { updateWasteInput: jest.fn(actualFunction) }
 })
 
-jest.mock('../common/constants/exponential-backoff-delay.js', () => ({
+jest.mock('../common/constants/exponential-backoff.js', () => ({
   BACKOFF_OPTIONS: { numOfAttempts: 1 }
 }))
 

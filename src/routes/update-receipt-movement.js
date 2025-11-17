@@ -6,7 +6,7 @@ import { updatePlugins } from './update-plugins.js'
 import { validateRequestOrgIdMatchesOriginalOrgId } from '../common/helpers/validate-api-code.js'
 import { config } from '../config.js'
 import { backOff } from 'exponential-backoff'
-import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff-delay.js'
+import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
 
 const updateReceiptMovement = {
   method: 'PUT',

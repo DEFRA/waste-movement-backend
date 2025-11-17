@@ -6,7 +6,7 @@ import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
 import { config } from '../config.js'
 import { backOff } from 'exponential-backoff'
-import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff-delay.js'
+import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
 
 const createReceiptMovement = [
   {

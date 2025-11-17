@@ -25,7 +25,7 @@ jest.mock('../services/movement-create.js', () => {
   return { createWasteInput: jest.fn(actualFunction) }
 })
 
-jest.mock('../common/constants/exponential-backoff-delay.js', () => ({
+jest.mock('../common/constants/exponential-backoff.js', () => ({
   BACKOFF_OPTIONS: { numOfAttempts: 1 }
 }))
 
