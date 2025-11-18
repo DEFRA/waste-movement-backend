@@ -1,4 +1,4 @@
-# waste-movement-backend
+# waste-movement-backend service
 
 Internal backend service for DEFRA's Digital Waste Tracking Service. This service provides the data persistence layer for waste receipt movements, storing and managing waste tracking data in MongoDB.
 
