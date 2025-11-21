@@ -8,6 +8,12 @@ import {
   it
 } from '@jest/globals'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
+import {
+  apiCode1,
+  base64EncodedOrgApiCodes,
+  orgId1
+} from '../test/data/apiCodes.js'
+import { config } from '../config.js'
 
 jest.mock('@hapi/hoek', () => ({
   wait: jest.fn()
@@ -26,6 +32,7 @@ describe('updateWasteInput', () => {
     client = testMongo.client
     db = testMongo.db
     replicaSet = testMongo.replicaSet
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
   })
 
   afterAll(async () => {
@@ -47,8 +54,17 @@ describe('updateWasteInput', () => {
 
   it('should update waste input when it exists and when fieldToUpdate is not present', async () => {
     const wasteTrackingId = 'test-id'
-    const updateData = { receipt: { test: 'data' } }
-    const existingWasteInput = { _id: wasteTrackingId, someData: 'value' }
+    const updateData = {
+      receipt: { test: 'data' },
+      apiCode: apiCode1,
+      orgId: orgId1
+    }
+    const existingWasteInput = {
+      _id: wasteTrackingId,
+      someData: 'value',
+      apiCode: apiCode1,
+      orgId: orgId1
+    }
 
     await wasteInputsCollection.insertOne(existingWasteInput)
 
@@ -91,8 +107,17 @@ describe('updateWasteInput', () => {
 
   it('should update waste input when it exists and when fieldToUpdate is present', async () => {
     const wasteTrackingId = 'test-id'
-    const updateData = { receipt: { test: 'data' } }
-    const existingWasteInput = { _id: wasteTrackingId, someData: 'value' }
+    const updateData = {
+      receipt: { test: 'data' },
+      apiCode: apiCode1,
+      orgId: orgId1
+    }
+    const existingWasteInput = {
+      _id: wasteTrackingId,
+      someData: 'value',
+      apiCode: apiCode1,
+      orgId: orgId1
+    }
 
     await wasteInputsCollection.insertOne(existingWasteInput)
 
@@ -137,7 +162,11 @@ describe('updateWasteInput', () => {
 
   it('should create invalid submission when waste input does not exist', async () => {
     const wasteTrackingId = 'non-existent-id'
-    const updateData = { receipt: { test: 'data' } }
+    const updateData = {
+      receipt: { test: 'data' },
+      apiCode: apiCode1,
+      orgId: orgId1
+    }
 
     const result = await updateWasteInput(
       db,
@@ -175,11 +204,17 @@ describe('updateWasteInput', () => {
 
   it('should increment existing revision when updating waste input', async () => {
     const wasteTrackingId = 'test-id-with-revision'
-    const updateData = { receipt: { test: 'updated-data' } }
+    const updateData = {
+      receipt: { test: 'updated-data' },
+      apiCode: apiCode1,
+      orgId: orgId1
+    }
     const existingWasteInput = {
       _id: wasteTrackingId,
       someData: 'value',
-      revision: 1
+      revision: 1,
+      apiCode: apiCode1,
+      orgId: orgId1
     }
 
     await wasteInputsCollection.insertOne(existingWasteInput)
