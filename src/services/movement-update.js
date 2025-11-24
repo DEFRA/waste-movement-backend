@@ -1,4 +1,7 @@
+import { ValidationError } from '../common/helpers/errors/validation-error.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
+import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
+import { config } from '../config.js'
 
 const logger = createLogger()
 
@@ -37,6 +40,8 @@ export async function updateWasteInput(
     }
     delete historyEntry._id
 
+    const orgApiCodes = config.get('orgApiCodes')
+    const requestOrgId = getOrgIdForApiCode(updateData.apiCode, orgApiCodes)
     const now = new Date()
     let result
 
@@ -44,7 +49,7 @@ export async function updateWasteInput(
       await wasteInputsHistoryCollection.insertOne(historyEntry, { session })
 
       result = await wasteInputsCollection.updateOne(
-        { _id: wasteTrackingId },
+        { _id: wasteTrackingId, orgId: requestOrgId },
         {
           $set: {
             ...(fieldToUpdate
@@ -57,6 +62,13 @@ export async function updateWasteInput(
         { session }
       )
     })
+
+    if (result.matchedCount === 0) {
+      throw new ValidationError(
+        'apiCode',
+        'the API Code supplied does not relate to the same Organisation as created the original waste item record'
+      )
+    }
 
     return {
       matchedCount: result?.matchedCount,
