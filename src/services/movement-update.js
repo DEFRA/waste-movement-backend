@@ -64,7 +64,10 @@ export async function updateWasteInput(
     })
 
     if (result.matchedCount === 0) {
-      throw new ValidationError(
+      // Returning the error because if it's thrown then it'll invoke the exponential
+      // backoff which isn't what we want in this scenario because we don't need to
+      // retry and we want the error to be directly returned to the user
+      return new ValidationError(
         'apiCode',
         'the API Code supplied does not relate to the same Organisation as created the original waste item record'
       )
