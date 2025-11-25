@@ -10,10 +10,13 @@ import {
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import {
   apiCode1,
+  apiCode2,
   base64EncodedOrgApiCodes,
-  orgId1
+  orgId1,
+  orgId2
 } from '../test/data/apiCodes.js'
 import { config } from '../config.js'
+import { ValidationError } from '../common/helpers/errors/validation-error.js'
 
 jest.mock('@hapi/hoek', () => ({
   wait: jest.fn()
@@ -270,5 +273,35 @@ describe('updateWasteInput', () => {
     await expect(
       updateWasteInput(mockDb, 1, mockMovement, client, 'receipt.movement')
     ).rejects.toThrow(mockError.message)
+  })
+
+  it('should return a validation error if the org id of the updated entry does not match the org id of the original entry', async () => {
+    const wasteTrackingId = 'test-id'
+    const updateData = {
+      receipt: { test: 'data' },
+      apiCode: apiCode2,
+      orgId: orgId2
+    }
+    const existingWasteInput = {
+      _id: wasteTrackingId,
+      someData: 'value',
+      apiCode: apiCode1,
+      orgId: orgId1
+    }
+
+    await wasteInputsCollection.insertOne(existingWasteInput)
+
+    const result = await updateWasteInput(
+      db,
+      wasteTrackingId,
+      updateData,
+      client
+    )
+
+    expect(result).toBeInstanceOf(ValidationError)
+    expect(result.key).toEqual('apiCode')
+    expect(result.message).toEqual(
+      'the API Code supplied does not relate to the same Organisation as created the original waste item record'
+    )
   })
 })

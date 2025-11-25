@@ -37,6 +37,10 @@ const updateReceiptMovement = {
         BACKOFF_OPTIONS
       )
 
+      if (result instanceof Error) {
+        throw result
+      }
+
       if (result.matchedCount === 0) {
         return h
           .response({
