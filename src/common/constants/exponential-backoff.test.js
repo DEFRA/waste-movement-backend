@@ -9,7 +9,7 @@ describe('BACKOFF_OPTIONS tests', () => {
       const result = BACKOFF_OPTIONS.retry(new Error('Database Error'), 1)
 
       expect(errorLoggerSpy).toHaveBeenCalledWith(
-        'Backoff attempt 1: Database Error'
+        'Backoff attempt 1 of 6: Database Error'
       )
       expect(result).toBeTruthy()
     })
