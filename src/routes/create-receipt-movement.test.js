@@ -32,6 +32,10 @@ jest.mock('../common/constants/exponential-backoff.js', () => ({
   }
 }))
 
+jest.mock('@defra/cdp-auditing', () => ({
+  audit: jest.fn().mockReturnValue(true)
+}))
+
 describe('movement Route Tests', () => {
   let server
   let mongoClient
