@@ -1,8 +1,10 @@
 import { createLogger } from '../common/helpers/logging/logger.js'
+import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
+import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 
 const logger = createLogger()
 
-export async function createWasteInput(db, wasteInput) {
+export async function createWasteInput(db, wasteInput, requestTraceId) {
   try {
     wasteInput._id = wasteInput.wasteTrackingId
     wasteInput.revision = 1
@@ -11,7 +13,21 @@ export async function createWasteInput(db, wasteInput) {
     wasteInput.lastUpdatedAt = now
     const collection = db.collection('waste-inputs')
     const result = await collection.insertOne(wasteInput)
-    return { _id: result?.insertedId }
+    const wasteTrackingId = result?.insertedId
+
+    const createdWasteInput = await collection.findOne({
+      _id: wasteTrackingId,
+      revision: 1
+    })
+
+    auditLogger({
+      type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
+      correlationId: requestTraceId,
+      data: createdWasteInput,
+      excludeFromLogData: ['receipt']
+    })
+
+    return { _id: wasteTrackingId }
   } catch (error) {
     logger.error(`Failed to create waste input: ${error.message}`)
     throw error

@@ -56,7 +56,7 @@ const createReceiptMovement = [
         wasteInput.orgId = requestOrgId
 
         await backOff(
-          () => createWasteInput(request.db, wasteInput),
+          () => createWasteInput(request.db, wasteInput, request.getTraceId),
           BACKOFF_OPTIONS
         )
 
