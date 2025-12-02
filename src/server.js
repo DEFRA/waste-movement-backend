@@ -4,6 +4,7 @@ import Vision from '@hapi/vision'
 
 import { config } from './config.js'
 import { router } from './plugins/router.js'
+import { serviceAuth } from './plugins/service-auth.js'
 import { requestLogger } from './common/helpers/logging/request-logger.js'
 import { mongoDb } from './common/helpers/mongodb.js'
 import { failAction } from './common/helpers/fail-action.js'
@@ -71,6 +72,9 @@ async function createServer() {
 
   // Register Swagger before routes
   await server.register(swagger)
+
+  // Register service auth
+  await server.register(serviceAuth)
 
   // Register routes
   await server.register(router)

@@ -138,6 +138,12 @@ const config = convict({
       '00000000-0000-0000-0000-000000000000=00000000-0000-0000-0000-000000000000'
     ),
     env: 'ORG_API_CODES'
+  },
+  serviceAuthToken: {
+    doc: 'Service-to-service authentication token (UUID)',
+    format: String,
+    default: '00000000-0000-0000-0000-000000000000',
+    env: 'SERVICE_AUTH_TOKEN'
   }
 })
 
