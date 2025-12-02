@@ -24,7 +24,7 @@ export async function createWasteInput(db, wasteInput, requestTraceId) {
       type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
       correlationId: requestTraceId,
       data: createdWasteInput,
-      excludeFromLogData: ['receipt']
+      fieldsToExcludeFromLoggedData: ['receipt']
     })
 
     return { _id: wasteTrackingId }

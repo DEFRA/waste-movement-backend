@@ -128,7 +128,7 @@ describe('updateWasteInput', () => {
 
     expect(auditSpy).toHaveBeenCalledTimes(1)
     expect(auditSpy).toHaveBeenCalledWith({
-      type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
+      type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
       correlationId: requestTraceId,
       version: 1,
       data: updatedWasteInput
@@ -195,7 +195,7 @@ describe('updateWasteInput', () => {
 
     expect(auditSpy).toHaveBeenCalledTimes(1)
     expect(auditSpy).toHaveBeenCalledWith({
-      type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
+      type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
       correlationId: requestTraceId,
       version: 1,
       data: updatedWasteInput

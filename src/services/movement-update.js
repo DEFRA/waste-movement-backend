@@ -114,9 +114,9 @@ async function createAuditLog(
   })
 
   auditLogger({
-    type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
+    type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
     correlationId: requestTraceId,
     data: updatedWasteInput,
-    excludeFromLogData: ['receipt']
+    fieldsToExcludeFromLoggedData: ['receipt']
   })
 }
