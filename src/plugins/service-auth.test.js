@@ -6,6 +6,7 @@ import { config } from '../config.js'
 describe('Service Auth Plugin', () => {
   let server
   const validToken = config.get('serviceAuthToken')
+  const validAuthHeader = `Basic ${Buffer.from(`service:${validToken}`).toString('base64')}`
 
   beforeAll(async () => {
     server = Hapi.server()
@@ -53,11 +54,12 @@ describe('Service Auth Plugin', () => {
   })
 
   test('returns 401 when token is invalid', async () => {
+    const invalidAuthHeader = `Basic ${Buffer.from('service:invalid-token').toString('base64')}`
     const response = await server.inject({
       method: 'GET',
       url: '/protected',
       headers: {
-        authorization: 'Bearer invalid-token'
+        authorization: invalidAuthHeader
       }
     })
 
@@ -69,7 +71,7 @@ describe('Service Auth Plugin', () => {
       method: 'GET',
       url: '/protected',
       headers: {
-        authorization: `Bearer ${validToken}`
+        authorization: validAuthHeader
       }
     })
 
