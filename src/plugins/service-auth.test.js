@@ -1,12 +1,11 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals'
 import Hapi from '@hapi/hapi'
 import { serviceAuth } from './service-auth.js'
-import { config } from '../config.js'
 
 describe('Service Auth Plugin', () => {
   let server
-  const validToken = config.get('serviceAuthToken')
-  const validAuthHeader = `Basic ${Buffer.from(`service:${validToken}`).toString('base64')}`
+  const validClientId = 'test-client-id'
+  const validAuthHeader = `Basic ${Buffer.from(`${validClientId}:`).toString('base64')}`
 
   beforeAll(async () => {
     server = Hapi.server()
@@ -15,7 +14,10 @@ describe('Service Auth Plugin', () => {
     server.route({
       method: 'GET',
       path: '/protected',
-      handler: () => ({ message: 'success' })
+      handler: (request) => ({
+        message: 'success',
+        clientId: request.auth.credentials.clientId
+      })
     })
 
     server.route({
@@ -53,20 +55,20 @@ describe('Service Auth Plugin', () => {
     expect(response.statusCode).toBe(401)
   })
 
-  test('returns 401 when token is invalid', async () => {
-    const invalidAuthHeader = `Basic ${Buffer.from('service:invalid-token').toString('base64')}`
+  test('returns 401 when clientId (username) is empty', async () => {
+    const emptyClientIdHeader = `Basic ${Buffer.from(':').toString('base64')}`
     const response = await server.inject({
       method: 'GET',
       url: '/protected',
       headers: {
-        authorization: invalidAuthHeader
+        authorization: emptyClientIdHeader
       }
     })
 
     expect(response.statusCode).toBe(401)
   })
 
-  test('returns 200 when valid token is provided', async () => {
+  test('returns 200 when valid clientId is provided', async () => {
     const response = await server.inject({
       method: 'GET',
       url: '/protected',
@@ -76,7 +78,23 @@ describe('Service Auth Plugin', () => {
     })
 
     expect(response.statusCode).toBe(200)
-    expect(response.result).toEqual({ message: 'success' })
+    expect(response.result).toEqual({
+      message: 'success',
+      clientId: validClientId
+    })
+  })
+
+  test('sets clientId in credentials from username', async () => {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/protected',
+      headers: {
+        authorization: validAuthHeader
+      }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.result.clientId).toBe(validClientId)
   })
 
   test('allows access to unprotected routes without auth', async () => {

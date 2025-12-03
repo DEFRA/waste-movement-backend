@@ -1,5 +1,4 @@
 import Basic from '@hapi/basic'
-import { config } from '../config.js'
 
 const serviceAuth = {
   plugin: {
@@ -8,11 +7,10 @@ const serviceAuth = {
       await server.register(Basic)
 
       server.auth.strategy('service-token', 'basic', {
-        validate: async (_request, _username, password) => {
-          const expectedToken = config.get('serviceAuthToken')
-          const isValid = password === expectedToken
+        validate: async (_request, username, _password) => {
+          const isValid = username !== undefined && username !== ''
 
-          return { isValid, credentials: { token: password } }
+          return { isValid, credentials: { clientId: username } }
         }
       })
 
