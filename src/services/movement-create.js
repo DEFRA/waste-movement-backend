@@ -4,7 +4,7 @@ import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 
 const logger = createLogger()
 
-export async function createWasteInput(db, wasteInput, requestTraceId) {
+export async function createWasteInput(db, wasteInput, traceId) {
   try {
     wasteInput._id = wasteInput.wasteTrackingId
     wasteInput.revision = 1
@@ -22,7 +22,7 @@ export async function createWasteInput(db, wasteInput, requestTraceId) {
 
     auditLogger({
       type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
-      correlationId: requestTraceId,
+      traceId,
       data: createdWasteInput,
       fieldsToExcludeFromLoggedData: ['receipt']
     })

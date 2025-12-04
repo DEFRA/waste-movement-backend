@@ -57,7 +57,7 @@ describe('createWasteInput', () => {
     expect(auditSpy).toHaveBeenCalledTimes(1)
     expect(auditSpy).toHaveBeenCalledWith({
       type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
-      correlationId: undefined,
+      traceId: undefined,
       version: 1,
       data: mockMovement
     })

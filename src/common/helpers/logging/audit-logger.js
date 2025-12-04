@@ -8,7 +8,7 @@ const logger = createLogger()
  * Logs a message to the CDP audit endpoint
  * @param params - The params to use to call the audit endpoint
  * @param params.type - The audit log type, see AUDIT_LOGGER_TYPE
- * @param params.correlationId - The audit log correlation id, for example request.getTraceId
+ * @param params.traceId - The audit log correlation id, for example request.getTraceId
  * @param params.version - The version of the audit logger that is being used
  * @param params.data - An object containing the audit log data
  * @param params.fieldsToExcludeFromLoggedData - The fields that should be excluded from the data logged in an error message
@@ -17,7 +17,7 @@ const logger = createLogger()
  */
 export function auditLogger({
   type,
-  correlationId,
+  traceId,
   version = 1,
   data,
   fieldsToExcludeFromLoggedData,
@@ -34,7 +34,7 @@ export function auditLogger({
       throw new Error('Audit data must be provided as an object')
     }
 
-    audit({ type, correlationId, version, data })
+    audit({ type, traceId, version, data })
 
     return true
   } catch (error) {

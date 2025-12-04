@@ -43,7 +43,7 @@ describe('updateWasteInput', () => {
   let invalidSubmissionsCollection
   let replicaSet
 
-  const requestTraceId = 'abc-def-123'
+  const traceId = 'abc-def-123'
 
   beforeAll(async () => {
     const testMongo = await createTestMongoDb(true)
@@ -94,7 +94,7 @@ describe('updateWasteInput', () => {
       wasteTrackingId,
       updateData,
       client,
-      requestTraceId,
+      traceId,
       undefined
     )
 
@@ -129,7 +129,7 @@ describe('updateWasteInput', () => {
     expect(auditSpy).toHaveBeenCalledTimes(1)
     expect(auditSpy).toHaveBeenCalledWith({
       type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
-      correlationId: requestTraceId,
+      traceId,
       version: 1,
       data: updatedWasteInput
     })
@@ -159,7 +159,7 @@ describe('updateWasteInput', () => {
       wasteTrackingId,
       updateData,
       client,
-      requestTraceId,
+      traceId,
       'receipt.movement'
     )
 
@@ -196,7 +196,7 @@ describe('updateWasteInput', () => {
     expect(auditSpy).toHaveBeenCalledTimes(1)
     expect(auditSpy).toHaveBeenCalledWith({
       type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
-      correlationId: requestTraceId,
+      traceId,
       version: 1,
       data: updatedWasteInput
     })
@@ -226,7 +226,7 @@ describe('updateWasteInput', () => {
       wasteTrackingId,
       updateData,
       client,
-      requestTraceId,
+      traceId,
       undefined
     )
 
@@ -275,7 +275,7 @@ describe('updateWasteInput', () => {
       wasteTrackingId,
       updateData,
       client,
-      requestTraceId,
+      traceId,
       'receipt.movement'
     )
 
@@ -329,7 +329,7 @@ describe('updateWasteInput', () => {
       wasteTrackingId,
       updateData,
       client,
-      requestTraceId,
+      traceId,
       undefined
     )
 
@@ -380,7 +380,7 @@ describe('updateWasteInput', () => {
         1,
         mockMovement,
         client,
-        requestTraceId,
+        traceId,
         'receipt.movement'
       )
     ).rejects.toThrow(mockError.message)
@@ -410,7 +410,7 @@ describe('updateWasteInput', () => {
       wasteTrackingId,
       updateData,
       client,
-      requestTraceId
+      traceId
     )
 
     expect(result).toBeInstanceOf(ValidationError)

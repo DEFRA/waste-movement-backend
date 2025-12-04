@@ -20,7 +20,7 @@ describe('Audit Logger Tests', () => {
     beforeEach(() => {
       params = {
         type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
-        correlationId: 'abc-def-123',
+        traceId: 'abc-def-123',
         version: 2,
         data: {
           wasteTrackingId: '2578ZCY8',
@@ -38,7 +38,7 @@ describe('Audit Logger Tests', () => {
       expect(result).toBeTruthy()
       expect(auditSpy).toHaveBeenCalledWith({
         type: params.type,
-        correlationId: params.correlationId,
+        traceId: params.traceId,
         version: params.version,
         data: params.data
       })
@@ -55,7 +55,7 @@ describe('Audit Logger Tests', () => {
       expect(result).toBeTruthy()
       expect(auditSpy).toHaveBeenCalledWith({
         type: params.type,
-        correlationId: params.correlationId,
+        traceId: params.traceId,
         version: 1,
         data: params.data
       })

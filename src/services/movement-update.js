@@ -12,7 +12,7 @@ export async function updateWasteInput(
   wasteTrackingId,
   updateData,
   mongoClient,
-  requestTraceId,
+  traceId,
   fieldToUpdate = undefined
 ) {
   const session = mongoClient.startSession()
@@ -80,7 +80,7 @@ export async function updateWasteInput(
       wasteInputsCollection,
       wasteTrackingId,
       existingWasteInput.revision,
-      requestTraceId
+      traceId
     )
 
     return {
@@ -100,13 +100,13 @@ export async function updateWasteInput(
  * @param wasteInputsCollection - The MongoDB collection from which the audit data is fetched
  * @param wasteTrackingId - The request waste tracking id
  * @param existingRevision - The revision of the updated record
- * @param requestTraceId - The unique id of the request
+ * @param traceId - The unique id of the request
  */
 async function createAuditLog(
   wasteInputsCollection,
   wasteTrackingId,
   existingRevision,
-  requestTraceId
+  traceId
 ) {
   const updatedWasteInput = await wasteInputsCollection.findOne({
     _id: wasteTrackingId,
@@ -115,7 +115,7 @@ async function createAuditLog(
 
   auditLogger({
     type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
-    correlationId: requestTraceId,
+    traceId,
     data: updatedWasteInput,
     fieldsToExcludeFromLoggedData: ['receipt']
   })
