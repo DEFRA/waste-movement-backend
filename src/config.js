@@ -3,9 +3,11 @@ import convictFormatWithValidator from 'convict-format-with-validator'
 
 import { convictValidateMongoUri } from './common/helpers/convict/validate-mongo-uri.js'
 import { convictValidateOrgApiCodes } from './common/helpers/convict/validate-org-api-codes.js'
+import { convictValidateServiceCredentials } from './common/helpers/convict/validate-service-credentials.js'
 
 convict.addFormat(convictValidateMongoUri)
 convict.addFormat(convictValidateOrgApiCodes)
+convict.addFormat(convictValidateServiceCredentials)
 convict.addFormats(convictFormatWithValidator)
 
 const isProduction = process.env.NODE_ENV === 'production'
@@ -138,9 +140,37 @@ const config = convict({
       '00000000-0000-0000-0000-000000000000=00000000-0000-0000-0000-000000000000'
     ),
     env: 'ORG_API_CODES'
+  },
+  serviceCredentials: {
+    doc: 'Service credentials for authenticating internal service-to-service calls, stored as base64 encoded username=password pairs',
+    format: 'service-credentials',
+    default: btoa('waste-movement-external-api=development-secret'),
+    env: 'ACCESS_CRED_WASTE_MOVEMENT_EXTERNAL_API'
   }
 })
 
 config.validate({ allowed: 'strict' })
+
+// Fail-fast: in production, ENVIRONMENT must be explicitly set (not default to 'local')
+const cdpEnvironment = config.get('cdpEnvironment')
+if (isProduction && !process.env.ENVIRONMENT) {
+  throw new Error(
+    'ENVIRONMENT must be explicitly set when NODE_ENV is production'
+  )
+}
+
+// Fail-fast: prevent startup with default credentials in non-local environments
+if (cdpEnvironment !== 'local') {
+  const defaultCredentials = btoa(
+    'waste-movement-external-api=development-secret'
+  )
+  const currentCredentials = process.env.ACCESS_CRED_WASTE_MOVEMENT_EXTERNAL_API
+
+  if (!currentCredentials || currentCredentials === defaultCredentials) {
+    throw new Error(
+      `ACCESS_CRED_WASTE_MOVEMENT_EXTERNAL_API must be explicitly set in non-local environments (current: ${cdpEnvironment})`
+    )
+  }
+}
 
 export { config }
