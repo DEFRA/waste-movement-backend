@@ -3,9 +3,11 @@ import convictFormatWithValidator from 'convict-format-with-validator'
 
 import { convictValidateMongoUri } from './common/helpers/convict/validate-mongo-uri.js'
 import { convictValidateOrgApiCodes } from './common/helpers/convict/validate-org-api-codes.js'
+import { convictValidateServiceCredentials } from './common/helpers/convict/validate-service-credentials.js'
 
 convict.addFormat(convictValidateMongoUri)
 convict.addFormat(convictValidateOrgApiCodes)
+convict.addFormat(convictValidateServiceCredentials)
 convict.addFormats(convictFormatWithValidator)
 
 const isProduction = process.env.NODE_ENV === 'production'
@@ -138,6 +140,13 @@ const config = convict({
       '00000000-0000-0000-0000-000000000000=00000000-0000-0000-0000-000000000000'
     ),
     env: 'ORG_API_CODES'
+  },
+  serviceCredentials: {
+    doc: 'Service credentials for authenticating internal service-to-service calls, stored as base64 encoded username=password pairs',
+    format: 'service-credentials',
+    nullable: true,
+    default: null,
+    env: 'ACCESS_CRED_WASTE_MOVEMENT_EXTERNAL_API'
   }
 })
 
