@@ -25,8 +25,7 @@ describe('Audit Logger Tests', () => {
         data: {
           wasteTrackingId: '2578ZCY8',
           receipt: { apiCode: '926a654e-f87d-4348-bf0c-2c21ab954e09' }
-        },
-        fieldsToExcludeFromLoggedData: []
+        }
       }
     })
 
@@ -61,23 +60,6 @@ describe('Audit Logger Tests', () => {
       })
     })
 
-    it('should log an error excluding the specified fields from logged data when an error is received from the audit endpoint', () => {
-      const errorLogSpy = jest.spyOn(logger.createLogger(), 'error')
-
-      const result = auditLogger({
-        ...params,
-        fieldsToExcludeFromLoggedData: ['receipt']
-      })
-
-      expect(result).toBeFalsy()
-      expect(errorLogSpy).toHaveBeenCalledWith(
-        {
-          wasteTrackingId: '2578ZCY8'
-        },
-        `Failed to call audit endpoint: Internal Server Error`
-      )
-    })
-
     it('should log an error when given an invalid type', () => {
       const errorLogSpy = jest.spyOn(logger.createLogger(), 'error')
 
@@ -88,10 +70,7 @@ describe('Audit Logger Tests', () => {
 
       expect(result).toBeFalsy()
       expect(errorLogSpy).toHaveBeenCalledWith(
-        {
-          wasteTrackingId: '2578ZCY8',
-          receipt: { apiCode: '926a654e-f87d-4348-bf0c-2c21ab954e09' }
-        },
+        { type: 'created', traceId: params.traceId, version: params.version },
         `Failed to call audit endpoint: Audit type must be one of: ${Object.values(AUDIT_LOGGER_TYPE).join(', ')}`
       )
     })
@@ -106,7 +85,7 @@ describe('Audit Logger Tests', () => {
 
       expect(result).toBeFalsy()
       expect(errorLogSpy).toHaveBeenCalledWith(
-        undefined,
+        { type: params.type, traceId: params.traceId, version: params.version },
         'Failed to call audit endpoint: Audit data must be provided as an object'
       )
     })
@@ -121,7 +100,7 @@ describe('Audit Logger Tests', () => {
 
       expect(result).toBeFalsy()
       expect(errorLogSpy).toHaveBeenCalledWith(
-        'Movement Created',
+        { type: params.type, traceId: params.traceId, version: params.version },
         'Failed to call audit endpoint: Audit data must be provided as an object'
       )
     })
