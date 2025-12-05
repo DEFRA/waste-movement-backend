@@ -29,7 +29,7 @@ export function auditLogger({
     }
 
     if (typeof data !== 'object') {
-      throw new Error('Audit data must be provided as an object')
+      throw new TypeError('Audit data must be provided as an object')
     }
 
     audit({ type, traceId, version, data })
