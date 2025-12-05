@@ -10,6 +10,7 @@ import { config } from '../config.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 import * as movementUpdate from '../services/movement-update.js'
+import { requestTracing } from '../common/helpers/request-tracing.js'
 
 jest.mock('../services/movement-update.js', () => {
   const { updateWasteInput: actualFunction } = jest.requireActual(
@@ -37,6 +38,7 @@ describe('movementUpdate Route Tests', () => {
   let mongoUri
 
   const errorMessage = 'Database connection failed'
+  const traceId = 'updated-trace-id-123'
 
   beforeAll(async () => {
     const testMongo = await createTestMongoDb(true)
@@ -51,7 +53,7 @@ describe('movementUpdate Route Tests', () => {
     server = hapi.server()
     server.route(createReceiptMovement)
     server.route(updateReceiptMovement)
-    await server.register([requestLogger, mongoDb])
+    await server.register([requestLogger, mongoDb, requestTracing])
     await server.initialize()
   })
 
@@ -110,14 +112,7 @@ describe('movementUpdate Route Tests', () => {
         throw new Error(errorMessage)
       })
 
-    const { statusCode, result } = await server.inject({
-      method: 'PUT',
-      url: `/movements/${wasteTrackingId}/receive`,
-      payload: updatePayload
-    })
-
-    expect(statusCode).toEqual(200)
-    expect(result).toEqual(null)
+    await updateReceipt(wasteTrackingId, updatePayload, traceId)
 
     const actualWasteInput = await testMongoDb
       .collection('waste-inputs')
@@ -130,6 +125,7 @@ describe('movementUpdate Route Tests', () => {
     expect(actualWasteInput.lastUpdatedAt.getTime()).toBeGreaterThan(
       timestampBeforeUpdate.getTime()
     )
+    expect(actualWasteInput.traceId).toEqual(traceId)
 
     const historicState = await getHistoricState(wasteTrackingId).toArray()
     expect(historicState.length).toEqual(1)
@@ -175,7 +171,7 @@ describe('movementUpdate Route Tests', () => {
         apiCode: apiCode1
       }
     }
-    await updateReceipt(wasteTrackingId, updatePayload)
+    await updateReceipt(wasteTrackingId, updatePayload, traceId)
 
     const afterFirstUpdate = await getCurrentWasteInput(wasteTrackingId)
     const timestampAfterFirstUpdate = afterFirstUpdate.lastUpdatedAt
@@ -188,7 +184,8 @@ describe('movementUpdate Route Tests', () => {
         apiCode: apiCode1
       }
     }
-    await updateReceipt(wasteTrackingId, updatePayload2)
+    const traceIdUpdate2 = 'trace-id-update-2'
+    await updateReceipt(wasteTrackingId, updatePayload2, traceIdUpdate2)
 
     const actualWasteInput = await getCurrentWasteInput(wasteTrackingId)
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
@@ -199,6 +196,7 @@ describe('movementUpdate Route Tests', () => {
     expect(actualWasteInput.lastUpdatedAt.getTime()).toBeGreaterThan(
       timestampAfterFirstUpdate.getTime()
     )
+    expect(actualWasteInput.traceId).toEqual(traceIdUpdate2)
 
     const historicState = await getHistoricState(wasteTrackingId).toArray()
 
@@ -264,11 +262,14 @@ describe('movementUpdate Route Tests', () => {
     expect(actualWasteInput).toEqual(null)
   })
 
-  async function updateReceipt(wasteTrackingId, updatePayload) {
+  async function updateReceipt(wasteTrackingId, updatePayload, traceId) {
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
-      payload: updatePayload
+      payload: updatePayload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
     })
 
     expect(statusCode).toEqual(200)

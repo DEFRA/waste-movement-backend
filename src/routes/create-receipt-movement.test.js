@@ -17,6 +17,7 @@ import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import * as movementCreate from '../services/movement-create.js'
 import { config } from '../config.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
+import { requestTracing } from '../common/helpers/request-tracing.js'
 
 jest.mock('../services/movement-create.js', () => {
   const { createWasteInput: actualFunction } = jest.requireActual(
@@ -42,11 +43,12 @@ describe('movement Route Tests', () => {
   let testMongoDb
 
   const errorMessage = 'Database connection failed'
+  const traceId = 'created-trace-id-123'
 
   beforeAll(async () => {
     server = hapi.server()
     server.route(createReceiptMovement)
-    await server.register([requestLogger, mongoDb])
+    await server.register([requestLogger, mongoDb, requestTracing])
     await server.initialize()
     const testMongo = await createTestMongoDb()
     mongoClient = testMongo.client
@@ -84,7 +86,10 @@ describe('movement Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      payload: expectedPayload
+      payload: expectedPayload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
     })
 
     expect(statusCode).toEqual(204)
@@ -101,6 +106,7 @@ describe('movement Route Tests', () => {
     expect(actualWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
     expect(actualWasteInput.createdAt).toEqual(actualWasteInput.lastUpdatedAt)
     expect(actualWasteInput.orgId).toBeDefined()
+    expect(actualWasteInput.traceId).toEqual(traceId)
     expect(createWasteInputSpy).toHaveBeenCalledTimes(3)
   })
 

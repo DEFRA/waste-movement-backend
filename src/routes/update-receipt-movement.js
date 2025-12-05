@@ -32,7 +32,7 @@ const updateReceiptMovement = {
             wasteTrackingId,
             request.payload.movement,
             request.mongoClient,
-            request.getTraceId,
+            request.getTraceId(),
             'receipt.movement'
           ),
         BACKOFF_OPTIONS

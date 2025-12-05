@@ -105,7 +105,8 @@ describe('updateWasteInput', () => {
     expect(updatedWasteInput).toMatchObject({
       ...existingWasteInput,
       ...updateData,
-      revision: 2
+      revision: 2,
+      traceId
     })
     expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
 
@@ -172,7 +173,8 @@ describe('updateWasteInput', () => {
       receipt: {
         movement: updateData
       },
-      revision: 2
+      revision: 2,
+      traceId
     })
     expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
 
@@ -237,7 +239,8 @@ describe('updateWasteInput', () => {
     expect(updatedWasteInput).toMatchObject({
       ...existingWasteInput,
       ...updateData,
-      revision: 2
+      revision: 2,
+      traceId
     })
     expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
 
@@ -339,7 +342,8 @@ describe('updateWasteInput', () => {
     expect(updatedWasteInput).toMatchObject({
       ...existingWasteInput,
       ...updateData,
-      revision: 2
+      revision: 2,
+      traceId
     })
     expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
 

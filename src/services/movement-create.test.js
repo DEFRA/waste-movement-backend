@@ -18,6 +18,8 @@ describe('createWasteInput', () => {
   let db
   let wasteInputsCollection
 
+  const traceId = 'abc-def-123'
+
   beforeAll(async () => {
     const testMongo = await createTestMongoDb()
     client = testMongo.client
@@ -37,7 +39,8 @@ describe('createWasteInput', () => {
   it('should create a movement, call the audit endpoint and return the inserted id', async () => {
     const wasteTrackingId = '123456789'
     const mockMovement = {
-      wasteTrackingId
+      wasteTrackingId,
+      traceId
     }
     const auditSpy = jest.spyOn(cdpAuditing, 'audit')
 
@@ -51,7 +54,8 @@ describe('createWasteInput', () => {
 
     expect(createdWasteInput).toMatchObject({
       ...mockMovement,
-      revision: 1
+      revision: 1,
+      traceId
     })
 
     expect(auditSpy).toHaveBeenCalledTimes(1)
@@ -66,7 +70,8 @@ describe('createWasteInput', () => {
   it('should create a movement and return the inserted id when calling the audit endpoint fails', async () => {
     const wasteTrackingId = '123456789'
     const mockMovement = {
-      wasteTrackingId
+      wasteTrackingId,
+      traceId
     }
     const errorLoggerSpy = jest.spyOn(logger.createLogger(), 'error')
 
@@ -80,7 +85,8 @@ describe('createWasteInput', () => {
 
     expect(createdWasteInput).toMatchObject({
       ...mockMovement,
-      revision: 1
+      revision: 1,
+      traceId
     })
 
     expect(errorLoggerSpy).toHaveBeenCalledTimes(1)

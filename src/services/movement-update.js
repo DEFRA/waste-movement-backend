@@ -58,7 +58,8 @@ export async function updateWasteInput(
             ...(fieldToUpdate
               ? { [fieldToUpdate]: { ...updateData } }
               : updateData),
-            lastUpdatedAt: now
+            lastUpdatedAt: now,
+            traceId
           },
           $inc: { revision: 1 }
         },
