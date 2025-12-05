@@ -2,6 +2,8 @@ import { ValidationError } from '../common/helpers/errors/validation-error.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
 import { config } from '../config.js'
+import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
+import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 
 const logger = createLogger()
 
@@ -10,6 +12,7 @@ export async function updateWasteInput(
   wasteTrackingId,
   updateData,
   mongoClient,
+  traceId,
   fieldToUpdate = undefined
 ) {
   const session = mongoClient.startSession()
@@ -55,7 +58,8 @@ export async function updateWasteInput(
             ...(fieldToUpdate
               ? { [fieldToUpdate]: { ...updateData } }
               : updateData),
-            lastUpdatedAt: now
+            lastUpdatedAt: now,
+            traceId
           },
           $inc: { revision: 1 }
         },
@@ -73,6 +77,13 @@ export async function updateWasteInput(
       )
     }
 
+    await createAuditLog(
+      wasteInputsCollection,
+      wasteTrackingId,
+      existingWasteInput.revision,
+      traceId
+    )
+
     return {
       matchedCount: result?.matchedCount,
       modifiedCount: result?.modifiedCount
@@ -83,4 +94,29 @@ export async function updateWasteInput(
   } finally {
     await session.endSession()
   }
+}
+
+/**
+ * Fetches the updated record and sends to the CDP audit endpoint
+ * @param wasteInputsCollection - The MongoDB collection from which the audit data is fetched
+ * @param wasteTrackingId - The request waste tracking id
+ * @param existingRevision - The revision of the updated record
+ * @param traceId - The unique id of the request
+ */
+async function createAuditLog(
+  wasteInputsCollection,
+  wasteTrackingId,
+  existingRevision,
+  traceId
+) {
+  const updatedWasteInput = await wasteInputsCollection.findOne({
+    _id: wasteTrackingId,
+    revision: existingRevision + 1
+  })
+
+  auditLogger({
+    type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
+    traceId,
+    data: updatedWasteInput
+  })
 }
