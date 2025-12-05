@@ -18,6 +18,11 @@ const serviceAuth = {
             return { isValid: true, credentials: { username } }
           }
 
+          // Reject if credentials not configured
+          if (!serviceCredentials) {
+            return { isValid: false, credentials: { username } }
+          }
+
           // Find matching credentials
           const matchingCredential = serviceCredentials.find(
             (cred) => cred.username === username && cred.password === password

@@ -134,4 +134,42 @@ describe('Service Auth Plugin', () => {
       })
     })
   })
+
+  describe('Non-local environment with null credentials', () => {
+    let server
+    const validAuthHeader = `Basic ${Buffer.from('test:test').toString('base64')}`
+
+    beforeAll(async () => {
+      config.set('cdpEnvironment', 'dev')
+      config.set('serviceCredentials', null)
+
+      server = Hapi.server()
+      await server.register(serviceAuth)
+
+      server.route({
+        method: 'GET',
+        path: '/protected',
+        handler: () => ({ message: 'success' })
+      })
+
+      await server.initialize()
+    })
+
+    afterAll(async () => {
+      config.set('cdpEnvironment', 'local')
+      await server.stop()
+    })
+
+    test('returns 401 when credentials are not configured', async () => {
+      const response = await server.inject({
+        method: 'GET',
+        url: '/protected',
+        headers: {
+          authorization: validAuthHeader
+        }
+      })
+
+      expect(response.statusCode).toBe(401)
+    })
+  })
 })

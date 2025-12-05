@@ -14,6 +14,10 @@ describe('#convictValidateServiceCredentials', () => {
     ).not.toThrow()
   })
 
+  it('should not throw an error when value is null', () => {
+    expect(() => convictValidateServiceCredentials.validate(null)).not.toThrow()
+  })
+
   it('should throw an error when password is missing', () => {
     expect(() =>
       convictValidateServiceCredentials.validate([
@@ -45,5 +49,13 @@ describe('#convictValidateServiceCredentials', () => {
     expect(
       convictValidateServiceCredentials.coerce(credentialsWithEquals)
     ).toEqual([{ username: 'service-name', password: 'pass=word=123' }])
+  })
+
+  it('should return null when coercing null value', () => {
+    expect(convictValidateServiceCredentials.coerce(null)).toBeNull()
+  })
+
+  it('should return null when coercing undefined value', () => {
+    expect(convictValidateServiceCredentials.coerce(undefined)).toBeNull()
   })
 })

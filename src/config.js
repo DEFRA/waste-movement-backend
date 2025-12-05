@@ -144,33 +144,12 @@ const config = convict({
   serviceCredentials: {
     doc: 'Service credentials for authenticating internal service-to-service calls, stored as base64 encoded username=password pairs',
     format: 'service-credentials',
-    default: btoa('waste-movement-external-api=development-secret'),
+    nullable: true,
+    default: null,
     env: 'ACCESS_CRED_WASTE_MOVEMENT_EXTERNAL_API'
   }
 })
 
 config.validate({ allowed: 'strict' })
-
-// Fail-fast: in production, ENVIRONMENT must be explicitly set (not default to 'local')
-const cdpEnvironment = config.get('cdpEnvironment')
-if (isProduction && !process.env.ENVIRONMENT) {
-  throw new Error(
-    'ENVIRONMENT must be explicitly set when NODE_ENV is production'
-  )
-}
-
-// Fail-fast: prevent startup with default credentials in non-local environments
-if (cdpEnvironment !== 'local') {
-  const defaultCredentials = btoa(
-    'waste-movement-external-api=development-secret'
-  )
-  const currentCredentials = process.env.ACCESS_CRED_WASTE_MOVEMENT_EXTERNAL_API
-
-  if (!currentCredentials || currentCredentials === defaultCredentials) {
-    throw new Error(
-      `ACCESS_CRED_WASTE_MOVEMENT_EXTERNAL_API must be explicitly set in non-local environments (current: ${cdpEnvironment})`
-    )
-  }
-}
 
 export { config }
