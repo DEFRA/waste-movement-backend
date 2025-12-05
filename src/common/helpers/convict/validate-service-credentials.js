@@ -3,7 +3,9 @@ import Joi from 'joi'
 export const convictValidateServiceCredentials = {
   name: 'service-credentials',
   validate: (value) => {
-    if (value === null) return
+    if (value === null) {
+      return
+    }
     Joi.assert(
       value,
       Joi.array().items(
@@ -15,7 +17,9 @@ export const convictValidateServiceCredentials = {
     )
   },
   coerce: (value) => {
-    if (value === null || value === undefined) return null
+    if (value === null || value === undefined) {
+      return null
+    }
     return atob(value)
       .split(',')
       .map((credential) => {
