@@ -8,16 +8,10 @@ const serviceAuth = {
     register: async (server) => {
       await server.register(Basic)
 
-      const isLocalEnvironment = config.get('cdpEnvironment') === 'local'
       const serviceCredentials = config.get('serviceCredentials')
 
       server.auth.strategy('service-token', 'basic', {
         validate: async (_request, username, password) => {
-          // Skip validation in local environment
-          if (isLocalEnvironment) {
-            return { isValid: true, credentials: { username } }
-          }
-
           // Reject if credentials not configured
           if (!serviceCredentials) {
             return { isValid: false, credentials: { username } }
