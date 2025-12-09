@@ -45,24 +45,20 @@ export async function updateWasteInput(
 
     const orgApiCodes = config.get('orgApiCodes')
     const requestOrgId = getOrgIdForApiCode(updateData.apiCode, orgApiCodes)
-    const now = new Date()
+    const revision = existingWasteInput.revision
     let result
 
     await session.withTransaction(async () => {
       await wasteInputsHistoryCollection.insertOne(historyEntry, { session })
 
       result = await wasteInputsCollection.updateOne(
-        {
-          _id: wasteTrackingId,
-          orgId: requestOrgId,
-          revision: existingWasteInput.revision
-        },
+        { _id: wasteTrackingId, orgId: requestOrgId, revision },
         {
           $set: {
             ...(fieldToUpdate
               ? { [fieldToUpdate]: { ...updateData } }
               : updateData),
-            lastUpdatedAt: now,
+            lastUpdatedAt: new Date(),
             traceId
           },
           $inc: { revision: 1 }
@@ -84,7 +80,7 @@ export async function updateWasteInput(
     await createAuditLog(
       [wasteInputsCollection, wasteInputsHistoryCollection],
       wasteTrackingId,
-      existingWasteInput.revision,
+      revision,
       traceId
     )
 
