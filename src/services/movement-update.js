@@ -52,7 +52,11 @@ export async function updateWasteInput(
       await wasteInputsHistoryCollection.insertOne(historyEntry, { session })
 
       result = await wasteInputsCollection.updateOne(
-        { _id: wasteTrackingId, orgId: requestOrgId },
+        {
+          _id: wasteTrackingId,
+          orgId: requestOrgId,
+          revision: existingWasteInput.revision
+        },
         {
           $set: {
             ...(fieldToUpdate
@@ -78,7 +82,7 @@ export async function updateWasteInput(
     }
 
     await createAuditLog(
-      wasteInputsCollection,
+      [wasteInputsCollection, wasteInputsHistoryCollection],
       wasteTrackingId,
       existingWasteInput.revision,
       traceId
@@ -97,22 +101,30 @@ export async function updateWasteInput(
 }
 
 /**
- * Fetches the updated record and sends to the CDP audit endpoint
- * @param wasteInputsCollection - The MongoDB collection from which the audit data is fetched
- * @param wasteTrackingId - The request waste tracking id
- * @param existingRevision - The revision of the updated record
- * @param traceId - The unique id of the request
+ * Fetches the updated record from either of the provided collections and sends to the CDP audit endpoint
+ * @param {Array} collections - The MongoDB collections from which the audit data is fetched
+ * @param {Number} wasteTrackingId - The request waste tracking id
+ * @param {Number} existingRevision - The revision of the updated record
+ * @param {String} traceId - The unique id of the request
+ * @param {Object} session - The MongoDB session for the transaction
  */
 async function createAuditLog(
-  wasteInputsCollection,
+  collections,
   wasteTrackingId,
   existingRevision,
-  traceId
+  traceId,
+  session
 ) {
-  const updatedWasteInput = await wasteInputsCollection.findOne({
-    _id: wasteTrackingId,
-    revision: existingRevision + 1
-  })
+  let updatedWasteInput
+
+  for (const collection of collections) {
+    if (!updatedWasteInput) {
+      updatedWasteInput = await collection.findOne(
+        { _id: wasteTrackingId, revision: existingRevision + 1 },
+        { session }
+      )
+    }
+  }
 
   auditLogger({
     type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
