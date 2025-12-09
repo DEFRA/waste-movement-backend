@@ -4,6 +4,10 @@ import { LockManager } from 'mongo-locks'
 import { createServer } from '../../server.js'
 import { config } from '../../config.js'
 
+jest.mock('@defra/cdp-auditing', () => ({
+  audit: jest.fn().mockReturnValue(true)
+}))
+
 describe('#mongoDb', () => {
   let server
 

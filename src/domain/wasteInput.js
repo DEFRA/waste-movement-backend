@@ -6,4 +6,5 @@ export class WasteInput {
   createdAt
   lastUpdatedAt
   orgId
+  traceId
 }
