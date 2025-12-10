@@ -88,6 +88,10 @@ jest.mock('./mongodb.js', () => ({
   }
 }))
 
+jest.mock('@defra/cdp-auditing', () => ({
+  audit: jest.fn().mockReturnValue(true)
+}))
+
 describe('#startServer', () => {
   const PROCESS_ENV = process.env
   let createServerSpy
