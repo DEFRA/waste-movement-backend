@@ -14,6 +14,20 @@ import { requestTracing } from './common/helpers/request-tracing.js'
 import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { swagger } from './plugins/swagger.js'
 
+function createAuthValidation(serviceCredentials) {
+  return async (_request, username, password) => {
+    if (!serviceCredentials) {
+      return { isValid: false, credentials: { username } }
+    }
+
+    const matchingCredential = serviceCredentials.find(
+      (cred) => cred.username === username && cred.password === password
+    )
+
+    return { isValid: !!matchingCredential, credentials: { username } }
+  }
+}
+
 async function createServer() {
   setupProxy()
   const server = Hapi.server({
@@ -60,44 +74,17 @@ async function createServer() {
     }
   })
 
-  // Register Vision and Inert first as they are required by Swagger
-  await server.register([
-    {
-      plugin: Inert
-    },
-    {
-      plugin: Vision
-    }
-  ])
-
-  // Register Swagger before routes
+  await server.register([Inert, Vision])
   await server.register(swagger)
-
-  // Register Basic auth and configure strategy
   await server.register(Basic)
 
   const serviceCredentials = config.get('serviceCredentials')
-
   server.auth.strategy('service-token', 'basic', {
-    validate: async (_request, username, password) => {
-      if (!serviceCredentials) {
-        return { isValid: false, credentials: { username } }
-      }
-
-      const matchingCredential = serviceCredentials.find(
-        (cred) => cred.username === username && cred.password === password
-      )
-
-      return { isValid: !!matchingCredential, credentials: { username } }
-    }
+    validate: createAuthValidation(serviceCredentials)
   })
-
   server.auth.default('service-token')
 
-  // Register routes
   await server.register(router)
-
-  // Register remaining plugins
   await server.register([
     requestLogger,
     requestTracing,
