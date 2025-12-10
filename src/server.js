@@ -1,10 +1,10 @@
 import Hapi from '@hapi/hapi'
+import Basic from '@hapi/basic'
 import Inert from '@hapi/inert'
 import Vision from '@hapi/vision'
 
 import { config } from './config.js'
 import { router } from './plugins/router.js'
-import { serviceAuth } from './plugins/service-auth.js'
 import { requestLogger } from './common/helpers/logging/request-logger.js'
 import { mongoDb } from './common/helpers/mongodb.js'
 import { failAction } from './common/helpers/fail-action.js'
@@ -73,8 +73,26 @@ async function createServer() {
   // Register Swagger before routes
   await server.register(swagger)
 
-  // Register service auth
-  await server.register(serviceAuth)
+  // Register Basic auth and configure strategy
+  await server.register(Basic)
+
+  const serviceCredentials = config.get('serviceCredentials')
+
+  server.auth.strategy('service-token', 'basic', {
+    validate: async (_request, username, password) => {
+      if (!serviceCredentials) {
+        return { isValid: false, credentials: { username } }
+      }
+
+      const matchingCredential = serviceCredentials.find(
+        (cred) => cred.username === username && cred.password === password
+      )
+
+      return { isValid: !!matchingCredential, credentials: { username } }
+    }
+  })
+
+  server.auth.default('service-token')
 
   // Register routes
   await server.register(router)
