@@ -96,4 +96,4 @@ async function createServer() {
   return server
 }
 
-export { createServer }
+export { createServer, createAuthValidation }
