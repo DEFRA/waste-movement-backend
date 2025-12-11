@@ -129,9 +129,11 @@ describe('updateWasteInput', () => {
 
     expect(auditSpy).toHaveBeenCalledTimes(1)
     expect(auditSpy).toHaveBeenCalledWith({
-      type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
-      traceId,
-      version: 1,
+      metadata: {
+        type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
+        traceId,
+        version: 1
+      },
       data: updatedWasteInput
     })
   })
@@ -197,9 +199,11 @@ describe('updateWasteInput', () => {
 
     expect(auditSpy).toHaveBeenCalledTimes(1)
     expect(auditSpy).toHaveBeenCalledWith({
-      type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
-      traceId,
-      version: 1,
+      metadata: {
+        type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
+        traceId,
+        version: 1
+      },
       data: updatedWasteInput
     })
   })

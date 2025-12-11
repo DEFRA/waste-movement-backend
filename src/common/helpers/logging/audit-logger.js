@@ -32,7 +32,7 @@ export function auditLogger({
       throw new TypeError('Audit data must be provided as an object')
     }
 
-    audit({ type, traceId, version, data })
+    audit({ metadata: { type, traceId, version }, data })
 
     return true
   } catch (error) {
