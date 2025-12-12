@@ -14,6 +14,10 @@ const mockServer = {
     info: mockHapiLoggerInfo,
     error: mockHapiLoggerError
   },
+  auth: {
+    strategy: jest.fn(),
+    default: jest.fn()
+  },
   register: jest.fn().mockImplementation(async (plugins) => {
     // Simulate plugin registration order
     if (Array.isArray(plugins)) {
