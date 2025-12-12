@@ -36,9 +36,11 @@ describe('Audit Logger Tests', () => {
 
       expect(result).toBeTruthy()
       expect(auditSpy).toHaveBeenCalledWith({
-        type: params.type,
-        traceId: params.traceId,
-        version: params.version,
+        metadata: {
+          type: params.type,
+          traceId: params.traceId,
+          version: params.version
+        },
         data: params.data
       })
     })
@@ -53,9 +55,7 @@ describe('Audit Logger Tests', () => {
 
       expect(result).toBeTruthy()
       expect(auditSpy).toHaveBeenCalledWith({
-        type: params.type,
-        traceId: params.traceId,
-        version: 1,
+        metadata: { type: params.type, traceId: params.traceId, version: 1 },
         data: params.data
       })
     })
