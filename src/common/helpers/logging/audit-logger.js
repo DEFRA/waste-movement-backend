@@ -1,6 +1,7 @@
 import { audit } from '@defra/cdp-auditing'
 import { createLogger } from './logger.js'
 import { AUDIT_LOGGER_TYPE } from '../../constants/audit-logger.js'
+import { metricsCounter } from '../metrics.js'
 
 const logger = createLogger()
 
@@ -36,13 +37,16 @@ export function auditLogger({
 
     return true
   } catch (error) {
-    logger.error(
-      { type, traceId, version },
-      `Failed to call audit endpoint: ${error.message}`
-    )
+    const logErrorMessage = `Failed to call audit endpoint: ${error.message}`
+
+    logger.error({ type, traceId, version }, logErrorMessage)
+
+    metricsCounter('audit.errors.failed', logErrorMessage, {
+      auditLogType: type
+    })
 
     if (shouldThrowError) {
-      throw new Error(`Failed to call audit endpoint: ${error.message}`)
+      throw new Error(logErrorMessage)
     }
   }
 
