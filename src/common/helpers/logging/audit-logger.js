@@ -35,6 +35,14 @@ export function auditLogger({
 
     audit({ metadata: { type, traceId, version }, data })
 
+    metricsCounter(
+      'audit.errors.failed',
+      'Failed to call audit endpoint: Audit data must be provided as an object',
+      {
+        auditLogType: type
+      }
+    )
+
     return true
   } catch (error) {
     const logErrorMessage = `Failed to call audit endpoint: ${error.message}`
