@@ -77,8 +77,12 @@ describe('Audit Logger Tests', () => {
       )
       expect(metricsCounterSpy).toHaveBeenCalledWith(
         'audit.errors.failed',
-        `Failed to call audit endpoint: Audit type must be one of: ${Object.values(AUDIT_LOGGER_TYPE).join(', ')}`,
-        { auditLogType: 'created' }
+        1,
+        { auditLogType: 'created' },
+        {
+          traceId: params.traceId,
+          errorMessage: `Failed to call audit endpoint: Audit type must be one of: ${Object.values(AUDIT_LOGGER_TYPE).join(', ')}`
+        }
       )
     })
 
@@ -98,8 +102,13 @@ describe('Audit Logger Tests', () => {
       )
       expect(metricsCounterSpy).toHaveBeenCalledWith(
         'audit.errors.failed',
-        'Failed to call audit endpoint: Audit data must be provided as an object',
-        { auditLogType: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED }
+        1,
+        { auditLogType: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED },
+        {
+          traceId: params.traceId,
+          errorMessage:
+            'Failed to call audit endpoint: Audit data must be provided as an object'
+        }
       )
     })
 
@@ -119,8 +128,13 @@ describe('Audit Logger Tests', () => {
       )
       expect(metricsCounterSpy).toHaveBeenCalledWith(
         'audit.errors.failed',
-        'Failed to call audit endpoint: Audit data must be provided as an object',
-        { auditLogType: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED }
+        1,
+        { auditLogType: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED },
+        {
+          traceId: params.traceId,
+          errorMessage:
+            'Failed to call audit endpoint: Audit data must be provided as an object'
+        }
       )
     })
 

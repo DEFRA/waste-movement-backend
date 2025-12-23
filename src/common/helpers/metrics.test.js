@@ -6,6 +6,7 @@ import { AUDIT_LOGGER_TYPE } from '../constants/audit-logger.js'
 
 const mockPutMetric = jest.fn()
 const mockPutDimensions = jest.fn()
+const mockSetProperty = jest.fn()
 const mockFlush = jest.fn()
 const mockLoggerError = jest.fn()
 
@@ -14,6 +15,7 @@ jest.mock('aws-embedded-metrics', () => ({
   createMetricsLogger: () => ({
     putMetric: mockPutMetric,
     putDimensions: mockPutDimensions,
+    setProperty: mockSetProperty,
     flush: mockFlush
   })
 }))
@@ -83,6 +85,30 @@ describe('#metrics', () => {
       const dimensions = { auditLogType: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED }
       await metricsCounter(mockMetricsName, mockValue, dimensions)
       expect(mockPutDimensions).toHaveBeenCalledWith(dimensions)
+    })
+
+    test('Should not call setProperty when no properties provided', async () => {
+      await metricsCounter(mockMetricsName, mockValue)
+      expect(mockSetProperty).not.toHaveBeenCalled()
+    })
+
+    test('Should call setProperty when properties provided', async () => {
+      const properties = {
+        traceId: 'abcdef123',
+        errorMessage:
+          'Failed to call audit endpoint: Audit data must be provided as an object'
+      }
+      const propertiesEntries = Object.entries(properties)
+      await metricsCounter(mockMetricsName, mockValue, {}, properties)
+      expect(mockSetProperty).toHaveBeenCalledTimes(2)
+      expect(mockSetProperty).toHaveBeenCalledWith(
+        propertiesEntries[0][0],
+        propertiesEntries[0][1]
+      )
+      expect(mockSetProperty).toHaveBeenCalledWith(
+        propertiesEntries[1][0],
+        propertiesEntries[1][1]
+      )
     })
 
     test('Should work with dot notation metric names', async () => {

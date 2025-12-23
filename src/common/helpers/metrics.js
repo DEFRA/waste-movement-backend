@@ -11,8 +11,14 @@ import { createLogger } from './logging/logger.js'
  * @param {string} metricName - Metric name (dot notation recommended)
  * @param {number} value - Metric value (default 1)
  * @param {Object} dimensions - Optional dimensions object
+ * @param {Object} properties - Optional properties object
  */
-const metricsCounter = async (metricName, value = 1, dimensions = {}) => {
+const metricsCounter = async (
+  metricName,
+  value = 1,
+  dimensions = {},
+  properties = {}
+) => {
   if (!config.get('isMetricsEnabled')) {
     return
   }
@@ -22,6 +28,12 @@ const metricsCounter = async (metricName, value = 1, dimensions = {}) => {
 
     if (Object.keys(dimensions).length > 0) {
       metricsLogger.putDimensions(dimensions)
+    }
+
+    if (Object.entries(properties).length > 0) {
+      Object.entries(properties).forEach(([propertyKey, propertyValue]) => {
+        metricsLogger.setProperty(propertyKey, propertyValue)
+      })
     }
 
     metricsLogger.putMetric(
