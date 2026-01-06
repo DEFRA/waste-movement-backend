@@ -76,7 +76,8 @@ describe('Audit Logger Tests', () => {
         `Failed to call audit endpoint: Audit type must be one of: ${Object.values(AUDIT_LOGGER_TYPE).join(', ')}`
       )
       expect(metricsCounterSpy).toHaveBeenCalledWith('audit.errors.failed', 1, {
-        auditLogType: 'created'
+        auditLogType: 'created',
+        traceId: params.traceId
       })
     })
 
@@ -95,7 +96,8 @@ describe('Audit Logger Tests', () => {
         'Failed to call audit endpoint: Audit data must be provided as an object'
       )
       expect(metricsCounterSpy).toHaveBeenCalledWith('audit.errors.failed', 1, {
-        auditLogType: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED
+        auditLogType: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
+        traceId: params.traceId
       })
     })
 
@@ -114,7 +116,8 @@ describe('Audit Logger Tests', () => {
         'Failed to call audit endpoint: Audit data must be provided as an object'
       )
       expect(metricsCounterSpy).toHaveBeenCalledWith('audit.errors.failed', 1, {
-        auditLogType: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED
+        auditLogType: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
+        traceId: params.traceId
       })
     })
 

@@ -35,7 +35,7 @@ export function auditLogger({
 
     audit({ metadata: { type, traceId, version }, data })
 
-    metricsCounter('audit.errors.failed', 1, { auditLogType: type })
+    metricsCounter('audit.errors.failed', 1, { auditLogType: type, traceId })
 
     return true
   } catch (error) {
@@ -43,7 +43,7 @@ export function auditLogger({
 
     logger.error({ type, traceId, version }, logErrorMessage)
 
-    metricsCounter('audit.errors.failed', 1, { auditLogType: type })
+    metricsCounter('audit.errors.failed', 1, { auditLogType: type, traceId })
 
     if (shouldThrowError) {
       throw new Error(logErrorMessage)
