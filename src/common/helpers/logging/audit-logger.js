@@ -35,16 +35,7 @@ export function auditLogger({
 
     audit({ metadata: { type, traceId, version }, data })
 
-    metricsCounter(
-      'audit.errors.failed',
-      1,
-      { auditLogType: type },
-      {
-        traceId,
-        errorMessage:
-          'Failed to call audit endpoint: Audit data must be provided as an object'
-      }
-    )
+    metricsCounter('audit.errors.failed', 1, { auditLogType: type })
 
     return true
   } catch (error) {
@@ -52,12 +43,7 @@ export function auditLogger({
 
     logger.error({ type, traceId, version }, logErrorMessage)
 
-    metricsCounter(
-      'audit.errors.failed',
-      1,
-      { auditLogType: type },
-      { traceId, errorMessage: logErrorMessage }
-    )
+    metricsCounter('audit.errors.failed', 1, { auditLogType: type })
 
     if (shouldThrowError) {
       throw new Error(logErrorMessage)
