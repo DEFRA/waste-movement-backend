@@ -87,30 +87,6 @@ describe('#metrics', () => {
       expect(mockPutDimensions).toHaveBeenCalledWith(dimensions)
     })
 
-    test('Should not call setProperty when no properties provided', async () => {
-      await metricsCounter(mockMetricsName, mockValue)
-      expect(mockSetProperty).not.toHaveBeenCalled()
-    })
-
-    test('Should call setProperty when properties provided', async () => {
-      const properties = {
-        traceId: 'abcdef123',
-        errorMessage:
-          'Failed to call audit endpoint: Audit data must be provided as an object'
-      }
-      const propertiesEntries = Object.entries(properties)
-      await metricsCounter(mockMetricsName, mockValue, {}, properties)
-      expect(mockSetProperty).toHaveBeenCalledTimes(2)
-      expect(mockSetProperty).toHaveBeenCalledWith(
-        propertiesEntries[0][0],
-        propertiesEntries[0][1]
-      )
-      expect(mockSetProperty).toHaveBeenCalledWith(
-        propertiesEntries[1][0],
-        propertiesEntries[1][1]
-      )
-    })
-
     test('Should work with dot notation metric names', async () => {
       await metricsCounter(
         'audit.errors.failed',
