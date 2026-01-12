@@ -35,8 +35,6 @@ export function auditLogger({
 
     audit({ metadata: { type, traceId, version }, data })
 
-    metricsCounter('audit.errors.failed', 1, { auditLogType: type, traceId })
-
     return true
   } catch (error) {
     const logErrorMessage = `Failed to call audit endpoint: ${error.message}`
