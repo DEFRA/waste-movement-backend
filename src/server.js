@@ -13,6 +13,7 @@ import { pulse } from './common/helpers/pulse.js'
 import { requestTracing } from './common/helpers/request-tracing.js'
 import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { swagger } from './plugins/swagger.js'
+import { errorHandler } from './plugins/error-handler.js'
 
 function createAuthValidation(serviceCredentials) {
   return async (_request, username, password) => {
@@ -90,7 +91,8 @@ async function createServer() {
     requestTracing,
     secureContext,
     pulse,
-    mongoDb
+    mongoDb,
+    errorHandler
   ])
 
   return server

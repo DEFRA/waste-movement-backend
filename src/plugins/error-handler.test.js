@@ -1,0 +1,185 @@
+import { config } from '../config.js'
+import { createServer } from '../server.js'
+import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
+import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
+import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+
+jest.mock('@defra/cdp-auditing', () => ({
+  audit: jest.fn().mockImplementation(() => true)
+}))
+
+describe('Error Handler', () => {
+  let server
+
+  const wasteTrackingId = generateWasteTrackingId()
+  const traceId = '64a4385a4447a8b1608b5b338d0a3157'
+
+  beforeAll(async () => {
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
+    config.set(
+      'serviceCredentials',
+      'd2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpPTRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+    )
+
+    server = await createServer()
+
+    const createResult = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: {
+        movement: {
+          receivingSiteId: 'test-create',
+          receiverReference: 'test-create',
+          specialHandlingRequirements: 'test-create',
+          apiCode: apiCode1
+        }
+      },
+      headers: {
+        'x-cdp-request-id': traceId,
+        authorization:
+          'Basic d2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpOjRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+      }
+    })
+
+    expect(createResult.statusCode).toEqual(HTTP_STATUS_CODES.NO_CONTENT)
+    expect(createResult.result).toEqual(null)
+  })
+
+  afterAll(async () => {
+    await server.stop()
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  test('should format validation errors correctly', async () => {
+    // Send a request with missing required fields
+    const response = await server.inject({
+      method: 'POST',
+      url: '/movements/retry-audit-log',
+      payload: {
+        wasteTrackingId
+      },
+      headers: {
+        authorization:
+          'Basic d2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpOjRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+      }
+    })
+
+    // Check status code
+    expect(response.statusCode).toBe(400)
+
+    // Parse response
+    const responseBody = JSON.parse(response.payload)
+
+    // Check response structure
+    expect(responseBody).toHaveProperty('validation')
+    expect(responseBody.validation).toHaveProperty('errors')
+    expect(Array.isArray(responseBody.validation.errors)).toBe(true)
+
+    // Check at least one error exists
+    expect(responseBody.validation.errors.length).toBeGreaterThan(0)
+
+    // Check error format
+    const error = responseBody.validation.errors[0]
+    expect(error).toHaveProperty('key')
+    expect(error).toHaveProperty('errorType')
+    expect(error).toHaveProperty('message')
+
+    // Check that the required field error has errorType 'NotProvided'
+    const requiredFieldError = responseBody.validation.errors.find(
+      (err) => err.key === 'retryAuditLogSchema'
+    )
+    expect(requiredFieldError).toBeDefined()
+    expect(requiredFieldError.errorType).toBe('NotProvided')
+
+    // Log the full response for debugging
+    console.log(
+      '[DEBUG_LOG] Validation error response:',
+      JSON.stringify(responseBody, null, 2)
+    )
+  })
+
+  test('should not create misleading keys from built-in Joi error types', async () => {
+    // This test ensures that built-in Joi errors like 'any.required' don't get
+    // their error type prefix extracted as a key (which would result in key: 'any')
+    const response = await server.inject({
+      method: 'POST',
+      url: '/movements/retry-audit-log',
+      payload: {
+        wasteTrackingId
+      },
+      headers: {
+        authorization:
+          'Basic d2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpOjRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+      }
+    })
+
+    expect(response.statusCode).toBe(400)
+    const responseBody = JSON.parse(response.payload)
+
+    // Ensure no error has key 'any' (which would be a regression)
+    const misleadingKeyError = responseBody.validation.errors.find(
+      (err) => err.key === 'any'
+    )
+    expect(misleadingKeyError).toBeUndefined()
+
+    // All errors should have either a proper field name or empty string
+    responseBody.validation.errors.forEach((err) => {
+      expect(err.key).not.toBe('any')
+      expect(err.key).not.toBe('object')
+      expect(err.key).not.toBe('string')
+    })
+  })
+
+  test('should handle a valid payload', async () => {
+    // This test ensures that built-in Joi errors like 'any.required' don't get
+    // their error type prefix extracted as a key (which would result in key: 'any')
+    const response = await server.inject({
+      method: 'POST',
+      url: '/movements/retry-audit-log',
+      payload: {
+        wasteTrackingId,
+        revision: 1
+      },
+      headers: {
+        authorization:
+          'Basic d2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpOjRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+      }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.result).toEqual({})
+  })
+
+  test('should handle an unexpected error', async () => {
+    // This test ensures that built-in Joi errors like 'any.required' don't get
+    // their error type prefix extracted as a key (which would result in key: 'any')
+    const response = await server.inject({
+      method: 'POST',
+      url: '/movements/retry-audit-log',
+      payload: {
+        wasteTrackingId,
+        revision: '1'
+      },
+      headers: {
+        authorization:
+          'Basic d2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpOjRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+      }
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.result).toEqual({
+      validation: {
+        errors: [
+          {
+            errorType: 'UnexpectedError',
+            key: 'revision',
+            message: '"revision" must be a number'
+          }
+        ]
+      }
+    })
+  })
+})
