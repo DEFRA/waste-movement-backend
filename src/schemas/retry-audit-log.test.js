@@ -173,6 +173,6 @@ describe('retryAuditLogSchema', () => {
     const { error } = retryAuditLogSchema.validate(payload)
 
     expect(error).toBeDefined()
-    expect(error.message).toEqual('"revision" must be greater than 0')
+    expect(error.message).toEqual('"revision" must be a positive number')
   })
 })
