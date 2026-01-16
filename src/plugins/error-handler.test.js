@@ -87,18 +87,12 @@ describe('Error Handler', () => {
     expect(error).toHaveProperty('errorType')
     expect(error).toHaveProperty('message')
 
-    // Check that the required field error has errorType 'NotProvided'
+    // Check that the required field error has a key of 'retryAuditLogSchema'
     const requiredFieldError = responseBody.validation.errors.find(
       (err) => err.key === 'retryAuditLogSchema'
     )
     expect(requiredFieldError).toBeDefined()
     expect(requiredFieldError.errorType).toBe('NotProvided')
-
-    // Log the full response for debugging
-    console.log(
-      '[DEBUG_LOG] Validation error response:',
-      JSON.stringify(responseBody, null, 2)
-    )
   })
 
   test('should not create misleading keys from built-in Joi error types', async () => {
@@ -134,8 +128,6 @@ describe('Error Handler', () => {
   })
 
   test('should handle a valid payload', async () => {
-    // This test ensures that built-in Joi errors like 'any.required' don't get
-    // their error type prefix extracted as a key (which would result in key: 'any')
     const response = await server.inject({
       method: 'POST',
       url: '/movements/retry-audit-log',
@@ -154,8 +146,6 @@ describe('Error Handler', () => {
   })
 
   test('should handle an unexpected error', async () => {
-    // This test ensures that built-in Joi errors like 'any.required' don't get
-    // their error type prefix extracted as a key (which would result in key: 'any')
     const response = await server.inject({
       method: 'POST',
       url: '/movements/retry-audit-log',
