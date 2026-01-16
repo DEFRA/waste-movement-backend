@@ -67,10 +67,10 @@ export const mongoDb = {
 
 async function createIndexes(db) {
   await db.collection('mongo-locks').createIndex({ id: 1 })
-
-  await db.collection('waste-inputs').createIndex({ id: 1 })
-  await db.collection('waste-inputs').createIndex({ wasteTrackingId: 1 })
+  await db
+    .collection('waste-inputs')
+    .createIndex({ id: 1, wasteTrackingId: 1, revision: 1, traceId: 1 })
   await db
     .collection('waste-inputs-history')
-    .createIndex({ wasteTrackingId: 1, revision: 1 })
+    .createIndex({ wasteTrackingId: 1, revision: 1, traceId: 1 })
 }
