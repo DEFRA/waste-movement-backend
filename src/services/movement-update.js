@@ -7,6 +7,24 @@ import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 
 const logger = createLogger()
 
+function createHistoryEntry(existingWasteInput, wasteTrackingId) {
+  const historyEntry = {
+    ...existingWasteInput,
+    wasteTrackingId,
+    timestamp: new Date()
+  }
+  delete historyEntry._id
+  return historyEntry
+}
+
+function createOrgMismatchError() {
+  return new ValidationError(
+    'apiCode',
+    'the API Code supplied does not relate to the same Organisation as created the original waste item record',
+    'BusinessRuleViolation'
+  )
+}
+
 export async function updateWasteInput(
   db,
   wasteTrackingId,
@@ -36,21 +54,16 @@ export async function updateWasteInput(
       return { matchedCount: 0, modifiedCount: 0 }
     }
 
-    const historyEntry = {
-      ...existingWasteInput,
-      wasteTrackingId, // Add reference to original document
-      timestamp: new Date()
-    }
-    delete historyEntry._id
-
-    const orgApiCodes = config.get('orgApiCodes')
-    const requestOrgId = getOrgIdForApiCode(updateData.apiCode, orgApiCodes)
+    const historyEntry = createHistoryEntry(existingWasteInput, wasteTrackingId)
+    const requestOrgId = getOrgIdForApiCode(
+      updateData.apiCode,
+      config.get('orgApiCodes')
+    )
     const revision = existingWasteInput.revision
     let result
 
     await session.withTransaction(async () => {
       await wasteInputsHistoryCollection.insertOne(historyEntry, { session })
-
       result = await wasteInputsCollection.updateOne(
         { _id: wasteTrackingId, orgId: requestOrgId, revision },
         {
@@ -68,14 +81,7 @@ export async function updateWasteInput(
     })
 
     if (result.matchedCount === 0) {
-      // Returning the error because if it's thrown then it'll invoke the exponential
-      // backoff which isn't what we want in this scenario because we don't need to
-      // retry and we want the error to be directly returned to the user
-      return new ValidationError(
-        'apiCode',
-        'the API Code supplied does not relate to the same Organisation as created the original waste item record',
-        'BusinessRuleViolation'
-      )
+      return createOrgMismatchError()
     }
 
     await createAuditLog(
