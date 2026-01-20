@@ -73,7 +73,8 @@ export async function updateWasteInput(
       // retry and we want the error to be directly returned to the user
       return new ValidationError(
         'apiCode',
-        'the API Code supplied does not relate to the same Organisation as created the original waste item record'
+        'the API Code supplied does not relate to the same Organisation as created the original waste item record',
+        'BusinessRuleViolation'
       )
     }
 

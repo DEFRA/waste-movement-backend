@@ -182,7 +182,7 @@ describe('movement Route Tests', () => {
         errors: [
           {
             key: 'apiCode',
-            errorType: 'UnexpectedError',
+            errorType: 'InvalidValue',
             message: 'the API Code supplied is invalid'
           }
         ]
@@ -213,7 +213,7 @@ describe('movement Route Tests', () => {
         errors: [
           {
             key: 'apiCode',
-            errorType: 'UnexpectedError',
+            errorType: 'InvalidValue',
             message: 'the API Code supplied is invalid'
           }
         ]
@@ -248,7 +248,7 @@ describe('movement Route Tests', () => {
           errors: [
             {
               key: 'apiCode',
-              errorType: 'UnexpectedError',
+              errorType: 'InvalidValue',
               message: 'the API Code supplied is invalid'
             }
           ]
