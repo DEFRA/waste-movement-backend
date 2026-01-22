@@ -6,7 +6,11 @@ export function getOrgIdForApiCode(apiCode, orgApiCodes) {
   )?.orgId
 
   if (!orgId) {
-    throw new ValidationError('apiCode', 'the API Code supplied is invalid')
+    throw new ValidationError(
+      'apiCode',
+      'the API Code supplied is invalid',
+      'InvalidValue'
+    )
   }
 
   return orgId

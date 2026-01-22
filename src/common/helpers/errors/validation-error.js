@@ -1,11 +1,11 @@
 import { HTTP_STATUS_CODES } from '../../constants/http-status-codes.js'
 
 export class ValidationError extends Error {
-  constructor(key, message) {
+  constructor(key, message, errorType = 'UnexpectedError') {
     super(message)
     this.name = 'ValidationError'
     this.statusCode = HTTP_STATUS_CODES.BAD_REQUEST
-    this.errorType = 'UnexpectedError'
+    this.errorType = errorType
     this.key = key
   }
 

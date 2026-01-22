@@ -322,7 +322,7 @@ describe('movementUpdate Route Tests', () => {
         errors: [
           {
             key: 'apiCode',
-            errorType: 'UnexpectedError',
+            errorType: 'InvalidValue',
             message: 'the API Code supplied is invalid'
           }
         ]
@@ -371,7 +371,7 @@ describe('movementUpdate Route Tests', () => {
         errors: [
           {
             key: 'apiCode',
-            errorType: 'UnexpectedError',
+            errorType: 'InvalidValue',
             message: 'the API Code supplied is invalid'
           }
         ]
@@ -424,7 +424,7 @@ describe('movementUpdate Route Tests', () => {
           errors: [
             {
               key: 'apiCode',
-              errorType: 'UnexpectedError',
+              errorType: 'InvalidValue',
               message: 'the API Code supplied is invalid'
             }
           ]
@@ -474,7 +474,7 @@ describe('movementUpdate Route Tests', () => {
         errors: [
           {
             key: 'apiCode',
-            errorType: 'UnexpectedError',
+            errorType: 'BusinessRuleViolation',
             message:
               'the API Code supplied does not relate to the same Organisation as created the original waste item record'
           }
