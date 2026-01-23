@@ -1,5 +1,5 @@
 import { createWasteInput } from '../services/movement-create.js'
-import { receiptMovementSchema } from '../schemas/receipt.js'
+import { movementSchema } from '../schemas/movement.js'
 import { WasteInput } from '../domain/wasteInput.js'
 import Joi from 'joi'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
@@ -16,7 +16,7 @@ const createReceiptMovement = [
       tags: ['movements'],
       description: 'Create a new waste input with a receipt movement',
       validate: {
-        payload: receiptMovementSchema,
+        payload: movementSchema,
         params: Joi.object({
           wasteTrackingId: Joi.string().required()
         })

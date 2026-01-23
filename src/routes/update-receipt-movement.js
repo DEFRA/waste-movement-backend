@@ -1,5 +1,5 @@
 import { updateWasteInput } from '../services/movement-update.js'
-import { receiptMovementSchema } from '../schemas/receipt.js'
+import { movementSchema } from '../schemas/movement.js'
 import Joi from 'joi'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { updatePlugins } from './update-plugins.js'
@@ -14,7 +14,7 @@ const updateReceiptMovement = {
     description:
       'Update an existing waste input with new receipt movement data',
     validate: {
-      payload: receiptMovementSchema,
+      payload: movementSchema,
       params: Joi.object({
         wasteTrackingId: Joi.string().required()
       })
