@@ -1,0 +1,12 @@
+// Means of transport enum for waste movement
+const MEANS_OF_TRANSPORT = [
+  'Road',
+  'Rail',
+  'Air',
+  'Sea',
+  'Inland Waterway',
+  'Piped',
+  'Other'
+]
+
+export { MEANS_OF_TRANSPORT }
