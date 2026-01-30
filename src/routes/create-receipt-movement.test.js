@@ -18,6 +18,7 @@ import * as movementCreate from '../services/movement-create.js'
 import { config } from '../config.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
+import * as metrics from '../common/helpers/metrics.js'
 
 jest.mock('../services/movement-create.js', () => {
   const { createWasteInput: actualFunction } = jest.requireActual(
@@ -74,6 +75,7 @@ describe('movement Route Tests', () => {
       }
     }
     const createWasteInputSpy = jest.spyOn(movementCreate, 'createWasteInput')
+    const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
 
     movementCreate.createWasteInput
       .mockImplementationOnce(() => {
@@ -107,7 +109,13 @@ describe('movement Route Tests', () => {
     expect(actualWasteInput.createdAt).toEqual(actualWasteInput.lastUpdatedAt)
     expect(actualWasteInput.orgId).toBeDefined()
     expect(actualWasteInput.traceId).toEqual(traceId)
+
     expect(createWasteInputSpy).toHaveBeenCalledTimes(3)
+
+    expect(metricsCounterSpy).toHaveBeenCalledTimes(1)
+    expect(metricsCounterSpy).toHaveBeenCalledWith('receiver.orgId', 1, {
+      orgId: actualWasteInput.orgId
+    })
   })
 
   it('handles error when creating a waste input fails', async () => {
@@ -121,6 +129,7 @@ describe('movement Route Tests', () => {
       }
     }
     const createWasteInputSpy = jest.spyOn(movementCreate, 'createWasteInput')
+    const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
 
     movementCreate.createWasteInput.mockRejectedValue(new Error(errorMessage))
 
@@ -136,7 +145,10 @@ describe('movement Route Tests', () => {
       error: 'Error',
       message: errorMessage
     })
+
     expect(createWasteInputSpy).toHaveBeenCalledTimes(3)
+
+    expect(metricsCounterSpy).not.toHaveBeenCalled()
   })
 
   it('does not create waste input when validation fails', async () => {

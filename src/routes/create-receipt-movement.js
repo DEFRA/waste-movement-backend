@@ -7,6 +7,7 @@ import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
 import { config } from '../config.js'
 import { backOff } from 'exponential-backoff'
 import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
+import { metricsCounter } from '../common/helpers/metrics.js'
 
 const createReceiptMovement = [
   {
@@ -60,6 +61,8 @@ const createReceiptMovement = [
           () => createWasteInput(request.db, wasteInput, request.getTraceId()),
           BACKOFF_OPTIONS
         )
+
+        metricsCounter('receiver.orgId', 1, { orgId: requestOrgId })
 
         return h.response().code(HTTP_STATUS_CODES.NO_CONTENT)
       } catch (error) {
