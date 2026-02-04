@@ -31,7 +31,8 @@ export async function updateWasteInput(
   updateData,
   mongoClient,
   traceId,
-  fieldToUpdate = undefined
+  fieldToUpdate = undefined,
+  submittingOrganisation = null
 ) {
   const session = mongoClient.startSession()
 
@@ -64,16 +65,31 @@ export async function updateWasteInput(
 
     await session.withTransaction(async () => {
       await wasteInputsHistoryCollection.insertOne(historyEntry, { session })
+
+      const updateSet = {
+        ...(fieldToUpdate
+          ? { [fieldToUpdate]: { ...updateData } }
+          : updateData),
+        lastUpdatedAt: new Date(),
+        traceId
+      }
+
+      if (submittingOrganisation?.defraCustomerOrganisationId) {
+        updateSet.submittingOrganisation = {
+          defraCustomerOrganisationId:
+            submittingOrganisation.defraCustomerOrganisationId
+        }
+        // Strip apiCode from stored data when using new org structure
+        const { apiCode, ...dataWithoutApiCode } = updateData
+        if (fieldToUpdate) {
+          updateSet[fieldToUpdate] = { ...dataWithoutApiCode }
+        }
+      }
+
       result = await wasteInputsCollection.updateOne(
         { _id: wasteTrackingId, orgId: requestOrgId, revision },
         {
-          $set: {
-            ...(fieldToUpdate
-              ? { [fieldToUpdate]: { ...updateData } }
-              : updateData),
-            lastUpdatedAt: new Date(),
-            traceId
-          },
+          $set: updateSet,
           $inc: { revision: 1 }
         },
         { session }

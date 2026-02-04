@@ -50,12 +50,23 @@ const createReceiptMovement = [
         )
 
         const { wasteTrackingId } = request.params
+        const { submittingOrganisation, ...payloadWithoutOrg } = request.payload
         const wasteInput = new WasteInput()
 
         wasteInput.wasteTrackingId = wasteTrackingId
-        wasteInput.receipt = request.payload
+        wasteInput.receipt = payloadWithoutOrg
         wasteInput.orgId = requestOrgId
         wasteInput.traceId = request.getTraceId()
+
+        if (submittingOrganisation?.defraCustomerOrganisationId) {
+          wasteInput.submittingOrganisation = {
+            defraCustomerOrganisationId:
+              submittingOrganisation.defraCustomerOrganisationId
+          }
+          const { apiCode, ...movementWithoutApiCode } =
+            payloadWithoutOrg.movement
+          wasteInput.receipt = { movement: movementWithoutApiCode }
+        }
 
         await backOff(
           () => createWasteInput(request.db, wasteInput, request.getTraceId()),

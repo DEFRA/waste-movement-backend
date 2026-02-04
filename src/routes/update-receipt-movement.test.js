@@ -8,7 +8,11 @@ import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { expect } from '@jest/globals'
 import { config } from '../config.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
-import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
+import {
+  apiCode1,
+  orgId1,
+  base64EncodedOrgApiCodes
+} from '../test/data/apiCodes.js'
 import * as movementUpdate from '../services/movement-update.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 
@@ -481,6 +485,60 @@ describe('movementUpdate Route Tests', () => {
         ]
       }
     })
+  })
+
+  it('updates a waste input with submittingOrganisation', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+
+    // First create a movement
+    const createPayload = {
+      movement: {
+        receivingSiteId: 'string',
+        receiverReference: 'string',
+        specialHandlingRequirements: 'string',
+        apiCode: apiCode1
+      }
+    }
+
+    const createResult = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: createPayload
+    })
+
+    expect(createResult.statusCode).toEqual(204)
+
+    // Now update with submittingOrganisation
+    const updatePayload = {
+      submittingOrganisation: {
+        defraCustomerOrganisationId: orgId1
+      },
+      movement: {
+        receivingSiteId: 'updated-site',
+        receiverReference: 'updated-ref',
+        specialHandlingRequirements: 'updated-requirements',
+        apiCode: apiCode1
+      }
+    }
+
+    const { statusCode } = await server.inject({
+      method: 'PUT',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: updatePayload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+
+    const actualWasteInput = await testMongoDb
+      .collection('waste-inputs')
+      .findOne({ _id: wasteTrackingId })
+
+    expect(actualWasteInput.submittingOrganisation).toEqual({
+      defraCustomerOrganisationId: orgId1
+    })
+    expect(actualWasteInput.receipt.movement.receivingSiteId).toEqual(
+      'updated-site'
+    )
   })
 
   it('handles error when updating a waste input fails', async () => {

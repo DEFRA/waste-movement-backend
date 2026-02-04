@@ -3,6 +3,7 @@ export class WasteInput {
   creation
   collection
   receipt
+  submittingOrganisation
   createdAt
   lastUpdatedAt
   orgId
