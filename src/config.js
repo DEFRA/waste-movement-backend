@@ -141,13 +141,6 @@ const config = convict({
     ),
     env: 'ORG_API_CODES'
   },
-  serviceCredentials: {
-    doc: 'Service credentials for authenticating internal service-to-service calls, stored as base64 encoded username=password pairs',
-    format: 'service-credentials',
-    nullable: true,
-    default: null,
-    env: 'ACCESS_CRED_WASTE_MOVEMENT_EXTERNAL_API'
-  },
   services: {
     wasteTracking: {
       doc: 'Waste Tracking Service URL',

@@ -7,6 +7,11 @@ jest.mock('@defra/cdp-auditing', () => ({
 }))
 
 describe('createAuthValidation', () => {
+  const serviceCredentials = [
+    'd2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpPTRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA==',
+    'd2FzdGUtbW92ZW1lbnQtYmFja2VuZD0yNjZhMmJiZi0xOWEwLTQ3OTUtODI4Zi1kZWI3Njc4MWM3OTc='
+  ]
+
   it('returns isValid false when serviceCredentials is null', async () => {
     const validate = createAuthValidation(null)
     const result = await validate({}, 'testuser', 'testpass')
@@ -28,23 +33,26 @@ describe('createAuthValidation', () => {
   })
 
   it('returns isValid true when credentials match', async () => {
-    const serviceCredentials = [
-      { username: 'service1', password: 'secret1' },
-      { username: 'service2', password: 'secret2' }
-    ]
     const validate = createAuthValidation(serviceCredentials)
-    const result = await validate({}, 'service1', 'secret1')
+    const result = await validate(
+      {},
+      'waste-movement-external-api',
+      '4d5d48cb-456a-470a-8814-eae2758be90d'
+    )
 
     expect(result).toEqual({
       isValid: true,
-      credentials: { username: 'service1' }
+      credentials: { username: 'waste-movement-external-api' }
     })
   })
 
   it('returns isValid false when username does not match', async () => {
-    const serviceCredentials = [{ username: 'service1', password: 'secret1' }]
     const validate = createAuthValidation(serviceCredentials)
-    const result = await validate({}, 'wronguser', 'secret1')
+    const result = await validate(
+      {},
+      'wronguser',
+      '4d5d48cb-456a-470a-8814-eae2758be90d'
+    )
 
     expect(result).toEqual({
       isValid: false,
@@ -53,13 +61,16 @@ describe('createAuthValidation', () => {
   })
 
   it('returns isValid false when password does not match', async () => {
-    const serviceCredentials = [{ username: 'service1', password: 'secret1' }]
     const validate = createAuthValidation(serviceCredentials)
-    const result = await validate({}, 'service1', 'wrongpass')
+    const result = await validate(
+      {},
+      'waste-movement-external-api',
+      'wrongpass'
+    )
 
     expect(result).toEqual({
       isValid: false,
-      credentials: { username: 'service1' }
+      credentials: { username: 'waste-movement-external-api' }
     })
   })
 })
