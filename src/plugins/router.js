@@ -2,6 +2,7 @@ import { health } from '../routes/health.js'
 import { createReceiptMovement } from '../routes/create-receipt-movement.js'
 import { updateReceiptMovement } from '../routes/update-receipt-movement.js'
 import { retryAuditLogReceiptMovement } from '../routes/retry-audit-log-receipt-movement.js'
+import { createBulkReceiptMovement } from '../routes/create-bulk-receipt-movement.js'
 
 const router = {
   plugin: {
@@ -12,7 +13,8 @@ const router = {
         health,
         ...createReceiptMovement,
         updateReceiptMovement,
-        retryAuditLogReceiptMovement
+        retryAuditLogReceiptMovement,
+        createBulkReceiptMovement
       ]
 
       // Register routes directly
