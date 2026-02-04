@@ -147,6 +147,12 @@ const config = convict({
       format: String,
       default: 'https://waste-tracking-id-backend.dev.cdp-int.defra.cloud',
       env: 'WASTE_TRACKING_SERVICE_URL'
+    },
+    wasteTrackingBatchSize: {
+      doc: 'Waste Tracking Service batch size',
+      format: Number,
+      default: 100,
+      env: 'WASTE_TRACKING_SERVICE_BATCH_SIZE'
     }
   },
   serviceAuth: {
