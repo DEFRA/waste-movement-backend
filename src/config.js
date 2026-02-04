@@ -147,8 +147,38 @@ const config = convict({
     nullable: true,
     default: null,
     env: 'ACCESS_CRED_WASTE_MOVEMENT_EXTERNAL_API'
+  },
+  services: {
+    wasteTracking: {
+      doc: 'Waste Tracking Service URL',
+      format: String,
+      default: 'https://waste-tracking-id-backend.dev.cdp-int.defra.cloud',
+      env: 'WASTE_TRACKING_SERVICE_URL'
+    }
+  },
+  serviceAuth: {
+    username: {
+      doc: 'Username for authenticating with internal backend services',
+      format: String,
+      default: 'waste-movement-backend',
+      env: 'SERVICE_AUTH_USERNAME_WASTE_MOVEMENT_BACKEND'
+    },
+    password: {
+      doc: 'Password for authenticating with internal backend services',
+      format: String,
+      default: '',
+      env: 'SERVICE_AUTH_PASSWORD_WASTE_MOVEMENT_BACKEND'
+    }
   }
 })
+
+const overrideConfig = {
+  services: {
+    wasteTracking: `https://waste-tracking-id-backend.${config.get('cdpEnvironment')}.cdp-int.defra.cloud`
+  }
+}
+
+config.load(overrideConfig)
 
 config.validate({ allowed: 'strict' })
 
