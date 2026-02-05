@@ -25,6 +25,32 @@ function createOrgMismatchError() {
   )
 }
 
+function buildUpdateSet(
+  updateData,
+  fieldToUpdate,
+  submittingOrganisation,
+  traceId
+) {
+  const updateSet = {
+    ...(fieldToUpdate ? { [fieldToUpdate]: { ...updateData } } : updateData),
+    lastUpdatedAt: new Date(),
+    traceId
+  }
+
+  if (submittingOrganisation?.defraCustomerOrganisationId) {
+    updateSet.submittingOrganisation = {
+      defraCustomerOrganisationId:
+        submittingOrganisation.defraCustomerOrganisationId
+    }
+    const { apiCode, ...dataWithoutApiCode } = updateData
+    if (fieldToUpdate) {
+      updateSet[fieldToUpdate] = { ...dataWithoutApiCode }
+    }
+  }
+
+  return updateSet
+}
+
 export async function updateWasteInput(
   db,
   wasteTrackingId,
@@ -66,25 +92,12 @@ export async function updateWasteInput(
     await session.withTransaction(async () => {
       await wasteInputsHistoryCollection.insertOne(historyEntry, { session })
 
-      const updateSet = {
-        ...(fieldToUpdate
-          ? { [fieldToUpdate]: { ...updateData } }
-          : updateData),
-        lastUpdatedAt: new Date(),
+      const updateSet = buildUpdateSet(
+        updateData,
+        fieldToUpdate,
+        submittingOrganisation,
         traceId
-      }
-
-      if (submittingOrganisation?.defraCustomerOrganisationId) {
-        updateSet.submittingOrganisation = {
-          defraCustomerOrganisationId:
-            submittingOrganisation.defraCustomerOrganisationId
-        }
-        // Strip apiCode from stored data when using new org structure
-        const { apiCode, ...dataWithoutApiCode } = updateData
-        if (fieldToUpdate) {
-          updateSet[fieldToUpdate] = { ...dataWithoutApiCode }
-        }
-      }
+      )
 
       result = await wasteInputsCollection.updateOne(
         { _id: wasteTrackingId, orgId: requestOrgId, revision },
