@@ -25,13 +25,40 @@ function createOrgMismatchError() {
   )
 }
 
+function buildUpdateSet(
+  updateData,
+  fieldToUpdate,
+  submittingOrganisation,
+  traceId
+) {
+  const updateSet = {
+    ...(fieldToUpdate ? { [fieldToUpdate]: { ...updateData } } : updateData),
+    lastUpdatedAt: new Date(),
+    traceId
+  }
+
+  if (submittingOrganisation?.defraCustomerOrganisationId) {
+    updateSet.submittingOrganisation = {
+      defraCustomerOrganisationId:
+        submittingOrganisation.defraCustomerOrganisationId
+    }
+    const { apiCode, ...dataWithoutApiCode } = updateData
+    if (fieldToUpdate) {
+      updateSet[fieldToUpdate] = { ...dataWithoutApiCode }
+    }
+  }
+
+  return updateSet
+}
+
 export async function updateWasteInput(
   db,
   wasteTrackingId,
   updateData,
   mongoClient,
   traceId,
-  fieldToUpdate = undefined
+  fieldToUpdate = undefined,
+  submittingOrganisation = null
 ) {
   const session = mongoClient.startSession()
 
@@ -64,16 +91,18 @@ export async function updateWasteInput(
 
     await session.withTransaction(async () => {
       await wasteInputsHistoryCollection.insertOne(historyEntry, { session })
+
+      const updateSet = buildUpdateSet(
+        updateData,
+        fieldToUpdate,
+        submittingOrganisation,
+        traceId
+      )
+
       result = await wasteInputsCollection.updateOne(
         { _id: wasteTrackingId, orgId: requestOrgId, revision },
         {
-          $set: {
-            ...(fieldToUpdate
-              ? { [fieldToUpdate]: { ...updateData } }
-              : updateData),
-            lastUpdatedAt: new Date(),
-            traceId
-          },
+          $set: updateSet,
           $inc: { revision: 1 }
         },
         { session }

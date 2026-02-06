@@ -16,7 +16,11 @@ import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import * as movementCreate from '../services/movement-create.js'
 import { config } from '../config.js'
-import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
+import {
+  apiCode1,
+  orgId1,
+  base64EncodedOrgApiCodes
+} from '../test/data/apiCodes.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 import * as metrics from '../common/helpers/metrics.js'
 
@@ -268,4 +272,81 @@ describe('movement Route Tests', () => {
       })
     }
   )
+
+  it('creates a waste input with submittingOrganisation', async () => {
+    const { createWasteInput: actualFunction } = jest.requireActual(
+      '../services/movement-create.js'
+    )
+    movementCreate.createWasteInput.mockImplementation(actualFunction)
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
+    const wasteTrackingId = generateWasteTrackingId()
+    const payload = {
+      submittingOrganisation: {
+        defraCustomerOrganisationId: orgId1
+      },
+      movement: {
+        receivingSiteId: 'string',
+        receiverReference: 'string',
+        specialHandlingRequirements: 'string',
+        apiCode: apiCode1
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': 'trace-123'
+      }
+    })
+
+    expect(statusCode).toEqual(204)
+    expect(result).toEqual(null)
+
+    const actualWasteInput = await testMongoDb
+      .collection('waste-inputs')
+      .findOne({ _id: wasteTrackingId })
+
+    expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
+    expect(actualWasteInput.submittingOrganisation).toEqual({
+      defraCustomerOrganisationId: orgId1
+    })
+  })
+
+  it('creates a waste input without submittingOrganisation', async () => {
+    const { createWasteInput: actualFunction } = jest.requireActual(
+      '../services/movement-create.js'
+    )
+    movementCreate.createWasteInput.mockImplementation(actualFunction)
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
+    const wasteTrackingId = generateWasteTrackingId()
+    const payload = {
+      movement: {
+        receivingSiteId: 'string',
+        receiverReference: 'string',
+        specialHandlingRequirements: 'string',
+        apiCode: apiCode1
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': 'trace-456'
+      }
+    })
+
+    expect(statusCode).toEqual(204)
+    expect(result).toEqual(null)
+
+    const actualWasteInput = await testMongoDb
+      .collection('waste-inputs')
+      .findOne({ _id: wasteTrackingId })
+
+    expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
+    expect(actualWasteInput.submittingOrganisation).toBeNull()
+  })
 })

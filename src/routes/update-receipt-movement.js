@@ -24,6 +24,7 @@ const updateReceiptMovement = {
   handler: async (request, h) => {
     try {
       const { wasteTrackingId } = request.params
+      const { submittingOrganisation } = request.payload
 
       const result = await backOff(
         () =>
@@ -33,7 +34,8 @@ const updateReceiptMovement = {
             request.payload.movement,
             request.mongoClient,
             request.getTraceId(),
-            'receipt.movement'
+            'receipt.movement',
+            submittingOrganisation
           ),
         BACKOFF_OPTIONS
       )
