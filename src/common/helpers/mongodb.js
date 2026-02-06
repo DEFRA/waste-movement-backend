@@ -66,22 +66,27 @@ export const mongoDb = {
 }
 
 async function createIndexes(db) {
+  const wasteInputsCollection = 'waste-inputs'
+  const wasteInputsHistoryCollection = 'waste-inputs-history'
+
   await db.collection('mongo-locks').createIndex({ id: 1 })
 
-  await db.collection('waste-inputs')
-  await db.collection('waste-inputs').createIndex({ id: 1 })
+  await db.collection(wasteInputsCollection)
+  await db.collection(wasteInputsCollection).createIndex({ id: 1 })
   await db
-    .collection('waste-inputs')
+    .collection(wasteInputsCollection)
     .createIndex({ wasteTrackingId: 1, revision: 1 })
-  await db.collection('waste-inputs').createIndex({ traceId: 1 })
-  await db.collection('waste-inputs').createIndex({ bulkId: 1, revision: 1 })
+  await db.collection(wasteInputsCollection).createIndex({ traceId: 1 })
+  await db
+    .collection(wasteInputsCollection)
+    .createIndex({ bulkId: 1, revision: 1 })
 
-  await db.collection('waste-inputs-history')
+  await db.collection(wasteInputsHistoryCollection)
   await db
-    .collection('waste-inputs-history')
+    .collection(wasteInputsHistoryCollection)
     .createIndex({ wasteTrackingId: 1, revision: 1 })
-  await db.collection('waste-inputs-history').createIndex({ traceId: 1 })
+  await db.collection(wasteInputsHistoryCollection).createIndex({ traceId: 1 })
   await db
-    .collection('waste-inputs-history')
+    .collection(wasteInputsHistoryCollection)
     .createIndex({ bulkId: 1, revision: 1 })
 }
