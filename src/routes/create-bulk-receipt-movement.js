@@ -7,6 +7,7 @@ import { createBulkWasteInput } from '../services/movement-create-bulk.js'
 import { httpClients } from '../common/helpers/http-client.js'
 import { config } from '../config.js'
 import { getBatches } from '../common/helpers/batch.js'
+import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 
 const createBulkReceiptMovement = {
   method: 'POST',
@@ -55,9 +56,14 @@ const createBulkReceiptMovement = {
         )
 
       if (existingWasteInputs.length > 0) {
-        return existingWasteInputs.map((wasteInput) => ({
-          wasteTrackingId: wasteInput.wasteTrackingId
-        }))
+        return h
+          .response({
+            status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
+            movements: existingWasteInputs.map((wasteInput) => ({
+              wasteTrackingId: wasteInput.wasteTrackingId
+            }))
+          })
+          .code(HTTP_STATUS_CODES.OK)
       }
 
       const batchSize = config.get('services.wasteTrackingBatchSize')
@@ -100,7 +106,12 @@ const createBulkReceiptMovement = {
         BACKOFF_OPTIONS
       )
 
-      return h.response(createdWasteTrackingIds).code(HTTP_STATUS_CODES.CREATED)
+      return h
+        .response({
+          status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
+          movements: createdWasteTrackingIds
+        })
+        .code(HTTP_STATUS_CODES.CREATED)
     } catch (error) {
       const statusCode =
         error.statusCode || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR

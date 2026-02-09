@@ -9,6 +9,7 @@ import { config } from '../config.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 import { createBulkReceiptMovement } from './create-bulk-receipt-movement.js'
 import { orgId1 } from '../test/data/apiCodes.js'
+import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 
 const payload = [
   {
@@ -150,12 +151,15 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.CREATED)
-    expect(result).toEqual([
-      { wasteTrackingId: '26S8EYDJ' },
-      { wasteTrackingId: '26NWSIXF' }
-    ])
+    expect(result).toEqual({
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
+      movements: [
+        { wasteTrackingId: '26S8EYDJ' },
+        { wasteTrackingId: '26NWSIXF' }
+      ]
+    })
 
-    for (const [index, item] of result.entries()) {
+    for (const [index, item] of result.movements.entries()) {
       const createdWasteInput = await testMongoDb
         .collection('waste-inputs')
         .findOne({ _id: item.wasteTrackingId })
@@ -191,10 +195,13 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
-    expect(result).toEqual([
-      { wasteTrackingId: '26E4C7Z2' },
-      { wasteTrackingId: '266XHTDL' }
-    ])
+    expect(result).toEqual({
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
+      movements: [
+        { wasteTrackingId: '26E4C7Z2' },
+        { wasteTrackingId: '266XHTDL' }
+      ]
+    })
   })
 
   it('should return existing waste tracking ids when provided with a bulk id which has already been used by the POST endpoint in the waste-inputs-history collection', async () => {
@@ -213,10 +220,13 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
-    expect(result).toEqual([
-      { wasteTrackingId: '26E4C7Z2' },
-      { wasteTrackingId: '266XHTDL' }
-    ])
+    expect(result).toEqual({
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
+      movements: [
+        { wasteTrackingId: '26E4C7Z2' },
+        { wasteTrackingId: '266XHTDL' }
+      ]
+    })
   })
 
   it('should create new waste inputs when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs collection', async () => {
@@ -235,10 +245,13 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.CREATED)
-    expect(result).toEqual([
-      { wasteTrackingId: '26S8EYDJ' },
-      { wasteTrackingId: '26NWSIXF' }
-    ])
+    expect(result).toEqual({
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
+      movements: [
+        { wasteTrackingId: '26S8EYDJ' },
+        { wasteTrackingId: '26NWSIXF' }
+      ]
+    })
   })
 
   it('should create new waste inputs when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs-history collection', async () => {
@@ -257,10 +270,13 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.CREATED)
-    expect(result).toEqual([
-      { wasteTrackingId: '26S8EYDJ' },
-      { wasteTrackingId: '26NWSIXF' }
-    ])
+    expect(result).toEqual({
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
+      movements: [
+        { wasteTrackingId: '26S8EYDJ' },
+        { wasteTrackingId: '26NWSIXF' }
+      ]
+    })
   })
 
   it('handles error when creating multiple waste inputs fails', async () => {
