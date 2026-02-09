@@ -86,19 +86,12 @@ const createBulkReceiptMovement = {
         )
       }
 
-      const dateNow = new Date()
-      const wasteInputs = payload.map((receipt, index) => {
-        const wasteInput = new WasteInput()
-        wasteInput.wasteTrackingId = wasteTrackingIds[index]
-        wasteInput.receipt = receipt
-        wasteInput.orgId = receipt.orgId
-        wasteInput.traceId = request.getTraceId()
-        wasteInput.bulkId = bulkId
-        wasteInput.revision = 1
-        wasteInput.createdAt = dateNow
-        wasteInput.lastUpdatedAt = dateNow
-        return wasteInput
-      })
+      const wasteInputs = createWasteInputs(
+        payload,
+        wasteTrackingIds,
+        request.getTraceId(),
+        bulkId
+      )
 
       const createdWasteTrackingIds = await backOff(
         () =>
@@ -125,6 +118,22 @@ const createBulkReceiptMovement = {
         .code(statusCode)
     }
   }
+}
+
+function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
+  const dateNow = new Date()
+  return payload.map((receipt, index) => {
+    const wasteInput = new WasteInput()
+    wasteInput.wasteTrackingId = wasteTrackingIds[index]
+    wasteInput.receipt = receipt
+    wasteInput.orgId = receipt.orgId
+    wasteInput.traceId = traceId
+    wasteInput.bulkId = bulkId
+    wasteInput.revision = 1
+    wasteInput.createdAt = dateNow
+    wasteInput.lastUpdatedAt = dateNow
+    return wasteInput
+  })
 }
 
 export { createBulkReceiptMovement }
