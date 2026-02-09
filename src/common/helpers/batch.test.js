@@ -47,5 +47,35 @@ describe('batch', () => {
 
       expect(result).toEqual([])
     })
+
+    it('should return an empty array when provided with a zero batch size', () => {
+      const result = getBatches(0, [])
+
+      expect(result).toEqual([])
+    })
+
+    it('should return an empty array when provided with a negative batch size', () => {
+      const result = getBatches(-1, [])
+
+      expect(result).toEqual([])
+    })
+
+    it('should return an empty array when provided with a decimal batch size', () => {
+      const result = getBatches(2.5, [])
+
+      expect(result).toEqual([])
+    })
+
+    it('should return an empty array when provided with a null batch size', () => {
+      const result = getBatches(null, [])
+
+      expect(result).toEqual([])
+    })
+
+    it('should return an empty array when provided with a string batch size', () => {
+      const result = getBatches('one', [])
+
+      expect(result).toEqual([])
+    })
   })
 })

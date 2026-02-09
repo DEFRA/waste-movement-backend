@@ -1,5 +1,5 @@
 export const getBatches = (batchSize, data = []) => {
-  if (isNaN(batchSize)) {
+  if (isNaN(batchSize) || batchSize <= 0) {
     return []
   }
 
