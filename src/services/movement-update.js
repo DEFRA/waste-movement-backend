@@ -4,18 +4,9 @@ import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
 import { config } from '../config.js'
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
+import { createHistoryEntry } from '../common/helpers/create-history-entry.js'
 
 const logger = createLogger()
-
-function createHistoryEntry(existingWasteInput, wasteTrackingId) {
-  const historyEntry = {
-    ...existingWasteInput,
-    wasteTrackingId,
-    timestamp: new Date()
-  }
-  delete historyEntry._id
-  return historyEntry
-}
 
 function createOrgMismatchError() {
   return new ValidationError(
