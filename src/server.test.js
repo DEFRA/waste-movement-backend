@@ -32,6 +32,16 @@ describe('createAuthValidation', () => {
     })
   })
 
+  it('returns isValid false when serviceCredentials is an empty array', async () => {
+    const validate = createAuthValidation([])
+    const result = await validate({}, 'testuser', 'testpass')
+
+    expect(result).toEqual({
+      isValid: false,
+      credentials: { username: 'testuser' }
+    })
+  })
+
   it('returns isValid true when credentials match', async () => {
     const validate = createAuthValidation(serviceCredentials)
     const result = await validate(

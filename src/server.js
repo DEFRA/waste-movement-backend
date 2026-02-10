@@ -17,13 +17,10 @@ import { errorHandler } from './plugins/error-handler.js'
 import { getEnvVars } from './common/helpers/env-vars.js'
 
 function createAuthValidation(serviceCredentials) {
+  serviceCredentials = serviceCredentials || []
+
   return async (_request, username, password) => {
-    if (!serviceCredentials) {
-      return { isValid: false, credentials: { username } }
-    }
-
     const base64EncodedCredentials = btoa(`${username}=${password}`)
-
     const matchingCredential = serviceCredentials.find(
       (cred) => cred === base64EncodedCredentials
     )
