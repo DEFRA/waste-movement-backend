@@ -8,4 +8,5 @@ export class WasteInput {
   lastUpdatedAt
   orgId
   traceId
+  bulkId
 }

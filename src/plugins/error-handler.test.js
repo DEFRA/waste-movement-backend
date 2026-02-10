@@ -13,13 +13,14 @@ describe('Error Handler', () => {
 
   const wasteTrackingId = generateWasteTrackingId()
   const traceId = '64a4385a4447a8b1608b5b338d0a3157'
+  const originalEnvVars = process.env
 
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
-    config.set(
-      'serviceCredentials',
-      'd2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpPTRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
-    )
+    process.env = {
+      ACCESS_CRED_WASTE_MOVEMENT_EXTERNAL_API:
+        'd2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpPTRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+    }
 
     server = await createServer()
 
@@ -47,6 +48,7 @@ describe('Error Handler', () => {
 
   afterAll(async () => {
     await server.stop()
+    process.env = originalEnvVars
   })
 
   beforeEach(() => {

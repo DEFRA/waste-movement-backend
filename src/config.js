@@ -3,11 +3,9 @@ import convictFormatWithValidator from 'convict-format-with-validator'
 
 import { convictValidateMongoUri } from './common/helpers/convict/validate-mongo-uri.js'
 import { convictValidateOrgApiCodes } from './common/helpers/convict/validate-org-api-codes.js'
-import { convictValidateServiceCredentials } from './common/helpers/convict/validate-service-credentials.js'
 
 convict.addFormat(convictValidateMongoUri)
 convict.addFormat(convictValidateOrgApiCodes)
-convict.addFormat(convictValidateServiceCredentials)
 convict.addFormats(convictFormatWithValidator)
 
 const isProduction = process.env.NODE_ENV === 'production'
@@ -141,14 +139,43 @@ const config = convict({
     ),
     env: 'ORG_API_CODES'
   },
-  serviceCredentials: {
-    doc: 'Service credentials for authenticating internal service-to-service calls, stored as base64 encoded username=password pairs',
-    format: 'service-credentials',
-    nullable: true,
-    default: null,
-    env: 'ACCESS_CRED_WASTE_MOVEMENT_EXTERNAL_API'
+  services: {
+    wasteTracking: {
+      doc: 'Waste Tracking Service URL',
+      format: String,
+      default: 'https://waste-tracking-id-backend.dev.cdp-int.defra.cloud',
+      env: 'WASTE_TRACKING_SERVICE_URL'
+    },
+    wasteTrackingBatchSize: {
+      doc: 'Waste Tracking Service batch size',
+      format: Number,
+      default: 100,
+      env: 'WASTE_TRACKING_SERVICE_BATCH_SIZE'
+    }
+  },
+  serviceAuth: {
+    username: {
+      doc: 'Username for authenticating with internal backend services',
+      format: String,
+      default: 'waste-movement-backend',
+      env: 'SERVICE_AUTH_USERNAME_WASTE_MOVEMENT_BACKEND'
+    },
+    password: {
+      doc: 'Password for authenticating with internal backend services',
+      format: String,
+      default: '',
+      env: 'SERVICE_AUTH_PASSWORD_WASTE_MOVEMENT_BACKEND'
+    }
   }
 })
+
+const overrideConfig = {
+  services: {
+    wasteTracking: `https://waste-tracking-id-backend.${config.get('cdpEnvironment')}.cdp-int.defra.cloud`
+  }
+}
+
+config.load(overrideConfig)
 
 config.validate({ allowed: 'strict' })
 
