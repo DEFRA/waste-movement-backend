@@ -1,9 +1,12 @@
-import Joi from 'joi'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { backOff } from 'exponential-backoff'
 import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
 import { updateBulkWasteInput } from '../services/movement-update-bulk.js'
 import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
+import {
+  badRequestResponse,
+  handleRouteError
+} from '../common/helpers/bulk-route-helpers.js'
 
 const updateBulkReceiptMovement = {
   method: 'PUT',
@@ -18,14 +21,7 @@ const updateBulkReceiptMovement = {
           [HTTP_STATUS_CODES.OK]: {
             description: 'Successfully updated waste inputs'
           },
-          [HTTP_STATUS_CODES.BAD_REQUEST]: {
-            description: 'Bad Request',
-            schema: Joi.object({
-              statusCode: Joi.number().valid(HTTP_STATUS_CODES.BAD_REQUEST),
-              error: Joi.string(),
-              message: Joi.string()
-            }).label('BadRequestResponse')
-          }
+          ...badRequestResponse
         }
       }
     }
@@ -84,16 +80,7 @@ const updateBulkReceiptMovement = {
         })
         .code(HTTP_STATUS_CODES.OK)
     } catch (error) {
-      const statusCode =
-        error.statusCode || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR
-
-      return h
-        .response({
-          statusCode,
-          error: error.name,
-          message: error.message
-        })
-        .code(statusCode)
+      return handleRouteError(h, error)
     }
   }
 }

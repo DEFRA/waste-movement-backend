@@ -1,5 +1,4 @@
 import { WasteInput } from '../domain/wasteInput.js'
-import Joi from 'joi'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { backOff } from 'exponential-backoff'
 import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
@@ -8,6 +7,10 @@ import { httpClients } from '../common/helpers/http-client.js'
 import { config } from '../config.js'
 import { getBatches } from '../common/helpers/batch.js'
 import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
+import {
+  badRequestResponse,
+  handleRouteError
+} from '../common/helpers/bulk-route-helpers.js'
 
 const createBulkReceiptMovement = {
   method: 'POST',
@@ -22,14 +25,7 @@ const createBulkReceiptMovement = {
           [HTTP_STATUS_CODES.NO_CONTENT]: {
             description: 'Successfully created waste inputs'
           },
-          [HTTP_STATUS_CODES.BAD_REQUEST]: {
-            description: 'Bad Request',
-            schema: Joi.object({
-              statusCode: Joi.number().valid(HTTP_STATUS_CODES.BAD_REQUEST),
-              error: Joi.string(),
-              message: Joi.string()
-            }).label('BadRequestResponse')
-          }
+          ...badRequestResponse
         }
       }
     }
@@ -106,16 +102,7 @@ const createBulkReceiptMovement = {
         })
         .code(HTTP_STATUS_CODES.CREATED)
     } catch (error) {
-      const statusCode =
-        error.statusCode || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR
-
-      return h
-        .response({
-          statusCode,
-          error: error.name,
-          message: error.message
-        })
-        .code(statusCode)
+      return handleRouteError(h, error)
     }
   }
 }
