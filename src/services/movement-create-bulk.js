@@ -15,11 +15,12 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
     const session = mongoClient.startSession()
     await session.withTransaction(async () => {
       const filters = { bulkId: wasteInputs[0].bulkId, revision: 1 }
+      const options = { session, readPreference: 'primary' }
       const existingWasteInput = await wasteInputsCollection
-        .findOne(filters, { session })
+        .findOne(filters, options)
         .then(
           (result) =>
-            result || wasteInputsHistoryCollection.findOne(filters, { session })
+            result || wasteInputsHistoryCollection.findOne(filters, options)
         )
 
       if (existingWasteInput) {
