@@ -136,7 +136,7 @@ describe('#updateBulkWasteInput', () => {
     expect(historyEntries[1].revision).toEqual(1)
   })
 
-  it('should throw an error if waste inputs with the same bulk id have already been updated', async () => {
+  it('should return null if waste inputs with the same bulk id have already been updated', async () => {
     const payload = [
       { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' },
       { wasteTrackingId: '266XHTDL', receivingSiteId: 'new site 2' }
@@ -158,18 +158,16 @@ describe('#updateBulkWasteInput', () => {
       )
     )
 
-    await expect(
-      updateBulkWasteInput(
-        db,
-        mongoClient,
-        payload,
-        updateBulkId,
-        traceId,
-        refreshedWasteInputs
-      )
-    ).rejects.toThrow(
-      `Failed to update waste inputs: Waste inputs with bulk id (${updateBulkId}) have already been updated`
+    const result = await updateBulkWasteInput(
+      db,
+      mongoClient,
+      payload,
+      updateBulkId,
+      traceId,
+      refreshedWasteInputs
     )
+
+    expect(result).toBeNull()
   })
 
   it('should rollback all changes when one update fails', async () => {

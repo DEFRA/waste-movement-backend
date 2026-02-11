@@ -17,6 +17,8 @@ export async function updateBulkWasteInput(
     const wasteInputsCollection = db.collection('waste-inputs')
     const wasteInputsHistoryCollection = db.collection('waste-inputs-history')
 
+    let alreadyUpdated = false
+
     await session.withTransaction(async () => {
       const filters = { bulkId, revision: { $gt: 1 } }
       const existingWasteInput = await wasteInputsCollection
@@ -31,9 +33,8 @@ export async function updateBulkWasteInput(
         )
 
       if (existingWasteInput) {
-        throw new Error(
-          `Failed to update waste inputs: Waste inputs with bulk id (${bulkId}) have already been updated`
-        )
+        alreadyUpdated = true
+        return
       }
 
       const dateNow = new Date()
@@ -65,6 +66,10 @@ export async function updateBulkWasteInput(
         }
       }
     })
+
+    if (alreadyUpdated) {
+      return null
+    }
 
     return payload.map(() => ({}))
   } catch (error) {

@@ -82,6 +82,15 @@ const updateBulkReceiptMovement = {
         )
       }, BACKOFF_OPTIONS)
 
+      if (!movements) {
+        return h
+          .response({
+            status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
+            movements: payload.map(() => ({}))
+          })
+          .code(HTTP_STATUS_CODES.OK)
+      }
+
       return h
         .response({
           status: BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED,
