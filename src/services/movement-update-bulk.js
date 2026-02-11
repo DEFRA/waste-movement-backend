@@ -20,10 +20,14 @@ export async function updateBulkWasteInput(
     await session.withTransaction(async () => {
       const filters = { bulkId, revision: { $gt: 1 } }
       const existingWasteInput = await wasteInputsCollection
-        .findOne(filters, { session })
+        .findOne(filters, { session, readPreference: 'primary' })
         .then(
           (result) =>
-            result || wasteInputsHistoryCollection.findOne(filters, { session })
+            result ||
+            wasteInputsHistoryCollection.findOne(filters, {
+              session,
+              readPreference: 'primary'
+            })
         )
 
       if (existingWasteInput) {
@@ -34,16 +38,8 @@ export async function updateBulkWasteInput(
 
       const dateNow = new Date()
 
-      for (const item of payload) {
-        const existing = existingWasteInputs.find(
-          (wi) => wi._id === item.wasteTrackingId
-        )
-
-        if (!existing) {
-          throw new Error(
-            `Failed to update waste inputs: Waste input not found for waste tracking id (${item.wasteTrackingId})`
-          )
-        }
+      for (const [index, item] of payload.entries()) {
+        const existing = existingWasteInputs[index]
 
         const historyEntry = createHistoryEntry(existing, item.wasteTrackingId)
         await wasteInputsHistoryCollection.insertOne(historyEntry, { session })

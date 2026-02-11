@@ -63,6 +63,15 @@ const updateBulkReceiptMovement = {
           )
         )
 
+        if (
+          wasteInputsToUpdate.length !== payload.length ||
+          wasteInputsToUpdate.some((wi) => !wi)
+        ) {
+          throw new Error(
+            `Failed to update waste inputs: One or more waste tracking ids not found for bulkId (${bulkId})`
+          )
+        }
+
         return updateBulkWasteInput(
           request.db,
           request.mongoClient,
