@@ -3,6 +3,7 @@ import { createServer } from '../server.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockImplementation(() => true)
@@ -55,7 +56,7 @@ describe('Error Handler', () => {
     jest.clearAllMocks()
   })
 
-  test('should format validation errors correctly', async () => {
+  test('should format validation errors correctly for a non bulk upload endpoint', async () => {
     // Send a request with missing required fields
     const response = await server.inject({
       method: 'POST',
@@ -75,26 +76,64 @@ describe('Error Handler', () => {
     // Parse response
     const responseBody = JSON.parse(response.payload)
 
-    // Check response structure
-    expect(responseBody).toHaveProperty('validation')
-    expect(responseBody.validation).toHaveProperty('errors')
-    expect(Array.isArray(responseBody.validation.errors)).toBe(true)
+    expect(responseBody).toEqual({
+      validation: {
+        errors: [
+          {
+            key: 'retryAuditLogSchema',
+            errorType: 'NotProvided',
+            message:
+              '"retryAuditLogSchema" contains [wasteTrackingId] without its required peers [revision]'
+          }
+        ]
+      }
+    })
+  })
 
-    // Check at least one error exists
-    expect(responseBody.validation.errors.length).toBeGreaterThan(0)
+  test('should format validation errors correctly for a bulk upload endpoint', async () => {
+    // Send a request with missing required fields
+    const response = await server.inject({
+      method: 'POST',
+      url: '/bulk/1/movements/receive',
+      payload: [
+        createBulkMovementRequest(),
+        {
+          ...createBulkMovementRequest(),
+          submittingOrganisation: undefined,
+          dateTimeReceived: undefined
+        }
+      ],
+      headers: {
+        authorization:
+          'Basic d2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpOjRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+      }
+    })
 
-    // Check error format
-    const error = responseBody.validation.errors[0]
-    expect(error).toHaveProperty('key')
-    expect(error).toHaveProperty('errorType')
-    expect(error).toHaveProperty('message')
+    // Check status code
+    expect(response.statusCode).toBe(400)
 
-    // Check that the required field error has a key of 'retryAuditLogSchema'
-    const requiredFieldError = responseBody.validation.errors.find(
-      (err) => err.key === 'retryAuditLogSchema'
-    )
-    expect(requiredFieldError).toBeDefined()
-    expect(requiredFieldError.errorType).toBe('NotProvided')
+    // Parse response
+    const responseBody = JSON.parse(response.payload)
+
+    expect(responseBody).toEqual([
+      {},
+      {
+        validation: {
+          errors: [
+            {
+              errorType: 'UnexpectedError',
+              key: '1.dateTimeReceived',
+              message: '"[1].dateTimeReceived" is required'
+            },
+            {
+              errorType: 'UnexpectedError',
+              key: '1.submittingOrganisation',
+              message: '"[1].submittingOrganisation" is required'
+            }
+          ]
+        }
+      }
+    ])
   })
 
   test('should not create misleading keys from built-in Joi error types', async () => {
