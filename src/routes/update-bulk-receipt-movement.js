@@ -56,31 +56,33 @@ const updateBulkReceiptMovement = {
           .code(HTTP_STATUS_CODES.OK)
       }
 
-      const movements = await backOff(async () => {
-        const wasteInputsToUpdate = await Promise.all(
-          payload.map((item) =>
-            wasteInputsCollection.findOne({ _id: item.wasteTrackingId })
-          )
+      const wasteInputsToUpdate = await Promise.all(
+        payload.map((item) =>
+          wasteInputsCollection.findOne({ _id: item.wasteTrackingId })
         )
+      )
 
-        if (
-          wasteInputsToUpdate.length !== payload.length ||
-          wasteInputsToUpdate.some((wi) => !wi)
-        ) {
-          throw new Error(
-            `Failed to update waste inputs: One or more waste tracking ids not found for bulkId (${bulkId})`
-          )
-        }
-
-        return updateBulkWasteInput(
-          request.db,
-          request.mongoClient,
-          payload,
-          bulkId,
-          request.getTraceId(),
-          wasteInputsToUpdate
+      if (
+        wasteInputsToUpdate.length !== payload.length ||
+        wasteInputsToUpdate.some((wi) => !wi)
+      ) {
+        throw new Error(
+          `Failed to update waste inputs: One or more waste tracking ids not found for bulkId (${bulkId})`
         )
-      }, BACKOFF_OPTIONS)
+      }
+
+      const movements = await backOff(
+        () =>
+          updateBulkWasteInput(
+            request.db,
+            request.mongoClient,
+            payload,
+            bulkId,
+            request.getTraceId(),
+            wasteInputsToUpdate
+          ),
+        BACKOFF_OPTIONS
+      )
 
       if (!movements) {
         return h
