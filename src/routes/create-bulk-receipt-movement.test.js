@@ -10,21 +10,10 @@ import { requestTracing } from '../common/helpers/request-tracing.js'
 import { createBulkReceiptMovement } from './create-bulk-receipt-movement.js'
 import { orgId1 } from '../test/data/apiCodes.js'
 import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
+import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
+import * as batch from '../common/helpers/batch.js'
 
-const payload = [
-  {
-    receivingSiteId: 'movement 1 receivingSiteId',
-    receiverReference: 'movement 1 receiverReference',
-    specialHandlingRequirements: 'movement 1 specialHandlingRequirements',
-    orgId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
-  },
-  {
-    receivingSiteId: 'movement 2 receivingSiteId',
-    receiverReference: 'movement 2 receiverReference',
-    specialHandlingRequirements: 'movement 2 specialHandlingRequirements',
-    orgId: '70d84972-2ad3-4ada-a867-ad261a7245e7'
-  }
-]
+const payload = [createBulkMovementRequest(), createBulkMovementRequest()]
 
 jest.mock('../common/constants/exponential-backoff.js', () => ({
   BACKOFF_OPTIONS: {
@@ -48,16 +37,6 @@ jest.mock('../common/helpers/http-client.js', () => ({
         .mockResolvedValueOnce({ payload: { wasteTrackingId: '26NWSIXF' } })
     }
   }
-}))
-
-jest.mock('../common/helpers/batch.js', () => ({
-  getBatches: jest
-    .fn()
-    .mockReturnValueOnce([payload])
-    .mockReturnValueOnce([payload])
-    .mockReturnValueOnce([payload])
-    .mockReturnValueOnce([payload])
-    .mockReturnValueOnce([])
 }))
 
 describe('Create Bulk Receipt Movement Route Tests', () => {
@@ -309,6 +288,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
   })
 
   it("throws an error when the number of waste tracking ids generated doesn't match the number of movements in the payload", async () => {
+    jest.spyOn(batch, 'getBatches').mockReturnValue([])
+
     const createBulkWasteInputSpy = jest.spyOn(
       movementCreateBulk,
       'createBulkWasteInput'

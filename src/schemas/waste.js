@@ -194,7 +194,21 @@ const hazardousSchema = Joi.object({
 })
   .empty(null)
   .custom((value, helpers) => {
-    const wasteItemIndex = helpers.state.path[1]
+    /*
+     * To be able to return the waste item index in the error message, we're
+     * getting the index from helpers.state.path, which has a different
+     * structure in the Exernal API (request payload is an object) to the
+     * Backend service (requst payload is an array) so we need to get it
+     * dynamically so it'll be correct in both services
+     *
+     * External API: [ 'wasteItems', 0, 'hazardous' ]
+     * Backend service: [ 0, 'wasteItems', 0, 'hazardous' ]
+     *
+     * This is quite fragile, but was done to get it working quickly, and
+     * we should revisit to improve it at a later date
+     */
+    const pathIndex = Number.isInteger(helpers.state.path[0]) ? 2 : 1
+    const wasteItemIndex = helpers.state.path[pathIndex]
     const wasteItem = helpers.state.ancestors[1][wasteItemIndex]
 
     if (

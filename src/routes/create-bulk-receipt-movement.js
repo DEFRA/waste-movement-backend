@@ -11,6 +11,7 @@ import {
   badRequestResponse,
   handleRouteError
 } from '../common/helpers/bulk-route-helpers.js'
+import { bulkReceiveMovementRequestSchema } from '../schemas/bulk-receipt.js'
 
 const createBulkReceiptMovement = {
   method: 'POST',
@@ -18,6 +19,12 @@ const createBulkReceiptMovement = {
   options: {
     tags: ['movements', 'bulk-upload'],
     description: 'Create multiple new waste inputs with receipt movements',
+    validate: {
+      payload: bulkReceiveMovementRequestSchema,
+      params: Joi.object({
+        bulkId: Joi.string().required()
+      })
+    },
     plugins: {
       'hapi-swagger': {
         params: {},
