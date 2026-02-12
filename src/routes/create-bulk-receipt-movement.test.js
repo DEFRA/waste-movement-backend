@@ -39,6 +39,10 @@ jest.mock('../common/helpers/http-client.js', () => ({
   }
 }))
 
+jest.mock('@defra/cdp-auditing', () => ({
+  audit: jest.fn().mockImplementation(() => true)
+}))
+
 describe('Create Bulk Receipt Movement Route Tests', () => {
   let server
   let mongoClient
