@@ -151,7 +151,9 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       expect(createdWasteInput.createdAt).toEqual(
         createdWasteInput.lastUpdatedAt
       )
-      expect(createdWasteInput.orgId).toEqual(payload[index].orgId)
+      expect(createdWasteInput.submittingOrganisation).toEqual(
+        payload[index].submittingOrganisation
+      )
       expect(createdWasteInput.traceId).toEqual(traceId)
     }
 

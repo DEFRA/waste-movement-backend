@@ -120,7 +120,7 @@ function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
     const wasteInput = new WasteInput()
     wasteInput.wasteTrackingId = wasteTrackingIds[index]
     wasteInput.receipt = receipt
-    wasteInput.orgId = receipt.orgId
+    wasteInput.submittingOrganisation = receipt.submittingOrganisation
     wasteInput.traceId = traceId
     wasteInput.bulkId = bulkId
     wasteInput.revision = 1
