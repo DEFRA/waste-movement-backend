@@ -12,6 +12,7 @@ import {
   handleRouteError
 } from '../common/helpers/bulk-route-helpers.js'
 import { bulkReceiveMovementRequestSchema } from '../schemas/bulk-receipt.js'
+import Joi from 'joi'
 
 const createBulkReceiptMovement = {
   method: 'POST',
