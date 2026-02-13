@@ -99,7 +99,7 @@ describe('Error Handler', () => {
         createBulkMovementRequest(),
         {
           ...createBulkMovementRequest(),
-          submittingOrganisation: undefined,
+          submittingOrganisation: {},
           dateTimeReceived: undefined
         }
       ],
@@ -122,13 +122,14 @@ describe('Error Handler', () => {
           errors: [
             {
               errorType: 'UnexpectedError',
-              key: '1.dateTimeReceived',
-              message: '"[1].dateTimeReceived" is required'
+              key: '1.submittingOrganisation.defraCustomerOrganisationId',
+              message:
+                '"[1].submittingOrganisation.defraCustomerOrganisationId" is required'
             },
             {
               errorType: 'UnexpectedError',
-              key: '1.submittingOrganisation',
-              message: '"[1].submittingOrganisation" is required'
+              key: '1.dateTimeReceived',
+              message: '"[1].dateTimeReceived" is required'
             }
           ]
         }
