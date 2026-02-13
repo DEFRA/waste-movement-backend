@@ -1,5 +1,7 @@
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { createHistoryEntry } from '../common/helpers/create-history-entry.js'
+import { auditLogger } from '../common/helpers/logging/audit-logger.js'
+import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
 
 const logger = createLogger()
 
@@ -69,6 +71,28 @@ export async function updateBulkWasteInput(
 
     if (alreadyUpdated) {
       return null
+    }
+
+    for (const [index, item] of payload.entries()) {
+      const existing = existingWasteInputs[index]
+
+      let updatedWasteInput = await wasteInputsCollection.findOne({
+        _id: item.wasteTrackingId,
+        revision: existing.revision + 1
+      })
+
+      if (!updatedWasteInput) {
+        updatedWasteInput = await wasteInputsHistoryCollection.findOne({
+          _id: item.wasteTrackingId,
+          revision: existing.revision + 1
+        })
+      }
+
+      auditLogger({
+        type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
+        traceId,
+        data: updatedWasteInput
+      })
     }
 
     return payload.map(() => ({}))

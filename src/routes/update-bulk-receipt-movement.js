@@ -1,3 +1,4 @@
+import Joi from 'joi'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { backOff } from 'exponential-backoff'
 import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
@@ -14,6 +15,9 @@ const updateBulkReceiptMovement = {
   options: {
     tags: ['movements', 'bulk-upload'],
     description: 'Update multiple existing waste inputs with receipt movements',
+    validate: {
+      payload: Joi.array().min(1).required()
+    },
     plugins: {
       'hapi-swagger': {
         params: {},
