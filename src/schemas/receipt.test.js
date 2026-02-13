@@ -1,5 +1,6 @@
 import { receiveMovementRequestSchema } from './receipt.js'
 import { createMovementRequest } from '../test/utils/createMovementRequest.js'
+import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 
 describe('receiveMovementRequestSchema - otherReferencesForMovement validation', () => {
   const basePayload = createMovementRequest({
@@ -48,17 +49,35 @@ describe('receiveMovementRequestSchema - otherReferencesForMovement validation',
 
       expect(error).toBeUndefined()
     })
+
+    it('should accept when given apiCode and not submittingOrganisation', () => {
+      const payload = createMovementRequest()
+
+      const { error } = receiveMovementRequestSchema.validate(payload)
+
+      expect(error).toBeUndefined()
+    })
+
+    it('should accept when given submittingOrganisation and not apiCode', () => {
+      const payload = createBulkMovementRequest()
+
+      const { error } = receiveMovementRequestSchema.validate(payload)
+
+      expect(error).toBeUndefined()
+    })
   })
 
   describe('invalid payloads', () => {
-    it('should reject when apiCode is missing', () => {
+    it('should reject when apiCode and submittingOrganisation are missing', () => {
       const payload = {
         ...basePayload,
         apiCode: undefined
       }
       const { error } = receiveMovementRequestSchema.validate(payload)
       expect(error).toBeDefined()
-      expect(error.message).toContain('"apiCode" is required')
+      expect(error.message).toContain(
+        '"ReceiveMovementRequest" must contain at least one of [apiCode, submittingOrganisation]'
+      )
     })
 
     it('should reject when apiCode is not a guid', () => {
@@ -199,6 +218,18 @@ describe('receiveMovementRequestSchema - otherReferencesForMovement validation',
       const { error } = receiveMovementRequestSchema.validate(payload)
       expect(error).toBeDefined()
       expect(error.message).toContain('"receipt" is required')
+    })
+
+    it('should reject when defraCustomerOrganisationId is missing', () => {
+      const payload = {
+        ...createBulkMovementRequest,
+        submittingOrganisation: {}
+      }
+      const { error } = receiveMovementRequestSchema.validate(payload)
+      expect(error).toBeDefined()
+      expect(error.message).toContain(
+        '"submittingOrganisation.defraCustomerOrganisationId" is required'
+      )
     })
   })
 })

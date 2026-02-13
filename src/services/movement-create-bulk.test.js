@@ -10,9 +10,21 @@ import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { base64EncodedOrgApiCodes, orgId1 } from '../test/data/apiCodes.js'
 import { config } from '../config.js'
 import { createBulkWasteInput } from './movement-create-bulk.js'
+import * as cdpAuditing from '@defra/cdp-auditing'
+import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
 
 jest.mock('@hapi/hoek', () => ({
   wait: jest.fn()
+}))
+
+jest.mock('@defra/cdp-auditing', () => ({
+  audit: jest
+    .fn()
+    .mockImplementationOnce(() => true)
+    .mockImplementationOnce(() => true)
+    .mockImplementation(() => {
+      throw new Error('Internal Server Error')
+    })
 }))
 
 describe('#createBulkWasteInput', () => {
@@ -72,7 +84,9 @@ describe('#createBulkWasteInput', () => {
     await wasteInputsHistoryCollection.deleteMany({})
   })
 
-  it('should create multiple waste inputs', async () => {
+  it('should create multiple waste inputs and call audit log endpoint', async () => {
+    const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+
     const result = await createBulkWasteInput(db, mongoClient, wasteInputs)
 
     expect(result).toEqual([
@@ -91,9 +105,54 @@ describe('#createBulkWasteInput', () => {
     })
 
     expect(updatedWasteInput2).toEqual(wasteInputs[1])
+
+    expect(auditSpy).toHaveBeenCalledTimes(2)
+    expect(auditSpy).toHaveBeenCalledWith({
+      metadata: {
+        type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
+        traceId,
+        version: 1
+      },
+      data: updatedWasteInput1
+    })
+    expect(auditSpy).toHaveBeenCalledWith({
+      metadata: {
+        type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
+        traceId,
+        version: 1
+      },
+      data: updatedWasteInput2
+    })
   })
 
-  it('should throw an error if waste inputs with the same bulk id already exist', async () => {
+  it('should create multiple waste inputs and return success response when calling audit log endpoint fails', async () => {
+    const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+
+    const result = await createBulkWasteInput(db, mongoClient, wasteInputs)
+
+    expect(result).toEqual([
+      { wasteTrackingId: '26E4C7Z2' },
+      { wasteTrackingId: '266XHTDL' }
+    ])
+
+    const updatedWasteInput1 = await wasteInputsCollection.findOne({
+      _id: '26E4C7Z2'
+    })
+
+    expect(updatedWasteInput1).toEqual(wasteInputs[0])
+
+    const updatedWasteInput2 = await wasteInputsCollection.findOne({
+      _id: '266XHTDL'
+    })
+
+    expect(updatedWasteInput2).toEqual(wasteInputs[1])
+
+    expect(auditSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it('should throw an error and not call audit log endpooint if waste inputs with the same bulk id already exist', async () => {
+    const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+
     await wasteInputsCollection.insertMany(wasteInputs)
 
     await expect(
@@ -101,9 +160,13 @@ describe('#createBulkWasteInput', () => {
     ).rejects.toThrow(
       `Failed to create waste inputs: Waste inputs with bulk id (${bulkId}) already exist`
     )
+
+    expect(auditSpy).not.toHaveBeenCalled()
   })
 
-  it('should throw an error if not all waste inputs have a waste tracking id and rollback changes', async () => {
+  it('should throw an error and not call audit log endpoint if not all waste inputs have a waste tracking id and rollback changes', async () => {
+    const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+
     wasteInputs[1].wasteTrackingId = undefined
 
     await expect(
@@ -115,9 +178,13 @@ describe('#createBulkWasteInput', () => {
     const results = await wasteInputsCollection.find().toArray()
 
     expect(results).toEqual([])
+
+    expect(auditSpy).not.toHaveBeenCalled()
   })
 
-  it('should database handle errors', async () => {
+  it('should database handle errors and not call audit log endpoint', async () => {
+    const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+
     const mockError = new Error('Database error')
     const mockDb = {
       collection: jest.fn().mockReturnValue({
@@ -132,5 +199,7 @@ describe('#createBulkWasteInput', () => {
     await expect(
       createBulkWasteInput(mockDb, mongoClient, wasteInputs)
     ).rejects.toThrow(mockError)
+
+    expect(auditSpy).not.toHaveBeenCalled()
   })
 })

@@ -10,21 +10,8 @@ import { requestTracing } from '../common/helpers/request-tracing.js'
 import { createBulkReceiptMovement } from './create-bulk-receipt-movement.js'
 import { orgId1 } from '../test/data/apiCodes.js'
 import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
-
-const payload = [
-  {
-    receivingSiteId: 'movement 1 receivingSiteId',
-    receiverReference: 'movement 1 receiverReference',
-    specialHandlingRequirements: 'movement 1 specialHandlingRequirements',
-    orgId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
-  },
-  {
-    receivingSiteId: 'movement 2 receivingSiteId',
-    receiverReference: 'movement 2 receiverReference',
-    specialHandlingRequirements: 'movement 2 specialHandlingRequirements',
-    orgId: '70d84972-2ad3-4ada-a867-ad261a7245e7'
-  }
-]
+import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
+import * as batch from '../common/helpers/batch.js'
 
 jest.mock('../common/constants/exponential-backoff.js', () => ({
   BACKOFF_OPTIONS: {
@@ -46,18 +33,14 @@ jest.mock('../common/helpers/http-client.js', () => ({
         .mockResolvedValueOnce({ payload: { wasteTrackingId: '26NWSIXF' } })
         .mockResolvedValueOnce({ payload: { wasteTrackingId: '26S8EYDJ' } })
         .mockResolvedValueOnce({ payload: { wasteTrackingId: '26NWSIXF' } })
+        .mockResolvedValueOnce({ payload: { wasteTrackingId: '26S8EYDJ' } })
+        .mockResolvedValueOnce({ payload: { wasteTrackingId: '26NWSIXF' } })
     }
   }
 }))
 
-jest.mock('../common/helpers/batch.js', () => ({
-  getBatches: jest
-    .fn()
-    .mockReturnValueOnce([payload])
-    .mockReturnValueOnce([payload])
-    .mockReturnValueOnce([payload])
-    .mockReturnValueOnce([payload])
-    .mockReturnValueOnce([])
+jest.mock('@defra/cdp-auditing', () => ({
+  audit: jest.fn().mockImplementation(() => true)
 }))
 
 describe('Create Bulk Receipt Movement Route Tests', () => {
@@ -68,6 +51,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
   let mongoUri
   let wasteInputsCollection
   let wasteInputsHistoryCollection
+  let payload
 
   const errorMessage = 'Database connection failed'
   const traceId = 'created-trace-id-123'
@@ -125,9 +109,11 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
 
     await wasteInputsCollection.deleteMany({})
     await wasteInputsHistoryCollection.deleteMany({})
+
+    payload = [createBulkMovementRequest(), createBulkMovementRequest()]
   })
 
-  it('creates multiple waste inputs', async () => {
+  it('creates multiple waste inputs without warnings', async () => {
     const createBulkWasteInputSpy = jest.spyOn(
       movementCreateBulk,
       'createBulkWasteInput'
@@ -172,7 +158,77 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       expect(createdWasteInput.createdAt).toEqual(
         createdWasteInput.lastUpdatedAt
       )
-      expect(createdWasteInput.orgId).toEqual(payload[index].orgId)
+      expect(createdWasteInput.submittingOrganisation).toEqual(
+        payload[index].submittingOrganisation
+      )
+      expect(createdWasteInput.traceId).toEqual(traceId)
+    }
+
+    expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(3)
+  })
+
+  it('creates multiple waste inputs with a waste input containing a warning', async () => {
+    payload[0].wasteItems[0].disposalOrRecoveryCodes = []
+
+    const createBulkWasteInputSpy = jest.spyOn(
+      movementCreateBulk,
+      'createBulkWasteInput'
+    )
+
+    movementCreateBulk.createBulkWasteInput
+      .mockImplementationOnce(() => {
+        throw new Error(errorMessage)
+      })
+      .mockImplementationOnce(() => {
+        throw new Error(errorMessage)
+      })
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/bulk/${bulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.CREATED)
+    expect(result).toEqual({
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
+      movements: [
+        {
+          wasteTrackingId: '26S8EYDJ',
+          validation: {
+            warnings: [
+              {
+                errorType: 'NotProvided',
+                key: 'wasteItems.0.disposalOrRecoveryCodes',
+                message:
+                  'wasteItems[0].disposalOrRecoveryCodes is required for proper waste tracking and compliance'
+              }
+            ]
+          }
+        },
+        { wasteTrackingId: '26NWSIXF' }
+      ]
+    })
+
+    for (const [index, item] of result.movements.entries()) {
+      const createdWasteInput = await testMongoDb
+        .collection('waste-inputs')
+        .findOne({ _id: item.wasteTrackingId })
+
+      expect(createdWasteInput.wasteTrackingId).toEqual(item.wasteTrackingId)
+      expect(createdWasteInput.revision).toEqual(1)
+      expect(createdWasteInput.receipt).toEqual(payload[index])
+      expect(createdWasteInput.createdAt).toBeInstanceOf(Date)
+      expect(createdWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
+      expect(createdWasteInput.createdAt).toEqual(
+        createdWasteInput.lastUpdatedAt
+      )
+      expect(createdWasteInput.submittingOrganisation).toEqual(
+        payload[index].submittingOrganisation
+      )
       expect(createdWasteInput.traceId).toEqual(traceId)
     }
 
@@ -309,6 +365,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
   })
 
   it("throws an error when the number of waste tracking ids generated doesn't match the number of movements in the payload", async () => {
+    jest.spyOn(batch, 'getBatches').mockReturnValue([])
+
     const createBulkWasteInputSpy = jest.spyOn(
       movementCreateBulk,
       'createBulkWasteInput'

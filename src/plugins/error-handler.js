@@ -20,6 +20,7 @@ export const errorHandler = {
           // Access the validation error details
           const validationErrors = response.details
           const unexpectedErrors = []
+          const isBulkUploadEndpoint = request.path.startsWith('/bulk/')
 
           // Transform validation errors to the required format
           const formattedErrors = validationErrors.map((err) => {
@@ -52,10 +53,31 @@ export const errorHandler = {
           })
 
           // Create the custom error format
-          const customError = {
+          let customError = {
             validation: {
               errors: formattedErrors
             }
+          }
+
+          // Re-format errors for bulk upload endpoints
+          if (isBulkUploadEndpoint) {
+            const bulkUploadErrors = {}
+
+            Object.keys(request.payload).forEach((key) => {
+              bulkUploadErrors[key] = {}
+            })
+
+            customError.validation.errors.forEach((error) => {
+              const errorIndex = error.key.split('.')[0]
+
+              if (!bulkUploadErrors[errorIndex].validation) {
+                bulkUploadErrors[errorIndex].validation = { errors: [] }
+              }
+
+              bulkUploadErrors[errorIndex].validation.errors.push(error)
+            })
+
+            customError = Object.values(bulkUploadErrors)
           }
 
           // Log all validation errors in a single consolidated entry
