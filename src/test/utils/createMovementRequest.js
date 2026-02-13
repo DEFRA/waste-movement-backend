@@ -58,7 +58,17 @@ export function createMovementRequest(overrides) {
         containsHazardous: false,
         hazardous: {
           sourceOfComponents: sourceOfComponentsNotProvided.NOT_PROVIDED
-        }
+        },
+        disposalOrRecoveryCodes: [
+          {
+            code: 'R1',
+            weight: {
+              metric: 'Tonnes',
+              amount: 0.75,
+              isEstimate: false
+            }
+          }
+        ]
       }
     ]
   }
