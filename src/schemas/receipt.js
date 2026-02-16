@@ -150,7 +150,10 @@ const brokerOrDealerSchema = Joi.object({
 })
 
 export const receiveMovementRequestSchema = Joi.object({
-  apiCode: Joi.string().required().uuid(),
+  apiCode: Joi.string().uuid(),
+  submittingOrganisation: Joi.object({
+    defraCustomerOrganisationId: Joi.string().required()
+  }),
   dateTimeReceived: Joi.date().iso().required(),
   hazardousWasteConsignmentCode: hazardousWasteConsignmentCodeSchema,
   reasonForNoConsignmentCode: Joi.string().allow(null, ''),
@@ -168,6 +171,7 @@ export const receiveMovementRequestSchema = Joi.object({
   receiver: receiverSchema.required(),
   receipt: receiptSchema.required()
 })
+  .xor('apiCode', 'submittingOrganisation')
   .custom((value, helpers) => {
     const hasHazardous = hasHazardousEwcCodes(value)
 
@@ -192,3 +196,4 @@ export const receiveMovementRequestSchema = Joi.object({
     'InvalidValue.reasonForNoConsignmentCode': `${CONSIGNMENT_ERRORS.REASON_INVALID_PREFIX} ${NO_CONSIGNMENT_REASONS.join(', ')}`,
     'BusinessRuleViolation.reasonRequired': CONSIGNMENT_ERRORS.REASON_REQUIRED
   })
+  .label('ReceiveMovementRequest')

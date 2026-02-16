@@ -11,6 +11,9 @@ import {
   badRequestResponse,
   handleRouteError
 } from '../common/helpers/bulk-route-helpers.js'
+import { bulkReceiveMovementRequestSchema } from '../schemas/bulk-receipt.js'
+import Joi from 'joi'
+import { generateAllValidationWarnings } from '../common/helpers/validation-warnings/validation-warnings.js'
 
 const createBulkReceiptMovement = {
   method: 'POST',
@@ -18,6 +21,12 @@ const createBulkReceiptMovement = {
   options: {
     tags: ['movements', 'bulk-upload'],
     description: 'Create multiple new waste inputs with receipt movements',
+    validate: {
+      payload: bulkReceiveMovementRequestSchema,
+      params: Joi.object({
+        bulkId: Joi.string().required()
+      })
+    },
     plugins: {
       'hapi-swagger': {
         params: {},
@@ -95,10 +104,15 @@ const createBulkReceiptMovement = {
         BACKOFF_OPTIONS
       )
 
+      const response = generateResponseWithValidationWarnings(
+        createdWasteTrackingIds,
+        payload
+      )
+
       return h
         .response({
           status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
-          movements: createdWasteTrackingIds
+          movements: response
         })
         .code(HTTP_STATUS_CODES.CREATED)
     } catch (error) {
@@ -113,13 +127,33 @@ function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
     const wasteInput = new WasteInput()
     wasteInput.wasteTrackingId = wasteTrackingIds[index]
     wasteInput.receipt = receipt
-    wasteInput.orgId = receipt.orgId
+    wasteInput.submittingOrganisation = receipt.submittingOrganisation
     wasteInput.traceId = traceId
     wasteInput.bulkId = bulkId
     wasteInput.revision = 1
     wasteInput.createdAt = dateNow
     wasteInput.lastUpdatedAt = dateNow
     return wasteInput
+  })
+}
+
+function generateResponseWithValidationWarnings(
+  createdWasteTrackingIds,
+  payload
+) {
+  return createdWasteTrackingIds.map((item, index) => {
+    const warnings = generateAllValidationWarnings(
+      payload[index],
+      item.wasteTrackingId
+    )
+
+    if (warnings.length > 0) {
+      item.validation = {
+        warnings
+      }
+    }
+
+    return item
   })
 }
 

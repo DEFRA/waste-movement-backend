@@ -1,3 +1,5 @@
+import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
+import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 
 const logger = createLogger()
@@ -45,7 +47,24 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
       }
     })
 
-    return createdWasteTrackingIds.map((wasteTrackingId) => ({
+    const createdWasteInputs = await wasteInputsCollection
+      .find({
+        $or: createdWasteTrackingIds.map((wasteTrackingId) => ({
+          _id: wasteTrackingId,
+          revision: 1
+        }))
+      })
+      .toArray()
+
+    createdWasteInputs.forEach((wasteInput) => {
+      auditLogger({
+        type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
+        traceId: wasteInput.traceId,
+        data: wasteInput
+      })
+    })
+
+    return createdWasteInputs.map(({ wasteTrackingId }) => ({
       wasteTrackingId
     }))
   } catch (error) {

@@ -9,7 +9,7 @@ import { validPopNames } from '../../common/constants/pop-names.js'
 export function createMovementRequest(overrides) {
   const defaultMovementRequest = {
     apiCode: uuidv4(),
-    dateTimeReceived: '2021-01-01T00:00:00.000Z',
+    dateTimeReceived: new Date('2021-01-01T00:00:00.000Z'),
     carrier: {
       registrationNumber: 'CBDU123456',
       organisationName: 'Test Carrier',
@@ -58,7 +58,17 @@ export function createMovementRequest(overrides) {
         containsHazardous: false,
         hazardous: {
           sourceOfComponents: sourceOfComponentsNotProvided.NOT_PROVIDED
-        }
+        },
+        disposalOrRecoveryCodes: [
+          {
+            code: 'R1',
+            weight: {
+              metric: 'Tonnes',
+              amount: 0.75,
+              isEstimate: false
+            }
+          }
+        ]
       }
     ]
   }
