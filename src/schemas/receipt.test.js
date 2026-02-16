@@ -222,9 +222,10 @@ describe('receiveMovementRequestSchema - otherReferencesForMovement validation',
 
     it('should reject when defraCustomerOrganisationId is missing', () => {
       const payload = {
-        ...createBulkMovementRequest,
+        ...createBulkMovementRequest(),
         submittingOrganisation: {}
       }
+
       const { error } = receiveMovementRequestSchema.validate(payload)
       expect(error).toBeDefined()
       expect(error.message).toContain(
