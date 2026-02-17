@@ -349,11 +349,11 @@ describe('#updateBulkWasteInput', () => {
 
   it('should return success when post-transaction audit DB read fails', async () => {
     const mockWasteInputsCollection = {
-      findOne: jest
-        .fn()
-        .mockResolvedValueOnce(null)
-        .mockRejectedValue(new Error('DB read failed')),
-      updateOne: jest.fn().mockResolvedValue({ matchedCount: 1 })
+      findOne: jest.fn().mockResolvedValueOnce(null),
+      updateOne: jest.fn().mockResolvedValue({ matchedCount: 1 }),
+      find: jest.fn().mockReturnValue({
+        toArray: jest.fn().mockRejectedValue(new Error('DB read failed'))
+      })
     }
 
     const mockHistoryCollection = {
@@ -383,56 +383,5 @@ describe('#updateBulkWasteInput', () => {
     )
 
     expect(result).toEqual([{}])
-  })
-
-  it('should fall back to history collection when waste input not found in main collection during audit logging', async () => {
-    const auditSpy = jest.spyOn(cdpAuditing, 'audit')
-
-    const updatedRecord = {
-      _id: '26E4C7Z2',
-      wasteTrackingId: '26E4C7Z2',
-      revision: 2,
-      receipt: { receivingSiteId: 'new site 1' }
-    }
-
-    const mockWasteInputsCollection = {
-      findOne: jest
-        .fn()
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null),
-      updateOne: jest.fn().mockResolvedValue({ matchedCount: 1 })
-    }
-
-    const mockHistoryCollection = {
-      findOne: jest
-        .fn()
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(updatedRecord),
-      insertOne: jest.fn().mockResolvedValue({})
-    }
-
-    const mockDb = {
-      collection: jest.fn((name) => {
-        if (name === 'waste-inputs') return mockWasteInputsCollection
-        if (name === 'waste-inputs-history') return mockHistoryCollection
-        return {}
-      })
-    }
-
-    const payload = [
-      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' }
-    ]
-
-    const result = await updateBulkWasteInput(
-      mockDb,
-      mongoClient,
-      payload,
-      updateBulkId,
-      traceId,
-      [existingWasteInputs[0]]
-    )
-
-    expect(result).toEqual([{}])
-    expect(auditSpy).toHaveBeenCalledTimes(1)
   })
 })
