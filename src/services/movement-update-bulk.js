@@ -5,6 +5,34 @@ import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
 
 const logger = createLogger()
 
+async function sendAuditLogs(
+  wasteInputsCollection,
+  payload,
+  existingWasteInputs,
+  traceId
+) {
+  try {
+    const updatedWasteInputs = await wasteInputsCollection
+      .find({
+        $or: payload.map((item, index) => ({
+          _id: item.wasteTrackingId,
+          revision: existingWasteInputs[index].revision + 1
+        }))
+      })
+      .toArray()
+
+    updatedWasteInputs.forEach((wasteInput) => {
+      auditLogger({
+        type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
+        traceId,
+        data: wasteInput
+      })
+    })
+  } catch (error) {
+    logger.error(`Failed to send audit log: ${error.message}`)
+  }
+}
+
 export async function updateBulkWasteInput(
   db,
   mongoClient,
@@ -73,26 +101,12 @@ export async function updateBulkWasteInput(
       return null
     }
 
-    try {
-      const updatedWasteInputs = await wasteInputsCollection
-        .find({
-          $or: payload.map((item, index) => ({
-            _id: item.wasteTrackingId,
-            revision: existingWasteInputs[index].revision + 1
-          }))
-        })
-        .toArray()
-
-      updatedWasteInputs.forEach((wasteInput) => {
-        auditLogger({
-          type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
-          traceId,
-          data: wasteInput
-        })
-      })
-    } catch (error) {
-      logger.error(`Failed to send audit log: ${error.message}`)
-    }
+    await sendAuditLogs(
+      wasteInputsCollection,
+      payload,
+      existingWasteInputs,
+      traceId
+    )
 
     return payload.map(() => ({}))
   } catch (error) {
