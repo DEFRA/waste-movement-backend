@@ -12,23 +12,7 @@ import { failAction } from '../common/helpers/fail-action.js'
 import { orgId1 } from '../test/data/apiCodes.js'
 import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 import { config } from '../config.js'
-
-const payload = [
-  {
-    wasteTrackingId: '26E4C7Z2',
-    receivingSiteId: 'movement 1 receivingSiteId',
-    receiverReference: 'movement 1 receiverReference',
-    specialHandlingRequirements: 'movement 1 specialHandlingRequirements',
-    orgId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
-  },
-  {
-    wasteTrackingId: '266XHTDL',
-    receivingSiteId: 'movement 2 receivingSiteId',
-    receiverReference: 'movement 2 receiverReference',
-    specialHandlingRequirements: 'movement 2 specialHandlingRequirements',
-    orgId: '70d84972-2ad3-4ada-a867-ad261a7245e7'
-  }
-]
+import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 
 jest.mock('../common/constants/exponential-backoff.js', () => ({
   BACKOFF_OPTIONS: {
@@ -49,6 +33,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
   let mongoUri
   let wasteInputsCollection
   let wasteInputsHistoryCollection
+  let payload
 
   const errorMessage = 'Database connection failed'
   const traceId = 'updated-trace-id-123'
@@ -116,6 +101,11 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     await wasteInputsCollection.insertMany(
       seedWasteInputs.map((wi) => ({ ...wi }))
     )
+
+    payload = [
+      createBulkMovementRequest({ wasteTrackingId: '26E4C7Z2' }),
+      createBulkMovementRequest({ wasteTrackingId: '266XHTDL' })
+    ]
   })
 
   it('updates multiple waste inputs', async () => {

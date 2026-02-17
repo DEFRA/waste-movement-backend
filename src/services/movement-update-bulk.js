@@ -73,26 +73,30 @@ export async function updateBulkWasteInput(
       return null
     }
 
-    for (const [index, item] of payload.entries()) {
-      const existing = existingWasteInputs[index]
+    try {
+      for (const [index, item] of payload.entries()) {
+        const existing = existingWasteInputs[index]
 
-      let updatedWasteInput = await wasteInputsCollection.findOne({
-        _id: item.wasteTrackingId,
-        revision: existing.revision + 1
-      })
-
-      if (!updatedWasteInput) {
-        updatedWasteInput = await wasteInputsHistoryCollection.findOne({
+        let updatedWasteInput = await wasteInputsCollection.findOne({
           _id: item.wasteTrackingId,
           revision: existing.revision + 1
         })
-      }
 
-      auditLogger({
-        type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
-        traceId,
-        data: updatedWasteInput
-      })
+        if (!updatedWasteInput) {
+          updatedWasteInput = await wasteInputsHistoryCollection.findOne({
+            _id: item.wasteTrackingId,
+            revision: existing.revision + 1
+          })
+        }
+
+        auditLogger({
+          type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
+          traceId,
+          data: updatedWasteInput
+        })
+      }
+    } catch (error) {
+      logger.error(`Failed to send audit log: ${error.message}`)
     }
 
     return payload.map(() => ({}))
