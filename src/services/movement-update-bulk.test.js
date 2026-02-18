@@ -346,42 +346,4 @@ describe('#updateBulkWasteInput', () => {
     expect(result).toEqual([{}])
     expect(auditSpy).toHaveBeenCalledTimes(1)
   })
-
-  it('should return success when post-transaction audit DB read fails', async () => {
-    const mockWasteInputsCollection = {
-      findOne: jest.fn().mockResolvedValueOnce(null),
-      updateOne: jest.fn().mockResolvedValue({ matchedCount: 1 }),
-      find: jest.fn().mockReturnValue({
-        toArray: jest.fn().mockRejectedValue(new Error('DB read failed'))
-      })
-    }
-
-    const mockHistoryCollection = {
-      findOne: jest.fn().mockResolvedValue(null),
-      insertOne: jest.fn().mockResolvedValue({})
-    }
-
-    const mockDb = {
-      collection: jest.fn((name) => {
-        if (name === 'waste-inputs') return mockWasteInputsCollection
-        if (name === 'waste-inputs-history') return mockHistoryCollection
-        return {}
-      })
-    }
-
-    const payload = [
-      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' }
-    ]
-
-    const result = await updateBulkWasteInput(
-      mockDb,
-      mongoClient,
-      payload,
-      updateBulkId,
-      traceId,
-      [existingWasteInputs[0]]
-    )
-
-    expect(result).toEqual([{}])
-  })
 })

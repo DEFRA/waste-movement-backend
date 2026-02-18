@@ -47,28 +47,24 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
       }
     })
 
-    try {
-      const createdWasteInputs = await wasteInputsCollection
-        .find({
-          $or: createdWasteTrackingIds.map((wasteTrackingId) => ({
-            _id: wasteTrackingId,
-            revision: 1
-          }))
-        })
-        .toArray()
-
-      createdWasteInputs.forEach((wasteInput) => {
-        auditLogger({
-          type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
-          traceId: wasteInput.traceId,
-          data: wasteInput
-        })
+    const createdWasteInputs = await wasteInputsCollection
+      .find({
+        $or: createdWasteTrackingIds.map((wasteTrackingId) => ({
+          _id: wasteTrackingId,
+          revision: 1
+        }))
       })
-    } catch (error) {
-      logger.error(`Failed to send audit log: ${error.message}`)
-    }
+      .toArray()
 
-    return createdWasteTrackingIds.map((wasteTrackingId) => ({
+    createdWasteInputs.forEach((wasteInput) => {
+      auditLogger({
+        type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
+        traceId: wasteInput.traceId,
+        data: wasteInput
+      })
+    })
+
+    return createdWasteInputs.map(({ wasteTrackingId }) => ({
       wasteTrackingId
     }))
   } catch (error) {

@@ -202,36 +202,4 @@ describe('#createBulkWasteInput', () => {
 
     expect(auditSpy).not.toHaveBeenCalled()
   })
-
-  it('should return success when post-transaction audit DB read fails', async () => {
-    const mockWasteInputsCollection = {
-      findOne: jest.fn().mockResolvedValue(null),
-      insertOne: jest
-        .fn()
-        .mockResolvedValueOnce({ insertedId: '26E4C7Z2' })
-        .mockResolvedValueOnce({ insertedId: '266XHTDL' }),
-      find: jest.fn().mockReturnValue({
-        toArray: jest.fn().mockRejectedValue(new Error('DB read failed'))
-      })
-    }
-
-    const mockHistoryCollection = {
-      findOne: jest.fn().mockResolvedValue(null)
-    }
-
-    const mockDb = {
-      collection: jest.fn((name) => {
-        if (name === 'waste-inputs') return mockWasteInputsCollection
-        if (name === 'waste-inputs-history') return mockHistoryCollection
-        return {}
-      })
-    }
-
-    const result = await createBulkWasteInput(mockDb, mongoClient, wasteInputs)
-
-    expect(result).toEqual([
-      { wasteTrackingId: '26E4C7Z2' },
-      { wasteTrackingId: '266XHTDL' }
-    ])
-  })
 })

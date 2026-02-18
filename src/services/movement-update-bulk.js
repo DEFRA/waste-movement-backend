@@ -11,26 +11,22 @@ async function sendAuditLogs(
   existingWasteInputs,
   traceId
 ) {
-  try {
-    const updatedWasteInputs = await wasteInputsCollection
-      .find({
-        $or: payload.map((item, index) => ({
-          _id: item.wasteTrackingId,
-          revision: existingWasteInputs[index].revision + 1
-        }))
-      })
-      .toArray()
-
-    updatedWasteInputs.forEach((wasteInput) => {
-      auditLogger({
-        type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
-        traceId,
-        data: wasteInput
-      })
+  const updatedWasteInputs = await wasteInputsCollection
+    .find({
+      $or: payload.map((item, index) => ({
+        _id: item.wasteTrackingId,
+        revision: existingWasteInputs[index].revision + 1
+      }))
     })
-  } catch (error) {
-    logger.error(`Failed to send audit log: ${error.message}`)
-  }
+    .toArray()
+
+  updatedWasteInputs.forEach((wasteInput) => {
+    auditLogger({
+      type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
+      traceId,
+      data: wasteInput
+    })
+  })
 }
 
 export async function updateBulkWasteInput(
