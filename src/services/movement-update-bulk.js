@@ -1,7 +1,33 @@
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { createHistoryEntry } from '../common/helpers/create-history-entry.js'
+import { auditLogger } from '../common/helpers/logging/audit-logger.js'
+import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
 
 const logger = createLogger()
+
+async function sendAuditLogs(
+  wasteInputsCollection,
+  payload,
+  existingWasteInputs,
+  traceId
+) {
+  const updatedWasteInputs = await wasteInputsCollection
+    .find({
+      $or: payload.map((item, index) => ({
+        _id: item.wasteTrackingId,
+        revision: existingWasteInputs[index].revision + 1
+      }))
+    })
+    .toArray()
+
+  updatedWasteInputs.forEach((wasteInput) => {
+    auditLogger({
+      type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
+      traceId,
+      data: wasteInput
+    })
+  })
+}
 
 export async function updateBulkWasteInput(
   db,
@@ -70,6 +96,13 @@ export async function updateBulkWasteInput(
     if (alreadyUpdated) {
       return null
     }
+
+    await sendAuditLogs(
+      wasteInputsCollection,
+      payload,
+      existingWasteInputs,
+      traceId
+    )
 
     return payload.map(() => ({}))
   } catch (error) {

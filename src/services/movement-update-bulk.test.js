@@ -11,9 +11,15 @@ import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { base64EncodedOrgApiCodes, orgId1 } from '../test/data/apiCodes.js'
 import { config } from '../config.js'
 import { updateBulkWasteInput } from './movement-update-bulk.js'
+import * as cdpAuditing from '@defra/cdp-auditing'
+import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
 
 jest.mock('@hapi/hoek', () => ({
   wait: jest.fn()
+}))
+
+jest.mock('@defra/cdp-auditing', () => ({
+  audit: jest.fn().mockReturnValue(true)
 }))
 
 describe('#updateBulkWasteInput', () => {
@@ -235,5 +241,109 @@ describe('#updateBulkWasteInput', () => {
         existingWasteInputs
       )
     ).rejects.toThrow(mockError)
+  })
+
+  it('should call audit logger for each updated waste input', async () => {
+    const payload = [
+      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' },
+      { wasteTrackingId: '266XHTDL', receivingSiteId: 'new site 2' }
+    ]
+
+    const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+
+    await updateBulkWasteInput(
+      db,
+      mongoClient,
+      payload,
+      updateBulkId,
+      traceId,
+      existingWasteInputs
+    )
+
+    expect(auditSpy).toHaveBeenCalledTimes(2)
+
+    const updatedWasteInput1 = await wasteInputsCollection.findOne({
+      _id: '26E4C7Z2'
+    })
+    const updatedWasteInput2 = await wasteInputsCollection.findOne({
+      _id: '266XHTDL'
+    })
+
+    expect(auditSpy).toHaveBeenCalledWith({
+      metadata: {
+        type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
+        traceId,
+        version: 1
+      },
+      data: updatedWasteInput1
+    })
+    expect(auditSpy).toHaveBeenCalledWith({
+      metadata: {
+        type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
+        traceId,
+        version: 1
+      },
+      data: updatedWasteInput2
+    })
+  })
+
+  it('should not call audit logger when alreadyUpdated is true', async () => {
+    const payload = [
+      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' },
+      { wasteTrackingId: '266XHTDL', receivingSiteId: 'new site 2' }
+    ]
+
+    await updateBulkWasteInput(
+      db,
+      mongoClient,
+      payload,
+      updateBulkId,
+      traceId,
+      existingWasteInputs
+    )
+
+    const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+    auditSpy.mockClear()
+
+    const refreshedWasteInputs = await Promise.all(
+      payload.map((item) =>
+        wasteInputsCollection.findOne({ _id: item.wasteTrackingId })
+      )
+    )
+
+    const result = await updateBulkWasteInput(
+      db,
+      mongoClient,
+      payload,
+      updateBulkId,
+      traceId,
+      refreshedWasteInputs
+    )
+
+    expect(result).toBeNull()
+    expect(auditSpy).not.toHaveBeenCalled()
+  })
+
+  it('should return success even when audit logger fails', async () => {
+    const payload = [
+      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' }
+    ]
+
+    const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+    auditSpy.mockImplementation(() => {
+      throw new Error('Audit endpoint unavailable')
+    })
+
+    const result = await updateBulkWasteInput(
+      db,
+      mongoClient,
+      payload,
+      updateBulkId,
+      traceId,
+      [existingWasteInputs[0]]
+    )
+
+    expect(result).toEqual([{}])
+    expect(auditSpy).toHaveBeenCalledTimes(1)
   })
 })

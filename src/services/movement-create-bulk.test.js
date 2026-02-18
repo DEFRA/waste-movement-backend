@@ -150,7 +150,7 @@ describe('#createBulkWasteInput', () => {
     expect(auditSpy).toHaveBeenCalledTimes(2)
   })
 
-  it('should throw an error and not call audit log endpooint if waste inputs with the same bulk id already exist', async () => {
+  it('should throw an error and not call audit log endpoint if waste inputs with the same bulk id already exist', async () => {
     const auditSpy = jest.spyOn(cdpAuditing, 'audit')
 
     await wasteInputsCollection.insertMany(wasteInputs)

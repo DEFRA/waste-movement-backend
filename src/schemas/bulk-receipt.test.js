@@ -1,4 +1,7 @@
-import { bulkReceiveMovementRequestSchema } from './bulk-receipt.js'
+import {
+  bulkReceiveMovementRequestSchema,
+  bulkUpdateMovementRequestSchema
+} from './bulk-receipt.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 
 describe('bulkReceiveMovementRequestSchema', () => {
@@ -45,5 +48,42 @@ describe('bulkReceiveMovementRequestSchema', () => {
 
     expect(error).toBeDefined()
     expect(error.message).toEqual('"BulkReceiveMovementRequest" is required')
+  })
+})
+
+describe('bulkUpdateMovementRequestSchema', () => {
+  it('should accept valid payload with wasteTrackingId', () => {
+    const payload = [createBulkMovementRequest({ wasteTrackingId: '26E4C7Z2' })]
+    const { error } = bulkUpdateMovementRequestSchema.validate(payload)
+
+    expect(error).toBeUndefined()
+  })
+
+  it('should return an error when wasteTrackingId is missing', () => {
+    const payload = [createBulkMovementRequest()]
+    const { error } = bulkUpdateMovementRequestSchema.validate(payload)
+
+    expect(error).toBeDefined()
+    expect(error.message).toContain('"[0].wasteTrackingId" is required')
+  })
+
+  it('should return an error when the payload is not an array', () => {
+    const payload = createBulkMovementRequest({ wasteTrackingId: '26E4C7Z2' })
+    const { error } = bulkUpdateMovementRequestSchema.validate(payload)
+
+    expect(error).toBeDefined()
+    expect(error.message).toEqual(
+      '"BulkUpdateMovementRequest" must be an array'
+    )
+  })
+
+  it('should return an error when the payload is an empty array', () => {
+    const payload = []
+    const { error } = bulkUpdateMovementRequestSchema.validate(payload)
+
+    expect(error).toBeDefined()
+    expect(error.message).toEqual(
+      '"BulkUpdateMovementRequest" must contain at least 1 items'
+    )
   })
 })

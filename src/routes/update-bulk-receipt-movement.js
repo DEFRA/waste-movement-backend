@@ -1,3 +1,4 @@
+import Joi from 'joi'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { backOff } from 'exponential-backoff'
 import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
@@ -7,6 +8,7 @@ import {
   badRequestResponse,
   handleRouteError
 } from '../common/helpers/bulk-route-helpers.js'
+import { bulkUpdateMovementRequestSchema } from '../schemas/bulk-receipt.js'
 
 const updateBulkReceiptMovement = {
   method: 'PUT',
@@ -14,6 +16,12 @@ const updateBulkReceiptMovement = {
   options: {
     tags: ['movements', 'bulk-upload'],
     description: 'Update multiple existing waste inputs with receipt movements',
+    validate: {
+      payload: bulkUpdateMovementRequestSchema,
+      params: Joi.object({
+        bulkId: Joi.string().required()
+      })
+    },
     plugins: {
       'hapi-swagger': {
         params: {},
