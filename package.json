@@ -75,6 +75,7 @@
   "overrides": {
     "@shelf/jest-mongodb": {
       "mongodb-memory-server": "10.2.0"
-    }
+    },
+    "minimatch": "10.2.1"
   }
 }
