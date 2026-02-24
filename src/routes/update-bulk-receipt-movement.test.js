@@ -11,6 +11,7 @@ import { updateBulkReceiptMovement } from './update-bulk-receipt-movement.js'
 import { failAction } from '../common/helpers/fail-action.js'
 import {
   orgId1,
+  apiCode1,
   apiCode2,
   base64EncodedOrgApiCodes
 } from '../test/data/apiCodes.js'
@@ -308,6 +309,33 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
         ]
       }
     })
+  })
+
+  it('should succeed when apiCode org matches the original record', async () => {
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
+
+    const apiCodeItem = createBulkMovementRequest({
+      wasteTrackingId: '26E4C7Z2',
+      apiCode: apiCode1
+    })
+    delete apiCodeItem.submittingOrganisation
+
+    payload = [
+      apiCodeItem,
+      createBulkMovementRequest({ wasteTrackingId: '266XHTDL' })
+    ]
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/bulk/${updateBulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(result.status).toEqual(BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED)
   })
 
   it('should return 400 when apiCode org does not match the original record', async () => {
