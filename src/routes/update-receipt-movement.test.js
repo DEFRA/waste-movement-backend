@@ -535,6 +535,7 @@ describe('movementUpdate Route Tests', () => {
 
     expect(createResult.statusCode).toEqual(204)
 
+
     const updatePayload = {
       submittingOrganisation: {
         defraCustomerOrganisationId: 'different-org-id'
@@ -590,6 +591,16 @@ describe('movementUpdate Route Tests', () => {
     })
 
     expect(createResult.statusCode).toEqual(204)
+
+    // Set submittingOrganisation on the existing record so the org check passes
+    await testMongoDb.collection('waste-inputs').updateOne(
+      { _id: wasteTrackingId },
+      {
+        $set: {
+          submittingOrganisation: { defraCustomerOrganisationId: orgId1 }
+        }
+      }
+    )
 
     // Now update with submittingOrganisation
     const updatePayload = {
