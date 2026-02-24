@@ -235,6 +235,70 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     })
   })
 
+  it('should skip org validation when payload item has neither apiCode nor submittingOrganisation', async () => {
+    const itemWithoutOrg = createBulkMovementRequest({
+      wasteTrackingId: '26E4C7Z2'
+    })
+    delete itemWithoutOrg.submittingOrganisation
+
+    payload = [
+      itemWithoutOrg,
+      createBulkMovementRequest({ wasteTrackingId: '266XHTDL' })
+    ]
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/bulk/${updateBulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(result.status).toEqual(BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED)
+  })
+
+  it('should return 400 when submittingOrganisation does not match and existing record has no submittingOrganisation', async () => {
+    await wasteInputsCollection.updateOne(
+      { _id: '26E4C7Z2' },
+      { $unset: { submittingOrganisation: '' } }
+    )
+
+    payload = [
+      createBulkMovementRequest({
+        wasteTrackingId: '26E4C7Z2',
+        submittingOrganisation: {
+          defraCustomerOrganisationId: 'some-org-id'
+        }
+      }),
+      createBulkMovementRequest({ wasteTrackingId: '266XHTDL' })
+    ]
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/bulk/${updateBulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual({
+      validation: {
+        errors: [
+          {
+            key: 'submittingOrganisation',
+            errorType: 'BusinessRuleViolation',
+            message:
+              'the submitting organisation does not match the Organisation that created the original waste item record'
+          }
+        ]
+      }
+    })
+  })
+
   it('should return 400 when submittingOrganisation does not match the original record', async () => {
     payload = [
       createBulkMovementRequest({

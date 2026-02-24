@@ -487,6 +487,32 @@ describe('movementUpdate Route Tests', () => {
     })
   })
 
+  it('returns 404 when submittingOrganisation is provided but waste input does not exist', async () => {
+    const updatePayload = {
+      submittingOrganisation: {
+        defraCustomerOrganisationId: 'some-org-id'
+      },
+      movement: {
+        receivingSiteId: 'updated-site',
+        receiverReference: 'updated-ref',
+        specialHandlingRequirements: 'updated-requirements'
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/movements/nonexistent-id/receive`,
+      payload: updatePayload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.NOT_FOUND)
+    expect(result).toEqual({
+      statusCode: HTTP_STATUS_CODES.NOT_FOUND,
+      error: 'Not Found',
+      message: 'Waste input with ID nonexistent-id not found'
+    })
+  })
+
   it('rejects when submittingOrganisation does not match the original record', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {
