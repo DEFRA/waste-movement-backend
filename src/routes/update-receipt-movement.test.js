@@ -487,6 +487,67 @@ describe('movementUpdate Route Tests', () => {
     })
   })
 
+  it('rejects when submittingOrganisation does not match the original record', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const createPayload = {
+      movement: {
+        receivingSiteId: 'test',
+        receiverReference: 'test',
+        specialHandlingRequirements: 'test',
+        apiCode: apiCode1
+      }
+    }
+
+    const createResult = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: createPayload
+    })
+
+    expect(createResult.statusCode).toEqual(204)
+
+    // Set submittingOrganisation on the existing record so there is a value to compare against
+    await testMongoDb.collection('waste-inputs').updateOne(
+      { _id: wasteTrackingId },
+      {
+        $set: {
+          submittingOrganisation: { defraCustomerOrganisationId: orgId1 }
+        }
+      }
+    )
+
+    const updatePayload = {
+      submittingOrganisation: {
+        defraCustomerOrganisationId: 'different-org-id'
+      },
+      movement: {
+        receivingSiteId: 'updated-site',
+        receiverReference: 'updated-ref',
+        specialHandlingRequirements: 'updated-requirements'
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: updatePayload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual({
+      validation: {
+        errors: [
+          {
+            key: 'submittingOrganisation',
+            errorType: 'BusinessRuleViolation',
+            message:
+              'the submitting organisation does not match the Organisation that created the original waste item record'
+          }
+        ]
+      }
+    })
+  })
+
   it('updates a waste input with submittingOrganisation', async () => {
     const wasteTrackingId = generateWasteTrackingId()
 
@@ -507,6 +568,16 @@ describe('movementUpdate Route Tests', () => {
     })
 
     expect(createResult.statusCode).toEqual(204)
+
+    // Set submittingOrganisation on the existing record so the org check passes
+    await testMongoDb.collection('waste-inputs').updateOne(
+      { _id: wasteTrackingId },
+      {
+        $set: {
+          submittingOrganisation: { defraCustomerOrganisationId: orgId1 }
+        }
+      }
+    )
 
     // Now update with submittingOrganisation
     const updatePayload = {
