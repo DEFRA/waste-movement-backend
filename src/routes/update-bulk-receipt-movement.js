@@ -13,6 +13,31 @@ import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
 import { ValidationError } from '../common/helpers/errors/validation-error.js'
 import { config } from '../config.js'
 
+function validateOrganisation(item, existing) {
+  if (item.apiCode) {
+    const requestOrgId = getOrgIdForApiCode(
+      item.apiCode,
+      config.get('orgApiCodes')
+    )
+    if (existing.orgId !== requestOrgId) {
+      throw new ValidationError(
+        'apiCode',
+        'the API Code supplied does not relate to the same Organisation as created the original waste item record',
+        'BusinessRuleViolation'
+      )
+    }
+  } else if (
+    item.submittingOrganisation.defraCustomerOrganisationId !==
+    existing.submittingOrganisation?.defraCustomerOrganisationId
+  ) {
+    throw new ValidationError(
+      'submittingOrganisation',
+      'the submitting organisation does not match the Organisation that created the original waste item record',
+      'BusinessRuleViolation'
+    )
+  }
+}
+
 const updateBulkReceiptMovement = {
   method: 'PUT',
   path: '/bulk/{bulkId}/movements/receive',
@@ -83,32 +108,7 @@ const updateBulkReceiptMovement = {
       }
 
       for (const [index, item] of payload.entries()) {
-        const existing = wasteInputsToUpdate[index]
-
-        if (item.apiCode) {
-          const requestOrgId = getOrgIdForApiCode(
-            item.apiCode,
-            config.get('orgApiCodes')
-          )
-          if (existing.orgId !== requestOrgId) {
-            throw new ValidationError(
-              'apiCode',
-              'the API Code supplied does not relate to the same Organisation as created the original waste item record',
-              'BusinessRuleViolation'
-            )
-          }
-        } else {
-          if (
-            item.submittingOrganisation.defraCustomerOrganisationId !==
-            existing.submittingOrganisation?.defraCustomerOrganisationId
-          ) {
-            throw new ValidationError(
-              'submittingOrganisation',
-              'the submitting organisation does not match the Organisation that created the original waste item record',
-              'BusinessRuleViolation'
-            )
-          }
-        }
+        validateOrganisation(item, wasteInputsToUpdate[index])
       }
 
       const movements = await backOff(
