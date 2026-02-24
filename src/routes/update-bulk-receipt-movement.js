@@ -9,6 +9,9 @@ import {
   handleRouteError
 } from '../common/helpers/bulk-route-helpers.js'
 import { bulkUpdateMovementRequestSchema } from '../schemas/bulk-receipt.js'
+import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
+import { ValidationError } from '../common/helpers/errors/validation-error.js'
+import { config } from '../config.js'
 
 const updateBulkReceiptMovement = {
   method: 'PUT',
@@ -77,6 +80,33 @@ const updateBulkReceiptMovement = {
         throw new Error(
           `Failed to update waste inputs: One or more waste tracking ids not found for bulkId (${bulkId})`
         )
+      }
+
+      for (const [index, item] of payload.entries()) {
+        const existing = wasteInputsToUpdate[index]
+
+        if (item.apiCode) {
+          const requestOrgId = getOrgIdForApiCode(
+            item.apiCode,
+            config.get('orgApiCodes')
+          )
+          if (existing.orgId !== requestOrgId) {
+            throw new ValidationError(
+              'apiCode',
+              'the API Code supplied does not relate to the same Organisation as created the original waste item record',
+              'BusinessRuleViolation'
+            )
+          }
+        } else if (
+          item.submittingOrganisation?.defraCustomerOrganisationId !==
+          existing.submittingOrganisation?.defraCustomerOrganisationId
+        ) {
+          throw new ValidationError(
+            'submittingOrganisation',
+            'the submitting organisation does not match the Organisation that created the original waste item record',
+            'BusinessRuleViolation'
+          )
+        }
       }
 
       const movements = await backOff(
