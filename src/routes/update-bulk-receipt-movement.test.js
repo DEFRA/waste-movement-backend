@@ -236,7 +236,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     })
   })
 
-  it('should return 400 when submittingOrganisation does not match and existing record has no submittingOrganisation', async () => {
+  it('should return NO_MOVEMENTS_UPDATED when submittingOrganisation does not match and existing record has no submittingOrganisation', async () => {
     await wasteInputsCollection.updateOne(
       { _id: '26E4C7Z2' },
       { $unset: { submittingOrganisation: '' } }
@@ -261,22 +261,28 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
     expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'submittingOrganisation',
-            errorType: 'BusinessRuleViolation',
-            message:
-              'the submitting organisation does not match the Organisation that created the original waste item record'
+      status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
+      movements: [
+        {
+          validation: {
+            errors: [
+              {
+                key: 'submittingOrganisation',
+                errorType: 'BusinessRuleViolation',
+                message:
+                  'the submitting organisation does not match the Organisation that created the original waste item record'
+              }
+            ]
           }
-        ]
-      }
+        },
+        {}
+      ]
     })
   })
 
-  it('should return 400 when submittingOrganisation does not match the original record', async () => {
+  it('should return NO_MOVEMENTS_UPDATED when submittingOrganisation does not match the original record', async () => {
     payload = [
       createBulkMovementRequest({
         wasteTrackingId: '26E4C7Z2',
@@ -296,18 +302,24 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
     expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'submittingOrganisation',
-            errorType: 'BusinessRuleViolation',
-            message:
-              'the submitting organisation does not match the Organisation that created the original waste item record'
+      status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
+      movements: [
+        {
+          validation: {
+            errors: [
+              {
+                key: 'submittingOrganisation',
+                errorType: 'BusinessRuleViolation',
+                message:
+                  'the submitting organisation does not match the Organisation that created the original waste item record'
+              }
+            ]
           }
-        ]
-      }
+        },
+        {}
+      ]
     })
   })
 
@@ -338,7 +350,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     expect(result.status).toEqual(BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED)
   })
 
-  it('should return 400 when apiCode org does not match the original record', async () => {
+  it('should return NO_MOVEMENTS_UPDATED when apiCode org does not match the original record', async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
 
     const apiCodeItem = createBulkMovementRequest({
@@ -361,18 +373,24 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
     expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'apiCode',
-            errorType: 'BusinessRuleViolation',
-            message:
-              'the API Code supplied does not relate to the same Organisation as created the original waste item record'
+      status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
+      movements: [
+        {
+          validation: {
+            errors: [
+              {
+                key: 'apiCode',
+                errorType: 'BusinessRuleViolation',
+                message:
+                  'the API Code supplied does not relate to the same Organisation as created the original waste item record'
+              }
+            ]
           }
-        ]
-      }
+        },
+        {}
+      ]
     })
   })
 

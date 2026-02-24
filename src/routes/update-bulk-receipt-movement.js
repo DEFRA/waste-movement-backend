@@ -9,7 +9,7 @@ import {
   handleRouteError
 } from '../common/helpers/bulk-route-helpers.js'
 import { bulkUpdateMovementRequestSchema } from '../schemas/bulk-receipt.js'
-import { validateOrganisation } from '../common/helpers/validate-organisation.js'
+import { getOrganisationValidationError } from '../common/helpers/validate-organisation.js'
 
 const updateBulkReceiptMovement = {
   method: 'PUT',
@@ -80,8 +80,19 @@ const updateBulkReceiptMovement = {
         )
       }
 
-      for (const [index, item] of payload.entries()) {
-        validateOrganisation(item, wasteInputsToUpdate[index])
+      const orgValidationErrors = payload.map((item, index) =>
+        getOrganisationValidationError(item, wasteInputsToUpdate[index])
+      )
+
+      if (orgValidationErrors.some(Boolean)) {
+        return h
+          .response({
+            status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
+            movements: orgValidationErrors.map((err) =>
+              err ? err.response() : {}
+            )
+          })
+          .code(HTTP_STATUS_CODES.OK)
       }
 
       const movements = await backOff(
