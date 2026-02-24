@@ -26,15 +26,17 @@ function validateOrganisation(item, existing) {
         'BusinessRuleViolation'
       )
     }
-  } else if (
-    item.submittingOrganisation.defraCustomerOrganisationId !==
-    existing.submittingOrganisation?.defraCustomerOrganisationId
-  ) {
-    throw new ValidationError(
-      'submittingOrganisation',
-      'the submitting organisation does not match the Organisation that created the original waste item record',
-      'BusinessRuleViolation'
-    )
+  } else {
+    if (
+      item.submittingOrganisation.defraCustomerOrganisationId !==
+      existing.submittingOrganisation?.defraCustomerOrganisationId
+    ) {
+      throw new ValidationError(
+        'submittingOrganisation',
+        'the submitting organisation does not match the Organisation that created the original waste item record',
+        'BusinessRuleViolation'
+      )
+    }
   }
 }
 
