@@ -97,7 +97,7 @@ const updateBulkReceiptMovement = {
               'BusinessRuleViolation'
             )
           }
-        } else if (item.submittingOrganisation) {
+        } else {
           if (
             item.submittingOrganisation.defraCustomerOrganisationId !==
             existing.submittingOrganisation?.defraCustomerOrganisationId
