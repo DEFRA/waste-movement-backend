@@ -133,6 +133,9 @@ function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
     wasteInput.revision = 1
     wasteInput.createdAt = dateNow
     wasteInput.lastUpdatedAt = dateNow
+
+    delete wasteInput.receipt.submittingOrganisation
+
     return wasteInput
   })
 }

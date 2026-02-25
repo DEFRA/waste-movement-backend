@@ -71,6 +71,8 @@ export async function updateBulkWasteInput(
         const historyEntry = createHistoryEntry(existing, item.wasteTrackingId)
         await wasteInputsHistoryCollection.insertOne(historyEntry, { session })
 
+        delete item.submittingOrganisation
+
         const result = await wasteInputsCollection.updateOne(
           { _id: item.wasteTrackingId, revision: existing.revision },
           {
