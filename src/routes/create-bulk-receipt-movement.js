@@ -126,7 +126,7 @@ function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
   return payload.map((receipt, index) => {
     const wasteInput = new WasteInput()
     wasteInput.wasteTrackingId = wasteTrackingIds[index]
-    wasteInput.receipt = receipt
+    wasteInput.receipt = { movement: receipt }
     wasteInput.submittingOrganisation = receipt.submittingOrganisation
     wasteInput.traceId = traceId
     wasteInput.bulkId = bulkId
@@ -134,7 +134,7 @@ function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
     wasteInput.createdAt = dateNow
     wasteInput.lastUpdatedAt = dateNow
 
-    delete wasteInput.receipt.submittingOrganisation
+    delete wasteInput.receipt.movement.submittingOrganisation
 
     return wasteInput
   })

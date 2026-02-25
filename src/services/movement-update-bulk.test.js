@@ -111,8 +111,10 @@ describe('#updateBulkWasteInput', () => {
 
     expect(updatedWasteInput1.revision).toEqual(2)
     expect(updatedWasteInput1.receipt).toEqual({
-      ...payload[0],
-      submittingOrganisation: undefined
+      movement: {
+        ...payload[0],
+        submittingOrganisation: undefined
+      }
     })
     expect(updatedWasteInput1.bulkId).toEqual(updateBulkId)
     expect(updatedWasteInput1.submittingOrganisation).toEqual(
@@ -125,8 +127,10 @@ describe('#updateBulkWasteInput', () => {
 
     expect(updatedWasteInput2.revision).toEqual(2)
     expect(updatedWasteInput2.receipt).toEqual({
-      ...payload[1],
-      submittingOrganisation: undefined
+      movement: {
+        ...payload[1],
+        submittingOrganisation: undefined
+      }
     })
     expect(updatedWasteInput2.bulkId).toEqual(updateBulkId)
 

@@ -77,7 +77,7 @@ export async function updateBulkWasteInput(
           { _id: item.wasteTrackingId, revision: existing.revision },
           {
             $set: {
-              receipt: item,
+              receipt: { movement: item },
               bulkId,
               lastUpdatedAt: dateNow,
               traceId
