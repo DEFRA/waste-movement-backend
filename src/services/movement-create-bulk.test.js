@@ -12,6 +12,7 @@ import { config } from '../config.js'
 import { createBulkWasteInput } from './movement-create-bulk.js'
 import * as cdpAuditing from '@defra/cdp-auditing'
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
+import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 
 jest.mock('@hapi/hoek', () => ({
   wait: jest.fn()
@@ -89,10 +90,13 @@ describe('#createBulkWasteInput', () => {
 
     const result = await createBulkWasteInput(db, mongoClient, wasteInputs)
 
-    expect(result).toEqual([
-      { wasteTrackingId: '26E4C7Z2' },
-      { wasteTrackingId: '266XHTDL' }
-    ])
+    expect(result).toEqual({
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
+      wasteTrackingIds: [
+        { wasteTrackingId: '26E4C7Z2' },
+        { wasteTrackingId: '266XHTDL' }
+      ]
+    })
 
     const updatedWasteInput1 = await wasteInputsCollection.findOne({
       _id: '26E4C7Z2'
@@ -130,10 +134,13 @@ describe('#createBulkWasteInput', () => {
 
     const result = await createBulkWasteInput(db, mongoClient, wasteInputs)
 
-    expect(result).toEqual([
-      { wasteTrackingId: '26E4C7Z2' },
-      { wasteTrackingId: '266XHTDL' }
-    ])
+    expect(result).toEqual({
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
+      wasteTrackingIds: [
+        { wasteTrackingId: '26E4C7Z2' },
+        { wasteTrackingId: '266XHTDL' }
+      ]
+    })
 
     const updatedWasteInput1 = await wasteInputsCollection.findOne({
       _id: '26E4C7Z2'
@@ -150,16 +157,20 @@ describe('#createBulkWasteInput', () => {
     expect(auditSpy).toHaveBeenCalledTimes(2)
   })
 
-  it('should throw an error and not call audit log endpoint if waste inputs with the same bulk id already exist', async () => {
+  it('should return the existing waste tracking ids and not call audit log endpoint if waste inputs with the same bulk id already exist', async () => {
     const auditSpy = jest.spyOn(cdpAuditing, 'audit')
 
     await wasteInputsCollection.insertMany(wasteInputs)
 
-    await expect(
-      createBulkWasteInput(db, mongoClient, wasteInputs)
-    ).rejects.toThrow(
-      `Failed to create waste inputs: Waste inputs with bulk id (${bulkId}) already exist`
-    )
+    const result = await createBulkWasteInput(db, mongoClient, wasteInputs)
+
+    expect(result).toEqual({
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
+      wasteTrackingIds: [
+        { wasteTrackingId: '26E4C7Z2' },
+        { wasteTrackingId: '266XHTDL' }
+      ]
+    })
 
     expect(auditSpy).not.toHaveBeenCalled()
   })
@@ -192,7 +203,9 @@ describe('#createBulkWasteInput', () => {
           .fn()
           .mockResolvedValueOnce({ insertedId: '26E4C7Z2' })
           .mockRejectedValueOnce(mockError),
-        findOne: jest.fn().mockResolvedValue(null)
+        find: jest.fn().mockReturnValue({
+          toArray: jest.fn().mockRejectedValueOnce(mockError)
+        })
       })
     }
 

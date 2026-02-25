@@ -1,4 +1,5 @@
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
+import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 
@@ -6,6 +7,8 @@ const logger = createLogger()
 
 export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
   try {
+    let existingWasteInputs = []
+
     const createdWasteTrackingIds = []
     const wasteInputsCollection = db.collection('waste-inputs')
     const wasteInputsHistoryCollection = db.collection('waste-inputs-history')
@@ -18,17 +21,18 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
     await session.withTransaction(async () => {
       const filters = { bulkId: wasteInputs[0].bulkId, revision: 1 }
       const options = { session, readPreference: 'primary' }
-      const existingWasteInput = await wasteInputsCollection
-        .findOne(filters, options)
-        .then(
-          (result) =>
-            result || wasteInputsHistoryCollection.findOne(filters, options)
+
+      existingWasteInputs = await wasteInputsCollection
+        .find(filters, options)
+        .toArray()
+        .then((result) =>
+          result.length > 0
+            ? result
+            : wasteInputsHistoryCollection.find(filters, options).toArray()
         )
 
-      if (existingWasteInput) {
-        throw new Error(
-          `Failed to create waste inputs: Waste inputs with bulk id (${wasteInputs[0].bulkId}) already exist`
-        )
+      if (existingWasteInputs.length > 0) {
+        return
       }
 
       for (const wasteInput of wasteInputs) {
@@ -47,6 +51,15 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
       }
     })
 
+    if (existingWasteInputs.length > 0) {
+      return {
+        status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
+        wasteTrackingIds: existingWasteInputs.map(({ wasteTrackingId }) => ({
+          wasteTrackingId
+        }))
+      }
+    }
+
     const createdWasteInputs = await wasteInputsCollection
       .find({
         $or: createdWasteTrackingIds.map((wasteTrackingId) => ({
@@ -64,9 +77,12 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
       })
     })
 
-    return createdWasteInputs.map(({ wasteTrackingId }) => ({
-      wasteTrackingId
-    }))
+    return {
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
+      wasteTrackingIds: createdWasteInputs.map(({ wasteTrackingId }) => ({
+        wasteTrackingId
+      }))
+    }
   } catch (error) {
     logger.error(`Failed to create waste inputs: ${error.message}`)
     throw error

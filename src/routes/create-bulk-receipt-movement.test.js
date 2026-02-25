@@ -35,6 +35,16 @@ jest.mock('../common/helpers/http-client.js', () => ({
         .mockResolvedValueOnce({ payload: { wasteTrackingId: '26NWSIXF' } })
         .mockResolvedValueOnce({ payload: { wasteTrackingId: '26S8EYDJ' } })
         .mockResolvedValueOnce({ payload: { wasteTrackingId: '26NWSIXF' } })
+        .mockResolvedValueOnce({ payload: { wasteTrackingId: '26S8EYDJ' } })
+        .mockResolvedValueOnce({ payload: { wasteTrackingId: '26NWSIXF' } })
+        .mockResolvedValueOnce({ payload: { wasteTrackingId: '26S8EYDJ' } })
+        .mockResolvedValueOnce({ payload: { wasteTrackingId: '26NWSIXF' } })
+        .mockResolvedValueOnce({ payload: { wasteTrackingId: '26S8EYDJ' } })
+        .mockResolvedValueOnce({ payload: { wasteTrackingId: '26NWSIXF' } })
+        .mockResolvedValueOnce({ payload: { wasteTrackingId: '26S8EYDJ' } })
+        .mockResolvedValueOnce({ payload: { wasteTrackingId: '26NWSIXF' } })
+        .mockResolvedValueOnce({ payload: { wasteTrackingId: '26S8EYDJ' } })
+        .mockResolvedValueOnce({ payload: { wasteTrackingId: '26NWSIXF' } })
     }
   }
 }))
@@ -343,6 +353,38 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
         { wasteTrackingId: '26NWSIXF' }
       ]
     })
+  })
+
+  it('can handle multiple concurrent requests with the same bulkId', async () => {
+    const request = {
+      method: 'POST',
+      url: `/bulk/${bulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    }
+
+    const results = await Promise.all([
+      server.inject(request),
+      server.inject(request),
+      server.inject(request),
+      server.inject(request),
+      server.inject(request)
+    ])
+
+    results.forEach((result, index) =>
+      expect(JSON.parse(result.payload)).toEqual({
+        status:
+          index === 0
+            ? BULK_RESPONSE_STATUS.MOVEMENTS_CREATED
+            : BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
+        movements: [
+          { wasteTrackingId: '26S8EYDJ' },
+          { wasteTrackingId: '26NWSIXF' }
+        ]
+      })
+    )
   })
 
   it('handles error when creating multiple waste inputs fails', async () => {
