@@ -153,8 +153,10 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       expect(createdWasteInput.wasteTrackingId).toEqual(item.wasteTrackingId)
       expect(createdWasteInput.revision).toEqual(1)
       expect(createdWasteInput.receipt).toEqual({
-        ...payload[index],
-        submittingOrganisation: undefined
+        movement: {
+          ...payload[index],
+          submittingOrganisation: undefined
+        }
       })
       expect(createdWasteInput.createdAt).toBeInstanceOf(Date)
       expect(createdWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
@@ -224,8 +226,10 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       expect(createdWasteInput.wasteTrackingId).toEqual(item.wasteTrackingId)
       expect(createdWasteInput.revision).toEqual(1)
       expect(createdWasteInput.receipt).toEqual({
-        ...payload[index],
-        submittingOrganisation: undefined
+        movement: {
+          ...payload[index],
+          submittingOrganisation: undefined
+        }
       })
       expect(createdWasteInput.createdAt).toBeInstanceOf(Date)
       expect(createdWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
