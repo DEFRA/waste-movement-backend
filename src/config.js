@@ -153,6 +153,14 @@ const config = convict({
       env: 'WASTE_TRACKING_SERVICE_BATCH_SIZE'
     }
   },
+  bulk: {
+    recordLimit: {
+      doc: 'Maximum number of records allowed in a bulk upload request',
+      format: Number,
+      default: 100000,
+      env: 'MAX_BULK_RECORDS'
+    }
+  },
   serviceAuth: {
     username: {
       doc: 'Username for authenticating with internal backend services',

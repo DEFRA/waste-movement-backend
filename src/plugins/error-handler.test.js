@@ -5,6 +5,11 @@ import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 
+jest.mock('../config.js', () => {
+  process.env.MAX_BULK_RECORDS = '3'
+  return jest.requireActual('../config.js')
+})
+
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockImplementation(() => true)
 }))
@@ -185,6 +190,36 @@ describe('Error Handler', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.result).toEqual({})
+  })
+
+  test('should format validation errors correctly for a bulk upload endpoint exceeding max record limit', async () => {
+    const payload = new Array(4).fill(createBulkMovementRequest())
+    const response = await server.inject({
+      method: 'POST',
+      url: '/bulk/1/movements/receive',
+      payload,
+      headers: {
+        authorization:
+          'Basic d2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpOjRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+      }
+    })
+
+    expect(response.statusCode).toBe(400)
+
+    const responseBody = JSON.parse(response.payload)
+
+    expect(responseBody).toEqual({
+      validation: {
+        errors: [
+          {
+            key: 'BulkReceiveMovementRequest',
+            errorType: 'UnexpectedError',
+            message:
+              '"BulkReceiveMovementRequest" must contain less than or equal to 3 items'
+          }
+        ]
+      }
+    })
   })
 
   test('should handle an unexpected error', async () => {

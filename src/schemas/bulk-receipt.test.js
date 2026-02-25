@@ -4,6 +4,11 @@ import {
 } from './bulk-receipt.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 
+jest.mock('../config.js', () => {
+  process.env.MAX_BULK_RECORDS = '3'
+  return jest.requireActual('../config.js')
+})
+
 describe('bulkReceiveMovementRequestSchema', () => {
   it('should accept valid payload', () => {
     const payload = [createBulkMovementRequest()]
@@ -49,6 +54,16 @@ describe('bulkReceiveMovementRequestSchema', () => {
     expect(error).toBeDefined()
     expect(error.message).toEqual('"BulkReceiveMovementRequest" is required')
   })
+
+  it('should return an error when the payload exceeds the max record limit', () => {
+    const payload = new Array(4).fill(createBulkMovementRequest())
+    const { error } = bulkReceiveMovementRequestSchema.validate(payload)
+
+    expect(error).toBeDefined()
+    expect(error.message).toEqual(
+      '"BulkReceiveMovementRequest" must contain less than or equal to 3 items'
+    )
+  })
 })
 
 describe('bulkUpdateMovementRequestSchema', () => {
@@ -84,6 +99,18 @@ describe('bulkUpdateMovementRequestSchema', () => {
     expect(error).toBeDefined()
     expect(error.message).toEqual(
       '"BulkUpdateMovementRequest" must contain at least 1 items'
+    )
+  })
+
+  it('should return an error when the payload exceeds the max record limit', () => {
+    const payload = new Array(4).fill(
+      createBulkMovementRequest({ wasteTrackingId: '26E4C7Z2' })
+    )
+    const { error } = bulkUpdateMovementRequestSchema.validate(payload)
+
+    expect(error).toBeDefined()
+    expect(error.message).toEqual(
+      '"BulkUpdateMovementRequest" must contain less than or equal to 3 items'
     )
   })
 })

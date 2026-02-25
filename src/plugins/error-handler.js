@@ -67,8 +67,15 @@ export const errorHandler = {
               bulkUploadErrors[key] = {}
             })
 
+            const topLevelErrors = []
+
             customError.validation.errors.forEach((error) => {
               const errorIndex = error.key.split('.')[0]
+
+              if (!bulkUploadErrors[errorIndex]) {
+                topLevelErrors.push(error)
+                return
+              }
 
               if (!bulkUploadErrors[errorIndex].validation) {
                 bulkUploadErrors[errorIndex].validation = { errors: [] }
@@ -77,7 +84,15 @@ export const errorHandler = {
               bulkUploadErrors[errorIndex].validation.errors.push(error)
             })
 
-            customError = Object.values(bulkUploadErrors)
+            if (topLevelErrors.length > 0) {
+              customError = {
+                validation: {
+                  errors: topLevelErrors
+                }
+              }
+            } else {
+              customError = Object.values(bulkUploadErrors)
+            }
           }
 
           // Log all validation errors in a single consolidated entry
