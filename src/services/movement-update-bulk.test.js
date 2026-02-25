@@ -13,6 +13,7 @@ import { config } from '../config.js'
 import { updateBulkWasteInput } from './movement-update-bulk.js'
 import * as cdpAuditing from '@defra/cdp-auditing'
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
+import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 
 jest.mock('@hapi/hoek', () => ({
   wait: jest.fn()
@@ -33,6 +34,7 @@ describe('#updateBulkWasteInput', () => {
   const traceId = 'abc-def-123'
   const bulkId = 'fccbd30d-3082-494d-b470-15b13a7bbaa8'
   const updateBulkId = 'a1b2c3d4-5678-9012-3456-789012345678'
+  const bulkMovementRequest = createBulkMovementRequest()
 
   beforeAll(async () => {
     const testMongo = await createTestMongoDb(true)
@@ -66,7 +68,8 @@ describe('#updateBulkWasteInput', () => {
         orgId: orgId1,
         traceId,
         bulkId,
-        revision: 1
+        revision: 1,
+        submittingOrganisation: bulkMovementRequest.submittingOrganisation
       },
       {
         _id: '266XHTDL',
@@ -77,7 +80,8 @@ describe('#updateBulkWasteInput', () => {
         orgId: orgId1,
         traceId,
         bulkId,
-        revision: 1
+        revision: 1,
+        submittingOrganisation: bulkMovementRequest.submittingOrganisation
       }
     ]
 
@@ -86,8 +90,8 @@ describe('#updateBulkWasteInput', () => {
 
   it('should update multiple waste inputs', async () => {
     const payload = [
-      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' },
-      { wasteTrackingId: '266XHTDL', receivingSiteId: 'new site 2' }
+      { ...createBulkMovementRequest(), wasteTrackingId: '26E4C7Z2' },
+      { ...createBulkMovementRequest(), wasteTrackingId: '266XHTDL' }
     ]
 
     const result = await updateBulkWasteInput(
@@ -106,16 +110,29 @@ describe('#updateBulkWasteInput', () => {
     })
 
     expect(updatedWasteInput1.revision).toEqual(2)
-    expect(updatedWasteInput1.receipt).toEqual(payload[0])
+    expect(updatedWasteInput1.receipt).toEqual({
+      ...payload[0],
+      submittingOrganisation: undefined
+    })
     expect(updatedWasteInput1.bulkId).toEqual(updateBulkId)
+    expect(updatedWasteInput1.submittingOrganisation).toEqual(
+      bulkMovementRequest.submittingOrganisation
+    )
 
     const updatedWasteInput2 = await wasteInputsCollection.findOne({
       _id: '266XHTDL'
     })
 
     expect(updatedWasteInput2.revision).toEqual(2)
-    expect(updatedWasteInput2.receipt).toEqual(payload[1])
+    expect(updatedWasteInput2.receipt).toEqual({
+      ...payload[1],
+      submittingOrganisation: undefined
+    })
     expect(updatedWasteInput2.bulkId).toEqual(updateBulkId)
+
+    expect(updatedWasteInput2.submittingOrganisation).toEqual(
+      bulkMovementRequest.submittingOrganisation
+    )
   })
 
   it('should create history entries for each updated movement', async () => {
