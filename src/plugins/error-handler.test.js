@@ -4,6 +4,7 @@ import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
+import { formatBulkUploadValidationErrors } from './error-handler.js'
 
 jest.mock('../config.js', () => {
   process.env.MAX_BULK_RECORDS = '3'
@@ -273,6 +274,76 @@ describe('Error Handler', () => {
           }
         ]
       }
+    })
+  })
+
+  describe('#formatBulkUploadValidationErrors', () => {
+    const payload = [
+      createBulkMovementRequest(),
+      createBulkMovementRequest(),
+      createBulkMovementRequest()
+    ]
+    const validationErrors = [
+      {
+        key: '0.wasteItems.0.typeOfContainers',
+        errorType: 'UnexpectedError',
+        message:
+          '"[0].wasteItems[0].typeOfContainers" must be a valid container type'
+      },
+      {
+        key: '0.wasteItems.0.weight.amount',
+        errorType: 'UnexpectedError',
+        message: '"[0].wasteItems[0].weight.amount" must be a number'
+      },
+      {
+        key: '1.wasteItems.0.disposalOrRecoveryCodes.0.code',
+        errorType: 'UnexpectedError',
+        message:
+          '"[1].wasteItems[0].disposalOrRecoveryCodes[0].code" must be one of [R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15]'
+      }
+    ]
+
+    it('should return errors', () => {
+      const result = formatBulkUploadValidationErrors(payload, validationErrors)
+
+      expect(result).toEqual([
+        {
+          validation: { errors: [validationErrors[0], validationErrors[1]] }
+        },
+        {
+          validation: {
+            errors: [validationErrors[2]]
+          }
+        },
+        {}
+      ])
+    })
+
+    it('should handle an unexpected error index', () => {
+      validationErrors.push({
+        key: 'two.wasteItems.0.typeOfContainers',
+        errorType: 'UnexpectedError',
+        message:
+          '"[two].wasteItems[0].typeOfContainers" must be a valid container type'
+      })
+
+      const result = formatBulkUploadValidationErrors(
+        payload,
+        validationErrors,
+        { error: jest.fn() }
+      )
+
+      expect(result).toEqual([
+        {
+          validation: { errors: [validationErrors[0], validationErrors[1]] }
+        },
+        {
+          validation: {
+            errors: [validationErrors[2]]
+          }
+        },
+        {}
+      ])
     })
   })
 })
