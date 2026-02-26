@@ -9,6 +9,7 @@ import {
   handleRouteError
 } from '../common/helpers/bulk-route-helpers.js'
 import { bulkUpdateMovementRequestSchema } from '../schemas/bulk-receipt.js'
+import { validateOrganisation } from '../common/helpers/validate-organisation.js'
 
 const updateBulkReceiptMovement = {
   method: 'PUT',
@@ -77,6 +78,10 @@ const updateBulkReceiptMovement = {
         throw new Error(
           `Failed to update waste inputs: One or more waste tracking ids not found for bulkId (${bulkId})`
         )
+      }
+
+      for (const [index, item] of payload.entries()) {
+        validateOrganisation(item, wasteInputsToUpdate[index])
       }
 
       const movements = await backOff(

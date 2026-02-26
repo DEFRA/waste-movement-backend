@@ -487,11 +487,94 @@ describe('movementUpdate Route Tests', () => {
     })
   })
 
+  it('returns 404 when submittingOrganisation is provided but waste input does not exist', async () => {
+    const updatePayload = {
+      submittingOrganisation: {
+        defraCustomerOrganisationId: 'some-org-id'
+      },
+      movement: {
+        receivingSiteId: 'updated-site',
+        receiverReference: 'updated-ref',
+        specialHandlingRequirements: 'updated-requirements'
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/movements/nonexistent-id/receive`,
+      payload: updatePayload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.NOT_FOUND)
+    expect(result).toEqual({
+      statusCode: HTTP_STATUS_CODES.NOT_FOUND,
+      error: 'Not Found',
+      message: 'Waste input with ID nonexistent-id not found'
+    })
+  })
+
+  it('rejects when submittingOrganisation does not match the original record', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const createPayload = {
+      submittingOrganisation: {
+        defraCustomerOrganisationId: orgId1
+      },
+      movement: {
+        receivingSiteId: 'test',
+        receiverReference: 'test',
+        specialHandlingRequirements: 'test',
+        apiCode: apiCode1
+      }
+    }
+
+    const createResult = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: createPayload
+    })
+
+    expect(createResult.statusCode).toEqual(204)
+
+    const updatePayload = {
+      submittingOrganisation: {
+        defraCustomerOrganisationId: 'different-org-id'
+      },
+      movement: {
+        receivingSiteId: 'updated-site',
+        receiverReference: 'updated-ref',
+        specialHandlingRequirements: 'updated-requirements'
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: updatePayload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual({
+      validation: {
+        errors: [
+          {
+            key: 'submittingOrganisation',
+            errorType: 'BusinessRuleViolation',
+            message:
+              'the submitting organisation does not match the Organisation that created the original waste item record'
+          }
+        ]
+      }
+    })
+  })
+
   it('updates a waste input with submittingOrganisation', async () => {
     const wasteTrackingId = generateWasteTrackingId()
 
-    // First create a movement
+    // First create a movement with submittingOrganisation
     const createPayload = {
+      submittingOrganisation: {
+        defraCustomerOrganisationId: orgId1
+      },
       movement: {
         receivingSiteId: 'string',
         receiverReference: 'string',
@@ -543,6 +626,23 @@ describe('movementUpdate Route Tests', () => {
 
   it('handles error when updating a waste input fails', async () => {
     const wasteTrackingId = generateWasteTrackingId()
+    const createPayload = {
+      movement: {
+        receivingSiteId: 'string',
+        receiverReference: 'string',
+        specialHandlingRequirements: 'string',
+        apiCode: apiCode1
+      }
+    }
+
+    const createResult = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: createPayload
+    })
+
+    expect(createResult.statusCode).toEqual(204)
+
     const payload = {
       movement: {
         receivingSiteId: 'string',

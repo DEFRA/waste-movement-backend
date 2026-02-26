@@ -5,6 +5,7 @@ import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { updatePlugins } from './update-plugins.js'
 import { backOff } from 'exponential-backoff'
 import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
+import { validateOrganisation } from '../common/helpers/validate-organisation.js'
 
 const updateReceiptMovement = {
   method: 'PUT',
@@ -25,6 +26,28 @@ const updateReceiptMovement = {
     try {
       const { wasteTrackingId } = request.params
       const { submittingOrganisation } = request.payload
+
+      const existing = await request.db
+        .collection('waste-inputs')
+        .findOne({ _id: wasteTrackingId })
+
+      if (!existing) {
+        return h
+          .response({
+            statusCode: HTTP_STATUS_CODES.NOT_FOUND,
+            error: 'Not Found',
+            message: `Waste input with ID ${wasteTrackingId} not found`
+          })
+          .code(HTTP_STATUS_CODES.NOT_FOUND)
+      }
+
+      validateOrganisation(
+        {
+          submittingOrganisation,
+          apiCode: request.payload.movement?.apiCode
+        },
+        existing
+      )
 
       const result = await backOff(
         () =>
