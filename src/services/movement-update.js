@@ -42,6 +42,15 @@ function buildUpdateSet(
   return updateSet
 }
 
+function buildOrFilter(requestOrgId) {
+  return [
+    { orgId: requestOrgId },
+    {
+      'submittingOrganisation.defraCustomerOrganisationId': requestOrgId
+    }
+  ]
+}
+
 export async function updateWasteInput(
   db,
   wasteTrackingId,
@@ -73,10 +82,12 @@ export async function updateWasteInput(
     }
 
     const historyEntry = createHistoryEntry(existingWasteInput, wasteTrackingId)
-    const requestOrgId = getOrgIdForApiCode(
-      updateData.apiCode,
-      config.get('orgApiCodes')
-    )
+
+    const requestOrgId = updateData.submittingOrganisation
+      ?.defraCustomerOrganisationId
+      ? updateData.submittingOrganisation.defraCustomerOrganisationId
+      : getOrgIdForApiCode(updateData.apiCode, config.get('orgApiCodes'))
+
     const revision = existingWasteInput.revision
     let result
 
@@ -91,7 +102,11 @@ export async function updateWasteInput(
       )
 
       result = await wasteInputsCollection.updateOne(
-        { _id: wasteTrackingId, orgId: requestOrgId, revision },
+        {
+          _id: wasteTrackingId,
+          $or: buildOrFilter(requestOrgId),
+          revision
+        },
         {
           $set: updateSet,
           $inc: { revision: 1 }

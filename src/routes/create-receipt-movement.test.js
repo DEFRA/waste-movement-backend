@@ -19,7 +19,9 @@ import { config } from '../config.js'
 import {
   apiCode1,
   orgId1,
-  base64EncodedOrgApiCodes
+  base64EncodedOrgApiCodes,
+  orgId3,
+  apiCode3
 } from '../test/data/apiCodes.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 import * as metrics from '../common/helpers/metrics.js'
@@ -273,7 +275,7 @@ describe('movement Route Tests', () => {
     }
   )
 
-  it('creates a waste input with submittingOrganisation', async () => {
+  it('creates a waste input with submittingOrganisation when apiCode matches the orgApiCodes secret value', async () => {
     const { createWasteInput: actualFunction } = jest.requireActual(
       '../services/movement-create.js'
     )
@@ -311,6 +313,42 @@ describe('movement Route Tests', () => {
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
     expect(actualWasteInput.submittingOrganisation).toEqual({
       defraCustomerOrganisationId: orgId1
+    })
+  })
+
+  it('creates a waste input with submittingOrganisation when apiCode does not match the orgApiCodes secret value', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const payload = {
+      submittingOrganisation: {
+        defraCustomerOrganisationId: orgId3
+      },
+      movement: {
+        receivingSiteId: 'string',
+        receiverReference: 'string',
+        specialHandlingRequirements: 'string',
+        apiCode: apiCode3
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': 'trace-123'
+      }
+    })
+
+    expect(statusCode).toEqual(204)
+    expect(result).toEqual(null)
+
+    const actualWasteInput = await testMongoDb
+      .collection('waste-inputs')
+      .findOne({ _id: wasteTrackingId })
+
+    expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
+    expect(actualWasteInput.submittingOrganisation).toEqual({
+      defraCustomerOrganisationId: orgId3
     })
   })
 

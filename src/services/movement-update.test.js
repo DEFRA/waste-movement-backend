@@ -11,9 +11,11 @@ import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import {
   apiCode1,
   apiCode2,
+  apiCode3,
   base64EncodedOrgApiCodes,
   orgId1,
-  orgId2
+  orgId2,
+  orgId3
 } from '../test/data/apiCodes.js'
 import { config } from '../config.js'
 import { ValidationError } from '../common/helpers/errors/validation-error.js'
@@ -175,6 +177,74 @@ describe('updateWasteInput', () => {
       receipt: {
         movement: updateData
       },
+      revision: 2,
+      traceId
+    })
+    expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
+
+    const historyEntry = await wasteInputsHistoryCollection.findOne({
+      wasteTrackingId
+    })
+    // ignore _id, it's random in the waste-inputs-history collection
+    delete historyEntry._id
+    delete existingWasteInput._id
+
+    expect(historyEntry).toMatchObject({
+      ...existingWasteInput,
+      wasteTrackingId,
+      timestamp: expect.any(Date)
+    })
+    expect(result).toEqual({
+      matchedCount: 1,
+      modifiedCount: 1
+    })
+
+    expect(auditSpy).toHaveBeenCalledTimes(1)
+    expect(auditSpy).toHaveBeenCalledWith({
+      metadata: {
+        type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
+        traceId,
+        version: 1
+      },
+      data: updatedWasteInput
+    })
+  })
+
+  it('should update waste input and calls audit endpoint when it exists and when submittingOrganisation apiCode does not match the orgApiCodes secret value', async () => {
+    const wasteTrackingId = 'test-id'
+    const updateData = {
+      receipt: { test: 'data' },
+      apiCode: apiCode3,
+      submittingOrganisation: { defraCustomerOrganisationId: orgId3 }
+    }
+    const existingWasteInput = {
+      _id: wasteTrackingId,
+      someData: 'value',
+      apiCode: apiCode3,
+      submittingOrganisation: { defraCustomerOrganisationId: orgId3 },
+      createdAt: new Date(),
+      revision: 1
+    }
+    const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+
+    await wasteInputsCollection.insertOne(existingWasteInput)
+
+    const result = await updateWasteInput(
+      db,
+      wasteTrackingId,
+      updateData,
+      client,
+      traceId,
+      undefined
+    )
+
+    const updatedWasteInput = await wasteInputsCollection.findOne({
+      _id: wasteTrackingId
+    })
+
+    expect(updatedWasteInput).toMatchObject({
+      ...existingWasteInput,
+      ...updateData,
       revision: 2,
       traceId
     })
