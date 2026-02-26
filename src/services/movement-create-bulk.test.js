@@ -193,6 +193,26 @@ describe('#createBulkWasteInput', () => {
     expect(auditSpy).not.toHaveBeenCalled()
   })
 
+  it('should throw an error and not call audit log endpoint if the number of created waste inputs does not match the number of request waste inputs ', async () => {
+    const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+    const dbMock = {
+      collection: jest.fn().mockReturnValue({
+        find: jest.fn().mockReturnValue({
+          toArray: jest.fn().mockResolvedValue([])
+        }),
+        insertOne: jest.fn().mockReturnValue({})
+      })
+    }
+
+    await expect(() =>
+      createBulkWasteInput(dbMock, mongoClient, wasteInputs)
+    ).rejects.toThrow(
+      `Failed to create waste inputs: Number of created waste inputs is different to the request waste inputs: Expected '2' but created '0'`
+    )
+
+    expect(auditSpy).not.toHaveBeenCalled()
+  })
+
   it('should database handle errors and not call audit log endpoint', async () => {
     const auditSpy = jest.spyOn(cdpAuditing, 'audit')
 

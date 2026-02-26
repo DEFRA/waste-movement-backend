@@ -69,6 +69,12 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
       })
       .toArray()
 
+    if (createdWasteInputs.length !== wasteInputs.length) {
+      throw new Error(
+        `Failed to create waste inputs: Number of created waste inputs is different to the request waste inputs: Expected '${wasteInputs.length}' but created '${createdWasteInputs.length}'`
+      )
+    }
+
     createdWasteInputs.forEach((wasteInput) => {
       auditLogger({
         type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
