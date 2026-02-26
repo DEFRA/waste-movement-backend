@@ -516,6 +516,9 @@ describe('movementUpdate Route Tests', () => {
   it('rejects when submittingOrganisation does not match the original record', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {
+      submittingOrganisation: {
+        defraCustomerOrganisationId: orgId1
+      },
       movement: {
         receivingSiteId: 'test',
         receiverReference: 'test',
@@ -531,16 +534,6 @@ describe('movementUpdate Route Tests', () => {
     })
 
     expect(createResult.statusCode).toEqual(204)
-
-    // Set submittingOrganisation on the existing record so there is a value to compare against
-    await testMongoDb.collection('waste-inputs').updateOne(
-      { _id: wasteTrackingId },
-      {
-        $set: {
-          submittingOrganisation: { defraCustomerOrganisationId: orgId1 }
-        }
-      }
-    )
 
     const updatePayload = {
       submittingOrganisation: {
@@ -577,8 +570,11 @@ describe('movementUpdate Route Tests', () => {
   it('updates a waste input with submittingOrganisation', async () => {
     const wasteTrackingId = generateWasteTrackingId()
 
-    // First create a movement
+    // First create a movement with submittingOrganisation
     const createPayload = {
+      submittingOrganisation: {
+        defraCustomerOrganisationId: orgId1
+      },
       movement: {
         receivingSiteId: 'string',
         receiverReference: 'string',
@@ -594,16 +590,6 @@ describe('movementUpdate Route Tests', () => {
     })
 
     expect(createResult.statusCode).toEqual(204)
-
-    // Set submittingOrganisation on the existing record so the org check passes
-    await testMongoDb.collection('waste-inputs').updateOne(
-      { _id: wasteTrackingId },
-      {
-        $set: {
-          submittingOrganisation: { defraCustomerOrganisationId: orgId1 }
-        }
-      }
-    )
 
     // Now update with submittingOrganisation
     const updatePayload = {
@@ -640,6 +626,23 @@ describe('movementUpdate Route Tests', () => {
 
   it('handles error when updating a waste input fails', async () => {
     const wasteTrackingId = generateWasteTrackingId()
+    const createPayload = {
+      movement: {
+        receivingSiteId: 'string',
+        receiverReference: 'string',
+        specialHandlingRequirements: 'string',
+        apiCode: apiCode1
+      }
+    }
+
+    const createResult = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: createPayload
+    })
+
+    expect(createResult.statusCode).toEqual(204)
+
     const payload = {
       movement: {
         receivingSiteId: 'string',
