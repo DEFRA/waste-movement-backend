@@ -59,23 +59,20 @@ export const errorHandler = {
             }
           }
 
-          // Re-format errors for bulk upload endpoints
-          if (isBulkUploadEndpoint) {
+          // Re-format per-item errors for bulk upload endpoints
+          const hasPerItemErrors = formattedErrors.some((error) =>
+            /^\d+\./.test(error.key)
+          )
+
+          if (isBulkUploadEndpoint && hasPerItemErrors) {
             const bulkUploadErrors = {}
 
             Object.keys(request.payload).forEach((key) => {
               bulkUploadErrors[key] = {}
             })
 
-            const topLevelErrors = []
-
             customError.validation.errors.forEach((error) => {
               const errorIndex = error.key.split('.')[0]
-
-              if (!bulkUploadErrors[errorIndex]) {
-                topLevelErrors.push(error)
-                return
-              }
 
               if (!bulkUploadErrors[errorIndex].validation) {
                 bulkUploadErrors[errorIndex].validation = { errors: [] }
@@ -84,15 +81,7 @@ export const errorHandler = {
               bulkUploadErrors[errorIndex].validation.errors.push(error)
             })
 
-            if (topLevelErrors.length > 0) {
-              customError = {
-                validation: {
-                  errors: topLevelErrors
-                }
-              }
-            } else {
-              customError = Object.values(bulkUploadErrors)
-            }
+            customError = Object.values(bulkUploadErrors)
           }
 
           // Log all validation errors in a single consolidated entry
