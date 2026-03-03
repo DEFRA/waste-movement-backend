@@ -192,6 +192,32 @@ describe('Error Handler', () => {
     expect(response.result).toEqual({})
   })
 
+  test('should format per-item errors as array when error key has no dot-separated field', async () => {
+    const movementMissingSubmittingOrg = createBulkMovementRequest()
+    delete movementMissingSubmittingOrg.submittingOrganisation
+
+    const response = await server.inject({
+      method: 'POST',
+      url: '/bulk/1/movements/receive',
+      payload: [createBulkMovementRequest(), movementMissingSubmittingOrg],
+      headers: {
+        authorization:
+          'Basic d2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpOjRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+      }
+    })
+
+    expect(response.statusCode).toBe(400)
+
+    const responseBody = JSON.parse(response.payload)
+
+    expect(Array.isArray(responseBody)).toBe(true)
+    expect(responseBody).toHaveLength(2)
+    expect(responseBody[1].validation.errors[0]).toMatchObject({
+      errorType: 'NotProvided',
+      key: '1'
+    })
+  })
+
   test('should format validation errors correctly for a bulk upload endpoint exceeding max record limit', async () => {
     const payload = new Array(4).fill(createBulkMovementRequest())
     const response = await server.inject({

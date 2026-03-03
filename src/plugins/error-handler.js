@@ -61,7 +61,7 @@ export const errorHandler = {
 
           // Re-format per-item errors for bulk upload endpoints
           const hasPerItemErrors = formattedErrors.some((error) =>
-            /^\d+\./.test(error.key)
+            /^\d+(\.|$)/.test(error.key)
           )
 
           if (isBulkUploadEndpoint && hasPerItemErrors) {
