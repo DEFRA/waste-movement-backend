@@ -59,8 +59,12 @@ export const errorHandler = {
             }
           }
 
-          // Re-format errors for bulk upload endpoints
-          if (isBulkUploadEndpoint) {
+          // Re-format per-item errors for bulk upload endpoints
+          const hasPerItemErrors = formattedErrors.some((error) =>
+            /^\d+(\.|$)/.test(error.key)
+          )
+
+          if (isBulkUploadEndpoint && hasPerItemErrors) {
             const bulkUploadErrors = {}
 
             Object.keys(request.payload).forEach((key) => {
