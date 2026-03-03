@@ -98,20 +98,20 @@ const createBulkReceiptMovement = {
         bulkId
       )
 
-      const createdWasteTrackingIds = await backOff(
+      const createdMovements = await backOff(
         () =>
           createBulkWasteInput(request.db, request.mongoClient, wasteInputs),
         BACKOFF_OPTIONS
       )
 
       const response = generateResponseWithValidationWarnings(
-        createdWasteTrackingIds,
+        createdMovements.wasteTrackingIds,
         payload
       )
 
       return h
         .response({
-          status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
+          status: createdMovements.status,
           movements: response
         })
         .code(HTTP_STATUS_CODES.CREATED)

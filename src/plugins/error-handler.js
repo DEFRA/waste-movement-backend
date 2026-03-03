@@ -65,23 +65,11 @@ export const errorHandler = {
           )
 
           if (isBulkUploadEndpoint && hasPerItemErrors) {
-            const bulkUploadErrors = {}
-
-            Object.keys(request.payload).forEach((key) => {
-              bulkUploadErrors[key] = {}
-            })
-
-            customError.validation.errors.forEach((error) => {
-              const errorIndex = error.key.split('.')[0]
-
-              if (!bulkUploadErrors[errorIndex].validation) {
-                bulkUploadErrors[errorIndex].validation = { errors: [] }
-              }
-
-              bulkUploadErrors[errorIndex].validation.errors.push(error)
-            })
-
-            customError = Object.values(bulkUploadErrors)
+            customError = formatBulkUploadValidationErrors(
+              request.payload,
+              customError.validation.errors,
+              logger
+            )
           }
 
           // Log all validation errors in a single consolidated entry
@@ -111,4 +99,37 @@ export const errorHandler = {
       })
     }
   }
+}
+
+export function formatBulkUploadValidationErrors(
+  payload,
+  validationErrors,
+  logger
+) {
+  const bulkUploadErrors = {}
+
+  Object.keys(payload).forEach((key) => {
+    bulkUploadErrors[key] = {}
+  })
+
+  validationErrors.forEach((error) => {
+    const errorIndex = error.key.split('.')[0]
+    const bulkUploadError = bulkUploadErrors[errorIndex]
+
+    if (!bulkUploadError) {
+      logger.error(
+        { error },
+        `Failed to format validation error and map to payload as the error index doesn't match a payload index: Expected an integer and received '${errorIndex}'`
+      )
+      return
+    }
+
+    if (!bulkUploadError.validation) {
+      bulkUploadError.validation = { errors: [] }
+    }
+
+    bulkUploadError.validation.errors.push(error)
+  })
+
+  return Object.values(bulkUploadErrors)
 }
