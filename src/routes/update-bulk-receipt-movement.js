@@ -36,11 +36,25 @@ function getOrgValidationResponse(h, payload, wasteInputsToUpdate) {
   }
 
   return h
-    .response({
-      status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
-      movements: orgValidationErrors.map((err) => (err ? err.response() : {}))
-    })
-    .code(HTTP_STATUS_CODES.OK)
+    .response(
+      orgValidationErrors.map((err, index) => {
+        if (!err) {
+          return {}
+        }
+        return {
+          validation: {
+            errors: [
+              {
+                key: `${index}.${err.key}`,
+                errorType: err.errorType,
+                message: err.message
+              }
+            ]
+          }
+        }
+      })
+    )
+    .code(HTTP_STATUS_CODES.BAD_REQUEST)
 }
 
 const updateBulkReceiptMovement = {
