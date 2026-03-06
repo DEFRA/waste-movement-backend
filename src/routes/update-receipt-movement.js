@@ -48,7 +48,9 @@ const updateReceiptMovement = {
         },
         existing
       )
-      if (orgError) throw orgError
+      if (orgError) {
+        throw orgError
+      }
 
       const result = await backOff(
         () =>

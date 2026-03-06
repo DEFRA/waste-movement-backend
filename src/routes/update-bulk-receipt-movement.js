@@ -11,6 +11,38 @@ import {
 import { bulkUpdateMovementRequestSchema } from '../schemas/bulk-receipt.js'
 import { getOrganisationValidationError } from '../common/helpers/validate-organisation.js'
 
+async function findWithHistoryFallback(
+  wasteInputsCollection,
+  wasteInputsHistoryCollection,
+  filters
+) {
+  return wasteInputsCollection
+    .find(filters)
+    .toArray()
+    .then((result) =>
+      result.length > 0
+        ? result
+        : wasteInputsHistoryCollection.find(filters).toArray()
+    )
+}
+
+function getOrgValidationResponse(h, payload, wasteInputsToUpdate) {
+  const orgValidationErrors = payload.map((item, index) =>
+    getOrganisationValidationError(item, wasteInputsToUpdate[index])
+  )
+
+  if (!orgValidationErrors.some(Boolean)) {
+    return null
+  }
+
+  return h
+    .response({
+      status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
+      movements: orgValidationErrors.map((err) => (err ? err.response() : {}))
+    })
+    .code(HTTP_STATUS_CODES.OK)
+}
+
 const updateBulkReceiptMovement = {
   method: 'PUT',
   path: '/bulk/{bulkId}/movements/receive',
@@ -47,14 +79,11 @@ const updateBulkReceiptMovement = {
       )
 
       const filters = { bulkId, revision: { $gt: 1 } }
-      const existingWasteInputs = await wasteInputsCollection
-        .find(filters)
-        .toArray()
-        .then((result) =>
-          result.length > 0
-            ? result
-            : wasteInputsHistoryCollection.find(filters).toArray()
-        )
+      const existingWasteInputs = await findWithHistoryFallback(
+        wasteInputsCollection,
+        wasteInputsHistoryCollection,
+        filters
+      )
 
       if (existingWasteInputs.length > 0) {
         return h
@@ -80,19 +109,13 @@ const updateBulkReceiptMovement = {
         )
       }
 
-      const orgValidationErrors = payload.map((item, index) =>
-        getOrganisationValidationError(item, wasteInputsToUpdate[index])
+      const orgValidationResponse = getOrgValidationResponse(
+        h,
+        payload,
+        wasteInputsToUpdate
       )
-
-      if (orgValidationErrors.some(Boolean)) {
-        return h
-          .response({
-            status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
-            movements: orgValidationErrors.map((err) =>
-              err ? err.response() : {}
-            )
-          })
-          .code(HTTP_STATUS_CODES.OK)
+      if (orgValidationResponse) {
+        return orgValidationResponse
       }
 
       const movements = await backOff(
