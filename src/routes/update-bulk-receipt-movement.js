@@ -9,7 +9,53 @@ import {
   handleRouteError
 } from '../common/helpers/bulk-route-helpers.js'
 import { bulkUpdateMovementRequestSchema } from '../schemas/bulk-receipt.js'
-import { validateOrganisation } from '../common/helpers/validate-organisation.js'
+import { getOrganisationValidationError } from '../common/helpers/validate-organisation.js'
+
+async function findWithHistoryFallback(
+  wasteInputsCollection,
+  wasteInputsHistoryCollection,
+  filters
+) {
+  return wasteInputsCollection
+    .find(filters)
+    .toArray()
+    .then((result) =>
+      result.length > 0
+        ? result
+        : wasteInputsHistoryCollection.find(filters).toArray()
+    )
+}
+
+function getOrgValidationResponse(h, payload, wasteInputsToUpdate) {
+  const orgValidationErrors = payload.map((item, index) =>
+    getOrganisationValidationError(item, wasteInputsToUpdate[index])
+  )
+
+  if (!orgValidationErrors.some(Boolean)) {
+    return null
+  }
+
+  return h
+    .response(
+      orgValidationErrors.map((err, index) => {
+        if (!err) {
+          return {}
+        }
+        return {
+          validation: {
+            errors: [
+              {
+                key: `${index}.${err.key}`,
+                errorType: err.errorType,
+                message: err.message
+              }
+            ]
+          }
+        }
+      })
+    )
+    .code(HTTP_STATUS_CODES.BAD_REQUEST)
+}
 
 const updateBulkReceiptMovement = {
   method: 'PUT',
@@ -47,14 +93,11 @@ const updateBulkReceiptMovement = {
       )
 
       const filters = { bulkId, revision: { $gt: 1 } }
-      const existingWasteInputs = await wasteInputsCollection
-        .find(filters)
-        .toArray()
-        .then((result) =>
-          result.length > 0
-            ? result
-            : wasteInputsHistoryCollection.find(filters).toArray()
-        )
+      const existingWasteInputs = await findWithHistoryFallback(
+        wasteInputsCollection,
+        wasteInputsHistoryCollection,
+        filters
+      )
 
       if (existingWasteInputs.length > 0) {
         return h
@@ -80,8 +123,13 @@ const updateBulkReceiptMovement = {
         )
       }
 
-      for (const [index, item] of payload.entries()) {
-        validateOrganisation(item, wasteInputsToUpdate[index])
+      const orgValidationResponse = getOrgValidationResponse(
+        h,
+        payload,
+        wasteInputsToUpdate
+      )
+      if (orgValidationResponse) {
+        return orgValidationResponse
       }
 
       const movements = await backOff(
