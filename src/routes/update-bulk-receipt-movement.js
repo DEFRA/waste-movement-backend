@@ -47,7 +47,7 @@ function getOrgValidationResponse(h, payload, wasteInputsToUpdate) {
               {
                 key: `${index}.${err.key}`,
                 errorType: err.errorType,
-                message: err.message
+                message: `[${index}].${err.key} ${err.message}`
               }
             ]
           }

@@ -270,7 +270,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
               key: '0.submittingOrganisation',
               errorType: 'BusinessRuleViolation',
               message:
-                'the submitting organisation does not match the Organisation that created the original waste item record'
+                '[0].submittingOrganisation the submitting organisation does not match the Organisation that created the original waste item record'
             }
           ]
         }
@@ -308,7 +308,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
               key: '0.submittingOrganisation',
               errorType: 'BusinessRuleViolation',
               message:
-                'the submitting organisation does not match the Organisation that created the original waste item record'
+                '[0].submittingOrganisation the submitting organisation does not match the Organisation that created the original waste item record'
             }
           ]
         }
@@ -376,7 +376,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
               key: '0.apiCode',
               errorType: 'BusinessRuleViolation',
               message:
-                'the API Code supplied does not relate to the same Organisation as created the original waste item record'
+                '[0].apiCode the API Code supplied does not relate to the same Organisation as created the original waste item record'
             }
           ]
         }
