@@ -276,7 +276,7 @@ export const wasteItemsSchema = Joi.object({
     }),
   wasteDescription: Joi.string().required(),
   physicalForm: Joi.string()
-    .valid('Gas', 'Liquid', 'Solid', 'Powder', 'Sludge', 'Mixed')
+    .valid(...WASTE_PHYSICAL_FORMS)
     .required(),
   numberOfContainers: Joi.number().strict().integer().required().min(0),
   typeOfContainers: Joi.string()
