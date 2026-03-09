@@ -1,14 +1,11 @@
 import Joi from 'joi'
 import { isValidHazardousEwcCode } from '../common/constants/ewc-codes.js'
 import { CONSIGNMENT_ERRORS } from '../common/constants/validation-error-messages.js'
-
-// Consignment note code formats, e.g.
-// CJTILE/A0001
-// SA1234567
-// DA1234567
-const EA_NRW_PATTERN = /^[A-Za-z]{2,}\/[A-Za-z0-9]{5}[A-Za-z]?$/
-const SEPA_PATTERN = /^S[ABC]\d{7}$/
-const NIEA_PATTERN = /^D[ABC]\d{7}$/
+import {
+  EA_NRW_CONSIGNMENT_CODE_REGEX,
+  NIEA_CONSIGNMENT_CODE_REGEX,
+  SEPA_CONSIGNMENT_CODE_REGEX
+} from '../common/constants/regexes.js'
 
 export function hasHazardousEwcCodes(payload) {
   // Access root payload to inspect waste EWC codes
@@ -35,9 +32,9 @@ export const hazardousWasteConsignmentCodeSchema = Joi.custom(
     // Validate format if value is provided
     if (value) {
       const valid =
-        EA_NRW_PATTERN.test(value) ||
-        SEPA_PATTERN.test(value) ||
-        NIEA_PATTERN.test(value)
+        EA_NRW_CONSIGNMENT_CODE_REGEX.test(value) ||
+        SEPA_CONSIGNMENT_CODE_REGEX.test(value) ||
+        NIEA_CONSIGNMENT_CODE_REGEX.test(value)
       if (!valid) {
         return helpers.error('InvalidFormat.consignmentCode')
       }

@@ -64,3 +64,12 @@ export const ALL_SITE_AUTHORISATION_NUMBER_REGEXES = [
   ...WALES_SITE_AUTHORISATION_NUMBER_REGEXES,
   ...NI_SITE_AUTHORISATION_NUMBER_REGEXES
 ]
+
+// Consignment note code formats, e.g.
+// CJTILE/A0001
+// SA1234567
+// DA1234567
+export const EA_NRW_CONSIGNMENT_CODE_REGEX =
+  /^[A-Za-z]{2,}\/[A-Za-z0-9]{5}[A-Za-z]?$/
+export const SEPA_CONSIGNMENT_CODE_REGEX = /^S[ABC]\d{7}$/
+export const NIEA_CONSIGNMENT_CODE_REGEX = /^D[ABC]\d{7}$/
