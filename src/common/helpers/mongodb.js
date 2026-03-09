@@ -6,6 +6,9 @@ import Boom from '@hapi/boom'
 
 let mongoConfig = config.get('mongo')
 
+const wasteInputsCollection = 'waste-inputs'
+const wasteInputsHistoryCollection = 'waste-inputs-history'
+
 export const mongoDb = {
   plugin: {
     name: 'mongodb',
@@ -66,9 +69,6 @@ export const mongoDb = {
 }
 
 async function createIndexes(db) {
-  const wasteInputsCollection = 'waste-inputs'
-  const wasteInputsHistoryCollection = 'waste-inputs-history'
-
   await db.collection('mongo-locks').createIndex({ id: 1 })
 
   await db.collection(wasteInputsCollection)
