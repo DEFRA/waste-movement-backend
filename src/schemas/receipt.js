@@ -22,9 +22,10 @@ import {
 } from '../common/constants/validation-error-messages.js'
 import { REASONS_FOR_NO_REGISTRATION_NUMBER } from '../common/constants/reasons-for-no-registration-number.js'
 import { NO_CONSIGNMENT_REASONS } from '../common/constants/no-consignment-reasons.js'
-
-const MIN_STRING_LENGTH = 1
-const LONG_STRING_MAX_LENGTH = 5000
+import {
+  MIN_STRING_LENGTH,
+  LONG_STRING_MAX_LENGTH
+} from '../common/constants/string-lengths.js'
 
 const addressSchema = Joi.object({
   fullAddress: Joi.string(),

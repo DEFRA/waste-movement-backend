@@ -12,8 +12,8 @@ import {
   WASTE_ERRORS
 } from '../common/constants/validation-error-messages.js'
 import { validSourceOfComponents } from '../common/constants/source-of-components.js'
-
-const MAX_EWC_CODES_COUNT = 5
+import { WASTE_PHYSICAL_FORMS } from '../common/constants/waste-physical-forms.js'
+import { MAX_EWC_CODES_COUNT } from '../common/constants/string-lengths.js'
 
 // Joi message template placeholders
 const JOI_MESSAGE_TEMPLATE = '{{#message}}'
