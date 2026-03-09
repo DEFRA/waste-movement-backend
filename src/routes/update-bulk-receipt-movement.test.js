@@ -262,18 +262,21 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
-    expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'submittingOrganisation',
-            errorType: 'BusinessRuleViolation',
-            message:
-              'the submitting organisation does not match the Organisation that created the original waste item record'
-          }
-        ]
-      }
-    })
+    expect(result).toEqual([
+      {
+        validation: {
+          errors: [
+            {
+              key: '0.submittingOrganisation',
+              errorType: 'BusinessRuleViolation',
+              message:
+                '[0].submittingOrganisation the submitting organisation does not match the Organisation that created the original waste item record'
+            }
+          ]
+        }
+      },
+      {}
+    ])
   })
 
   it('should return 400 when submittingOrganisation does not match the original record', async () => {
@@ -297,18 +300,21 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
-    expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'submittingOrganisation',
-            errorType: 'BusinessRuleViolation',
-            message:
-              'the submitting organisation does not match the Organisation that created the original waste item record'
-          }
-        ]
-      }
-    })
+    expect(result).toEqual([
+      {
+        validation: {
+          errors: [
+            {
+              key: '0.submittingOrganisation',
+              errorType: 'BusinessRuleViolation',
+              message:
+                '[0].submittingOrganisation the submitting organisation does not match the Organisation that created the original waste item record'
+            }
+          ]
+        }
+      },
+      {}
+    ])
   })
 
   it('should succeed when apiCode org matches the original record', async () => {
@@ -362,18 +368,21 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
-    expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'apiCode',
-            errorType: 'BusinessRuleViolation',
-            message:
-              'the API Code supplied does not relate to the same Organisation as created the original waste item record'
-          }
-        ]
-      }
-    })
+    expect(result).toEqual([
+      {
+        validation: {
+          errors: [
+            {
+              key: '0.apiCode',
+              errorType: 'BusinessRuleViolation',
+              message:
+                '[0].apiCode the API Code supplied does not relate to the same Organisation as created the original waste item record'
+            }
+          ]
+        }
+      },
+      {}
+    ])
   })
 
   it('handles error when updating multiple waste inputs fails', async () => {

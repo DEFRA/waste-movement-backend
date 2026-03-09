@@ -5,7 +5,7 @@ import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { updatePlugins } from './update-plugins.js'
 import { backOff } from 'exponential-backoff'
 import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
-import { validateOrganisation } from '../common/helpers/validate-organisation.js'
+import { getOrganisationValidationError } from '../common/helpers/validate-organisation.js'
 
 const updateReceiptMovement = {
   method: 'PUT',
@@ -41,13 +41,16 @@ const updateReceiptMovement = {
           .code(HTTP_STATUS_CODES.NOT_FOUND)
       }
 
-      validateOrganisation(
+      const orgError = getOrganisationValidationError(
         {
           submittingOrganisation,
           apiCode: request.payload.movement?.apiCode
         },
         existing
       )
+      if (orgError) {
+        throw orgError
+      }
 
       const result = await backOff(
         () =>
