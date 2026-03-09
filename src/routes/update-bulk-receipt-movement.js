@@ -26,6 +26,51 @@ async function findWithHistoryFallback(
     )
 }
 
+function noMovementsUpdatedResponse(h, payload) {
+  return h
+    .response({
+      status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
+      movements: payload.map(() => ({}))
+    })
+    .code(HTTP_STATUS_CODES.OK)
+}
+
+function getIdempotencyResponse(h, existingWasteInputs, payload) {
+  if (existingWasteInputs.length === 0) {
+    return null
+  }
+
+  return noMovementsUpdatedResponse(h, payload)
+}
+
+function getNotFoundResponse(h, wasteInputsToUpdate) {
+  if (!wasteInputsToUpdate.some((wi) => !wi)) {
+    return null
+  }
+
+  return h
+    .response({
+      status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
+      movements: wasteInputsToUpdate.map((wi, index) => {
+        if (wi) {
+          return {}
+        }
+        return {
+          validation: {
+            errors: [
+              {
+                key: `${index}.wasteTrackingId`,
+                errorType: 'BusinessRuleViolation',
+                message: `[${index}].wasteTrackingId waste tracking id not found`
+              }
+            ]
+          }
+        }
+      })
+    })
+    .code(HTTP_STATUS_CODES.BAD_REQUEST)
+}
+
 function getOrgValidationResponse(h, payload, wasteInputsToUpdate) {
   const orgValidationErrors = payload.map((item, index) =>
     getOrganisationValidationError(item, wasteInputsToUpdate[index])
@@ -99,13 +144,13 @@ const updateBulkReceiptMovement = {
         filters
       )
 
-      if (existingWasteInputs.length > 0) {
-        return h
-          .response({
-            status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
-            movements: payload.map(() => ({}))
-          })
-          .code(HTTP_STATUS_CODES.OK)
+      const idempotencyResponse = getIdempotencyResponse(
+        h,
+        existingWasteInputs,
+        payload
+      )
+      if (idempotencyResponse) {
+        return idempotencyResponse
       }
 
       const wasteInputsToUpdate = await Promise.all(
@@ -114,28 +159,9 @@ const updateBulkReceiptMovement = {
         )
       )
 
-      if (wasteInputsToUpdate.some((wi) => !wi)) {
-        return h
-          .response({
-            status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
-            movements: wasteInputsToUpdate.map((wi, index) => {
-              if (wi) {
-                return {}
-              }
-              return {
-                validation: {
-                  errors: [
-                    {
-                      key: `${index}.wasteTrackingId`,
-                      errorType: 'BusinessRuleViolation',
-                      message: `[${index}].wasteTrackingId waste tracking id not found`
-                    }
-                  ]
-                }
-              }
-            })
-          })
-          .code(HTTP_STATUS_CODES.BAD_REQUEST)
+      const notFoundResponse = getNotFoundResponse(h, wasteInputsToUpdate)
+      if (notFoundResponse) {
+        return notFoundResponse
       }
 
       const orgValidationResponse = getOrgValidationResponse(
@@ -161,12 +187,7 @@ const updateBulkReceiptMovement = {
       )
 
       if (!movements) {
-        return h
-          .response({
-            status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
-            movements: payload.map(() => ({}))
-          })
-          .code(HTTP_STATUS_CODES.OK)
+        return noMovementsUpdatedResponse(h, payload)
       }
 
       return h
