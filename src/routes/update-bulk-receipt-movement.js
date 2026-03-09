@@ -114,13 +114,28 @@ const updateBulkReceiptMovement = {
         )
       )
 
-      if (
-        wasteInputsToUpdate.length !== payload.length ||
-        wasteInputsToUpdate.some((wi) => !wi)
-      ) {
-        throw new Error(
-          `Failed to update waste inputs: One or more waste tracking ids not found for bulkId (${bulkId})`
-        )
+      if (wasteInputsToUpdate.some((wi) => !wi)) {
+        return h
+          .response({
+            status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
+            movements: wasteInputsToUpdate.map((wi, index) => {
+              if (wi) {
+                return {}
+              }
+              return {
+                validation: {
+                  errors: [
+                    {
+                      key: `${index}.wasteTrackingId`,
+                      errorType: 'BusinessRuleViolation',
+                      message: `[${index}].wasteTrackingId waste tracking id not found`
+                    }
+                  ]
+                }
+              }
+            })
+          })
+          .code(HTTP_STATUS_CODES.BAD_REQUEST)
       }
 
       const orgValidationResponse = getOrgValidationResponse(
