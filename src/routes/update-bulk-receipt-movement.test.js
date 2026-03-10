@@ -427,6 +427,80 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
   })
 
+  it('should return 400 when one wasteTrackingId is not found', async () => {
+    payload = [
+      createBulkMovementRequest({ wasteTrackingId: '26E4C7Z2' }),
+      createBulkMovementRequest({ wasteTrackingId: 'INVALID1' })
+    ]
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/bulk/${updateBulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual([
+      {},
+      {
+        validation: {
+          errors: [
+            {
+              key: '1.wasteTrackingId',
+              errorType: 'BusinessRuleViolation',
+              message: '[1].wasteTrackingId waste tracking id not found'
+            }
+          ]
+        }
+      }
+    ])
+  })
+
+  it('should return 400 when all wasteTrackingIds are not found', async () => {
+    payload = [
+      createBulkMovementRequest({ wasteTrackingId: 'INVALID1' }),
+      createBulkMovementRequest({ wasteTrackingId: 'INVALID2' })
+    ]
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/bulk/${updateBulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual([
+      {
+        validation: {
+          errors: [
+            {
+              key: '0.wasteTrackingId',
+              errorType: 'BusinessRuleViolation',
+              message: '[0].wasteTrackingId waste tracking id not found'
+            }
+          ]
+        }
+      },
+      {
+        validation: {
+          errors: [
+            {
+              key: '1.wasteTrackingId',
+              errorType: 'BusinessRuleViolation',
+              message: '[1].wasteTrackingId waste tracking id not found'
+            }
+          ]
+        }
+      }
+    ])
+  })
+
   it('should return 400 when payload is not an array', async () => {
     const { statusCode } = await server.inject({
       method: 'PUT',
