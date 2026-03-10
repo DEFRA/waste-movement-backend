@@ -443,23 +443,20 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
-    expect(result).toEqual({
-      status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
-      movements: [
-        {},
-        {
-          validation: {
-            errors: [
-              {
-                key: '1.wasteTrackingId',
-                errorType: 'BusinessRuleViolation',
-                message: '[1].wasteTrackingId waste tracking id not found'
-              }
-            ]
-          }
+    expect(result).toEqual([
+      {},
+      {
+        validation: {
+          errors: [
+            {
+              key: '1.wasteTrackingId',
+              errorType: 'BusinessRuleViolation',
+              message: '[1].wasteTrackingId waste tracking id not found'
+            }
+          ]
         }
-      ]
-    })
+      }
+    ])
   })
 
   it('should return 400 when all wasteTrackingIds are not found', async () => {
@@ -478,33 +475,30 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
-    expect(result).toEqual({
-      status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
-      movements: [
-        {
-          validation: {
-            errors: [
-              {
-                key: '0.wasteTrackingId',
-                errorType: 'BusinessRuleViolation',
-                message: '[0].wasteTrackingId waste tracking id not found'
-              }
-            ]
-          }
-        },
-        {
-          validation: {
-            errors: [
-              {
-                key: '1.wasteTrackingId',
-                errorType: 'BusinessRuleViolation',
-                message: '[1].wasteTrackingId waste tracking id not found'
-              }
-            ]
-          }
+    expect(result).toEqual([
+      {
+        validation: {
+          errors: [
+            {
+              key: '0.wasteTrackingId',
+              errorType: 'BusinessRuleViolation',
+              message: '[0].wasteTrackingId waste tracking id not found'
+            }
+          ]
         }
-      ]
-    })
+      },
+      {
+        validation: {
+          errors: [
+            {
+              key: '1.wasteTrackingId',
+              errorType: 'BusinessRuleViolation',
+              message: '[1].wasteTrackingId waste tracking id not found'
+            }
+          ]
+        }
+      }
+    ])
   })
 
   it('should return 400 when payload is not an array', async () => {

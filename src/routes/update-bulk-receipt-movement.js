@@ -49,9 +49,8 @@ function getNotFoundResponse(h, wasteInputsToUpdate) {
   }
 
   return h
-    .response({
-      status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
-      movements: wasteInputsToUpdate.map((wi, index) => {
+    .response(
+      wasteInputsToUpdate.map((wi, index) => {
         if (wi) {
           return {}
         }
@@ -67,7 +66,7 @@ function getNotFoundResponse(h, wasteInputsToUpdate) {
           }
         }
       })
-    })
+    )
     .code(HTTP_STATUS_CODES.BAD_REQUEST)
 }
 
