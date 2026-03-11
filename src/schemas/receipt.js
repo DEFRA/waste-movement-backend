@@ -31,8 +31,8 @@ const addressSchema = Joi.object({
   fullAddress: Joi.string(),
   postcode: Joi.alternatives()
     .try(
-      Joi.string().pattern(UK_POSTCODE_REGEX),
-      Joi.string().pattern(IRL_POSTCODE_REGEX)
+      Joi.string().pattern(new RegExp(UK_POSTCODE_REGEX, 'i')),
+      Joi.string().pattern(new RegExp(IRL_POSTCODE_REGEX, 'i'))
     )
     .messages({
       'alternatives.match': ADDRESS_ERRORS.POSTCODE_UK_IRELAND_FORMAT
@@ -42,10 +42,16 @@ const addressSchema = Joi.object({
 
 const carrierOrBrokerDealerRegistrationNumber = Joi.alternatives()
   .try(
-    Joi.string().pattern(ENGLAND_CARRIER_REGISTRATION_NUMBER_REGEX),
-    Joi.string().pattern(SEPA_CARRIER_REGISTRATION_NUMBER_REGEX),
-    Joi.string().pattern(NRU_CARRIER_REGISTRATION_NUMBER_REGEX),
-    Joi.string().pattern(NI_CARRIER_REGISTRATION_NUMBER_REGEX)
+    Joi.string().pattern(
+      new RegExp(ENGLAND_CARRIER_REGISTRATION_NUMBER_REGEX, 'i')
+    ),
+    Joi.string().pattern(
+      new RegExp(SEPA_CARRIER_REGISTRATION_NUMBER_REGEX, 'i')
+    ),
+    Joi.string().pattern(
+      new RegExp(NRU_CARRIER_REGISTRATION_NUMBER_REGEX, 'i')
+    ),
+    Joi.string().pattern(new RegExp(NI_CARRIER_REGISTRATION_NUMBER_REGEX, 'i'))
   )
   .messages({
     'alternatives.match': CARRIER_ERRORS.REGISTRATION_NUMBER_FORMAT
@@ -59,7 +65,7 @@ const carrierOrBrokerDealerRegistrationNumber = Joi.alternatives()
 const isValidAuthorisationNumber = (authorisationNumber) => {
   const trimmedAuthorisationNumber = authorisationNumber.trim()
   return ALL_SITE_AUTHORISATION_NUMBER_REGEXES.some((regex) =>
-    regex.test(trimmedAuthorisationNumber)
+    new RegExp(regex, 'i').test(trimmedAuthorisationNumber)
   )
 }
 
@@ -123,7 +129,7 @@ const carrierSchema = Joi.object({
 const receiverAddressSchema = addressSchema.keys({
   fullAddress: Joi.string().required(),
   postcode: Joi.string()
-    .pattern(UK_POSTCODE_REGEX)
+    .pattern(new RegExp(UK_POSTCODE_REGEX, 'i'))
     .message(ADDRESS_ERRORS.POSTCODE_UK_FORMAT)
     .required()
 })

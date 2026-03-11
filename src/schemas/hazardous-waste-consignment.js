@@ -32,9 +32,9 @@ export const hazardousWasteConsignmentCodeSchema = Joi.custom(
     // Validate format if value is provided
     if (value) {
       const valid =
-        EA_NRW_CONSIGNMENT_CODE_REGEX.test(value) ||
-        SEPA_CONSIGNMENT_CODE_REGEX.test(value) ||
-        NIEA_CONSIGNMENT_CODE_REGEX.test(value)
+        new RegExp(EA_NRW_CONSIGNMENT_CODE_REGEX).test(value) ||
+        new RegExp(SEPA_CONSIGNMENT_CODE_REGEX).test(value) ||
+        new RegExp(NIEA_CONSIGNMENT_CODE_REGEX).test(value)
       if (!valid) {
         return helpers.error('InvalidFormat.consignmentCode')
       }
