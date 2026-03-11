@@ -79,7 +79,7 @@ const createBulkReceiptMovement = {
         const batchWasteTrackingIds = await Promise.all(
           payloadBatch.map(() => httpClients.wasteTracking.get('/next'))
         ).then((results) => {
-          return results.map((result) => result.payload.wasteTrackingId)
+          return results.map((result) => result?.payload?.wasteTrackingId)
         })
 
         wasteTrackingIds.push(...batchWasteTrackingIds)

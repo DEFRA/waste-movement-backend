@@ -36,9 +36,6 @@ describe('Error Handler', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       payload: {
         movement: {
-          receivingSiteId: 'test-create',
-          receiverReference: 'test-create',
-          specialHandlingRequirements: 'test-create',
           apiCode: apiCode1
         }
       },

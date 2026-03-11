@@ -8,7 +8,6 @@ import * as movementCreateBulk from '../services/movement-create-bulk.js'
 import { config } from '../config.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 import { createBulkReceiptMovement } from './create-bulk-receipt-movement.js'
-import { orgId1 } from '../test/data/apiCodes.js'
 import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 import * as batch from '../common/helpers/batch.js'
@@ -66,26 +65,6 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
   const errorMessage = 'Database connection failed'
   const traceId = 'created-trace-id-123'
   const bulkId = 'fccbd30d-3082-494d-b470-15b13a7bbaa8'
-  const wasteInputs = [
-    {
-      wasteTrackingId: '26E4C7Z2',
-      receipt: {},
-      createdAt: new Date(),
-      lastUpdatedAt: new Date(),
-      orgId: orgId1,
-      traceId,
-      bulkId
-    },
-    {
-      wasteTrackingId: '266XHTDL',
-      receipt: {},
-      createdAt: new Date(),
-      lastUpdatedAt: new Date(),
-      orgId: orgId1,
-      traceId,
-      bulkId
-    }
-  ]
 
   beforeAll(async () => {
     const testMongo = await createTestMongoDb(true)
@@ -256,10 +235,14 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
   })
 
   it('should return existing waste tracking ids when provided with a bulk id which has already been used by the POST endpoint in the waste-inputs collection', async () => {
-    wasteInputs[0].revision = 1
-    wasteInputs[1].revision = 1
-
-    await wasteInputsCollection.insertMany(wasteInputs)
+    await server.inject({
+      method: 'POST',
+      url: `/bulk/${bulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -274,17 +257,21 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     expect(result).toEqual({
       status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
       movements: [
-        { wasteTrackingId: '26E4C7Z2' },
-        { wasteTrackingId: '266XHTDL' }
+        { wasteTrackingId: '26S8EYDJ' },
+        { wasteTrackingId: '26NWSIXF' }
       ]
     })
   })
 
   it('should return existing waste tracking ids when provided with a bulk id which has already been used by the POST endpoint in the waste-inputs-history collection', async () => {
-    wasteInputs[0].revision = 1
-    wasteInputs[1].revision = 1
-
-    await wasteInputsHistoryCollection.insertMany(wasteInputs)
+    await server.inject({
+      method: 'POST',
+      url: `/bulk/${bulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -299,17 +286,22 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     expect(result).toEqual({
       status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
       movements: [
-        { wasteTrackingId: '26E4C7Z2' },
-        { wasteTrackingId: '266XHTDL' }
+        { wasteTrackingId: '26S8EYDJ' },
+        { wasteTrackingId: '26NWSIXF' }
       ]
     })
   })
 
   it('should create new waste inputs when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs collection', async () => {
-    wasteInputs[0].revision = 2
-    wasteInputs[1].revision = 2
-
-    await wasteInputsCollection.insertMany(wasteInputs)
+    await server.inject({
+      method: 'POST',
+      url: `/bulk/${bulkId}/movements/receive`,
+      payload: [{ ...payload[0], wasteTrackingId: '26NWSIXF' }],
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+    await wasteInputsCollection.updateOne({ bulkId }, { $inc: { revision: 1 } })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -331,10 +323,15 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
   })
 
   it('should create new waste inputs when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs-history collection', async () => {
-    wasteInputs[0].revision = 2
-    wasteInputs[1].revision = 2
-
-    await wasteInputsHistoryCollection.insertMany(wasteInputs)
+    await server.inject({
+      method: 'POST',
+      url: `/bulk/${bulkId}/movements/receive`,
+      payload: [{ ...payload[0], wasteTrackingId: '26NWSIXF' }],
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+    await wasteInputsCollection.updateOne({ bulkId }, { $inc: { revision: 1 } })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',

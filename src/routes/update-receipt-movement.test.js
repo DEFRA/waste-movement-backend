@@ -77,9 +77,6 @@ describe('movementUpdate Route Tests', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {
       movement: {
-        receivingSiteId: 'test',
-        receiverReference: 'test',
-        specialHandlingRequirements: 'test',
         apiCode: apiCode1
       }
     }
@@ -87,6 +84,7 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: createPayload
     })
 
@@ -100,9 +98,6 @@ describe('movementUpdate Route Tests', () => {
 
     const updatePayload = {
       movement: {
-        receivingSiteId: 'updated-site',
-        receiverReference: 'updated-ref',
-        specialHandlingRequirements: 'updated-requirements',
         apiCode: apiCode1
       }
     }
@@ -151,9 +146,6 @@ describe('movementUpdate Route Tests', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {
       movement: {
-        receivingSiteId: 'test',
-        receiverReference: 'test',
-        specialHandlingRequirements: 'test',
         apiCode: apiCode1
       }
     }
@@ -161,6 +153,7 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: createPayload
     })
 
@@ -169,9 +162,6 @@ describe('movementUpdate Route Tests', () => {
 
     const updatePayload = {
       movement: {
-        receivingSiteId: 'updated-site',
-        receiverReference: 'updated-ref',
-        specialHandlingRequirements: 'updated-requirements',
         apiCode: apiCode1
       }
     }
@@ -182,9 +172,6 @@ describe('movementUpdate Route Tests', () => {
 
     const updatePayload2 = {
       movement: {
-        receivingSiteId: 'updated-site2',
-        receiverReference: 'updated-ref2',
-        specialHandlingRequirements: 'updated-requirements2',
         apiCode: apiCode1
       }
     }
@@ -219,8 +206,6 @@ describe('movementUpdate Route Tests', () => {
     const wasteTrackingId = 'nonexistent-id'
     const updatePayload = {
       movement: {
-        receivingSiteId: 'updated-site',
-        receiverReference: 'updated-ref',
         apiCode: apiCode1,
         // Minimal payload for test
         carrier: {
@@ -249,6 +234,7 @@ describe('movementUpdate Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: updatePayload
     })
 
@@ -290,9 +276,6 @@ describe('movementUpdate Route Tests', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {
       movement: {
-        receivingSiteId: 'test',
-        receiverReference: 'test',
-        specialHandlingRequirements: 'test',
         apiCode: apiCode1
       }
     }
@@ -300,6 +283,7 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: createPayload
     })
 
@@ -307,16 +291,13 @@ describe('movementUpdate Route Tests', () => {
     expect(createResult.result).toEqual(null)
 
     const updatePayload = {
-      movement: {
-        receivingSiteId: 'updated-site',
-        receiverReference: 'updated-ref',
-        specialHandlingRequirements: 'updated-requirements'
-      }
+      movement: {}
     }
 
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: updatePayload
     })
 
@@ -338,9 +319,6 @@ describe('movementUpdate Route Tests', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {
       movement: {
-        receivingSiteId: 'test',
-        receiverReference: 'test',
-        specialHandlingRequirements: 'test',
         apiCode: apiCode1
       }
     }
@@ -348,6 +326,7 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: createPayload
     })
 
@@ -356,9 +335,6 @@ describe('movementUpdate Route Tests', () => {
 
     const updatePayload = {
       movement: {
-        receivingSiteId: 'updated-site',
-        receiverReference: 'updated-ref',
-        specialHandlingRequirements: 'updated-requirements',
         apiCode: 'invalid'
       }
     }
@@ -366,6 +342,7 @@ describe('movementUpdate Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: updatePayload
     })
 
@@ -389,9 +366,6 @@ describe('movementUpdate Route Tests', () => {
       const wasteTrackingId = generateWasteTrackingId()
       const createPayload = {
         movement: {
-          receivingSiteId: 'test',
-          receiverReference: 'test',
-          specialHandlingRequirements: 'test',
           apiCode: apiCode1
         }
       }
@@ -399,6 +373,7 @@ describe('movementUpdate Route Tests', () => {
       const createResult = await server.inject({
         method: 'POST',
         url: `/movements/${wasteTrackingId}/receive`,
+        headers: { 'x-cdp-request-id': traceId },
         payload: createPayload
       })
 
@@ -409,9 +384,6 @@ describe('movementUpdate Route Tests', () => {
 
       const updatePayload = {
         movement: {
-          receivingSiteId: 'updated-site',
-          receiverReference: 'updated-ref',
-          specialHandlingRequirements: 'updated-requirements',
           apiCode: apiCode1
         }
       }
@@ -419,6 +391,7 @@ describe('movementUpdate Route Tests', () => {
       const { statusCode, result } = await server.inject({
         method: 'PUT',
         url: `/movements/${wasteTrackingId}/receive`,
+        headers: { 'x-cdp-request-id': traceId },
         payload: updatePayload
       })
 
@@ -441,9 +414,6 @@ describe('movementUpdate Route Tests', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {
       movement: {
-        receivingSiteId: 'test',
-        receiverReference: 'test',
-        specialHandlingRequirements: 'test',
         apiCode: apiCode1
       }
     }
@@ -451,6 +421,7 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: createPayload
     })
 
@@ -459,9 +430,6 @@ describe('movementUpdate Route Tests', () => {
 
     const updatePayload = {
       movement: {
-        receivingSiteId: 'updated-site',
-        receiverReference: 'updated-ref',
-        specialHandlingRequirements: 'updated-requirements',
         apiCode: 'bc05d1ce-5a80-4624-b2ae-e7227c8c6c41'
       }
     }
@@ -469,6 +437,7 @@ describe('movementUpdate Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: updatePayload
     })
 
@@ -492,16 +461,13 @@ describe('movementUpdate Route Tests', () => {
       submittingOrganisation: {
         defraCustomerOrganisationId: 'some-org-id'
       },
-      movement: {
-        receivingSiteId: 'updated-site',
-        receiverReference: 'updated-ref',
-        specialHandlingRequirements: 'updated-requirements'
-      }
+      movement: {}
     }
 
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/nonexistent-id/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: updatePayload
     })
 
@@ -520,9 +486,6 @@ describe('movementUpdate Route Tests', () => {
         defraCustomerOrganisationId: orgId1
       },
       movement: {
-        receivingSiteId: 'test',
-        receiverReference: 'test',
-        specialHandlingRequirements: 'test',
         apiCode: apiCode1
       }
     }
@@ -530,6 +493,7 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: createPayload
     })
 
@@ -539,16 +503,13 @@ describe('movementUpdate Route Tests', () => {
       submittingOrganisation: {
         defraCustomerOrganisationId: 'different-org-id'
       },
-      movement: {
-        receivingSiteId: 'updated-site',
-        receiverReference: 'updated-ref',
-        specialHandlingRequirements: 'updated-requirements'
-      }
+      movement: {}
     }
 
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: updatePayload
     })
 
@@ -569,6 +530,7 @@ describe('movementUpdate Route Tests', () => {
 
   it('updates a waste input with submittingOrganisation', async () => {
     const wasteTrackingId = generateWasteTrackingId()
+    const dateNow = new Date().toISOString()
 
     // First create a movement with submittingOrganisation
     const createPayload = {
@@ -576,9 +538,6 @@ describe('movementUpdate Route Tests', () => {
         defraCustomerOrganisationId: orgId1
       },
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode1
       }
     }
@@ -586,6 +545,7 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: createPayload
     })
 
@@ -597,16 +557,15 @@ describe('movementUpdate Route Tests', () => {
         defraCustomerOrganisationId: orgId1
       },
       movement: {
-        receivingSiteId: 'updated-site',
-        receiverReference: 'updated-ref',
-        specialHandlingRequirements: 'updated-requirements',
-        apiCode: apiCode1
+        apiCode: apiCode1,
+        dateTimeReceived: dateNow
       }
     }
 
     const { statusCode } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: updatePayload
     })
 
@@ -619,18 +578,13 @@ describe('movementUpdate Route Tests', () => {
     expect(actualWasteInput.submittingOrganisation).toEqual({
       defraCustomerOrganisationId: orgId1
     })
-    expect(actualWasteInput.receipt.movement.receivingSiteId).toEqual(
-      'updated-site'
-    )
+    expect(actualWasteInput.receipt.movement.dateTimeReceived).toEqual(dateNow)
   })
 
   it('handles error when updating a waste input fails', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode1
       }
     }
@@ -638,6 +592,7 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload: createPayload
     })
 
@@ -645,9 +600,6 @@ describe('movementUpdate Route Tests', () => {
 
     const payload = {
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode1
       }
     }
@@ -658,6 +610,7 @@ describe('movementUpdate Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
+      headers: { 'x-cdp-request-id': traceId },
       payload
     })
 

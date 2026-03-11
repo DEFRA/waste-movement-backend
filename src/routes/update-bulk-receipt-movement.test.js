@@ -48,7 +48,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     {
       _id: '26E4C7Z2',
       wasteTrackingId: '26E4C7Z2',
-      receipt: { receivingSiteId: 'old site 1' },
+      receipt: { movement: {} },
       createdAt: new Date(),
       lastUpdatedAt: new Date(),
       orgId: orgId1,
@@ -62,7 +62,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     {
       _id: '266XHTDL',
       wasteTrackingId: '266XHTDL',
-      receipt: { receivingSiteId: 'old site 2' },
+      receipt: { movement: {} },
       createdAt: new Date(),
       lastUpdatedAt: new Date(),
       orgId: orgId1,
@@ -182,7 +182,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     await wasteInputsHistoryCollection.insertMany([
       {
         wasteTrackingId: '26E4C7Z2',
-        receipt: {},
+        receipt: { movement: {} },
         orgId: orgId1,
         traceId,
         bulkId: updateBulkId,
@@ -191,7 +191,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       },
       {
         wasteTrackingId: '266XHTDL',
-        receipt: {},
+        receipt: { movement: {} },
         orgId: orgId1,
         traceId,
         bulkId: updateBulkId,
