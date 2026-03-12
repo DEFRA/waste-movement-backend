@@ -14,7 +14,7 @@ import {
   LONG_STRING_MAX_LENGTH,
   MAX_EWC_CODES_COUNT,
   MIN_STRING_LENGTH
-} from '../common/constants/string-lengths.js'
+} from '../common/constants/field-lengths.js'
 import { validEwcCodes } from '../common/constants/ewc-codes.js'
 import { WASTE_PHYSICAL_FORMS } from '../common/constants/waste-physical-forms.js'
 import { validContainerTypes } from '../common/constants/container-types.js'

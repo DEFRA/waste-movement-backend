@@ -25,7 +25,7 @@ import { NO_CONSIGNMENT_REASONS } from '../common/constants/no-consignment-reaso
 import {
   MIN_STRING_LENGTH,
   LONG_STRING_MAX_LENGTH
-} from '../common/constants/string-lengths.js'
+} from '../common/constants/field-lengths.js'
 
 const addressSchema = Joi.object({
   fullAddress: Joi.string(),
