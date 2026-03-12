@@ -108,7 +108,7 @@ export async function updateBulkWasteInput(
 
     return payload.map(() => ({}))
   } catch (error) {
-    logger.error(`Failed to update waste inputs: ${error.message}`)
+    logger.error({ error }, 'Failed to update waste inputs')
     throw error
   } finally {
     await session.endSession()

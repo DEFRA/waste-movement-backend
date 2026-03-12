@@ -131,7 +131,7 @@ export async function updateWasteInput(
       modifiedCount: result?.modifiedCount
     }
   } catch (error) {
-    logger.error(`Failed to update waste input: ${error.message}`)
+    logger.error({ error }, 'Failed to update waste input')
     throw error
   } finally {
     await session.endSession()

@@ -90,7 +90,7 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
       }))
     }
   } catch (error) {
-    logger.error(`Failed to create waste inputs: ${error.message}`)
+    logger.error({ error }, 'Failed to create waste inputs')
     throw error
   }
 }

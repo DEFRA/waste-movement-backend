@@ -28,7 +28,7 @@ export async function createWasteInput(db, wasteInput, traceId) {
 
     return { _id: wasteTrackingId }
   } catch (error) {
-    logger.error(`Failed to create waste input: ${error.message}`)
+    logger.error({ error }, 'Failed to create waste input')
     throw error
   }
 }
