@@ -13,10 +13,17 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
     const wasteInputsCollection = db.collection('waste-inputs')
     const wasteInputsHistoryCollection = db.collection('waste-inputs-history')
 
-    // We need to guarantee that either all or none of the documents are persisted so using a
-    // transaction here rather than insertMany() because if insertMany() fails halfway through
-    // then the documents inserted up to that point will be persisted and won't be rolled back
-    // see: https://www.mongodb.com/docs/manual/reference/method/db.collection.insertMany
+    // Pre-validate all wasteTrackingIds and set _id fields before the transaction
+    for (const wasteInput of wasteInputs) {
+      if (!wasteInput.wasteTrackingId) {
+        throw new Error(
+          `Failed to create waste inputs: Not all waste inputs with bulk id (${wasteInput.bulkId}) have a waste tracking id`
+        )
+      }
+      wasteInput._id = wasteInput.wasteTrackingId
+    }
+
+    // insertMany inside a transaction is atomic — rolls back all inserts on failure
     const session = mongoClient.startSession()
     await session.withTransaction(async () => {
       const filters = { bulkId: wasteInputs[0].bulkId, revision: 1 }
@@ -35,20 +42,11 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
         return
       }
 
-      for (const wasteInput of wasteInputs) {
-        if (!wasteInput.wasteTrackingId) {
-          throw new Error(
-            `Failed to create waste inputs: Not all waste inputs with bulk id (${wasteInput.bulkId}) have a waste tracking id`
-          )
-        }
+      const insertResult = await wasteInputsCollection.insertMany(wasteInputs, {
+        session
+      })
 
-        wasteInput._id = wasteInput.wasteTrackingId
-        const result = await wasteInputsCollection.insertOne(wasteInput, {
-          session
-        })
-
-        createdWasteTrackingIds.push(result.insertedId)
-      }
+      createdWasteTrackingIds.push(...Object.values(insertResult.insertedIds))
     })
 
     if (existingWasteInputs.length > 0) {

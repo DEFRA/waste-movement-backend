@@ -247,8 +247,8 @@ describe('#updateBulkWasteInput', () => {
     const mockDb = {
       collection: jest.fn().mockReturnValue({
         findOne: jest.fn().mockRejectedValue(mockError),
-        insertOne: jest.fn().mockRejectedValue(mockError),
-        updateOne: jest.fn().mockRejectedValue(mockError)
+        insertMany: jest.fn().mockRejectedValue(mockError),
+        bulkWrite: jest.fn().mockRejectedValue(mockError)
       })
     }
 

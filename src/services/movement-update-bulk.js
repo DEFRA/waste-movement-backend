@@ -29,6 +29,73 @@ async function sendAuditLogs(
   })
 }
 
+async function performBulkUpdate(
+  wasteInputsCollection,
+  wasteInputsHistoryCollection,
+  payload,
+  bulkId,
+  traceId,
+  existingWasteInputs,
+  session
+) {
+  const filters = { bulkId, revision: { $gt: 1 } }
+  const existingWasteInput = await wasteInputsCollection
+    .findOne(filters, { session, readPreference: 'primary' })
+    .then(
+      (result) =>
+        result ||
+        wasteInputsHistoryCollection.findOne(filters, {
+          session,
+          readPreference: 'primary'
+        })
+    )
+
+  if (existingWasteInput) {
+    return true
+  }
+
+  const dateNow = new Date()
+
+  const historyEntries = payload.map((item, index) =>
+    createHistoryEntry(existingWasteInputs[index], item.wasteTrackingId)
+  )
+
+  await wasteInputsHistoryCollection.insertMany(historyEntries, { session })
+
+  const updateOps = payload.map((item, index) => {
+    const existing = existingWasteInputs[index]
+    delete item.submittingOrganisation
+
+    return {
+      updateOne: {
+        filter: { _id: item.wasteTrackingId, revision: existing.revision },
+        update: {
+          $set: {
+            receipt: { movement: item },
+            bulkId,
+            lastUpdatedAt: dateNow,
+            traceId
+          },
+          $inc: { revision: 1 }
+        }
+      }
+    }
+  })
+
+  const bulkResult = await wasteInputsCollection.bulkWrite(updateOps, {
+    session
+  })
+
+  if (bulkResult.matchedCount !== payload.length) {
+    const failedItem = payload[bulkResult.matchedCount]
+    throw new Error(
+      `Failed to update waste inputs: Concurrent update detected for waste tracking id (${failedItem.wasteTrackingId})`
+    )
+  }
+
+  return false
+}
+
 export async function updateBulkWasteInput(
   db,
   mongoClient,
@@ -46,53 +113,15 @@ export async function updateBulkWasteInput(
     let alreadyUpdated = false
 
     await session.withTransaction(async () => {
-      const filters = { bulkId, revision: { $gt: 1 } }
-      const existingWasteInput = await wasteInputsCollection
-        .findOne(filters, { session, readPreference: 'primary' })
-        .then(
-          (result) =>
-            result ||
-            wasteInputsHistoryCollection.findOne(filters, {
-              session,
-              readPreference: 'primary'
-            })
-        )
-
-      if (existingWasteInput) {
-        alreadyUpdated = true
-        return
-      }
-
-      const dateNow = new Date()
-
-      for (const [index, item] of payload.entries()) {
-        const existing = existingWasteInputs[index]
-
-        const historyEntry = createHistoryEntry(existing, item.wasteTrackingId)
-        await wasteInputsHistoryCollection.insertOne(historyEntry, { session })
-
-        delete item.submittingOrganisation
-
-        const result = await wasteInputsCollection.updateOne(
-          { _id: item.wasteTrackingId, revision: existing.revision },
-          {
-            $set: {
-              receipt: { movement: item },
-              bulkId,
-              lastUpdatedAt: dateNow,
-              traceId
-            },
-            $inc: { revision: 1 }
-          },
-          { session }
-        )
-
-        if (result.matchedCount === 0) {
-          throw new Error(
-            `Failed to update waste inputs: Concurrent update detected for waste tracking id (${item.wasteTrackingId})`
-          )
-        }
-      }
+      alreadyUpdated = await performBulkUpdate(
+        wasteInputsCollection,
+        wasteInputsHistoryCollection,
+        payload,
+        bulkId,
+        traceId,
+        existingWasteInputs,
+        session
+      )
     })
 
     if (alreadyUpdated) {

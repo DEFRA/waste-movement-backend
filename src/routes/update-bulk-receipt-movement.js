@@ -152,10 +152,13 @@ const updateBulkReceiptMovement = {
         return idempotencyResponse
       }
 
-      const wasteInputsToUpdate = await Promise.all(
-        payload.map((item) =>
-          wasteInputsCollection.findOne({ _id: item.wasteTrackingId })
-        )
+      const ids = payload.map((item) => item.wasteTrackingId)
+      const results = await wasteInputsCollection
+        .find({ _id: { $in: ids } })
+        .toArray()
+      const resultMap = new Map(results.map((r) => [r._id, r]))
+      const wasteInputsToUpdate = payload.map(
+        (item) => resultMap.get(item.wasteTrackingId) ?? null
       )
 
       const notFoundResponse = getNotFoundResponse(h, wasteInputsToUpdate)
