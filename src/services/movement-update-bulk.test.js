@@ -62,7 +62,7 @@ describe('#updateBulkWasteInput', () => {
       {
         _id: '26E4C7Z2',
         wasteTrackingId: '26E4C7Z2',
-        receipt: { receivingSiteId: 'old site 1' },
+        receipt: {},
         createdAt: new Date(),
         lastUpdatedAt: new Date(),
         orgId: orgId1,
@@ -74,7 +74,7 @@ describe('#updateBulkWasteInput', () => {
       {
         _id: '266XHTDL',
         wasteTrackingId: '266XHTDL',
-        receipt: { receivingSiteId: 'old site 2' },
+        receipt: {},
         createdAt: new Date(),
         lastUpdatedAt: new Date(),
         orgId: orgId1,
@@ -141,8 +141,8 @@ describe('#updateBulkWasteInput', () => {
 
   it('should create history entries for each updated movement', async () => {
     const payload = [
-      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' },
-      { wasteTrackingId: '266XHTDL', receivingSiteId: 'new site 2' }
+      { wasteTrackingId: '26E4C7Z2' },
+      { wasteTrackingId: '266XHTDL' }
     ]
 
     await updateBulkWasteInput(
@@ -165,8 +165,8 @@ describe('#updateBulkWasteInput', () => {
 
   it('should return null if waste inputs with the same bulk id have already been updated', async () => {
     const payload = [
-      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' },
-      { wasteTrackingId: '266XHTDL', receivingSiteId: 'new site 2' }
+      { wasteTrackingId: '26E4C7Z2' },
+      { wasteTrackingId: '266XHTDL' }
     ]
 
     await updateBulkWasteInput(
@@ -199,8 +199,8 @@ describe('#updateBulkWasteInput', () => {
 
   it('should rollback all changes when one update fails', async () => {
     const payload = [
-      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' },
-      { wasteTrackingId: '266XHTDL', receivingSiteId: 'new site 2' }
+      { wasteTrackingId: '26E4C7Z2' },
+      { wasteTrackingId: '266XHTDL' }
     ]
 
     // Set a wrong revision on the second item to trigger a concurrent update error
@@ -239,9 +239,7 @@ describe('#updateBulkWasteInput', () => {
   })
 
   it('should handle database errors', async () => {
-    const payload = [
-      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' }
-    ]
+    const payload = [{ wasteTrackingId: '26E4C7Z2' }]
 
     const mockError = new Error('Database error')
     const mockDb = {
@@ -266,8 +264,8 @@ describe('#updateBulkWasteInput', () => {
 
   it('should call audit logger for each updated waste input', async () => {
     const payload = [
-      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' },
-      { wasteTrackingId: '266XHTDL', receivingSiteId: 'new site 2' }
+      { wasteTrackingId: '26E4C7Z2' },
+      { wasteTrackingId: '266XHTDL' }
     ]
 
     const auditSpy = jest.spyOn(cdpAuditing, 'audit')
@@ -310,8 +308,8 @@ describe('#updateBulkWasteInput', () => {
 
   it('should not call audit logger when alreadyUpdated is true', async () => {
     const payload = [
-      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' },
-      { wasteTrackingId: '266XHTDL', receivingSiteId: 'new site 2' }
+      { wasteTrackingId: '26E4C7Z2' },
+      { wasteTrackingId: '266XHTDL' }
     ]
 
     await updateBulkWasteInput(
@@ -346,9 +344,7 @@ describe('#updateBulkWasteInput', () => {
   })
 
   it('should return success even when audit logger fails', async () => {
-    const payload = [
-      { wasteTrackingId: '26E4C7Z2', receivingSiteId: 'new site 1' }
-    ]
+    const payload = [{ wasteTrackingId: '26E4C7Z2' }]
 
     const auditSpy = jest.spyOn(cdpAuditing, 'audit')
     auditSpy.mockImplementation(() => {

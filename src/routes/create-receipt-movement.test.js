@@ -74,9 +74,6 @@ describe('movement Route Tests', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const expectedPayload = {
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode1
       }
     }
@@ -128,9 +125,6 @@ describe('movement Route Tests', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode1
       }
     }
@@ -181,11 +175,7 @@ describe('movement Route Tests', () => {
   it('rejects when apiCode is missing', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
-      movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string'
-      }
+      movement: {}
     }
 
     const { statusCode, result } = await server.inject({
@@ -212,9 +202,6 @@ describe('movement Route Tests', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: 'invalid'
       }
     }
@@ -247,9 +234,6 @@ describe('movement Route Tests', () => {
       const wasteTrackingId = generateWasteTrackingId()
       const payload = {
         movement: {
-          receivingSiteId: 'string',
-          receiverReference: 'string',
-          specialHandlingRequirements: 'string',
           apiCode: apiCode1
         }
       }
@@ -287,9 +271,6 @@ describe('movement Route Tests', () => {
         defraCustomerOrganisationId: orgId1
       },
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode1
       }
     }
@@ -323,9 +304,6 @@ describe('movement Route Tests', () => {
         defraCustomerOrganisationId: orgId3
       },
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode3
       }
     }
@@ -361,9 +339,6 @@ describe('movement Route Tests', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode1
       }
     }

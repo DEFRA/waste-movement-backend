@@ -1,8 +1,5 @@
 export const createMovementPostBody = () => ({
   movement: {
-    receivingSiteId: 'test',
-    receiverReference: 'test',
-    specialHandlingRequirements: 'test',
     waste: [
       {
         ewcCode: 'test',
