@@ -42,11 +42,11 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
         return
       }
 
-      const result = await wasteInputsCollection.insertMany(wasteInputs, {
+      const insertResult = await wasteInputsCollection.insertMany(wasteInputs, {
         session
       })
 
-      createdWasteTrackingIds.push(...Object.values(result.insertedIds))
+      createdWasteTrackingIds.push(...Object.values(insertResult.insertedIds))
     })
 
     if (existingWasteInputs.length > 0) {
