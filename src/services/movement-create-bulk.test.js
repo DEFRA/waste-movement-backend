@@ -200,7 +200,7 @@ describe('#createBulkWasteInput', () => {
         find: jest.fn().mockReturnValue({
           toArray: jest.fn().mockResolvedValue([])
         }),
-        insertOne: jest.fn().mockReturnValue({})
+        insertMany: jest.fn().mockReturnValue({ insertedIds: {} })
       })
     }
 
@@ -219,10 +219,7 @@ describe('#createBulkWasteInput', () => {
     const mockError = new Error('Database error')
     const mockDb = {
       collection: jest.fn().mockReturnValue({
-        insertOne: jest
-          .fn()
-          .mockResolvedValueOnce({ insertedId: '26E4C7Z2' })
-          .mockRejectedValueOnce(mockError),
+        insertMany: jest.fn().mockRejectedValueOnce(mockError),
         find: jest.fn().mockReturnValue({
           toArray: jest.fn().mockRejectedValueOnce(mockError)
         })
