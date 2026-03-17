@@ -581,6 +581,29 @@ describe('movementUpdate Route Tests', () => {
     expect(actualWasteInput.receipt.movement.dateTimeReceived).toEqual(dateNow)
   })
 
+  it('rejects when Mongo throws a schema validation error', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const createPayload = {
+      movement: {
+        apiCode: apiCode1
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: createPayload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual({
+      statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
+      error: 'ValidationError',
+      message:
+        '[{"operatorName":"properties","propertiesNotSatisfied":[{"propertyName":"traceId","details":[{"operatorName":"bsonType","specifiedAs":{"bsonType":"string"},"reason":"type did not match","consideredValue":null,"consideredType":"null"}]}]}]'
+    })
+  })
+
   it('handles error when updating a waste input fails', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {

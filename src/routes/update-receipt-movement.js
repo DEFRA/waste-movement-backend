@@ -6,6 +6,7 @@ import { updatePlugins } from './update-plugins.js'
 import { backOff } from 'exponential-backoff'
 import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
 import { getOrganisationValidationError } from '../common/helpers/validate-organisation.js'
+import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 
 const updateReceiptMovement = {
   method: 'PUT',
@@ -82,20 +83,7 @@ const updateReceiptMovement = {
 
       return h.response().code(HTTP_STATUS_CODES.OK)
     } catch (error) {
-      const statusCode =
-        error.statusCode || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR
-
-      return h
-        .response(
-          typeof error.response === 'function'
-            ? error.response()
-            : {
-                statusCode,
-                error: error.name,
-                message: error.message
-              }
-        )
-        .code(statusCode)
+      return handleRouteError(h, error)
     }
   }
 }
