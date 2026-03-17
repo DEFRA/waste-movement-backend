@@ -402,6 +402,7 @@ export function popsAndHazardousComponentsErrorTests(
       expect(result.error.message).toBe(
         `"wasteItems[0].${popsOrHazardousObjectProperty}.sourceOfComponents" is required when ${containsPopsOrHazardousField} is true`
       )
+      expect(result.error.details[0].path).toContain('sourceOfComponents')
     })
 
     it(`should reject components when ${containsPopsOrHazardousField} is true and sourceOfComponents is invalid`, () => {
@@ -483,6 +484,7 @@ export function popsAndHazardousComponentsErrorTests(
         expect(result.error.message).toBe(
           `"wasteItems[0].${popsOrHazardousObjectProperty}.components" is required when ${containsPopsOrHazardousField} is true`
         )
+        expect(result.error.details[0].path).toContain('components')
       }
     )
 
