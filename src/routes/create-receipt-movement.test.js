@@ -74,9 +74,6 @@ describe('movement Route Tests', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const expectedPayload = {
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode1
       }
     }
@@ -124,13 +121,33 @@ describe('movement Route Tests', () => {
     })
   })
 
+  it('rejects when Mongo throws a schema validation error', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const payload = {
+      movement: {
+        apiCode: apiCode1
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual({
+      statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
+      error: 'ValidationError',
+      message:
+        '[{"operatorName":"properties","propertiesNotSatisfied":[{"propertyName":"traceId","details":[{"operatorName":"bsonType","specifiedAs":{"bsonType":"string"},"reason":"type did not match","consideredValue":null,"consideredType":"null"}]}]}]'
+    })
+  })
+
   it('handles error when creating a waste input fails', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode1
       }
     }
@@ -181,11 +198,7 @@ describe('movement Route Tests', () => {
   it('rejects when apiCode is missing', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
-      movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string'
-      }
+      movement: {}
     }
 
     const { statusCode, result } = await server.inject({
@@ -212,9 +225,6 @@ describe('movement Route Tests', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: 'invalid'
       }
     }
@@ -247,9 +257,6 @@ describe('movement Route Tests', () => {
       const wasteTrackingId = generateWasteTrackingId()
       const payload = {
         movement: {
-          receivingSiteId: 'string',
-          receiverReference: 'string',
-          specialHandlingRequirements: 'string',
           apiCode: apiCode1
         }
       }
@@ -287,9 +294,6 @@ describe('movement Route Tests', () => {
         defraCustomerOrganisationId: orgId1
       },
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode1
       }
     }
@@ -323,9 +327,6 @@ describe('movement Route Tests', () => {
         defraCustomerOrganisationId: orgId3
       },
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode3
       }
     }
@@ -361,9 +362,6 @@ describe('movement Route Tests', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
       movement: {
-        receivingSiteId: 'string',
-        receiverReference: 'string',
-        specialHandlingRequirements: 'string',
         apiCode: apiCode1
       }
     }

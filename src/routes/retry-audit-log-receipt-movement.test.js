@@ -56,9 +56,6 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       payload: {
         movement: {
-          receivingSiteId: 'test-create',
-          receiverReference: 'test-create',
-          specialHandlingRequirements: 'test-create',
           apiCode: apiCode1
         }
       },
@@ -75,9 +72,6 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       payload: {
         movement: {
-          receivingSiteId: 'test-update',
-          receiverReference: 'test-update',
-          specialHandlingRequirements: 'test-update',
           apiCode: apiCode1
         }
       },

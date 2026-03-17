@@ -48,7 +48,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     {
       _id: '26E4C7Z2',
       wasteTrackingId: '26E4C7Z2',
-      receipt: { receivingSiteId: 'old site 1' },
+      receipt: { movement: {} },
       createdAt: new Date(),
       lastUpdatedAt: new Date(),
       orgId: orgId1,
@@ -62,7 +62,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     {
       _id: '266XHTDL',
       wasteTrackingId: '266XHTDL',
-      receipt: { receivingSiteId: 'old site 2' },
+      receipt: { movement: {} },
       createdAt: new Date(),
       lastUpdatedAt: new Date(),
       orgId: orgId1,
@@ -182,7 +182,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     await wasteInputsHistoryCollection.insertMany([
       {
         wasteTrackingId: '26E4C7Z2',
-        receipt: {},
+        receipt: { movement: {} },
         orgId: orgId1,
         traceId,
         bulkId: updateBulkId,
@@ -191,7 +191,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       },
       {
         wasteTrackingId: '266XHTDL',
-        receipt: {},
+        receipt: { movement: {} },
         orgId: orgId1,
         traceId,
         bulkId: updateBulkId,
@@ -383,6 +383,22 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       },
       {}
     ])
+  })
+
+  it('rejects when Mongo throws a schema validation error', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/bulk/${updateBulkId}/movements/receive`,
+      payload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual({
+      statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
+      error: 'ValidationError',
+      message:
+        '[{"failingDocumentId":"26E4C7Z2","details":{"operatorName":"$jsonSchema","schemaRulesNotSatisfied":[{"operatorName":"properties","propertiesNotSatisfied":[{"propertyName":"traceId","details":[{"operatorName":"bsonType","specifiedAs":{"bsonType":"string"},"reason":"type did not match","consideredValue":null,"consideredType":"null"}]}]}]}}]'
+    })
   })
 
   it('handles error when updating multiple waste inputs fails', async () => {

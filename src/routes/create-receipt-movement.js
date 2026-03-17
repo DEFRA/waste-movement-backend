@@ -8,6 +8,7 @@ import { config } from '../config.js'
 import { backOff } from 'exponential-backoff'
 import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
 import { metricsCounter } from '../common/helpers/metrics.js'
+import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 
 const createReceiptMovement = [
   {
@@ -80,20 +81,7 @@ const createReceiptMovement = [
 
         return h.response().code(HTTP_STATUS_CODES.NO_CONTENT)
       } catch (error) {
-        const statusCode =
-          error.statusCode || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR
-
-        return h
-          .response(
-            typeof error.response === 'function'
-              ? error.response()
-              : {
-                  statusCode,
-                  error: error.name,
-                  message: error.message
-                }
-          )
-          .code(statusCode)
+        return handleRouteError(h, error)
       }
     }
   }
