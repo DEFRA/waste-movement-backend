@@ -32,6 +32,7 @@ describe('Audit Logger Tests', () => {
 
     it('should call the audit endpoint', () => {
       const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+      const infoLogSpy = jest.spyOn(logger.createLogger(), 'info')
 
       const result = auditLogger(params)
 
@@ -44,6 +45,15 @@ describe('Audit Logger Tests', () => {
         },
         data: params.data
       })
+      expect(infoLogSpy).toHaveBeenCalledWith(
+        {
+          type: params.type,
+          traceId: params.traceId,
+          wasteTrackingId: '2578ZCY8',
+          revision: undefined
+        },
+        'Audit log sent'
+      )
     })
 
     it('should call the audit endpoint with a default version', () => {
@@ -72,7 +82,13 @@ describe('Audit Logger Tests', () => {
 
       expect(result).toBeFalsy()
       expect(errorLogSpy).toHaveBeenCalledWith(
-        { type: 'created', traceId: params.traceId, version: params.version },
+        {
+          type: 'created',
+          traceId: params.traceId,
+          version: params.version,
+          wasteTrackingId: '2578ZCY8',
+          revision: undefined
+        },
         `Failed to call audit endpoint: Audit type must be one of: ${Object.values(AUDIT_LOGGER_TYPE).join(', ')}`
       )
       expect(metricsCounterSpy).toHaveBeenCalledWith('audit.errors.failed', 1, {
@@ -92,7 +108,13 @@ describe('Audit Logger Tests', () => {
 
       expect(result).toBeFalsy()
       expect(errorLogSpy).toHaveBeenCalledWith(
-        { type: params.type, traceId: params.traceId, version: params.version },
+        {
+          type: params.type,
+          traceId: params.traceId,
+          version: params.version,
+          wasteTrackingId: undefined,
+          revision: undefined
+        },
         'Failed to call audit endpoint: Audit data must be provided as an object'
       )
       expect(metricsCounterSpy).toHaveBeenCalledWith('audit.errors.failed', 1, {
@@ -112,7 +134,13 @@ describe('Audit Logger Tests', () => {
 
       expect(result).toBeFalsy()
       expect(errorLogSpy).toHaveBeenCalledWith(
-        { type: params.type, traceId: params.traceId, version: params.version },
+        {
+          type: params.type,
+          traceId: params.traceId,
+          version: params.version,
+          wasteTrackingId: undefined,
+          revision: undefined
+        },
         'Failed to call audit endpoint: Audit data must be provided as an object'
       )
       expect(metricsCounterSpy).toHaveBeenCalledWith('audit.errors.failed', 1, {
