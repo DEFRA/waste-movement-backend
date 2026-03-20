@@ -1,4 +1,5 @@
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { getErrorCategory } from '../common/constants/validation-error-categories.js'
 
 export const errorHandler = {
   plugin: {
@@ -24,15 +25,10 @@ export const errorHandler = {
 
           // Transform validation errors to the required format
           const formattedErrors = validationErrors.map((err) => {
-            let errorType
-            switch (err.type) {
-              case 'object.and':
-              case 'object.missing':
-                errorType = 'NotProvided'
-                break
-              default:
-                errorType = 'UnexpectedError'
-                unexpectedErrors.push(err)
+            const errorType = getErrorCategory(err.type)
+
+            if (errorType === 'UnexpectedError') {
+              unexpectedErrors.push(err)
             }
 
             // Determine the error key
