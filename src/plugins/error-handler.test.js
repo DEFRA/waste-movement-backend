@@ -255,7 +255,7 @@ describe('Error Handler', () => {
     expect(Array.isArray(responseBody)).toBe(true)
     expect(responseBody).toHaveLength(2)
     expect(responseBody[1].validation.errors[0]).toMatchObject({
-      errorType: 'UnexpectedError',
+      errorType: 'NotProvided',
       key: '1'
     })
   })
@@ -614,6 +614,32 @@ describe('Error Handler', () => {
         (err) =>
           err.key === '0.receiver.authorisationNumber' &&
           err.errorType === 'InvalidFormat'
+      )
+      expect(formatError).toBeDefined()
+    })
+
+    test('should return NotProvided for missing subbmitting organisation object', async () => {
+      const payload = createBulkMovementRequest({
+        submittingOrganisation: undefined
+      })
+
+      const response = await server.inject({
+        method: 'POST',
+        url: '/bulk/1/movements/receive',
+        payload: [payload],
+        headers: {
+          authorization:
+            'Basic d2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpOjRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+        }
+      })
+
+      expect(response.statusCode).toBe(400)
+      const responseBody = JSON.parse(response.payload)
+
+      console.dir({ responseBody }, { depth: null })
+
+      const formatError = responseBody[0].validation.errors.find(
+        (err) => err.key === '0' && err.errorType === 'NotProvided'
       )
       expect(formatError).toBeDefined()
     })

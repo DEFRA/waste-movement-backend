@@ -1,6 +1,7 @@
 export const JOI_TYPE_TO_CATEGORY = {
   // NotProvided
   'any.required': 'NotProvided',
+  'object.missing': 'NotProvided',
 
   // NotAllowed
   'object.unknown': 'NotAllowed',
