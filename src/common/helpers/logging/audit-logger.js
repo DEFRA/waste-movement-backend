@@ -35,6 +35,8 @@ export function auditLogger({
 
     audit({ metadata: { type, traceId, version }, data })
 
+    metricsCounter('audit.errors.failed', 1, { auditLogType: type, traceId })
+
     logger.info(
       {
         type,
