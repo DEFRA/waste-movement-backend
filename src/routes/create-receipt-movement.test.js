@@ -115,6 +115,7 @@ describe('movement Route Tests', () => {
 
     expect(createWasteInputSpy).toHaveBeenCalledTimes(3)
 
+    expect(metricsCounterSpy).toHaveBeenCalledTimes(1)
     expect(metricsCounterSpy).toHaveBeenCalledWith('receiver.orgId', 1, {
       orgId: actualWasteInput.orgId
     })
