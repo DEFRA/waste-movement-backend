@@ -3,7 +3,7 @@ import { retryAuditLogReceiptMovement } from './retry-audit-log-receipt-movement
 import { requestLogger } from '../common/helpers/logging/request-logger.js'
 import { mongoDb } from '../common/helpers/mongodb.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
-import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
+import { base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 import { createReceiptMovement } from './create-receipt-movement.js'
 import { updateReceiptMovement } from './update-receipt-movement.js'
 import { config } from '../config.js'
@@ -13,6 +13,7 @@ import * as auditLogger from '../common/helpers/logging/audit-logger.js'
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import * as cdpAuditing from '@defra/cdp-auditing'
+import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockImplementation(() => true)
@@ -55,9 +56,7 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
       payload: {
-        movement: {
-          apiCode: apiCode1
-        }
+        movement: createTestPayload()
       },
       headers: {
         'x-cdp-request-id': traceId
@@ -71,9 +70,7 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
       payload: {
-        movement: {
-          apiCode: apiCode1
-        }
+        movement: createTestPayload()
       },
       headers: {
         'x-cdp-request-id': traceId2

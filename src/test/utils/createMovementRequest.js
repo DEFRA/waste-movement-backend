@@ -1,14 +1,11 @@
-import { v4 as uuidv4 } from 'uuid'
-import {
-  sourceOfComponentsNotProvided,
-  sourceOfComponentsProvided
-} from '../../common/constants/source-of-components.js'
+import { sourceOfComponentsProvided } from '../../common/constants/source-of-components.js'
 import { TEST_DATA } from '../../schemas/test-constants.js'
 import { validPopNames } from '../../common/constants/pop-names.js'
+import { apiCode1 } from '../data/apiCodes.js'
 
 export function createMovementRequest(overrides) {
   const defaultMovementRequest = {
-    apiCode: uuidv4(),
+    apiCode: apiCode1,
     dateTimeReceived: new Date('2021-01-01T00:00:00.000Z'),
     carrier: {
       registrationNumber: 'CBDU123456',
@@ -56,9 +53,6 @@ export function createMovementRequest(overrides) {
           ]
         },
         containsHazardous: false,
-        hazardous: {
-          sourceOfComponents: sourceOfComponentsNotProvided.NOT_PROVIDED
-        },
         disposalOrRecoveryCodes: [
           {
             code: 'R1',

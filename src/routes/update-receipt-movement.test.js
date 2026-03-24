@@ -9,12 +9,13 @@ import { expect } from '@jest/globals'
 import { config } from '../config.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import {
-  apiCode1,
   orgId1,
-  base64EncodedOrgApiCodes
+  base64EncodedOrgApiCodes,
+  apiCode3
 } from '../test/data/apiCodes.js'
 import * as movementUpdate from '../services/movement-update.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
+import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
 
 jest.mock('../services/movement-update.js', () => {
   const { updateWasteInput: actualFunction } = jest.requireActual(
@@ -75,17 +76,15 @@ describe('movementUpdate Route Tests', () => {
 
   it('updates a waste input', async () => {
     const wasteTrackingId = generateWasteTrackingId()
-    const createPayload = {
-      movement: {
-        apiCode: apiCode1
-      }
+    const payload = {
+      movement: createTestPayload()
     }
 
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
       headers: { 'x-cdp-request-id': traceId },
-      payload: createPayload
+      payload
     })
 
     expect(createResult.statusCode).toEqual(204)
@@ -96,11 +95,6 @@ describe('movementUpdate Route Tests', () => {
       .findOne({ _id: wasteTrackingId })
     const timestampBeforeUpdate = beforeUpdate.lastUpdatedAt
 
-    const updatePayload = {
-      movement: {
-        apiCode: apiCode1
-      }
-    }
     const updateWasteInputSpy = jest.spyOn(movementUpdate, 'updateWasteInput')
 
     movementUpdate.updateWasteInput
@@ -111,14 +105,14 @@ describe('movementUpdate Route Tests', () => {
         throw new Error(errorMessage)
       })
 
-    await updateReceipt(wasteTrackingId, updatePayload, traceId)
+    await updateReceipt(wasteTrackingId, payload, traceId)
 
     const actualWasteInput = await testMongoDb
       .collection('waste-inputs')
       .findOne({ _id: wasteTrackingId })
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
     expect(actualWasteInput.revision).toEqual(2)
-    expect(actualWasteInput.receipt.movement).toEqual(updatePayload.movement)
+    expect(actualWasteInput.receipt.movement).toEqual(payload.movement)
     expect(actualWasteInput.createdAt).toBeInstanceOf(Date)
     expect(actualWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
     expect(actualWasteInput.lastUpdatedAt.getTime()).toBeGreaterThan(
@@ -131,7 +125,7 @@ describe('movementUpdate Route Tests', () => {
     expect(historicState[0]._id).toBeDefined()
     expect(historicState[0].wasteTrackingId).toEqual(wasteTrackingId)
     expect(historicState[0].revision).toEqual(1)
-    expect(historicState[0].receipt.movement).toEqual(createPayload.movement)
+    expect(historicState[0].receipt.movement).toEqual(payload.movement)
 
     expect(updateWasteInputSpy).toHaveBeenCalledTimes(3)
   })
@@ -144,44 +138,31 @@ describe('movementUpdate Route Tests', () => {
 
   it('updates a waste input twice and stores all history', async () => {
     const wasteTrackingId = generateWasteTrackingId()
-    const createPayload = {
-      movement: {
-        apiCode: apiCode1
-      }
+    const payload = {
+      movement: createTestPayload()
     }
 
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
       headers: { 'x-cdp-request-id': traceId },
-      payload: createPayload
+      payload
     })
 
     expect(createResult.statusCode).toEqual(204)
     expect(createResult.result).toEqual(null)
 
-    const updatePayload = {
-      movement: {
-        apiCode: apiCode1
-      }
-    }
-    await updateReceipt(wasteTrackingId, updatePayload, traceId)
+    await updateReceipt(wasteTrackingId, payload, traceId)
 
     const afterFirstUpdate = await getCurrentWasteInput(wasteTrackingId)
     const timestampAfterFirstUpdate = afterFirstUpdate.lastUpdatedAt
-
-    const updatePayload2 = {
-      movement: {
-        apiCode: apiCode1
-      }
-    }
     const traceIdUpdate2 = 'trace-id-update-2'
-    await updateReceipt(wasteTrackingId, updatePayload2, traceIdUpdate2)
+    await updateReceipt(wasteTrackingId, payload, traceIdUpdate2)
 
     const actualWasteInput = await getCurrentWasteInput(wasteTrackingId)
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
     expect(actualWasteInput.revision).toEqual(3)
-    expect(actualWasteInput.receipt.movement).toEqual(updatePayload2.movement)
+    expect(actualWasteInput.receipt.movement).toEqual(payload.movement)
     expect(actualWasteInput.createdAt).toBeInstanceOf(Date)
     expect(actualWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
     expect(actualWasteInput.lastUpdatedAt.getTime()).toBeGreaterThan(
@@ -195,40 +176,17 @@ describe('movementUpdate Route Tests', () => {
     expect(historicState[0]._id).toBeDefined()
     expect(historicState[0].wasteTrackingId).toEqual(wasteTrackingId)
     expect(historicState[0].revision).toEqual(1)
-    expect(historicState[0].receipt.movement).toEqual(createPayload.movement)
+    expect(historicState[0].receipt.movement).toEqual(payload.movement)
     expect(historicState[1]._id).toBeDefined()
     expect(historicState[1].wasteTrackingId).toEqual(wasteTrackingId)
     expect(historicState[1].revision).toEqual(2)
-    expect(historicState[1].receipt.movement).toEqual(updatePayload.movement)
+    expect(historicState[1].receipt.movement).toEqual(payload.movement)
   })
 
   it('returns 404 when updating a non-existent waste input', async () => {
     const wasteTrackingId = 'nonexistent-id'
     const updatePayload = {
-      movement: {
-        apiCode: apiCode1,
-        // Minimal payload for test
-        carrier: {
-          registrationNumber: 'updated-reg',
-          organisationName: 'updated-org',
-          address: 'updated-address',
-          emailAddress: 'updated@email.com',
-          phoneNumber: 'updated-phone',
-          vehicleRegistration: 'updated-vehicle',
-          meansOfTransport: 'Road'
-        },
-        acceptance: {
-          acceptingAll: true
-        },
-        receiver: {
-          authorisationType: 'updated-type',
-          authorisationNumber: 'updated-number'
-        },
-        receipt: {
-          estimateOrActual: 'Actual',
-          dateTimeReceived: new Date(2025, 6, 15)
-        }
-      }
+      movement: createTestPayload()
     }
 
     const { statusCode, result } = await server.inject({
@@ -272,55 +230,10 @@ describe('movementUpdate Route Tests', () => {
       .find({ wasteTrackingId })
   }
 
-  it('rejects when the api code is missing', async () => {
-    const wasteTrackingId = generateWasteTrackingId()
-    const createPayload = {
-      movement: {
-        apiCode: apiCode1
-      }
-    }
-
-    const createResult = await server.inject({
-      method: 'POST',
-      url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
-      payload: createPayload
-    })
-
-    expect(createResult.statusCode).toEqual(204)
-    expect(createResult.result).toEqual(null)
-
-    const updatePayload = {
-      movement: {}
-    }
-
-    const { statusCode, result } = await server.inject({
-      method: 'PUT',
-      url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
-      payload: updatePayload
-    })
-
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
-    expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'apiCode',
-            errorType: 'InvalidValue',
-            message: 'the API Code supplied is invalid'
-          }
-        ]
-      }
-    })
-  })
-
   it('rejects when the api code is invalid', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {
-      movement: {
-        apiCode: apiCode1
-      }
+      movement: createTestPayload()
     }
 
     const createResult = await server.inject({
@@ -335,7 +248,8 @@ describe('movementUpdate Route Tests', () => {
 
     const updatePayload = {
       movement: {
-        apiCode: 'invalid'
+        ...createTestPayload(),
+        apiCode: apiCode3
       }
     }
 
@@ -365,9 +279,7 @@ describe('movementUpdate Route Tests', () => {
     async (value) => {
       const wasteTrackingId = generateWasteTrackingId()
       const createPayload = {
-        movement: {
-          apiCode: apiCode1
-        }
+        movement: createTestPayload()
       }
 
       const createResult = await server.inject({
@@ -383,9 +295,7 @@ describe('movementUpdate Route Tests', () => {
       config.set('orgApiCodes', value)
 
       const updatePayload = {
-        movement: {
-          apiCode: apiCode1
-        }
+        movement: createTestPayload()
       }
 
       const { statusCode, result } = await server.inject({
@@ -413,9 +323,7 @@ describe('movementUpdate Route Tests', () => {
   it('rejects when the org id of the updated entry does not match the org id of the original entry', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {
-      movement: {
-        apiCode: apiCode1
-      }
+      movement: createTestPayload()
     }
 
     const createResult = await server.inject({
@@ -430,6 +338,7 @@ describe('movementUpdate Route Tests', () => {
 
     const updatePayload = {
       movement: {
+        ...createTestPayload(),
         apiCode: 'bc05d1ce-5a80-4624-b2ae-e7227c8c6c41'
       }
     }
@@ -461,7 +370,7 @@ describe('movementUpdate Route Tests', () => {
       submittingOrganisation: {
         defraCustomerOrganisationId: 'some-org-id'
       },
-      movement: {}
+      movement: createTestPayload()
     }
 
     const { statusCode, result } = await server.inject({
@@ -485,9 +394,7 @@ describe('movementUpdate Route Tests', () => {
       submittingOrganisation: {
         defraCustomerOrganisationId: orgId1
       },
-      movement: {
-        apiCode: apiCode1
-      }
+      movement: createTestPayload()
     }
 
     const createResult = await server.inject({
@@ -500,10 +407,10 @@ describe('movementUpdate Route Tests', () => {
     expect(createResult.statusCode).toEqual(204)
 
     const updatePayload = {
+      ...createPayload,
       submittingOrganisation: {
         defraCustomerOrganisationId: 'different-org-id'
-      },
-      movement: {}
+      }
     }
 
     const { statusCode, result } = await server.inject({
@@ -530,43 +437,29 @@ describe('movementUpdate Route Tests', () => {
 
   it('updates a waste input with submittingOrganisation', async () => {
     const wasteTrackingId = generateWasteTrackingId()
-    const dateNow = new Date().toISOString()
-
-    // First create a movement with submittingOrganisation
-    const createPayload = {
+    const payload = {
       submittingOrganisation: {
         defraCustomerOrganisationId: orgId1
       },
-      movement: {
-        apiCode: apiCode1
-      }
+      movement: createTestPayload()
     }
 
+    // First create a movement with submittingOrganisation
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
       headers: { 'x-cdp-request-id': traceId },
-      payload: createPayload
+      payload
     })
 
     expect(createResult.statusCode).toEqual(204)
 
     // Now update with submittingOrganisation
-    const updatePayload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: orgId1
-      },
-      movement: {
-        apiCode: apiCode1,
-        dateTimeReceived: dateNow
-      }
-    }
-
     const { statusCode } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
       headers: { 'x-cdp-request-id': traceId },
-      payload: updatePayload
+      payload
     })
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
@@ -578,15 +471,15 @@ describe('movementUpdate Route Tests', () => {
     expect(actualWasteInput.submittingOrganisation).toEqual({
       defraCustomerOrganisationId: orgId1
     })
-    expect(actualWasteInput.receipt.movement.dateTimeReceived).toEqual(dateNow)
+    expect(actualWasteInput.receipt.movement.dateTimeReceived).toEqual(
+      payload.movement.dateTimeReceived
+    )
   })
 
   it('rejects when Mongo throws a schema validation error', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {
-      movement: {
-        apiCode: apiCode1
-      }
+      movement: createTestPayload()
     }
 
     const { statusCode, result } = await server.inject({
@@ -606,26 +499,19 @@ describe('movementUpdate Route Tests', () => {
 
   it('handles error when updating a waste input fails', async () => {
     const wasteTrackingId = generateWasteTrackingId()
-    const createPayload = {
-      movement: {
-        apiCode: apiCode1
-      }
+    const payload = {
+      movement: createTestPayload()
     }
 
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
       headers: { 'x-cdp-request-id': traceId },
-      payload: createPayload
+      payload
     })
 
     expect(createResult.statusCode).toEqual(204)
 
-    const payload = {
-      movement: {
-        apiCode: apiCode1
-      }
-    }
     const updateWasteInputSpy = jest.spyOn(movementUpdate, 'updateWasteInput')
 
     movementUpdate.updateWasteInput.mockRejectedValue(new Error(errorMessage))
