@@ -42,7 +42,7 @@ export function auditLogger({
         wasteTrackingId: data?.wasteTrackingId,
         revision: data?.revision
       },
-      'Audit log sent'
+      `Audit log sent for movement: ${data?.wasteTrackingId} revision: ${data?.revision}`
     )
 
     return true
