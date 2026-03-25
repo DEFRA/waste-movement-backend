@@ -5,6 +5,18 @@ import { createLogger } from '../common/helpers/logging/logger.js'
 
 const logger = createLogger()
 
+function sendAuditLogs(createdWasteInputs) {
+  createdWasteInputs.forEach((wasteInput) => {
+    auditLogger({
+      type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
+      traceId: wasteInput.traceId,
+      data: wasteInput,
+      wasteTrackingId: wasteInput.wasteTrackingId,
+      revision: wasteInput.revision
+    })
+  })
+}
+
 export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
   try {
     let existingWasteInputs = []
@@ -76,15 +88,7 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
       )
     }
 
-    createdWasteInputs.forEach((wasteInput) => {
-      auditLogger({
-        type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
-        traceId: wasteInput.traceId,
-        data: wasteInput,
-        wasteTrackingId: wasteInput.wasteTrackingId,
-        revision: wasteInput.revision
-      })
-    })
+    sendAuditLogs(createdWasteInputs)
 
     return {
       status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
