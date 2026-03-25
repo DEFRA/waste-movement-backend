@@ -52,7 +52,7 @@ describe('Audit Logger Tests', () => {
           wasteTrackingId: '2578ZCY8',
           revision: undefined
         },
-        'Audit log sent'
+        'Audit log sent for movement: 2578ZCY8 revision: undefined'
       )
     })
 
