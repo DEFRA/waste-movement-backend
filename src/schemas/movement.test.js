@@ -52,13 +52,15 @@ describe('movementSchema', () => {
 
   it('should return an error when movement is null', () => {
     const payload = {
-      movement: undefined
+      movement: null
     }
 
     const { error } = movementSchema.validate(payload)
 
     expect(error).toBeDefined()
-    expect(error.message).toEqual('"ReceiveMovementRequest" is required')
+    expect(error.message).toEqual(
+      '"ReceiveMovementRequest" must be of type object'
+    )
   })
 
   it('should return an error when defraCustomerOrganisationId is missing', () => {
