@@ -12,6 +12,8 @@ const logger = createLogger()
  * @param params.traceId - The audit log trace id, for example request.getTraceId()
  * @param params.version - The version of the audit logger that is being used
  * @param params.data - An object containing the audit log data
+ * @param params.wasteTrackingId - The waste tracking id of the movement
+ * @param params.revision - The revision number of the movement
  * @param params.shouldThrowError - Determines if an error should be thrown
  * @returns {Boolean} True if the audit endpoint has been called successfully
  */
@@ -20,6 +22,8 @@ export function auditLogger({
   traceId,
   version = 1,
   data,
+  wasteTrackingId,
+  revision,
   shouldThrowError = false
 }) {
   const auditTypes = Object.values(AUDIT_LOGGER_TYPE)
@@ -39,10 +43,10 @@ export function auditLogger({
       {
         type,
         traceId,
-        wasteTrackingId: data?.wasteTrackingId,
-        revision: data?.revision
+        wasteTrackingId,
+        revision
       },
-      `Audit log sent for movement: ${data?.wasteTrackingId} revision: ${data?.revision}`
+      `Audit log sent for movement: ${wasteTrackingId} revision: ${revision}`
     )
 
     return true
@@ -54,8 +58,8 @@ export function auditLogger({
         type,
         traceId,
         version,
-        wasteTrackingId: data?.wasteTrackingId,
-        revision: data?.revision
+        wasteTrackingId,
+        revision
       },
       logErrorMessage
     )

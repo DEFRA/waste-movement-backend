@@ -59,12 +59,15 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
     }
 
     const createdWasteInputs = await wasteInputsCollection
-      .find({
-        $or: createdWasteTrackingIds.map((wasteTrackingId) => ({
-          _id: wasteTrackingId,
-          revision: 1
-        }))
-      })
+      .find(
+        {
+          $or: createdWasteTrackingIds.map((wasteTrackingId) => ({
+            _id: wasteTrackingId,
+            revision: 1
+          }))
+        },
+        { readPreference: 'primary' }
+      )
       .toArray()
 
     if (createdWasteInputs.length !== wasteInputs.length) {
@@ -77,7 +80,9 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
       auditLogger({
         type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
         traceId: wasteInput.traceId,
-        data: wasteInput
+        data: wasteInput,
+        wasteTrackingId: wasteInput.wasteTrackingId,
+        revision: wasteInput.revision
       })
     })
 

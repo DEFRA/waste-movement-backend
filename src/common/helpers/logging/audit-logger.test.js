@@ -26,7 +26,9 @@ describe('Audit Logger Tests', () => {
         data: {
           wasteTrackingId: '2578ZCY8',
           receipt: { apiCode: '926a654e-f87d-4348-bf0c-2c21ab954e09' }
-        }
+        },
+        wasteTrackingId: '2578ZCY8',
+        revision: 1
       }
     })
 
@@ -50,9 +52,9 @@ describe('Audit Logger Tests', () => {
           type: params.type,
           traceId: params.traceId,
           wasteTrackingId: '2578ZCY8',
-          revision: undefined
+          revision: 1
         },
-        'Audit log sent for movement: 2578ZCY8 revision: undefined'
+        'Audit log sent for movement: 2578ZCY8 revision: 1'
       )
     })
 
@@ -87,7 +89,7 @@ describe('Audit Logger Tests', () => {
           traceId: params.traceId,
           version: params.version,
           wasteTrackingId: '2578ZCY8',
-          revision: undefined
+          revision: 1
         },
         `Failed to call audit endpoint: Audit type must be one of: ${Object.values(AUDIT_LOGGER_TYPE).join(', ')}`
       )
@@ -112,8 +114,8 @@ describe('Audit Logger Tests', () => {
           type: params.type,
           traceId: params.traceId,
           version: params.version,
-          wasteTrackingId: undefined,
-          revision: undefined
+          wasteTrackingId: '2578ZCY8',
+          revision: 1
         },
         'Failed to call audit endpoint: Audit data must be provided as an object'
       )
@@ -138,8 +140,8 @@ describe('Audit Logger Tests', () => {
           type: params.type,
           traceId: params.traceId,
           version: params.version,
-          wasteTrackingId: undefined,
-          revision: undefined
+          wasteTrackingId: '2578ZCY8',
+          revision: 1
         },
         'Failed to call audit endpoint: Audit data must be provided as an object'
       )

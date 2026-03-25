@@ -12,19 +12,24 @@ async function sendAuditLogs(
   traceId
 ) {
   const updatedWasteInputs = await wasteInputsCollection
-    .find({
-      $or: payload.map((item, index) => ({
-        _id: item.wasteTrackingId,
-        revision: existingWasteInputs[index].revision + 1
-      }))
-    })
+    .find(
+      {
+        $or: payload.map((item, index) => ({
+          _id: item.wasteTrackingId,
+          revision: existingWasteInputs[index].revision + 1
+        }))
+      },
+      { readPreference: 'primary' }
+    )
     .toArray()
 
   updatedWasteInputs.forEach((wasteInput) => {
     auditLogger({
       type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
       traceId,
-      data: wasteInput
+      data: wasteInput,
+      wasteTrackingId: wasteInput.wasteTrackingId,
+      revision: wasteInput.revision
     })
   })
 }

@@ -159,7 +159,7 @@ async function createAuditLog(
     if (!updatedWasteInput) {
       updatedWasteInput = await collection.findOne(
         { _id: wasteTrackingId, revision: existingRevision + 1 },
-        { session }
+        { session, readPreference: 'primary' }
       )
     }
   }
@@ -167,6 +167,8 @@ async function createAuditLog(
   auditLogger({
     type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
     traceId,
-    data: updatedWasteInput
+    data: updatedWasteInput,
+    wasteTrackingId,
+    revision: existingRevision + 1
   })
 }

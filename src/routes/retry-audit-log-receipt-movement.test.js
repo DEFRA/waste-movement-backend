@@ -113,6 +113,8 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
       traceId: traceId2,
       data: wasteInputsRecord,
+      wasteTrackingId: wasteInputsRecord.wasteTrackingId,
+      revision: wasteInputsRecord.revision,
       shouldThrowError: true
     })
   })
@@ -133,6 +135,8 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
       traceId: traceId2,
       data: wasteInputsRecord,
+      wasteTrackingId: wasteInputsRecord.wasteTrackingId,
+      revision: wasteInputsRecord.revision,
       shouldThrowError: true
     })
   })
@@ -153,6 +157,8 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
       traceId,
       data: wasteInputsHistoryRecord,
+      wasteTrackingId: wasteInputsHistoryRecord.wasteTrackingId,
+      revision: wasteInputsHistoryRecord.revision,
       shouldThrowError: true
     })
   })
@@ -173,6 +179,8 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
       traceId,
       data: wasteInputsHistoryRecord,
+      wasteTrackingId: wasteInputsHistoryRecord.wasteTrackingId,
+      revision: wasteInputsHistoryRecord.revision,
       shouldThrowError: true
     })
   })
