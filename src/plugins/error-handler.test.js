@@ -1,10 +1,11 @@
 import { config } from '../config.js'
 import { createServer } from '../server.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
-import { apiCode1, base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
+import { base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 import { formatBulkUploadValidationErrors } from './error-handler.js'
+import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
 
 jest.mock('../config.js', () => {
   process.env.MAX_BULK_RECORDS = '3'
@@ -35,9 +36,7 @@ describe('Error Handler', () => {
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
       payload: {
-        movement: {
-          apiCode: apiCode1
-        }
+        movement: createTestPayload()
       },
       headers: {
         'x-cdp-request-id': traceId,

@@ -101,7 +101,7 @@ export const wasteInputSchema = {
               bsonType: 'string'
             },
             dateTimeReceived: {
-              bsonType: ['date', 'string']
+              bsonType: 'date'
             },
             hazardousWasteConsignmentCode: {
               bsonType: 'string'

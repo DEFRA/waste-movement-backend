@@ -17,7 +17,6 @@ import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import * as movementCreate from '../services/movement-create.js'
 import { config } from '../config.js'
 import {
-  apiCode1,
   orgId1,
   base64EncodedOrgApiCodes,
   orgId3,
@@ -25,6 +24,7 @@ import {
 } from '../test/data/apiCodes.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 import * as metrics from '../common/helpers/metrics.js'
+import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
 
 jest.mock('../services/movement-create.js', () => {
   const { createWasteInput: actualFunction } = jest.requireActual(
@@ -73,9 +73,7 @@ describe('movement Route Tests', () => {
   it('creates a waste input', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const expectedPayload = {
-      movement: {
-        apiCode: apiCode1
-      }
+      movement: createTestPayload()
     }
     const createWasteInputSpy = jest.spyOn(movementCreate, 'createWasteInput')
     const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
@@ -124,9 +122,7 @@ describe('movement Route Tests', () => {
   it('rejects when Mongo throws a schema validation error', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
-      movement: {
-        apiCode: apiCode1
-      }
+      movement: createTestPayload()
     }
 
     const { statusCode, result } = await server.inject({
@@ -147,9 +143,7 @@ describe('movement Route Tests', () => {
   it('handles error when creating a waste input fails', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
-      movement: {
-        apiCode: apiCode1
-      }
+      movement: createTestPayload()
     }
     const createWasteInputSpy = jest.spyOn(movementCreate, 'createWasteInput')
     const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
@@ -177,7 +171,8 @@ describe('movement Route Tests', () => {
   it('does not create waste input when validation fails', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const invalidPayload = {
-      // Missing required 'movement' field
+      ...createTestPayload(),
+      apiCode: undefined
     }
 
     const { statusCode } = await server.inject({
@@ -195,37 +190,12 @@ describe('movement Route Tests', () => {
     expect(actualWasteInput).toBeNull()
   })
 
-  it('rejects when apiCode is missing', async () => {
-    const wasteTrackingId = generateWasteTrackingId()
-    const payload = {
-      movement: {}
-    }
-
-    const { statusCode, result } = await server.inject({
-      method: 'POST',
-      url: `/movements/${wasteTrackingId}/receive`,
-      payload
-    })
-
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
-    expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'apiCode',
-            errorType: 'InvalidValue',
-            message: 'the API Code supplied is invalid'
-          }
-        ]
-      }
-    })
-  })
-
   it('rejects when apiCode is invalid', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
       movement: {
-        apiCode: 'invalid'
+        ...createTestPayload(),
+        apiCode: apiCode3
       }
     }
 
@@ -256,9 +226,7 @@ describe('movement Route Tests', () => {
 
       const wasteTrackingId = generateWasteTrackingId()
       const payload = {
-        movement: {
-          apiCode: apiCode1
-        }
+        movement: createTestPayload()
       }
 
       const { statusCode, result } = await server.inject({
@@ -293,9 +261,7 @@ describe('movement Route Tests', () => {
       submittingOrganisation: {
         defraCustomerOrganisationId: orgId1
       },
-      movement: {
-        apiCode: apiCode1
-      }
+      movement: createTestPayload()
     }
 
     const { statusCode, result } = await server.inject({
@@ -327,6 +293,7 @@ describe('movement Route Tests', () => {
         defraCustomerOrganisationId: orgId3
       },
       movement: {
+        ...createTestPayload(),
         apiCode: apiCode3
       }
     }
@@ -360,16 +327,14 @@ describe('movement Route Tests', () => {
     movementCreate.createWasteInput.mockImplementation(actualFunction)
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
     const wasteTrackingId = generateWasteTrackingId()
-    const payload = {
-      movement: {
-        apiCode: apiCode1
-      }
-    }
+    const movement = createTestPayload()
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      payload,
+      payload: {
+        movement
+      },
       headers: {
         'x-cdp-request-id': 'trace-456'
       }

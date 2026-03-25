@@ -19,6 +19,34 @@ const MAX_EWC_CODES_COUNT = 5
 const JOI_MESSAGE_TEMPLATE = '{{#message}}'
 const JOI_LABEL_TEMPLATE = '{{#label}}'
 
+/**
+ * Gets the waste item index from the path of a property
+ * in a request payload.
+ *
+ * To be able to return the waste item index in the error message, we're
+ * getting the index from helpers.state.path, which has a different
+ * structure in the Exernal API (request payload is an object) to the
+ * Backend service (requst payload is an array) so we need to get it
+ * dynamically so it'll be correct in both services
+ *
+ * helpers.state.path structure:
+ * - External API: ['movement', 'wasteItems', 0, 'hazardous' ]
+ * - Backend: [ 0, 'wasteItems', 0, 'hazardous' ]
+ * - Default: [ 'wasteItems', 0, 'hazardous' ]
+ *
+ * This is quite fragile, but was done to get it working quickly, and
+ * we should revisit to try to improve it at a later date
+ *
+ * @param {[String | Number]} path - The property path
+ * @returns {Number} - The waste item index
+ */
+function getWasteItemIndex(path) {
+  const firstPathItem = path[0]
+  const pathIndex =
+    Number.isInteger(firstPathItem) || firstPathItem === 'movement' ? 2 : 1
+  return path[pathIndex]
+}
+
 const disposalOrRecoveryCodeSchema = Joi.object({
   code: Joi.string()
     .valid(...DISPOSAL_OR_RECOVERY_CODES)
@@ -36,8 +64,7 @@ export const formatPopsOrHazardousFields = (popsOrHazardous) => ({
 const validatePopOrHazardousPresence = (value, helpers, popsOrHazardous) => {
   const wasteItem = helpers.state.ancestors[0]
   const { sourceOfComponents, components } = wasteItem[popsOrHazardous]
-  const pathIndex = Number.isInteger(helpers.state.path[0]) ? 2 : 1
-  const currentIndex = helpers.state.path[pathIndex]
+  const currentIndex = getWasteItemIndex(helpers.state.path)
   const { containsPopsOrHazardousField } =
     formatPopsOrHazardousFields(popsOrHazardous)
   // Joi doesn't run custom functions on undefined fields so this can't be attached
@@ -92,8 +119,7 @@ const validatePopsOrHazardousComponents = (value, helpers, popsOrHazardous) => {
   const { sourceOfComponents, components } = wasteItem[popsOrHazardous]
   const { containsPopsOrHazardousField } =
     formatPopsOrHazardousFields(popsOrHazardous)
-  const pathIndex = Number.isInteger(helpers.state.path[0]) ? 2 : 1
-  const currentIndex = helpers.state.path[pathIndex]
+  const currentIndex = getWasteItemIndex(helpers.state.path)
   const labelPath = `"wasteItems[${currentIndex}].${popsOrHazardous}.components"`
 
   if (
@@ -207,22 +233,7 @@ const hazardousSchema = Joi.object({
 })
   .empty(null)
   .custom((value, helpers) => {
-    /*
-     * To be able to return the waste item index in the error message, we're
-     * getting the index from helpers.state.path, which has a different
-     * structure in the Exernal API (request payload is an object) to the
-     * Backend service (requst payload is an array) so we need to get it
-     * dynamically so it'll be correct in both services
-     *
-     * helpers.state.path structure:
-     * - External API: [ 'wasteItems', 0, 'hazardous' ]
-     * - Backend: [ 0, 'wasteItems', 0, 'hazardous' ]
-     *
-     * This is quite fragile, but was done to get it working quickly, and
-     * we should revisit to try to improve it at a later date
-     */
-    const pathIndex = Number.isInteger(helpers.state.path[0]) ? 2 : 1
-    const wasteItemIndex = helpers.state.path[pathIndex]
+    const wasteItemIndex = getWasteItemIndex(helpers.state.path)
     const wasteItem = helpers.state.ancestors[1][wasteItemIndex]
 
     if (
