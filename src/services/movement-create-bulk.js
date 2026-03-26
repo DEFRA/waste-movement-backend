@@ -71,15 +71,12 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
     }
 
     const createdWasteInputs = await wasteInputsCollection
-      .find(
-        {
-          $or: createdWasteTrackingIds.map((wasteTrackingId) => ({
-            _id: wasteTrackingId,
-            revision: 1
-          }))
-        },
-        { readPreference: 'primary' }
-      )
+      .find({
+        $or: createdWasteTrackingIds.map((wasteTrackingId) => ({
+          _id: wasteTrackingId,
+          revision: 1
+        }))
+      })
       .toArray()
 
     if (createdWasteInputs.length !== wasteInputs.length) {

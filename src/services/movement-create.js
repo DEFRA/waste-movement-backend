@@ -15,10 +15,10 @@ export async function createWasteInput(db, wasteInput, traceId) {
     const result = await collection.insertOne(wasteInput)
     const wasteTrackingId = result?.insertedId
 
-    const createdWasteInput = await collection.findOne(
-      { _id: wasteTrackingId, revision: 1 },
-      { readPreference: 'primary' }
-    )
+    const createdWasteInput = await collection.findOne({
+      _id: wasteTrackingId,
+      revision: 1
+    })
 
     auditLogger({
       type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
