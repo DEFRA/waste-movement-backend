@@ -23,7 +23,9 @@ export async function createWasteInput(db, wasteInput, traceId) {
     auditLogger({
       type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
       traceId,
-      data: createdWasteInput
+      data: createdWasteInput,
+      wasteTrackingId: createdWasteInput.wasteTrackingId,
+      revision: createdWasteInput.revision
     })
 
     return { _id: wasteTrackingId }

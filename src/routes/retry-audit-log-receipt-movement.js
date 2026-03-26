@@ -81,6 +81,8 @@ const retryAuditLogReceiptMovement = {
             : AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
         traceId: wasteInput.traceId,
         data: wasteInput,
+        wasteTrackingId: wasteInput.wasteTrackingId,
+        revision: wasteInput.revision,
         shouldThrowError: true
       })
 

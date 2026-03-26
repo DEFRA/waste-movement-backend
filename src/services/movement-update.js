@@ -167,6 +167,8 @@ async function createAuditLog(
   auditLogger({
     type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
     traceId,
-    data: updatedWasteInput
+    data: updatedWasteInput,
+    wasteTrackingId,
+    revision: existingRevision + 1
   })
 }

@@ -24,7 +24,9 @@ async function sendAuditLogs(
     auditLogger({
       type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
       traceId,
-      data: wasteInput
+      data: wasteInput,
+      wasteTrackingId: wasteInput.wasteTrackingId,
+      revision: wasteInput.revision
     })
   })
 }
