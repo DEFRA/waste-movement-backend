@@ -2,34 +2,7 @@ import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js
 import { movementSchema } from './movement.js'
 
 describe('movementSchema', () => {
-  it('should accept valid payload with submittingOrganisation which has valid fields', () => {
-    const payload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: 'org-id-123'
-      },
-      movement: createTestPayload()
-    }
-
-    const { error } = movementSchema.validate(payload)
-
-    expect(error).toBeUndefined()
-  })
-
-  it('should accept valid payload with submittingOrganisation which has unknown fields', () => {
-    const payload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: 'org-id-123',
-        unknownField: 'unknown-field-value'
-      },
-      movement: createTestPayload()
-    }
-
-    const { error } = movementSchema.validate(payload)
-
-    expect(error).toBeUndefined()
-  })
-
-  it('should accept valid payload without submittingOrganisation', () => {
+  it('should accept valid payload with submittingOrganisation inside movement', () => {
     const payload = {
       movement: createTestPayload()
     }
@@ -63,58 +36,93 @@ describe('movementSchema', () => {
     )
   })
 
+  it('should return an error when submittingOrganisation is missing from movement', () => {
+    const { submittingOrganisation, ...movementWithoutOrg } =
+      createTestPayload()
+    const payload = {
+      movement: movementWithoutOrg
+    }
+
+    const { error } = movementSchema.validate(payload)
+
+    expect(error).toBeDefined()
+    expect(error.message).toContain(
+      '"movement.submittingOrganisation" is required'
+    )
+  })
+
   it('should return an error when defraCustomerOrganisationId is missing', () => {
     const payload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: undefined
-      },
-      movement: createTestPayload()
+      movement: createTestPayload({
+        submittingOrganisation: {
+          defraCustomerOrganisationId: undefined
+        }
+      })
     }
 
     const { error } = movementSchema.validate(payload)
 
     expect(error).toBeDefined()
     expect(error.message).toEqual(
-      '"submittingOrganisation.defraCustomerOrganisationId" is required'
+      '"movement.submittingOrganisation.defraCustomerOrganisationId" is required'
     )
   })
 
   it('should return an error when defraCustomerOrganisationId is null', () => {
     const payload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: null
-      },
-      movement: createTestPayload()
+      movement: createTestPayload({
+        submittingOrganisation: {
+          defraCustomerOrganisationId: null
+        }
+      })
     }
 
     const { error } = movementSchema.validate(payload)
 
     expect(error).toBeDefined()
     expect(error.message).toEqual(
-      '"submittingOrganisation.defraCustomerOrganisationId" must be a string'
+      '"movement.submittingOrganisation.defraCustomerOrganisationId" must be a string'
     )
   })
 
   it('should return an error when defraCustomerOrganisationId is not a string', () => {
     const payload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: 123
-      },
-      movement: createTestPayload()
+      movement: createTestPayload({
+        submittingOrganisation: {
+          defraCustomerOrganisationId: 123
+        }
+      })
     }
 
     const { error } = movementSchema.validate(payload)
 
     expect(error).toBeDefined()
     expect(error.message).toEqual(
-      '"submittingOrganisation.defraCustomerOrganisationId" must be a string'
+      '"movement.submittingOrganisation.defraCustomerOrganisationId" must be a string'
     )
   })
 
   it('should return an error when defraCustomerOrganisationId is an empty string', () => {
     const payload = {
+      movement: createTestPayload({
+        submittingOrganisation: {
+          defraCustomerOrganisationId: ''
+        }
+      })
+    }
+
+    const { error } = movementSchema.validate(payload)
+
+    expect(error).toBeDefined()
+    expect(error.message).toEqual(
+      '"movement.submittingOrganisation.defraCustomerOrganisationId" is not allowed to be empty'
+    )
+  })
+
+  it('should reject submittingOrganisation at root level', () => {
+    const payload = {
       submittingOrganisation: {
-        defraCustomerOrganisationId: ''
+        defraCustomerOrganisationId: 'org-id-123'
       },
       movement: createTestPayload()
     }
@@ -122,8 +130,6 @@ describe('movementSchema', () => {
     const { error } = movementSchema.validate(payload)
 
     expect(error).toBeDefined()
-    expect(error.message).toEqual(
-      '"submittingOrganisation.defraCustomerOrganisationId" is not allowed to be empty'
-    )
+    expect(error.message).toContain('"submittingOrganisation" is not allowed')
   })
 })

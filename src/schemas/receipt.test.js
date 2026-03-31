@@ -50,16 +50,8 @@ describe('receiveMovementRequestSchema - otherReferencesForMovement validation',
       expect(error).toBeUndefined()
     })
 
-    it('should accept when given apiCode and not submittingOrganisation', () => {
+    it('should accept when given submittingOrganisation', () => {
       const payload = createMovementRequest()
-
-      const { error } = receiveMovementRequestSchema.validate(payload)
-
-      expect(error).toBeUndefined()
-    })
-
-    it('should accept when given submittingOrganisation and not apiCode', () => {
-      const payload = createBulkMovementRequest()
 
       const { error } = receiveMovementRequestSchema.validate(payload)
 
@@ -68,26 +60,11 @@ describe('receiveMovementRequestSchema - otherReferencesForMovement validation',
   })
 
   describe('invalid payloads', () => {
-    it('should reject when apiCode and submittingOrganisation are missing', () => {
-      const payload = {
-        ...basePayload,
-        apiCode: undefined
-      }
-      const { error } = receiveMovementRequestSchema.validate(payload)
+    it('should reject when submittingOrganisation is missing', () => {
+      const { submittingOrganisation, ...payloadWithoutOrg } = basePayload
+      const { error } = receiveMovementRequestSchema.validate(payloadWithoutOrg)
       expect(error).toBeDefined()
-      expect(error.message).toContain(
-        '"ReceiveMovementRequest" must contain at least one of [apiCode, submittingOrganisation]'
-      )
-    })
-
-    it('should reject when apiCode is not a guid', () => {
-      const payload = {
-        ...basePayload,
-        apiCode: 'notaguid'
-      }
-      const { error } = receiveMovementRequestSchema.validate(payload)
-      expect(error).toBeDefined()
-      expect(error.message).toContain('"apiCode" must be a valid GUID')
+      expect(error.message).toContain('"submittingOrganisation" is required')
     })
 
     it('should reject when label is missing', () => {

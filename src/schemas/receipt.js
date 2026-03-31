@@ -150,10 +150,9 @@ const brokerOrDealerSchema = Joi.object({
 })
 
 export const receiveMovementRequestSchema = Joi.object({
-  apiCode: Joi.string().uuid(),
   submittingOrganisation: Joi.object({
     defraCustomerOrganisationId: Joi.string().required()
-  }),
+  }).required(),
   dateTimeReceived: Joi.date().iso().required(),
   hazardousWasteConsignmentCode: hazardousWasteConsignmentCodeSchema,
   reasonForNoConsignmentCode: Joi.string().allow(null, ''),
@@ -171,7 +170,6 @@ export const receiveMovementRequestSchema = Joi.object({
   receiver: receiverSchema.required(),
   receipt: receiptSchema.required()
 })
-  .xor('apiCode', 'submittingOrganisation')
   .custom((value, helpers) => {
     const hasHazardous = hasHazardousEwcCodes(value)
 

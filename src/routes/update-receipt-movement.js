@@ -26,7 +26,7 @@ const updateReceiptMovement = {
   handler: async (request, h) => {
     try {
       const { wasteTrackingId } = request.params
-      const { submittingOrganisation } = request.payload
+      const { submittingOrganisation } = request.payload.movement
 
       const existing = await request.db
         .collection('waste-inputs')
@@ -43,10 +43,7 @@ const updateReceiptMovement = {
       }
 
       const orgError = getOrganisationValidationError(
-        {
-          submittingOrganisation,
-          apiCode: request.payload.movement?.apiCode
-        },
+        { submittingOrganisation },
         existing
       )
       if (orgError) {

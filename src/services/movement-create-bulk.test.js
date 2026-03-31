@@ -7,8 +7,6 @@ import {
   it
 } from '@jest/globals'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
-import { base64EncodedOrgApiCodes, orgId1 } from '../test/data/apiCodes.js'
-import { config } from '../config.js'
 import { createBulkWasteInput } from './movement-create-bulk.js'
 import * as cdpAuditing from '@defra/cdp-auditing'
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
@@ -44,7 +42,6 @@ describe('#createBulkWasteInput', () => {
     mongoClient = testMongo.client
     db = testMongo.db
     replicaSet = testMongo.replicaSet
-    config.set('orgApiCodes', base64EncodedOrgApiCodes)
   })
 
   afterAll(async () => {
@@ -61,7 +58,9 @@ describe('#createBulkWasteInput', () => {
         receipt: {},
         createdAt: new Date(),
         lastUpdatedAt: new Date(),
-        orgId: orgId1,
+        submittingOrganisation: {
+          defraCustomerOrganisationId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
+        },
         traceId,
         bulkId,
         revision: 1
@@ -71,7 +70,9 @@ describe('#createBulkWasteInput', () => {
         receipt: {},
         createdAt: new Date(),
         lastUpdatedAt: new Date(),
-        orgId: orgId1,
+        submittingOrganisation: {
+          defraCustomerOrganisationId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
+        },
         traceId,
         bulkId,
         revision: 1

@@ -3,8 +3,6 @@ import { movementSchema } from '../schemas/movement.js'
 import { WasteInput } from '../domain/wasteInput.js'
 import Joi from 'joi'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
-import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
-import { config } from '../config.js'
 import { backOff } from 'exponential-backoff'
 import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
 import { metricsCounter } from '../common/helpers/metrics.js'
@@ -44,33 +42,20 @@ const createReceiptMovement = [
     },
     handler: async (request, h) => {
       try {
-        let requestOrgId
-
         const { wasteTrackingId } = request.params
-        const { submittingOrganisation, ...payloadWithoutOrg } = request.payload
+        const { submittingOrganisation, ...movementWithoutOrg } =
+          request.payload.movement
         const wasteInput = new WasteInput()
 
         wasteInput.wasteTrackingId = wasteTrackingId
-        wasteInput.receipt = payloadWithoutOrg
+        wasteInput.receipt = { movement: movementWithoutOrg }
         wasteInput.traceId = request.getTraceId()
-
-        if (submittingOrganisation?.defraCustomerOrganisationId) {
-          wasteInput.submittingOrganisation = {
-            defraCustomerOrganisationId:
-              submittingOrganisation.defraCustomerOrganisationId
-          }
-          const { apiCode, ...movementWithoutApiCode } =
-            payloadWithoutOrg.movement
-          wasteInput.receipt = { movement: movementWithoutApiCode }
-          requestOrgId = submittingOrganisation.defraCustomerOrganisationId
-        } else {
-          const orgApiCodes = config.get('orgApiCodes')
-          requestOrgId = getOrgIdForApiCode(
-            request.payload.movement.apiCode,
-            orgApiCodes
-          )
-          wasteInput.orgId = requestOrgId
+        wasteInput.submittingOrganisation = {
+          defraCustomerOrganisationId:
+            submittingOrganisation.defraCustomerOrganisationId
         }
+
+        const requestOrgId = submittingOrganisation.defraCustomerOrganisationId
 
         await backOff(
           () => createWasteInput(request.db, wasteInput, request.getTraceId()),

@@ -1,11 +1,14 @@
 import { sourceOfComponentsProvided } from '../../common/constants/source-of-components.js'
 import { TEST_DATA } from '../../schemas/test-constants.js'
 import { validPopNames } from '../../common/constants/pop-names.js'
-import { apiCode1 } from '../data/apiCodes.js'
+
+const defaultOrgId = '57aed195-325e-45d5-b1fb-5f201e0324cf'
 
 export function createMovementRequest(overrides) {
   const defaultMovementRequest = {
-    apiCode: apiCode1,
+    submittingOrganisation: {
+      defraCustomerOrganisationId: defaultOrgId
+    },
     dateTimeReceived: new Date('2021-01-01T00:00:00.000Z'),
     carrier: {
       registrationNumber: 'CBDU123456',

@@ -1,7 +1,5 @@
-import { config } from '../config.js'
 import { createServer } from '../server.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
-import { base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 import { formatBulkUploadValidationErrors } from './error-handler.js'
@@ -24,7 +22,6 @@ describe('Error Handler', () => {
   const originalEnvVars = process.env
 
   beforeAll(async () => {
-    config.set('orgApiCodes', base64EncodedOrgApiCodes)
     process.env = {
       ACCESS_CRED_WASTE_MOVEMENT_EXTERNAL_API:
         'd2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpPTRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
@@ -255,7 +252,7 @@ describe('Error Handler', () => {
     expect(responseBody).toHaveLength(2)
     expect(responseBody[1].validation.errors[0]).toMatchObject({
       errorType: 'NotProvided',
-      key: '1'
+      key: '1.submittingOrganisation'
     })
   })
 
@@ -350,13 +347,13 @@ describe('Error Handler', () => {
       expect(typeError.errorType).toBe('InvalidType')
     })
 
-    test('should return InvalidFormat for invalid UUID', async () => {
+    test('should return InvalidFormat for invalid postcode', async () => {
       const response = await server.inject({
         method: 'POST',
         url: '/bulk/1/movements/receive',
         payload: [
           {
-            apiCode: 'not-a-valid-uuid',
+            submittingOrganisation: { defraCustomerOrganisationId: 'org-123' },
             dateTimeReceived: new Date().toISOString(),
             receiver: {
               siteName: 'Test Site',
@@ -365,7 +362,7 @@ describe('Error Handler', () => {
             receipt: {
               address: {
                 fullAddress: '123 Test St',
-                postcode: 'SW1A 1AA'
+                postcode: 'INVALID'
               }
             }
           }
@@ -380,7 +377,7 @@ describe('Error Handler', () => {
       const responseBody = JSON.parse(response.payload)
 
       const formatError = responseBody[0].validation.errors.find(
-        (err) => err.key === '0.apiCode'
+        (err) => err.key === '0.receipt.address.postcode'
       )
       expect(formatError).toBeDefined()
       expect(formatError.errorType).toBe('InvalidFormat')
@@ -638,7 +635,9 @@ describe('Error Handler', () => {
       console.dir({ responseBody }, { depth: null })
 
       const formatError = responseBody[0].validation.errors.find(
-        (err) => err.key === '0' && err.errorType === 'NotProvided'
+        (err) =>
+          err.key === '0.submittingOrganisation' &&
+          err.errorType === 'NotProvided'
       )
       expect(formatError).toBeDefined()
     })

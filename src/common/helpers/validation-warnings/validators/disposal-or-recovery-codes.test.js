@@ -44,7 +44,7 @@ describe('Disposal or Recovery Code Validation Warnings', () => {
 
   it('should generate warning when wasteItems are missing', () => {
     const payload = {
-      apiCode: uuidv4()
+      submittingOrganisation: { defraCustomerOrganisationId: uuidv4() }
       // No wasteItems section
     }
 

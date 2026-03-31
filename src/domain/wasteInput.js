@@ -6,7 +6,6 @@ export class WasteInput {
   submittingOrganisation
   createdAt
   lastUpdatedAt
-  orgId
   traceId
   bulkId
 }

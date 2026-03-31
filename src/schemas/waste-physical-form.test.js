@@ -29,7 +29,7 @@ describe('Receipt Schema Validation - Physical Form', () => {
     it('should reject empty physical form', () => {
       // Need to build manually as physicalForm is required in defaults
       const payload = {
-        apiCode: uuidv4(),
+        submittingOrganisation: { defraCustomerOrganisationId: uuidv4() },
         dateTimeReceived: '2021-01-01T00:00:00.000Z',
         wasteItems: [
           {

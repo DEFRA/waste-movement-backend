@@ -15,13 +15,6 @@ import { requestLogger } from '../common/helpers/logging/request-logger.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
 import * as movementCreate from '../services/movement-create.js'
-import { config } from '../config.js'
-import {
-  orgId1,
-  base64EncodedOrgApiCodes,
-  orgId3,
-  apiCode3
-} from '../test/data/apiCodes.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 import * as metrics from '../common/helpers/metrics.js'
 import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
@@ -44,6 +37,9 @@ jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockReturnValue(true)
 }))
 
+const orgId1 = '57aed195-325e-45d5-b1fb-5f201e0324cf'
+const orgId3 = '7bbbe5a1a-82fa-48bf-bb8c-b516b8aa1ef4'
+
 describe('movement Route Tests', () => {
   let server
   let mongoClient
@@ -60,7 +56,6 @@ describe('movement Route Tests', () => {
     const testMongo = await createTestMongoDb()
     mongoClient = testMongo.client
     testMongoDb = testMongo.db
-    config.set('orgApiCodes', base64EncodedOrgApiCodes)
   })
 
   afterAll(async () => {
@@ -104,18 +99,19 @@ describe('movement Route Tests', () => {
 
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
     expect(actualWasteInput.revision).toEqual(1)
-    expect(actualWasteInput.receipt).toEqual(expectedPayload)
+    expect(actualWasteInput.submittingOrganisation).toEqual({
+      defraCustomerOrganisationId: orgId1
+    })
     expect(actualWasteInput.createdAt).toBeInstanceOf(Date)
     expect(actualWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
     expect(actualWasteInput.createdAt).toEqual(actualWasteInput.lastUpdatedAt)
-    expect(actualWasteInput.orgId).toBeDefined()
     expect(actualWasteInput.traceId).toEqual(traceId)
 
     expect(createWasteInputSpy).toHaveBeenCalledTimes(3)
 
     expect(metricsCounterSpy).toHaveBeenCalledTimes(1)
     expect(metricsCounterSpy).toHaveBeenCalledWith('receiver.orgId', 1, {
-      orgId: actualWasteInput.orgId
+      orgId: orgId1
     })
   })
 
@@ -171,8 +167,10 @@ describe('movement Route Tests', () => {
   it('does not create waste input when validation fails', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const invalidPayload = {
-      ...createTestPayload(),
-      apiCode: undefined
+      movement: {
+        ...createTestPayload(),
+        submittingOrganisation: undefined
+      }
     }
 
     const { statusCode } = await server.inject({
@@ -190,112 +188,18 @@ describe('movement Route Tests', () => {
     expect(actualWasteInput).toBeNull()
   })
 
-  it('rejects when apiCode is invalid', async () => {
-    const wasteTrackingId = generateWasteTrackingId()
-    const payload = {
-      movement: {
-        ...createTestPayload(),
-        apiCode: apiCode3
-      }
-    }
-
-    const { statusCode, result } = await server.inject({
-      method: 'POST',
-      url: `/movements/${wasteTrackingId}/receive`,
-      payload
-    })
-
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
-    expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'apiCode',
-            errorType: 'InvalidValue',
-            message: 'the API Code supplied is invalid'
-          }
-        ]
-      }
-    })
-  })
-
-  it.each([undefined, null, ''])(
-    'rejects when ORG_API_CODES secret does not have a value: "%s"',
-    async (value) => {
-      config.set('orgApiCodes', value)
-
-      const wasteTrackingId = generateWasteTrackingId()
-      const payload = {
-        movement: createTestPayload()
-      }
-
-      const { statusCode, result } = await server.inject({
-        method: 'POST',
-        url: `/movements/${wasteTrackingId}/receive`,
-        payload
-      })
-
-      expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
-      expect(result).toEqual({
-        validation: {
-          errors: [
-            {
-              key: 'apiCode',
-              errorType: 'InvalidValue',
-              message: 'the API Code supplied is invalid'
-            }
-          ]
-        }
-      })
-    }
-  )
-
-  it('creates a waste input with submittingOrganisation when apiCode matches the orgApiCodes secret value', async () => {
+  it('creates a waste input with a different submittingOrganisation', async () => {
     const { createWasteInput: actualFunction } = jest.requireActual(
       '../services/movement-create.js'
     )
     movementCreate.createWasteInput.mockImplementation(actualFunction)
-    config.set('orgApiCodes', base64EncodedOrgApiCodes)
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: orgId1
-      },
-      movement: createTestPayload()
-    }
-
-    const { statusCode, result } = await server.inject({
-      method: 'POST',
-      url: `/movements/${wasteTrackingId}/receive`,
-      payload,
-      headers: {
-        'x-cdp-request-id': 'trace-123'
-      }
-    })
-
-    expect(statusCode).toEqual(204)
-    expect(result).toEqual(null)
-
-    const actualWasteInput = await testMongoDb
-      .collection('waste-inputs')
-      .findOne({ _id: wasteTrackingId })
-
-    expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
-    expect(actualWasteInput.submittingOrganisation).toEqual({
-      defraCustomerOrganisationId: orgId1
-    })
-  })
-
-  it('creates a waste input with submittingOrganisation when apiCode does not match the orgApiCodes secret value', async () => {
-    const wasteTrackingId = generateWasteTrackingId()
-    const payload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: orgId3
-      },
-      movement: {
-        ...createTestPayload(),
-        apiCode: apiCode3
-      }
+      movement: createTestPayload({
+        submittingOrganisation: {
+          defraCustomerOrganisationId: orgId3
+        }
+      })
     }
 
     const { statusCode, result } = await server.inject({
@@ -318,36 +222,5 @@ describe('movement Route Tests', () => {
     expect(actualWasteInput.submittingOrganisation).toEqual({
       defraCustomerOrganisationId: orgId3
     })
-  })
-
-  it('creates a waste input without submittingOrganisation', async () => {
-    const { createWasteInput: actualFunction } = jest.requireActual(
-      '../services/movement-create.js'
-    )
-    movementCreate.createWasteInput.mockImplementation(actualFunction)
-    config.set('orgApiCodes', base64EncodedOrgApiCodes)
-    const wasteTrackingId = generateWasteTrackingId()
-    const movement = createTestPayload()
-
-    const { statusCode, result } = await server.inject({
-      method: 'POST',
-      url: `/movements/${wasteTrackingId}/receive`,
-      payload: {
-        movement
-      },
-      headers: {
-        'x-cdp-request-id': 'trace-456'
-      }
-    })
-
-    expect(statusCode).toEqual(204)
-    expect(result).toEqual(null)
-
-    const actualWasteInput = await testMongoDb
-      .collection('waste-inputs')
-      .findOne({ _id: wasteTrackingId })
-
-    expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
-    expect(actualWasteInput.submittingOrganisation).toBeNull()
   })
 })
