@@ -8,6 +8,16 @@ import {
   it
 } from '@jest/globals'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
+import {
+  apiCode1,
+  apiCode2,
+  apiCode3,
+  base64EncodedOrgApiCodes,
+  orgId1,
+  orgId2,
+  orgId3
+} from '../test/data/apiCodes.js'
+import { config } from '../config.js'
 import { ValidationError } from '../common/helpers/errors/validation-error.js'
 import * as cdpAuditing from '@defra/cdp-auditing'
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
@@ -27,10 +37,6 @@ jest.mock('@defra/cdp-auditing', () => ({
     })
 }))
 
-const orgId1 = '57aed195-325e-45d5-b1fb-5f201e0324cf'
-const orgId2 = '70d84972-2ad3-4ada-a867-ad261a7245e7'
-const orgId3 = '7bbbe5a1a-82fa-48bf-bb8c-b516b8aa1ef4'
-
 describe('updateWasteInput', () => {
   let client
   let db
@@ -46,6 +52,7 @@ describe('updateWasteInput', () => {
     client = testMongo.client
     db = testMongo.db
     replicaSet = testMongo.replicaSet
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
   })
 
   afterAll(async () => {
@@ -69,12 +76,14 @@ describe('updateWasteInput', () => {
     const wasteTrackingId = 'test-id'
     const updateData = {
       receipt: { test: 'data' },
-      submittingOrganisation: { defraCustomerOrganisationId: orgId1 }
+      apiCode: apiCode1,
+      orgId: orgId1
     }
     const existingWasteInput = {
       _id: wasteTrackingId,
       someData: 'value',
-      submittingOrganisation: { defraCustomerOrganisationId: orgId1 },
+      apiCode: apiCode1,
+      orgId: orgId1,
       createdAt: new Date(),
       revision: 1
     }
@@ -95,14 +104,18 @@ describe('updateWasteInput', () => {
       _id: wasteTrackingId
     })
 
-    expect(updatedWasteInput.receipt).toEqual(updateData.receipt)
-    expect(updatedWasteInput.revision).toEqual(2)
-    expect(updatedWasteInput.traceId).toEqual(traceId)
+    expect(updatedWasteInput).toMatchObject({
+      ...existingWasteInput,
+      ...updateData,
+      revision: 2,
+      traceId
+    })
     expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
 
     const historyEntry = await wasteInputsHistoryCollection.findOne({
       wasteTrackingId
     })
+    // ignore _id, it's random in the waste-inputs-history collection
     delete historyEntry._id
     delete existingWasteInput._id
 
@@ -131,12 +144,14 @@ describe('updateWasteInput', () => {
     const wasteTrackingId = 'test-id'
     const updateData = {
       receipt: { test: 'data' },
-      submittingOrganisation: { defraCustomerOrganisationId: orgId1 }
+      apiCode: apiCode1,
+      orgId: orgId1
     }
     const existingWasteInput = {
       _id: wasteTrackingId,
       someData: 'value',
-      submittingOrganisation: { defraCustomerOrganisationId: orgId1 },
+      apiCode: apiCode1,
+      orgId: orgId1,
       createdAt: new Date(),
       revision: 1
     }
@@ -157,16 +172,20 @@ describe('updateWasteInput', () => {
       _id: wasteTrackingId
     })
 
-    expect(updatedWasteInput.receipt.movement.receipt).toEqual(
-      updateData.receipt
-    )
-    expect(updatedWasteInput.revision).toEqual(2)
-    expect(updatedWasteInput.traceId).toEqual(traceId)
+    expect(updatedWasteInput).toMatchObject({
+      ...existingWasteInput,
+      receipt: {
+        movement: updateData
+      },
+      revision: 2,
+      traceId
+    })
     expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
 
     const historyEntry = await wasteInputsHistoryCollection.findOne({
       wasteTrackingId
     })
+    // ignore _id, it's random in the waste-inputs-history collection
     delete historyEntry._id
     delete existingWasteInput._id
 
@@ -191,15 +210,17 @@ describe('updateWasteInput', () => {
     })
   })
 
-  it('should update waste input with submittingOrganisation and calls audit endpoint', async () => {
+  it('should update waste input and calls audit endpoint when it exists and when submittingOrganisation apiCode does not match the orgApiCodes secret value', async () => {
     const wasteTrackingId = 'test-id'
     const updateData = {
       receipt: { test: 'data' },
+      apiCode: apiCode3,
       submittingOrganisation: { defraCustomerOrganisationId: orgId3 }
     }
     const existingWasteInput = {
       _id: wasteTrackingId,
       someData: 'value',
+      apiCode: apiCode3,
       submittingOrganisation: { defraCustomerOrganisationId: orgId3 },
       createdAt: new Date(),
       revision: 1
@@ -214,23 +235,26 @@ describe('updateWasteInput', () => {
       updateData,
       client,
       traceId,
-      undefined
+      undefined,
+      updateData.submittingOrganisation
     )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({
       _id: wasteTrackingId
     })
 
-    expect(updatedWasteInput.submittingOrganisation).toEqual({
-      defraCustomerOrganisationId: orgId3
+    expect(updatedWasteInput).toMatchObject({
+      ...existingWasteInput,
+      ...updateData,
+      revision: 2,
+      traceId
     })
-    expect(updatedWasteInput.revision).toEqual(2)
-    expect(updatedWasteInput.traceId).toEqual(traceId)
     expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
 
     const historyEntry = await wasteInputsHistoryCollection.findOne({
       wasteTrackingId
     })
+    // ignore _id, it's random in the waste-inputs-history collection
     delete historyEntry._id
     delete existingWasteInput._id
 
@@ -259,12 +283,14 @@ describe('updateWasteInput', () => {
     const wasteTrackingId = 'test-id'
     const updateData = {
       receipt: { test: 'data' },
-      submittingOrganisation: { defraCustomerOrganisationId: orgId1 }
+      apiCode: apiCode1,
+      orgId: orgId1
     }
     const existingWasteInput = {
       _id: wasteTrackingId,
       someData: 'value',
-      submittingOrganisation: { defraCustomerOrganisationId: orgId1 },
+      apiCode: apiCode1,
+      orgId: orgId1,
       createdAt: new Date(),
       revision: 1
     }
@@ -285,13 +311,18 @@ describe('updateWasteInput', () => {
       _id: wasteTrackingId
     })
 
-    expect(updatedWasteInput.revision).toEqual(2)
-    expect(updatedWasteInput.traceId).toEqual(traceId)
+    expect(updatedWasteInput).toMatchObject({
+      ...existingWasteInput,
+      ...updateData,
+      revision: 2,
+      traceId
+    })
     expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
 
     const historyEntry = await wasteInputsHistoryCollection.findOne({
       wasteTrackingId
     })
+    // ignore _id, it's random in the waste-inputs-history collection
     delete historyEntry._id
     delete existingWasteInput._id
 
@@ -312,7 +343,8 @@ describe('updateWasteInput', () => {
     const wasteTrackingId = 'non-existent-id'
     const updateData = {
       receipt: { test: 'data' },
-      submittingOrganisation: { defraCustomerOrganisationId: orgId1 }
+      apiCode: apiCode1,
+      orgId: orgId1
     }
     const auditSpy = jest.spyOn(cdpAuditing, 'audit')
 
@@ -357,13 +389,15 @@ describe('updateWasteInput', () => {
     const wasteTrackingId = 'test-id-with-revision'
     const updateData = {
       receipt: { test: 'updated-data' },
-      submittingOrganisation: { defraCustomerOrganisationId: orgId1 }
+      apiCode: apiCode1,
+      orgId: orgId1
     }
     const existingWasteInput = {
       _id: wasteTrackingId,
       someData: 'value',
       revision: 1,
-      submittingOrganisation: { defraCustomerOrganisationId: orgId1 }
+      apiCode: apiCode1,
+      orgId: orgId1
     }
 
     await wasteInputsCollection.insertOne(existingWasteInput)
@@ -380,14 +414,19 @@ describe('updateWasteInput', () => {
     const updatedWasteInput = await wasteInputsCollection.findOne({
       _id: wasteTrackingId
     })
-    expect(updatedWasteInput.revision).toEqual(2)
-    expect(updatedWasteInput.traceId).toEqual(traceId)
+    expect(updatedWasteInput).toMatchObject({
+      ...existingWasteInput,
+      ...updateData,
+      revision: 2,
+      traceId
+    })
     expect(updatedWasteInput.lastUpdatedAt).toBeInstanceOf(Date)
 
     const historyEntry = await wasteInputsHistoryCollection.findOne({
       wasteTrackingId
     })
 
+    // ignore _id, it's random in the waste-inputs-history collection
     delete historyEntry._id
     delete existingWasteInput._id
     expect(historyEntry).toMatchObject({
@@ -428,16 +467,18 @@ describe('updateWasteInput', () => {
     expect(auditSpy).not.toHaveBeenCalled()
   })
 
-  it('should return a validation error and not call audit endpoint if the submitting organisation does not match the original record', async () => {
+  it('should return a validation error and not call audit endpoint if the org id of the updated entry does not match the org id of the original entry', async () => {
     const wasteTrackingId = 'test-id'
     const updateData = {
       receipt: { test: 'data' },
-      submittingOrganisation: { defraCustomerOrganisationId: orgId2 }
+      apiCode: apiCode2,
+      orgId: orgId2
     }
     const existingWasteInput = {
       _id: wasteTrackingId,
       someData: 'value',
-      submittingOrganisation: { defraCustomerOrganisationId: orgId1 }
+      apiCode: apiCode1,
+      orgId: orgId1
     }
     const auditSpy = jest.spyOn(cdpAuditing, 'audit')
 
@@ -452,9 +493,9 @@ describe('updateWasteInput', () => {
     )
 
     expect(result).toBeInstanceOf(ValidationError)
-    expect(result.key).toEqual('submittingOrganisation')
+    expect(result.key).toEqual('apiCode')
     expect(result.message).toEqual(
-      'the submitting organisation does not match the Organisation that created the original waste item record'
+      'the API Code supplied does not relate to the same Organisation as created the original waste item record'
     )
 
     expect(auditSpy).not.toHaveBeenCalled()

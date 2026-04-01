@@ -8,6 +8,8 @@ import {
   jest
 } from '@jest/globals'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
+import { base64EncodedOrgApiCodes, orgId1 } from '../test/data/apiCodes.js'
+import { config } from '../config.js'
 import { updateBulkWasteInput } from './movement-update-bulk.js'
 import * as cdpAuditing from '@defra/cdp-auditing'
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
@@ -39,6 +41,7 @@ describe('#updateBulkWasteInput', () => {
     mongoClient = testMongo.client
     db = testMongo.db
     replicaSet = testMongo.replicaSet
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
   })
 
   afterAll(async () => {
@@ -62,6 +65,7 @@ describe('#updateBulkWasteInput', () => {
         receipt: {},
         createdAt: new Date(),
         lastUpdatedAt: new Date(),
+        orgId: orgId1,
         traceId,
         bulkId,
         revision: 1,
@@ -73,6 +77,7 @@ describe('#updateBulkWasteInput', () => {
         receipt: {},
         createdAt: new Date(),
         lastUpdatedAt: new Date(),
+        orgId: orgId1,
         traceId,
         bulkId,
         revision: 1,

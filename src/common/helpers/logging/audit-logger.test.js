@@ -25,7 +25,7 @@ describe('Audit Logger Tests', () => {
         version: 2,
         data: {
           wasteTrackingId: '2578ZCY8',
-          receipt: { movement: {} }
+          receipt: { apiCode: '926a654e-f87d-4348-bf0c-2c21ab954e09' }
         },
         wasteTrackingId: '2578ZCY8',
         revision: 1

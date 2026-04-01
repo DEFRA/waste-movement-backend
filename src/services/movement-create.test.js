@@ -41,10 +41,7 @@ describe('createWasteInput', () => {
     const mockMovement = {
       wasteTrackingId,
       traceId,
-      receipt: { movement: {} },
-      submittingOrganisation: {
-        defraCustomerOrganisationId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
-      }
+      receipt: { movement: {} }
     }
     const auditSpy = jest.spyOn(cdpAuditing, 'audit')
 
@@ -78,10 +75,7 @@ describe('createWasteInput', () => {
     const mockMovement = {
       wasteTrackingId,
       traceId,
-      receipt: { movement: {} },
-      submittingOrganisation: {
-        defraCustomerOrganisationId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
-      }
+      receipt: { movement: {} }
     }
     const errorLoggerSpy = jest.spyOn(logger.createLogger(), 'error')
 

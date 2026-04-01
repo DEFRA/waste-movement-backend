@@ -1,5 +1,7 @@
 import { ValidationError } from '../common/helpers/errors/validation-error.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
+import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
+import { config } from '../config.js'
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 import { createHistoryEntry } from '../common/helpers/create-history-entry.js'
@@ -8,8 +10,8 @@ const logger = createLogger()
 
 function createOrgMismatchError() {
   return new ValidationError(
-    'submittingOrganisation',
-    'the submitting organisation does not match the Organisation that created the original waste item record',
+    'apiCode',
+    'the API Code supplied does not relate to the same Organisation as created the original waste item record',
     'BusinessRuleViolation'
   )
 }
@@ -20,12 +22,8 @@ function buildUpdateSet(
   submittingOrganisation,
   traceId
 ) {
-  const { submittingOrganisation: _, ...dataWithoutOrg } = updateData
-
   const updateSet = {
-    ...(fieldToUpdate
-      ? { [fieldToUpdate]: { ...dataWithoutOrg } }
-      : dataWithoutOrg),
+    ...(fieldToUpdate ? { [fieldToUpdate]: { ...updateData } } : updateData),
     lastUpdatedAt: new Date(),
     traceId
   }
@@ -35,9 +33,22 @@ function buildUpdateSet(
       defraCustomerOrganisationId:
         submittingOrganisation.defraCustomerOrganisationId
     }
+    const { apiCode, ...dataWithoutApiCode } = updateData
+    if (fieldToUpdate) {
+      updateSet[fieldToUpdate] = { ...dataWithoutApiCode }
+    }
   }
 
   return updateSet
+}
+
+function buildOrFilter(requestOrgId) {
+  return [
+    { orgId: requestOrgId },
+    {
+      'submittingOrganisation.defraCustomerOrganisationId': requestOrgId
+    }
+  ]
 }
 
 export async function updateWasteInput(
@@ -72,9 +83,9 @@ export async function updateWasteInput(
 
     const historyEntry = createHistoryEntry(existingWasteInput, wasteTrackingId)
 
-    const requestOrgId =
-      submittingOrganisation?.defraCustomerOrganisationId ??
-      updateData.submittingOrganisation?.defraCustomerOrganisationId
+    const requestOrgId = submittingOrganisation?.defraCustomerOrganisationId
+      ? submittingOrganisation.defraCustomerOrganisationId
+      : getOrgIdForApiCode(updateData.apiCode, config.get('orgApiCodes'))
 
     const revision = existingWasteInput.revision
     let result
@@ -92,7 +103,7 @@ export async function updateWasteInput(
       result = await wasteInputsCollection.updateOne(
         {
           _id: wasteTrackingId,
-          'submittingOrganisation.defraCustomerOrganisationId': requestOrgId,
+          $or: buildOrFilter(requestOrgId),
           revision
         },
         {

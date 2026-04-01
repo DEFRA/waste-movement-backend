@@ -9,6 +9,12 @@ import * as movementUpdateBulk from '../services/movement-update-bulk.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 import { updateBulkReceiptMovement } from './update-bulk-receipt-movement.js'
 import { failAction } from '../common/helpers/fail-action.js'
+import {
+  orgId1,
+  apiCode1,
+  apiCode2,
+  base64EncodedOrgApiCodes
+} from '../test/data/apiCodes.js'
 import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 import { config } from '../config.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
@@ -45,8 +51,9 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       receipt: { movement: {} },
       createdAt: new Date(),
       lastUpdatedAt: new Date(),
+      orgId: orgId1,
       submittingOrganisation: {
-        defraCustomerOrganisationId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
+        defraCustomerOrganisationId: 'fd98d4ef34e33b34fc8fad03f8c385'
       },
       traceId: 'created-trace-id-123',
       bulkId: createBulkId,
@@ -58,8 +65,9 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       receipt: { movement: {} },
       createdAt: new Date(),
       lastUpdatedAt: new Date(),
+      orgId: orgId1,
       submittingOrganisation: {
-        defraCustomerOrganisationId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
+        defraCustomerOrganisationId: 'fd98d4ef34e33b34fc8fad03f8c385'
       },
       traceId: 'created-trace-id-123',
       bulkId: createBulkId,
@@ -175,9 +183,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       {
         wasteTrackingId: '26E4C7Z2',
         receipt: { movement: {} },
-        submittingOrganisation: {
-          defraCustomerOrganisationId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
-        },
+        orgId: orgId1,
         traceId,
         bulkId: updateBulkId,
         revision: 2,
@@ -186,9 +192,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       {
         wasteTrackingId: '266XHTDL',
         receipt: { movement: {} },
-        submittingOrganisation: {
-          defraCustomerOrganisationId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
-        },
+        orgId: orgId1,
         traceId,
         bulkId: updateBulkId,
         revision: 2,
@@ -232,6 +236,49 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     })
   })
 
+  it('should return 400 when submittingOrganisation does not match and existing record has no submittingOrganisation', async () => {
+    await wasteInputsCollection.updateOne(
+      { _id: '26E4C7Z2' },
+      { $unset: { submittingOrganisation: '' } }
+    )
+
+    payload = [
+      createBulkMovementRequest({
+        wasteTrackingId: '26E4C7Z2',
+        submittingOrganisation: {
+          defraCustomerOrganisationId: 'some-org-id'
+        }
+      }),
+      createBulkMovementRequest({ wasteTrackingId: '266XHTDL' })
+    ]
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/bulk/${updateBulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual([
+      {
+        validation: {
+          errors: [
+            {
+              key: '0.submittingOrganisation',
+              errorType: 'BusinessRuleViolation',
+              message:
+                '[0].submittingOrganisation the submitting organisation does not match the Organisation that created the original waste item record'
+            }
+          ]
+        }
+      },
+      {}
+    ])
+  })
+
   it('should return 400 when submittingOrganisation does not match the original record', async () => {
     payload = [
       createBulkMovementRequest({
@@ -262,6 +309,74 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
               errorType: 'BusinessRuleViolation',
               message:
                 '[0].submittingOrganisation the submitting organisation does not match the Organisation that created the original waste item record'
+            }
+          ]
+        }
+      },
+      {}
+    ])
+  })
+
+  it('should succeed when apiCode org matches the original record', async () => {
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
+
+    const apiCodeItem = createBulkMovementRequest({
+      wasteTrackingId: '26E4C7Z2',
+      apiCode: apiCode1
+    })
+    delete apiCodeItem.submittingOrganisation
+
+    payload = [
+      apiCodeItem,
+      createBulkMovementRequest({ wasteTrackingId: '266XHTDL' })
+    ]
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/bulk/${updateBulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(result.status).toEqual(BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED)
+  })
+
+  it('should return 400 when apiCode org does not match the original record', async () => {
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
+
+    const apiCodeItem = createBulkMovementRequest({
+      wasteTrackingId: '26E4C7Z2',
+      apiCode: apiCode2
+    })
+    delete apiCodeItem.submittingOrganisation
+
+    payload = [
+      apiCodeItem,
+      createBulkMovementRequest({ wasteTrackingId: '266XHTDL' })
+    ]
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/bulk/${updateBulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual([
+      {
+        validation: {
+          errors: [
+            {
+              key: '0.apiCode',
+              errorType: 'BusinessRuleViolation',
+              message:
+                '[0].apiCode the API Code supplied does not relate to the same Organisation as created the original waste item record'
             }
           ]
         }

@@ -4,6 +4,22 @@ import { movementSchema } from './movement.js'
 describe('movementSchema', () => {
   it('should accept valid payload with submittingOrganisation inside movement', () => {
     const payload = {
+      movement: {
+        ...createTestPayload(),
+        submittingOrganisation: {
+          defraCustomerOrganisationId: 'org-id-123'
+        }
+      }
+    }
+    delete payload.movement.apiCode
+
+    const { error } = movementSchema.validate(payload)
+
+    expect(error).toBeUndefined()
+  })
+
+  it('should accept valid payload with apiCode inside movement', () => {
+    const payload = {
       movement: createTestPayload()
     }
 
@@ -36,28 +52,15 @@ describe('movementSchema', () => {
     )
   })
 
-  it('should return an error when submittingOrganisation is missing from movement', () => {
-    const { submittingOrganisation, ...movementWithoutOrg } =
-      createTestPayload()
-    const payload = {
-      movement: movementWithoutOrg
-    }
-
-    const { error } = movementSchema.validate(payload)
-
-    expect(error).toBeDefined()
-    expect(error.message).toContain(
-      '"movement.submittingOrganisation" is required'
-    )
-  })
-
   it('should return an error when defraCustomerOrganisationId is missing', () => {
     const payload = {
-      movement: createTestPayload({
+      movement: {
+        ...createTestPayload(),
+        apiCode: undefined,
         submittingOrganisation: {
           defraCustomerOrganisationId: undefined
         }
-      })
+      }
     }
 
     const { error } = movementSchema.validate(payload)
@@ -70,11 +73,13 @@ describe('movementSchema', () => {
 
   it('should return an error when defraCustomerOrganisationId is null', () => {
     const payload = {
-      movement: createTestPayload({
+      movement: {
+        ...createTestPayload(),
+        apiCode: undefined,
         submittingOrganisation: {
           defraCustomerOrganisationId: null
         }
-      })
+      }
     }
 
     const { error } = movementSchema.validate(payload)
@@ -87,11 +92,13 @@ describe('movementSchema', () => {
 
   it('should return an error when defraCustomerOrganisationId is not a string', () => {
     const payload = {
-      movement: createTestPayload({
+      movement: {
+        ...createTestPayload(),
+        apiCode: undefined,
         submittingOrganisation: {
           defraCustomerOrganisationId: 123
         }
-      })
+      }
     }
 
     const { error } = movementSchema.validate(payload)
@@ -104,11 +111,13 @@ describe('movementSchema', () => {
 
   it('should return an error when defraCustomerOrganisationId is an empty string', () => {
     const payload = {
-      movement: createTestPayload({
+      movement: {
+        ...createTestPayload(),
+        apiCode: undefined,
         submittingOrganisation: {
           defraCustomerOrganisationId: ''
         }
-      })
+      }
     }
 
     const { error } = movementSchema.validate(payload)

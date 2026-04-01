@@ -3,6 +3,7 @@ import { retryAuditLogReceiptMovement } from './retry-audit-log-receipt-movement
 import { requestLogger } from '../common/helpers/logging/request-logger.js'
 import { mongoDb } from '../common/helpers/mongodb.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
+import { base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 import { createReceiptMovement } from './create-receipt-movement.js'
 import { updateReceiptMovement } from './update-receipt-movement.js'
 import { config } from '../config.js'
@@ -40,6 +41,7 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
     mongoUri = testMongo.mongoUri
     replicaSet = testMongo.replicaSet
 
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
     config.set('mongo.uri', mongoUri)
     config.set('mongo.readPreference', 'primary')
 

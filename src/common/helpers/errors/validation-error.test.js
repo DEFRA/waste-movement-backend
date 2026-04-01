@@ -14,8 +14,8 @@ describe('ValidationError', () => {
 
   it('should use provided errorType', () => {
     const error = new ValidationError(
-      'submittingOrganisation',
-      'invalid submitting organisation',
+      'apiCode',
+      'invalid api code',
       'InvalidValue'
     )
 
@@ -24,8 +24,8 @@ describe('ValidationError', () => {
 
   it('should return correct response format', () => {
     const error = new ValidationError(
-      'submittingOrganisation',
-      'the submitting organisation supplied is invalid',
+      'apiCode',
+      'the API Code supplied is invalid',
       'InvalidValue'
     )
 
@@ -33,9 +33,9 @@ describe('ValidationError', () => {
       validation: {
         errors: [
           {
-            key: 'submittingOrganisation',
+            key: 'apiCode',
             errorType: 'InvalidValue',
-            message: 'the submitting organisation supplied is invalid'
+            message: 'the API Code supplied is invalid'
           }
         ]
       }

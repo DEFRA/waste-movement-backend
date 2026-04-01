@@ -41,7 +41,7 @@ const receiverAddressSchema = {
 export const wasteInputSchema = {
   bsonType: 'object',
   additionalProperties: false,
-  required: ['_id', 'receipt', 'submittingOrganisation'],
+  required: ['_id', 'receipt'],
   properties: {
     _id: {
       bsonType: ['objectId', 'string']
@@ -56,7 +56,7 @@ export const wasteInputSchema = {
       bsonType: 'null'
     },
     submittingOrganisation: {
-      bsonType: 'object',
+      bsonType: ['object', 'null'],
       required: ['defraCustomerOrganisationId'],
       properties: {
         defraCustomerOrganisationId: {
@@ -69,6 +69,9 @@ export const wasteInputSchema = {
     },
     lastUpdatedAt: {
       bsonType: 'date'
+    },
+    orgId: {
+      bsonType: ['string', 'null']
     },
     traceId: {
       bsonType: 'string'
@@ -92,6 +95,9 @@ export const wasteInputSchema = {
           additionalProperties: false,
           properties: {
             wasteTrackingId: {
+              bsonType: 'string'
+            },
+            apiCode: {
               bsonType: 'string'
             },
             dateTimeReceived: {

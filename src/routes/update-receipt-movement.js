@@ -26,7 +26,8 @@ const updateReceiptMovement = {
   handler: async (request, h) => {
     try {
       const { wasteTrackingId } = request.params
-      const { submittingOrganisation } = request.payload.movement
+      const { submittingOrganisation, ...movementData } =
+        request.payload.movement
 
       const existing = await request.db
         .collection('waste-inputs')
@@ -43,7 +44,10 @@ const updateReceiptMovement = {
       }
 
       const orgError = getOrganisationValidationError(
-        { submittingOrganisation },
+        {
+          submittingOrganisation,
+          apiCode: movementData.apiCode
+        },
         existing
       )
       if (orgError) {
@@ -55,7 +59,7 @@ const updateReceiptMovement = {
           updateWasteInput(
             request.db,
             wasteTrackingId,
-            request.payload.movement,
+            movementData,
             request.mongoClient,
             request.getTraceId(),
             'receipt.movement',

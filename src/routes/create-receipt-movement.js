@@ -3,6 +3,8 @@ import { movementSchema } from '../schemas/movement.js'
 import { WasteInput } from '../domain/wasteInput.js'
 import Joi from 'joi'
 import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
+import { config } from '../config.js'
 import { backOff } from 'exponential-backoff'
 import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
 import { metricsCounter } from '../common/helpers/metrics.js'
@@ -42,20 +44,29 @@ const createReceiptMovement = [
     },
     handler: async (request, h) => {
       try {
+        let requestOrgId
+
         const { wasteTrackingId } = request.params
-        const { submittingOrganisation, ...movementWithoutOrg } =
+        const { submittingOrganisation, apiCode, ...movementData } =
           request.payload.movement
         const wasteInput = new WasteInput()
 
         wasteInput.wasteTrackingId = wasteTrackingId
-        wasteInput.receipt = { movement: movementWithoutOrg }
         wasteInput.traceId = request.getTraceId()
-        wasteInput.submittingOrganisation = {
-          defraCustomerOrganisationId:
-            submittingOrganisation.defraCustomerOrganisationId
-        }
 
-        const requestOrgId = submittingOrganisation.defraCustomerOrganisationId
+        if (submittingOrganisation?.defraCustomerOrganisationId) {
+          wasteInput.submittingOrganisation = {
+            defraCustomerOrganisationId:
+              submittingOrganisation.defraCustomerOrganisationId
+          }
+          wasteInput.receipt = { movement: movementData }
+          requestOrgId = submittingOrganisation.defraCustomerOrganisationId
+        } else {
+          const orgApiCodes = config.get('orgApiCodes')
+          requestOrgId = getOrgIdForApiCode(apiCode, orgApiCodes)
+          wasteInput.orgId = requestOrgId
+          wasteInput.receipt = { movement: { apiCode, ...movementData } }
+        }
 
         await backOff(
           () => createWasteInput(request.db, wasteInput, request.getTraceId()),

@@ -140,7 +140,7 @@ describe('Validation Warnings', () => {
 
     it('should handle payload without wasteItems section', () => {
       const payload = {
-        submittingOrganisation: { defraCustomerOrganisationId: uuidv4() }
+        apiCode: uuidv4()
       }
 
       const warnings = processValidationWarnings(
