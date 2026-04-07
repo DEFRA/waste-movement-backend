@@ -4,6 +4,10 @@ import { updateReceiptMovement } from '../routes/update-receipt-movement.js'
 import { retryAuditLogReceiptMovement } from '../routes/retry-audit-log-receipt-movement.js'
 import { createBulkReceiptMovement } from '../routes/create-bulk-receipt-movement.js'
 import { updateBulkReceiptMovement } from '../routes/update-bulk-receipt-movement.js'
+import { getReceiptMovement } from '../routes/get-receipt-movement.js'
+import { config } from '../config.js'
+
+const environment = config.get('cdpEnvironment')
 
 const router = {
   plugin: {
@@ -18,6 +22,12 @@ const router = {
         createBulkReceiptMovement,
         updateBulkReceiptMovement
       ]
+
+      const nonProdRoutes = [getReceiptMovement]
+
+      if (['local', 'dev', 'test'].includes(environment)) {
+        routes.push(...nonProdRoutes)
+      }
 
       // Register routes directly
       server.route(routes)
