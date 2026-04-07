@@ -128,7 +128,7 @@ describe('movementSchema', () => {
     )
   })
 
-  it('should reject submittingOrganisation at root level', () => {
+  it('should accept submittingOrganisation at root level (backwards compatibility)', () => {
     const payload = {
       submittingOrganisation: {
         defraCustomerOrganisationId: 'org-id-123'
@@ -138,7 +138,6 @@ describe('movementSchema', () => {
 
     const { error } = movementSchema.validate(payload)
 
-    expect(error).toBeDefined()
-    expect(error.message).toContain('"submittingOrganisation" is not allowed')
+    expect(error).toBeUndefined()
   })
 })
