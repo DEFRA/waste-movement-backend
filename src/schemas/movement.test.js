@@ -6,12 +6,12 @@ describe('movementSchema', () => {
     const payload = {
       movement: {
         ...createTestPayload(),
+        apiCode: undefined,
         submittingOrganisation: {
           defraCustomerOrganisationId: 'org-id-123'
         }
       }
     }
-    delete payload.movement.apiCode
 
     const { error } = movementSchema.validate(payload)
 
@@ -128,7 +128,7 @@ describe('movementSchema', () => {
     )
   })
 
-  it('should accept submittingOrganisation at root level (backwards compatibility)', () => {
+  it('should reject submittingOrganisation at root level', () => {
     const payload = {
       submittingOrganisation: {
         defraCustomerOrganisationId: 'org-id-123'
@@ -138,6 +138,7 @@ describe('movementSchema', () => {
 
     const { error } = movementSchema.validate(payload)
 
-    expect(error).toBeUndefined()
+    expect(error).toBeDefined()
+    expect(error.message).toContain('"submittingOrganisation" is not allowed')
   })
 })

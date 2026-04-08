@@ -47,13 +47,8 @@ const createReceiptMovement = [
         let requestOrgId
 
         const { wasteTrackingId } = request.params
-        const {
-          submittingOrganisation: movementOrg,
-          apiCode,
-          ...movementData
-        } = request.payload.movement
-        const submittingOrganisation =
-          movementOrg || request.payload.submittingOrganisation
+        const { submittingOrganisation, apiCode, ...movementData } =
+          request.payload.movement
         const wasteInput = new WasteInput()
 
         wasteInput.wasteTrackingId = wasteTrackingId
