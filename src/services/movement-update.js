@@ -83,9 +83,8 @@ export async function updateWasteInput(
 
     const historyEntry = createHistoryEntry(existingWasteInput, wasteTrackingId)
 
-    const requestOrgId = updateData.submittingOrganisation
-      ?.defraCustomerOrganisationId
-      ? updateData.submittingOrganisation.defraCustomerOrganisationId
+    const requestOrgId = submittingOrganisation?.defraCustomerOrganisationId
+      ? submittingOrganisation.defraCustomerOrganisationId
       : getOrgIdForApiCode(updateData.apiCode, config.get('orgApiCodes'))
 
     const revision = existingWasteInput.revision

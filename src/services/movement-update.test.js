@@ -235,7 +235,8 @@ describe('updateWasteInput', () => {
       updateData,
       client,
       traceId,
-      undefined
+      undefined,
+      updateData.submittingOrganisation
     )
 
     const updatedWasteInput = await wasteInputsCollection.findOne({

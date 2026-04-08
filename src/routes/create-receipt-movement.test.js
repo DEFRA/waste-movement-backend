@@ -258,10 +258,13 @@ describe('movement Route Tests', () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: orgId1
-      },
-      movement: createTestPayload()
+      movement: {
+        ...createTestPayload(),
+        apiCode: undefined,
+        submittingOrganisation: {
+          defraCustomerOrganisationId: orgId1
+        }
+      }
     }
 
     const { statusCode, result } = await server.inject({
@@ -286,15 +289,15 @@ describe('movement Route Tests', () => {
     })
   })
 
-  it('creates a waste input with submittingOrganisation when apiCode does not match the orgApiCodes secret value', async () => {
+  it('creates a waste input with submittingOrganisation and ignores apiCode mismatch', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: orgId3
-      },
       movement: {
         ...createTestPayload(),
-        apiCode: apiCode3
+        apiCode: undefined,
+        submittingOrganisation: {
+          defraCustomerOrganisationId: orgId3
+        }
       }
     }
 

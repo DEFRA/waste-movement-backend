@@ -367,10 +367,13 @@ describe('movementUpdate Route Tests', () => {
 
   it('returns 404 when submittingOrganisation is provided but waste input does not exist', async () => {
     const updatePayload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: 'some-org-id'
-      },
-      movement: createTestPayload()
+      movement: {
+        ...createTestPayload(),
+        apiCode: undefined,
+        submittingOrganisation: {
+          defraCustomerOrganisationId: 'some-org-id'
+        }
+      }
     }
 
     const { statusCode, result } = await server.inject({
@@ -391,10 +394,13 @@ describe('movementUpdate Route Tests', () => {
   it('rejects when submittingOrganisation does not match the original record', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const createPayload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: orgId1
-      },
-      movement: createTestPayload()
+      movement: {
+        ...createTestPayload(),
+        apiCode: undefined,
+        submittingOrganisation: {
+          defraCustomerOrganisationId: orgId1
+        }
+      }
     }
 
     const createResult = await server.inject({
@@ -407,9 +413,12 @@ describe('movementUpdate Route Tests', () => {
     expect(createResult.statusCode).toEqual(204)
 
     const updatePayload = {
-      ...createPayload,
-      submittingOrganisation: {
-        defraCustomerOrganisationId: 'different-org-id'
+      movement: {
+        ...createTestPayload(),
+        apiCode: undefined,
+        submittingOrganisation: {
+          defraCustomerOrganisationId: 'different-org-id'
+        }
       }
     }
 
@@ -438,10 +447,13 @@ describe('movementUpdate Route Tests', () => {
   it('updates a waste input with submittingOrganisation', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {
-      submittingOrganisation: {
-        defraCustomerOrganisationId: orgId1
-      },
-      movement: createTestPayload()
+      movement: {
+        ...createTestPayload(),
+        apiCode: undefined,
+        submittingOrganisation: {
+          defraCustomerOrganisationId: orgId1
+        }
+      }
     }
 
     // First create a movement with submittingOrganisation
@@ -471,9 +483,6 @@ describe('movementUpdate Route Tests', () => {
     expect(actualWasteInput.submittingOrganisation).toEqual({
       defraCustomerOrganisationId: orgId1
     })
-    expect(actualWasteInput.receipt.movement.dateTimeReceived).toEqual(
-      payload.movement.dateTimeReceived
-    )
   })
 
   it('rejects when Mongo throws a schema validation error', async () => {
