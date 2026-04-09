@@ -26,10 +26,8 @@ const updateReceiptMovement = {
   handler: async (request, h) => {
     try {
       const { wasteTrackingId } = request.params
-      const { submittingOrganisation: movementOrg, ...movementData } =
+      const { submittingOrganisation, ...movementData } =
         request.payload.movement
-      const submittingOrganisation =
-        movementOrg || request.payload.submittingOrganisation
 
       const existing = await request.db
         .collection('waste-inputs')
