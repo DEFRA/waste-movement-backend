@@ -207,7 +207,7 @@ describe('#createBulkWasteInput', () => {
     await expect(() =>
       createBulkWasteInput(dbMock, mongoClient, wasteInputs)
     ).rejects.toThrow(
-      `Failed to create waste inputs: Number of created waste inputs is different to the request waste inputs: Expected '2' but created '0'`
+      `Failed to find waste inputs: Number of waste inputs found is different to the request waste inputs: Expected '2' but found '0'`
     )
 
     expect(auditSpy).not.toHaveBeenCalled()
