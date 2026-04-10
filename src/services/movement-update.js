@@ -5,6 +5,7 @@ import { config } from '../config.js'
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 import { createHistoryEntry } from '../common/helpers/create-history-entry.js'
+import { findWasteInputs } from '../common/helpers/find-waste-inputs.js'
 
 const logger = createLogger()
 
@@ -143,25 +144,16 @@ export async function updateWasteInput(
  * @param {Number} wasteTrackingId - The request waste tracking id
  * @param {Number} existingRevision - The revision of the updated record
  * @param {String} traceId - The unique id of the request
- * @param {Object} session - The MongoDB session for the transaction
  */
 async function createAuditLog(
   collections,
   wasteTrackingId,
   existingRevision,
-  traceId,
-  session
+  traceId
 ) {
-  let updatedWasteInput
-
-  for (const collection of collections) {
-    if (!updatedWasteInput) {
-      updatedWasteInput = await collection.findOne(
-        { _id: wasteTrackingId, revision: existingRevision + 1 },
-        { session }
-      )
-    }
-  }
+  const [updatedWasteInput] = await findWasteInputs(1, collections, [
+    { wasteTrackingId, revision: existingRevision + 1 }
+  ])
 
   auditLogger({
     type: AUDIT_LOGGER_TYPE.MOVEMENT_UPDATED,
