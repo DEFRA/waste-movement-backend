@@ -14,6 +14,7 @@ import {
 import { bulkReceiveMovementRequestSchema } from '../schemas/bulk-receipt.js'
 import Joi from 'joi'
 import { generateAllValidationWarnings } from '../common/helpers/validation-warnings/validation-warnings.js'
+import { metricsCounter } from '../common/helpers/metrics.js'
 
 const createBulkReceiptMovement = {
   method: 'POST',
@@ -103,6 +104,12 @@ const createBulkReceiptMovement = {
           createBulkWasteInput(request.db, request.mongoClient, wasteInputs),
         BACKOFF_OPTIONS
       )
+
+      if (createdMovements.status === BULK_RESPONSE_STATUS.MOVEMENTS_CREATED) {
+        createdMovements.wasteTrackingIds.forEach(() =>
+          metricsCounter('receipts.received.bulk', 1, { endpointType: 'post' })
+        )
+      }
 
       const response = generateResponseWithValidationWarnings(
         createdMovements.wasteTrackingIds,
