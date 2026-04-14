@@ -2,6 +2,7 @@ import { createLogger } from '../common/helpers/logging/logger.js'
 import { createHistoryEntry } from '../common/helpers/create-history-entry.js'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
+import { findWasteInputs } from '../common/helpers/find-waste-inputs.js'
 
 const logger = createLogger()
 
@@ -11,14 +12,14 @@ async function sendAuditLogs(
   existingWasteInputs,
   traceId
 ) {
-  const updatedWasteInputs = await wasteInputsCollection
-    .find({
-      $or: payload.map((item, index) => ({
-        _id: item.wasteTrackingId,
-        revision: existingWasteInputs[index].revision + 1
-      }))
-    })
-    .toArray()
+  const updatedWasteInputs = await findWasteInputs(
+    payload.length,
+    [wasteInputsCollection],
+    payload.map((item, index) => ({
+      wasteTrackingId: item.wasteTrackingId,
+      revision: existingWasteInputs[index].revision + 1
+    }))
+  )
 
   updatedWasteInputs.forEach((wasteInput) => {
     auditLogger({

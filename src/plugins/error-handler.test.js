@@ -635,8 +635,6 @@ describe('Error Handler', () => {
       expect(response.statusCode).toBe(400)
       const responseBody = JSON.parse(response.payload)
 
-      console.dir({ responseBody }, { depth: null })
-
       const formatError = responseBody[0].validation.errors.find(
         (err) => err.key === '0' && err.errorType === 'NotProvided'
       )

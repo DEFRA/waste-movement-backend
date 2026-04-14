@@ -1,5 +1,6 @@
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
 import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
+import { findWasteInputs } from '../common/helpers/find-waste-inputs.js'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 
@@ -70,20 +71,14 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
       }
     }
 
-    const createdWasteInputs = await wasteInputsCollection
-      .find({
-        $or: createdWasteTrackingIds.map((wasteTrackingId) => ({
-          _id: wasteTrackingId,
-          revision: 1
-        }))
-      })
-      .toArray()
-
-    if (createdWasteInputs.length !== wasteInputs.length) {
-      throw new Error(
-        `Failed to create waste inputs: Number of created waste inputs is different to the request waste inputs: Expected '${wasteInputs.length}' but created '${createdWasteInputs.length}'`
-      )
-    }
+    const createdWasteInputs = await findWasteInputs(
+      wasteInputs.length,
+      [wasteInputsCollection],
+      createdWasteTrackingIds.map((wasteTrackingId) => ({
+        wasteTrackingId,
+        revision: 1
+      }))
+    )
 
     sendAuditLogs(createdWasteInputs)
 

@@ -174,6 +174,12 @@ const config = convict({
       default: '',
       env: 'SERVICE_AUTH_PASSWORD_WASTE_MOVEMENT_BACKEND'
     }
+  },
+  mongoFetchAttempts: {
+    doc: 'The number of attempts that will be made to fetch data from Mongo',
+    format: Number,
+    default: 5,
+    env: 'MONGO_FETCH_ATTEMPTS'
   }
 })
 

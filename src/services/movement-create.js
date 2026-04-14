@@ -1,6 +1,7 @@
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
+import { findWasteInputs } from '../common/helpers/find-waste-inputs.js'
 
 const logger = createLogger()
 
@@ -11,14 +12,15 @@ export async function createWasteInput(db, wasteInput, traceId) {
     const now = new Date()
     wasteInput.createdAt = now
     wasteInput.lastUpdatedAt = now
-    const collection = db.collection('waste-inputs')
-    const result = await collection.insertOne(wasteInput)
+    const wasteInputsCollection = db.collection('waste-inputs')
+    const result = await wasteInputsCollection.insertOne(wasteInput)
     const wasteTrackingId = result?.insertedId
 
-    const createdWasteInput = await collection.findOne({
-      _id: wasteTrackingId,
-      revision: 1
-    })
+    const [createdWasteInput] = await findWasteInputs(
+      1,
+      [wasteInputsCollection],
+      [{ wasteTrackingId, revision: 1 }]
+    )
 
     auditLogger({
       type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
