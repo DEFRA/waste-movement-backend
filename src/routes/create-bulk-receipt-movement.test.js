@@ -11,6 +11,23 @@ import { createBulkReceiptMovement } from './create-bulk-receipt-movement.js'
 import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 import * as batch from '../common/helpers/batch.js'
+import * as metricsCounter from '../common/helpers/metrics.js'
+
+const assertMetricsCounterWasCalled = (metricsCounterSpy) => {
+  expect(metricsCounterSpy).toHaveBeenCalledTimes(2)
+  expect(metricsCounterSpy).toHaveBeenNthCalledWith(
+    1,
+    'receipts.received.bulk',
+    1,
+    { endpointType: 'post' }
+  )
+  expect(metricsCounterSpy).toHaveBeenNthCalledWith(
+    2,
+    'receipts.received.bulk',
+    1,
+    { endpointType: 'post' }
+  )
+}
 
 jest.mock('../common/constants/exponential-backoff.js', () => ({
   BACKOFF_OPTIONS: {
@@ -111,6 +128,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       movementCreateBulk,
       'createBulkWasteInput'
     )
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
 
     movementCreateBulk.createBulkWasteInput
       .mockImplementationOnce(() => {
@@ -163,6 +181,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     }
 
     expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(3)
+
+    assertMetricsCounterWasCalled(metricsCounterSpy)
   })
 
   it('creates multiple waste inputs with a waste input containing a warning', async () => {
@@ -172,6 +192,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       movementCreateBulk,
       'createBulkWasteInput'
     )
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
 
     movementCreateBulk.createBulkWasteInput
       .mockImplementationOnce(() => {
@@ -236,9 +257,13 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     }
 
     expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(3)
+
+    assertMetricsCounterWasCalled(metricsCounterSpy)
   })
 
   it('should return existing waste tracking ids when provided with a bulk id which has already been used by the POST endpoint in the waste-inputs collection', async () => {
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+
     await server.inject({
       method: 'POST',
       url: `/bulk/${bulkId}/movements/receive`,
@@ -265,9 +290,15 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
         { wasteTrackingId: '26NWSIXF' }
       ]
     })
+
+    // Expect metricsCounter to be called twice as the endpoint is called twice above, metricsCounter
+    // should only called the first time
+    assertMetricsCounterWasCalled(metricsCounterSpy)
   })
 
   it('should return existing waste tracking ids when provided with a bulk id which has already been used by the POST endpoint in the waste-inputs-history collection', async () => {
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+
     await server.inject({
       method: 'POST',
       url: `/bulk/${bulkId}/movements/receive`,
@@ -294,9 +325,15 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
         { wasteTrackingId: '26NWSIXF' }
       ]
     })
+
+    // Expect metricsCounter to be called twice as the endpoint is called twice above, metricsCounter
+    // should only called the first time
+    assertMetricsCounterWasCalled(metricsCounterSpy)
   })
 
   it('should create new waste inputs when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs collection', async () => {
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+
     await server.inject({
       method: 'POST',
       url: `/bulk/${bulkId}/movements/receive`,
@@ -324,9 +361,13 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
         { wasteTrackingId: '26NWSIXF' }
       ]
     })
+
+    assertMetricsCounterWasCalled(metricsCounterSpy)
   })
 
   it('should create new waste inputs when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs-history collection', async () => {
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+
     await server.inject({
       method: 'POST',
       url: `/bulk/${bulkId}/movements/receive`,
@@ -354,6 +395,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
         { wasteTrackingId: '26NWSIXF' }
       ]
     })
+
+    assertMetricsCounterWasCalled(metricsCounterSpy)
   })
 
   it('can handle multiple concurrent requests with the same bulkId', async () => {
@@ -389,6 +432,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
   })
 
   it('rejects when Mongo throws a schema validation error', async () => {
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: `/bulk/${bulkId}/movements/receive`,
@@ -402,6 +447,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       message:
         '[{"failingDocumentId":"26S8EYDJ","details":{"operatorName":"$jsonSchema","schemaRulesNotSatisfied":[{"operatorName":"properties","propertiesNotSatisfied":[{"propertyName":"traceId","details":[{"operatorName":"bsonType","specifiedAs":{"bsonType":"string"},"reason":"type did not match","consideredValue":null,"consideredType":"null"}]}]}]}}]'
     })
+
+    expect(metricsCounterSpy).not.toHaveBeenCalled()
   })
 
   it('handles error when creating multiple waste inputs fails', async () => {
@@ -409,6 +456,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       movementCreateBulk,
       'createBulkWasteInput'
     )
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
 
     movementCreateBulk.createBulkWasteInput.mockRejectedValue(
       new Error(errorMessage)
@@ -431,6 +479,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(3)
+    expect(metricsCounterSpy).not.toHaveBeenCalled()
   })
 
   it("throws an error when the number of waste tracking ids generated doesn't match the number of movements in the payload", async () => {
@@ -440,6 +489,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       movementCreateBulk,
       'createBulkWasteInput'
     )
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -459,5 +509,6 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(0)
+    expect(metricsCounterSpy).not.toHaveBeenCalled()
   })
 })

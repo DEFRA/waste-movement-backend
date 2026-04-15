@@ -18,6 +18,23 @@ import {
 import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 import { config } from '../config.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
+import * as metricsCounter from '../common/helpers/metrics.js'
+
+const assertMetricsCounterWasCalled = (metricsCounterSpy) => {
+  expect(metricsCounterSpy).toHaveBeenCalledTimes(2)
+  expect(metricsCounterSpy).toHaveBeenNthCalledWith(
+    1,
+    'receipts.received.bulk',
+    1,
+    { endpointType: 'put' }
+  )
+  expect(metricsCounterSpy).toHaveBeenNthCalledWith(
+    2,
+    'receipts.received.bulk',
+    1,
+    { endpointType: 'put' }
+  )
+}
 
 jest.mock('../common/constants/exponential-backoff.js', () => ({
   BACKOFF_OPTIONS: {
@@ -124,6 +141,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       movementUpdateBulk,
       'updateBulkWasteInput'
     )
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
 
     movementUpdateBulk.updateBulkWasteInput
       .mockImplementationOnce(() => {
@@ -153,9 +171,13 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     }
 
     expect(updateBulkWasteInputSpy).toHaveBeenCalledTimes(3)
+
+    assertMetricsCounterWasCalled(metricsCounterSpy)
   })
 
   it('should return NO_MOVEMENTS_UPDATED when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs collection', async () => {
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+
     // Update the seed data to have revision > 1 with the update bulkId
     await wasteInputsCollection.updateMany(
       {},
@@ -176,9 +198,13 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
       movements: [{}, {}]
     })
+
+    expect(metricsCounterSpy).not.toHaveBeenCalled()
   })
 
   it('should return NO_MOVEMENTS_UPDATED when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs-history collection', async () => {
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+
     await wasteInputsHistoryCollection.insertMany([
       {
         wasteTrackingId: '26E4C7Z2',
@@ -214,9 +240,13 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
       movements: [{}, {}]
     })
+
+    expect(metricsCounterSpy).not.toHaveBeenCalled()
   })
 
   it('should proceed with update when bulkId exists with revision 1 only (POST endpoint bulkId)', async () => {
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+
     // Seed data already has revision: 1 with createBulkId
     // Using createBulkId as the PUT bulkId - since all matches have revision: 1,
     // the idempotency check for revision > 1 should NOT trigger
@@ -234,6 +264,8 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       status: BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED,
       movements: [{}, {}]
     })
+
+    assertMetricsCounterWasCalled(metricsCounterSpy)
   })
 
   it('should return 400 when submittingOrganisation does not match and existing record has no submittingOrganisation', async () => {
@@ -320,6 +352,8 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
   it('should succeed when apiCode org matches the original record', async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
 
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+
     const apiCodeItem = createBulkMovementRequest({
       wasteTrackingId: '26E4C7Z2',
       apiCode: apiCode1
@@ -342,6 +376,8 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
     expect(result.status).toEqual(BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED)
+
+    assertMetricsCounterWasCalled(metricsCounterSpy)
   })
 
   it('should return 400 when apiCode org does not match the original record', async () => {
@@ -386,6 +422,8 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
   })
 
   it('rejects when Mongo throws a schema validation error', async () => {
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/bulk/${updateBulkId}/movements/receive`,
@@ -399,6 +437,8 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       message:
         '[{"failingDocumentId":"26E4C7Z2","details":{"operatorName":"$jsonSchema","schemaRulesNotSatisfied":[{"operatorName":"properties","propertiesNotSatisfied":[{"propertyName":"traceId","details":[{"operatorName":"bsonType","specifiedAs":{"bsonType":"string"},"reason":"type did not match","consideredValue":null,"consideredType":"null"}]}]}]}}]'
     })
+
+    expect(metricsCounterSpy).not.toHaveBeenCalled()
   })
 
   it('handles error when updating multiple waste inputs fails', async () => {
@@ -406,6 +446,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       movementUpdateBulk,
       'updateBulkWasteInput'
     )
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
 
     movementUpdateBulk.updateBulkWasteInput.mockRejectedValue(
       new Error(errorMessage)
@@ -428,6 +469,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(updateBulkWasteInputSpy).toHaveBeenCalledTimes(3)
+    expect(metricsCounterSpy).not.toHaveBeenCalled()
   })
 
   it('should return 400 when payload is an empty array', async () => {

@@ -10,6 +10,7 @@ import {
 } from '../common/helpers/bulk-route-helpers.js'
 import { bulkUpdateMovementRequestSchema } from '../schemas/bulk-receipt.js'
 import { getOrganisationValidationError } from '../common/helpers/validate-organisation.js'
+import { metricsCounter } from '../common/helpers/metrics.js'
 
 async function findWithHistoryFallback(
   wasteInputsCollection,
@@ -191,6 +192,10 @@ const updateBulkReceiptMovement = {
       if (!movements) {
         return noMovementsUpdatedResponse(h, payload)
       }
+
+      movements.forEach(() =>
+        metricsCounter('receipts.received.bulk', 1, { endpointType: 'put' })
+      )
 
       return h
         .response({
