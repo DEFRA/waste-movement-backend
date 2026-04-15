@@ -106,9 +106,12 @@ const createBulkReceiptMovement = {
       )
 
       if (createdMovements.status === BULK_RESPONSE_STATUS.MOVEMENTS_CREATED) {
-        createdMovements.wasteInputs.forEach(() =>
+        createdMovements.wasteInputs.forEach((wasteInput) => {
           metricsCounter('receipts.received.bulk', 1, { endpointType: 'post' })
-        )
+          metricsCounter('receiver.orgId.bulk', 1, {
+            orgId: wasteInput.submittingOrganisation.defraCustomerOrganisationId
+          })
+        })
       }
 
       const response = generateResponseWithValidationWarnings(
