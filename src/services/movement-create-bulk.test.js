@@ -57,6 +57,7 @@ describe('#createBulkWasteInput', () => {
   beforeEach(async () => {
     wasteInputs = [
       {
+        _id: '26E4C7Z2',
         wasteTrackingId: '26E4C7Z2',
         receipt: {},
         createdAt: new Date(),
@@ -67,6 +68,7 @@ describe('#createBulkWasteInput', () => {
         revision: 1
       },
       {
+        _id: '266XHTDL',
         wasteTrackingId: '266XHTDL',
         receipt: {},
         createdAt: new Date(),
@@ -92,10 +94,7 @@ describe('#createBulkWasteInput', () => {
 
     expect(result).toEqual({
       status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
-      wasteTrackingIds: [
-        { wasteTrackingId: '26E4C7Z2' },
-        { wasteTrackingId: '266XHTDL' }
-      ]
+      wasteInputs
     })
 
     const updatedWasteInput1 = await wasteInputsCollection.findOne({
@@ -136,10 +135,7 @@ describe('#createBulkWasteInput', () => {
 
     expect(result).toEqual({
       status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
-      wasteTrackingIds: [
-        { wasteTrackingId: '26E4C7Z2' },
-        { wasteTrackingId: '266XHTDL' }
-      ]
+      wasteInputs
     })
 
     const updatedWasteInput1 = await wasteInputsCollection.findOne({
@@ -166,10 +162,7 @@ describe('#createBulkWasteInput', () => {
 
     expect(result).toEqual({
       status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
-      wasteTrackingIds: [
-        { wasteTrackingId: '26E4C7Z2' },
-        { wasteTrackingId: '266XHTDL' }
-      ]
+      wasteInputs
     })
 
     expect(auditSpy).not.toHaveBeenCalled()

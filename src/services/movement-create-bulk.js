@@ -65,9 +65,7 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
     if (existingWasteInputs.length > 0) {
       return {
         status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
-        wasteTrackingIds: existingWasteInputs.map(({ wasteTrackingId }) => ({
-          wasteTrackingId
-        }))
+        wasteInputs: existingWasteInputs
       }
     }
 
@@ -84,9 +82,7 @@ export async function createBulkWasteInput(db, mongoClient, wasteInputs) {
 
     return {
       status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
-      wasteTrackingIds: createdWasteInputs.map(({ wasteTrackingId }) => ({
-        wasteTrackingId
-      }))
+      wasteInputs: createdWasteInputs
     }
   } catch (error) {
     logger.error({ error }, 'Failed to create waste inputs')
