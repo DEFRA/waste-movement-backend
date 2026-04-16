@@ -105,14 +105,7 @@ const createBulkReceiptMovement = {
         BACKOFF_OPTIONS
       )
 
-      if (createdMovements.status === BULK_RESPONSE_STATUS.MOVEMENTS_CREATED) {
-        createdMovements.wasteInputs.forEach((wasteInput) => {
-          metricsCounter('receipts.received.bulk', 1, { endpointType: 'post' })
-          metricsCounter('receiver.orgId.bulk', 1, {
-            orgId: wasteInput.submittingOrganisation.defraCustomerOrganisationId
-          })
-        })
-      }
+      collectMetrics(createdMovements)
 
       const response = generateResponseWithValidationWarnings(
         createdMovements.wasteInputs,
@@ -166,6 +159,26 @@ function generateResponseWithValidationWarnings(wasteInputs, payload) {
 
     return response
   })
+}
+
+/**
+ * Collects metrics for the created movements
+ *
+ * @param {Object} createdMovements - The created movements
+ * @param {String} createdMovements.status - The status of the created movements
+ * @param {Object} createdMovements.wasteInputs - The created waste inputs
+ *
+ * @returns {void}
+ */
+function collectMetrics(createdMovements) {
+  if (createdMovements.status === BULK_RESPONSE_STATUS.MOVEMENTS_CREATED) {
+    createdMovements.wasteInputs.forEach((wasteInput) => {
+      metricsCounter('receipts.received.bulk', 1, { endpointType: 'post' })
+      metricsCounter('receiver.orgId.bulk', 1, {
+        orgId: wasteInput.submittingOrganisation.defraCustomerOrganisationId
+      })
+    })
+  }
 }
 
 export { createBulkReceiptMovement }
