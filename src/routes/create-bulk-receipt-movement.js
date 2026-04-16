@@ -105,14 +105,10 @@ const createBulkReceiptMovement = {
         BACKOFF_OPTIONS
       )
 
-      if (createdMovements.status === BULK_RESPONSE_STATUS.MOVEMENTS_CREATED) {
-        createdMovements.wasteTrackingIds.forEach(() =>
-          metricsCounter('receipts.received.bulk', 1, { endpointType: 'post' })
-        )
-      }
+      collectMetrics(createdMovements)
 
       const response = generateResponseWithValidationWarnings(
-        createdMovements.wasteTrackingIds,
+        createdMovements.wasteInputs,
         payload
       )
 
@@ -147,24 +143,42 @@ function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
   })
 }
 
-function generateResponseWithValidationWarnings(
-  createdWasteTrackingIds,
-  payload
-) {
-  return createdWasteTrackingIds.map((item, index) => {
+function generateResponseWithValidationWarnings(wasteInputs, payload) {
+  return wasteInputs.map(({ wasteTrackingId }, index) => {
+    const response = { wasteTrackingId }
     const warnings = generateAllValidationWarnings(
       payload[index],
-      item.wasteTrackingId
+      wasteTrackingId
     )
 
     if (warnings.length > 0) {
-      item.validation = {
+      response.validation = {
         warnings
       }
     }
 
-    return item
+    return response
   })
+}
+
+/**
+ * Collects metrics for the created movements
+ *
+ * @param {Object} createdMovements - The created movements
+ * @param {String} createdMovements.status - The status of the created movements
+ * @param {Object} createdMovements.wasteInputs - The created waste inputs
+ *
+ * @returns {void}
+ */
+function collectMetrics(createdMovements) {
+  if (createdMovements.status === BULK_RESPONSE_STATUS.MOVEMENTS_CREATED) {
+    createdMovements.wasteInputs.forEach((wasteInput) => {
+      metricsCounter('receipts.received.bulk', 1, { endpointType: 'post' })
+      metricsCounter('receiver.orgId.bulk', 1, {
+        orgId: wasteInput.submittingOrganisation.defraCustomerOrganisationId
+      })
+    })
+  }
 }
 
 export { createBulkReceiptMovement }

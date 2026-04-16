@@ -14,7 +14,7 @@ import * as batch from '../common/helpers/batch.js'
 import * as metricsCounter from '../common/helpers/metrics.js'
 
 const assertMetricsCounterWasCalled = (metricsCounterSpy) => {
-  expect(metricsCounterSpy).toHaveBeenCalledTimes(2)
+  expect(metricsCounterSpy).toHaveBeenCalledTimes(4)
   expect(metricsCounterSpy).toHaveBeenNthCalledWith(
     1,
     'receipts.received.bulk',
@@ -23,9 +23,26 @@ const assertMetricsCounterWasCalled = (metricsCounterSpy) => {
   )
   expect(metricsCounterSpy).toHaveBeenNthCalledWith(
     2,
+    'receiver.orgId.bulk',
+    1,
+    {
+      orgId: 'fd98d4ef34e33b34fc8fad03f8c385'
+    }
+  )
+  expect(metricsCounterSpy).toHaveBeenNthCalledWith(
+    3,
     'receipts.received.bulk',
     1,
     { endpointType: 'post' }
+  )
+
+  expect(metricsCounterSpy).toHaveBeenNthCalledWith(
+    4,
+    'receiver.orgId.bulk',
+    1,
+    {
+      orgId: 'fd98d4ef34e33b34fc8fad03f8c385'
+    }
   )
 }
 
