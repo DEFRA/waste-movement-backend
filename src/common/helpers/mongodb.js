@@ -2,7 +2,6 @@ import { MongoClient } from 'mongodb'
 import { LockManager } from 'mongo-locks'
 import { config } from '../../config.js'
 import Boom from '@hapi/boom'
-import { wasteInputSchema } from '../../schemas/waste-input.js'
 
 let mongoConfig = config.get('mongo')
 
@@ -96,14 +95,8 @@ async function createIndexes(db) {
 async function addSchemaValidation(db, collection) {
   await db.command({
     collMod: collection,
-    validator: {
-      $jsonSchema: wasteInputSchema
-    },
-    // Validate new documents and ignore existing documents
+    validator: {},
     // https://www.mongodb.com/docs/manual/core/schema-validation/specify-validation-level
-    validationLevel: 'moderate',
-    // Reject invalid documents
-    // https://www.mongodb.com/docs/manual/core/schema-validation/handle-invalid-documents/#std-label-schema-validation-handle-invalid-docs
-    validationAction: 'error'
+    validationLevel: 'off'
   })
 }
