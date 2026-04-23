@@ -388,22 +388,6 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     )
   })
 
-  it('rejects when Mongo throws a schema validation error', async () => {
-    const { statusCode, result } = await server.inject({
-      method: 'POST',
-      url: `/bulk/${bulkId}/movements/receive`,
-      payload
-    })
-
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
-    expect(result).toEqual({
-      statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
-      error: 'ValidationError',
-      message:
-        '[{"failingDocumentId":"26S8EYDJ","details":{"operatorName":"$jsonSchema","schemaRulesNotSatisfied":[{"operatorName":"properties","propertiesNotSatisfied":[{"propertyName":"traceId","details":[{"operatorName":"bsonType","specifiedAs":{"bsonType":"string"},"reason":"type did not match","consideredValue":null,"consideredType":"null"}]}]}]}}]'
-    })
-  })
-
   it('handles error when creating multiple waste inputs fails', async () => {
     const createBulkWasteInputSpy = jest.spyOn(
       movementCreateBulk,

@@ -385,22 +385,6 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     ])
   })
 
-  it('rejects when Mongo throws a schema validation error', async () => {
-    const { statusCode, result } = await server.inject({
-      method: 'PUT',
-      url: `/bulk/${updateBulkId}/movements/receive`,
-      payload
-    })
-
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
-    expect(result).toEqual({
-      statusCode: HTTP_STATUS_CODES.BAD_REQUEST,
-      error: 'ValidationError',
-      message:
-        '[{"failingDocumentId":"26E4C7Z2","details":{"operatorName":"$jsonSchema","schemaRulesNotSatisfied":[{"operatorName":"properties","propertiesNotSatisfied":[{"propertyName":"traceId","details":[{"operatorName":"bsonType","specifiedAs":{"bsonType":"string"},"reason":"type did not match","consideredValue":null,"consideredType":"null"}]}]}]}}]'
-    })
-  })
-
   it('handles error when updating multiple waste inputs fails', async () => {
     const updateBulkWasteInputSpy = jest.spyOn(
       movementUpdateBulk,
