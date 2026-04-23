@@ -107,7 +107,7 @@ export const wasteInputSchema = {
               bsonType: 'string'
             },
             reasonForNoConsignmentCode: {
-              bsonType: 'string'
+              bsonType: ['string', 'null']
             },
             yourUniqueReference: {
               bsonType: 'string'
