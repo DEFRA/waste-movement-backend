@@ -1,6 +1,7 @@
 import Joi from 'joi'
 import { HTTP_STATUS_CODES } from '../constants/http-status-codes.js'
 import { MongoServerError } from 'mongodb'
+import { generateAllValidationWarnings } from './validation-warnings/validation-warnings.js'
 
 const badRequestResponse = {
   [HTTP_STATUS_CODES.BAD_REQUEST]: {
@@ -56,4 +57,22 @@ function handleRouteError(h, error) {
     .code(statusCode)
 }
 
-export { badRequestResponse, handleRouteError }
+function generateResponseWithValidationWarnings(payload, wasteTrackingIds) {
+  return payload.map((item, index) => {
+    const wasteTrackingId = wasteTrackingIds?.[index] ?? item.wasteTrackingId
+    const response = wasteTrackingIds ? { wasteTrackingId } : {}
+    const warnings = generateAllValidationWarnings(item, wasteTrackingId)
+
+    if (warnings.length > 0) {
+      response.validation = { warnings }
+    }
+
+    return response
+  })
+}
+
+export {
+  badRequestResponse,
+  handleRouteError,
+  generateResponseWithValidationWarnings
+}

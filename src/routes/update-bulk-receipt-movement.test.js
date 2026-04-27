@@ -175,6 +175,49 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     assertMetricsCounterWasCalled(metricsCounterSpy)
   })
 
+  it('updates multiple waste inputs and returns warnings for items containing them', async () => {
+    const updateBulkWasteInputSpy = jest.spyOn(
+      movementUpdateBulk,
+      'updateBulkWasteInput'
+    )
+    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+
+    payload[0].wasteItems[0].disposalOrRecoveryCodes = []
+
+    const { statusCode, result } = await server.inject({
+      method: 'PUT',
+      url: `/bulk/${updateBulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(result).toEqual({
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED,
+      movements: [
+        {
+          validation: {
+            warnings: [
+              {
+                errorType: 'NotProvided',
+                key: 'wasteItems.0.disposalOrRecoveryCodes',
+                message:
+                  'wasteItems[0].disposalOrRecoveryCodes is required for proper waste tracking and compliance'
+              }
+            ]
+          }
+        },
+        {}
+      ]
+    })
+
+    expect(updateBulkWasteInputSpy).toHaveBeenCalledTimes(1)
+
+    assertMetricsCounterWasCalled(metricsCounterSpy)
+  })
+
   it('should return NO_MOVEMENTS_UPDATED when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs collection', async () => {
     const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
 
