@@ -9,11 +9,11 @@ import { getBatches } from '../common/helpers/batch.js'
 import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 import {
   badRequestResponse,
+  generateResponseWithValidationWarnings,
   handleRouteError
 } from '../common/helpers/bulk-route-helpers.js'
 import { bulkReceiveMovementRequestSchema } from '../schemas/bulk-receipt.js'
 import Joi from 'joi'
-import { generateAllValidationWarnings } from '../common/helpers/validation-warnings/validation-warnings.js'
 import { metricsCounter } from '../common/helpers/metrics.js'
 
 const createBulkReceiptMovement = {
@@ -108,8 +108,10 @@ const createBulkReceiptMovement = {
       collectMetrics(createdMovements)
 
       const response = generateResponseWithValidationWarnings(
-        createdMovements.wasteInputs,
-        payload
+        payload,
+        createdMovements.wasteInputs.map(
+          ({ wasteTrackingId }) => wasteTrackingId
+        )
       )
 
       return h
@@ -140,24 +142,6 @@ function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
     delete wasteInput.receipt.movement.submittingOrganisation
 
     return wasteInput
-  })
-}
-
-function generateResponseWithValidationWarnings(wasteInputs, payload) {
-  return wasteInputs.map(({ wasteTrackingId }, index) => {
-    const response = { wasteTrackingId }
-    const warnings = generateAllValidationWarnings(
-      payload[index],
-      wasteTrackingId
-    )
-
-    if (warnings.length > 0) {
-      response.validation = {
-        warnings
-      }
-    }
-
-    return response
   })
 }
 

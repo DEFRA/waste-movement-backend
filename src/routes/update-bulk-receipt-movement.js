@@ -6,6 +6,7 @@ import { updateBulkWasteInput } from '../services/movement-update-bulk.js'
 import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 import {
   badRequestResponse,
+  generateResponseWithValidationWarnings,
   handleRouteError
 } from '../common/helpers/bulk-route-helpers.js'
 import { bulkUpdateMovementRequestSchema } from '../schemas/bulk-receipt.js'
@@ -200,7 +201,7 @@ const updateBulkReceiptMovement = {
       return h
         .response({
           status: BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED,
-          movements
+          movements: generateResponseWithValidationWarnings(payload)
         })
         .code(HTTP_STATUS_CODES.OK)
     } catch (error) {
