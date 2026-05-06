@@ -6,6 +6,7 @@ import { createBulkReceiptMovement } from '../routes/create-bulk-receipt-movemen
 import { updateBulkReceiptMovement } from '../routes/update-bulk-receipt-movement.js'
 import { getReceiptMovement } from '../routes/get-receipt-movement.js'
 import { config } from '../config.js'
+import { productionApprovalTests } from '../routes/production-approval-tests.js'
 
 const environment = config.get('cdpEnvironment')
 
@@ -22,11 +23,15 @@ const router = {
         createBulkReceiptMovement,
         updateBulkReceiptMovement
       ]
-
-      const nonProdRoutes = [getReceiptMovement]
+      const nonProdRoutes = [getReceiptMovement, productionApprovalTests]
+      const extTestRoutes = [productionApprovalTests]
 
       if (['local', 'dev', 'test'].includes(environment)) {
         routes.push(...nonProdRoutes)
+      }
+
+      if (['ext-test'].includes(environment)) {
+        routes.push(...extTestRoutes)
       }
 
       // Register routes directly
