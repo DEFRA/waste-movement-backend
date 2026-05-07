@@ -64,7 +64,7 @@ describe('runProductionApprovalTests', () => {
       PAT_STATUS.FAIL,
       PAT_STATUS.PASS
     ])
-    expect(results[1].message).toContain('Expected exactly 1 waste item')
+    expect(results[1].message).toBe('Multiple waste items provided')
   })
 
   it('returns Error status for an unsupported scenarioId', () => {

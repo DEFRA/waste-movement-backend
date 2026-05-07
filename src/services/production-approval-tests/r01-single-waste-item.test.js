@@ -11,33 +11,27 @@ describe('runScenarioR01Tests', () => {
     expect(result).toEqual({ status: PAT_STATUS.PASS, message: '' })
   })
 
-  it('fails when there are 0 waste items', () => {
+  it('fails with "No waste items provided" when wasteItems is empty', () => {
     const result = runScenarioR01Tests(buildWasteInput({ wasteItems: [] }))
 
     expect(result.status).toBe(PAT_STATUS.FAIL)
-    expect(result.message).toBe(
-      'Expected exactly 1 waste item for R01, found 0'
-    )
+    expect(result.message).toBe('No waste items provided')
   })
 
-  it('fails when there are multiple waste items', () => {
+  it('fails with "No waste items provided" when wasteItems is missing', () => {
+    const result = runScenarioR01Tests({ receipt: { movement: {} } })
+
+    expect(result.status).toBe(PAT_STATUS.FAIL)
+    expect(result.message).toBe('No waste items provided')
+  })
+
+  it('fails with "Multiple waste items provided" when there are multiple waste items', () => {
     const result = runScenarioR01Tests(
       buildWasteInput({ wasteItems: [buildWasteItem(), buildWasteItem()] })
     )
 
     expect(result.status).toBe(PAT_STATUS.FAIL)
-    expect(result.message).toBe(
-      'Expected exactly 1 waste item for R01, found 2'
-    )
-  })
-
-  it('fails when wasteItems is missing', () => {
-    const result = runScenarioR01Tests({ receipt: { movement: {} } })
-
-    expect(result.status).toBe(PAT_STATUS.FAIL)
-    expect(result.message).toBe(
-      'Expected exactly 1 waste item for R01, found 0'
-    )
+    expect(result.message).toBe('Multiple waste items provided')
   })
 
   it('fails when the waste item has no disposal or recovery codes', () => {
@@ -48,12 +42,10 @@ describe('runScenarioR01Tests', () => {
     )
 
     expect(result.status).toBe(PAT_STATUS.FAIL)
-    expect(result.message).toBe(
-      'Expected the waste item to have at least one disposal or recovery code for R01'
-    )
+    expect(result.message).toBe('No disposal or recovery code provided')
   })
 
-  it('fails when the waste item contains POPs', () => {
+  it('fails with "POPs components provided" when the waste item contains POPs', () => {
     const result = runScenarioR01Tests(
       buildWasteInput({
         wasteItems: [buildWasteItem({ containsPops: true })]
@@ -61,12 +53,10 @@ describe('runScenarioR01Tests', () => {
     )
 
     expect(result.status).toBe(PAT_STATUS.FAIL)
-    expect(result.message).toBe(
-      'Expected the waste item to not contain POPs for R01'
-    )
+    expect(result.message).toBe('POPs components provided')
   })
 
-  it('fails when the waste item contains hazardous components', () => {
+  it('fails with "Hazardous waste items provided" when the waste item contains hazardous components', () => {
     const result = runScenarioR01Tests(
       buildWasteInput({
         wasteItems: [buildWasteItem({ containsHazardous: true })]
@@ -74,8 +64,6 @@ describe('runScenarioR01Tests', () => {
     )
 
     expect(result.status).toBe(PAT_STATUS.FAIL)
-    expect(result.message).toBe(
-      'Expected the waste item to not contain hazardous components for R01'
-    )
+    expect(result.message).toBe('Hazardous waste items provided')
   })
 })
