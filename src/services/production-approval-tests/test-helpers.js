@@ -17,6 +17,8 @@ export function buildWasteItem(overrides = {}) {
   return {
     ewcCodes: ['200101'],
     disposalOrRecoveryCodes: [{ code: 'R1' }],
+    containsPops: false,
+    containsHazardous: false,
     ...overrides
   }
 }

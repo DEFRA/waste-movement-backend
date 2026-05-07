@@ -22,6 +22,12 @@ describe('runScenarioR04Tests', () => {
     expect(result.status).toBe(PAT_STATUS.PASS)
   })
 
+  it('passes when wasteItems is missing', () => {
+    const result = runScenarioR04Tests({ receipt: { movement: {} } })
+
+    expect(result.status).toBe(PAT_STATUS.PASS)
+  })
+
   it('fails when a waste item has a disposal or recovery code', () => {
     const result = runScenarioR04Tests(
       buildWasteInput({

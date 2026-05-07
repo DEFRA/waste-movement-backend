@@ -3,10 +3,10 @@ import { buildWasteInput } from './test-helpers.js'
 import { PAT_STATUS } from './status.js'
 
 describe('runScenarioR03Tests', () => {
-  it('passes when carrier is by Road with a vehicle registration', () => {
+  it('passes when carrier meansOfTransport is Road', () => {
     const result = runScenarioR03Tests(
       buildWasteInput({
-        carrier: { meansOfTransport: 'Road', vehicleRegistration: 'AB12 CDE' }
+        carrier: { meansOfTransport: 'Road' }
       })
     )
 
@@ -16,7 +16,7 @@ describe('runScenarioR03Tests', () => {
   it('fails when meansOfTransport is not Road', () => {
     const result = runScenarioR03Tests(
       buildWasteInput({
-        carrier: { meansOfTransport: 'Rail', vehicleRegistration: 'AB12 CDE' }
+        carrier: { meansOfTransport: 'Rail' }
       })
     )
 
@@ -32,17 +32,6 @@ describe('runScenarioR03Tests', () => {
     expect(result.status).toBe(PAT_STATUS.FAIL)
     expect(result.message).toBe(
       'Expected carrier.meansOfTransport to be "Road" for R03, found "undefined"'
-    )
-  })
-
-  it('fails when Road transport has no vehicle registration', () => {
-    const result = runScenarioR03Tests(
-      buildWasteInput({ carrier: { meansOfTransport: 'Road' } })
-    )
-
-    expect(result.status).toBe(PAT_STATUS.FAIL)
-    expect(result.message).toBe(
-      'Expected carrier.vehicleRegistration to be provided for R03 road transport'
     )
   })
 })

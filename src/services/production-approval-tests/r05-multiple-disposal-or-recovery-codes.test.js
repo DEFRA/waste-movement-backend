@@ -53,4 +53,10 @@ describe('runScenarioR05Tests', () => {
 
     expect(result.status).toBe(PAT_STATUS.FAIL)
   })
+
+  it('fails when wasteItems is missing', () => {
+    const result = runScenarioR05Tests({ receipt: { movement: {} } })
+
+    expect(result.status).toBe(PAT_STATUS.FAIL)
+  })
 })

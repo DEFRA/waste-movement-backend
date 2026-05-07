@@ -1,16 +1,18 @@
 import { fail, pass } from './status.js'
 
-const DUAL_EWC_CODE_COUNT = 2
+const MIN_DUAL_EWC_CODES = 2
 
 export function runScenarioR07Tests(wasteInput) {
   const wasteItems = wasteInput?.receipt?.movement?.wasteItems ?? []
 
   const hasDualEwcCodes = wasteItems.some(
-    (item) => item?.ewcCodes?.length === DUAL_EWC_CODE_COUNT
+    (item) => item?.ewcCodes?.length >= MIN_DUAL_EWC_CODES
   )
 
   if (!hasDualEwcCodes) {
-    return fail('Expected at least one waste item to have 2 EWC codes for R07')
+    return fail(
+      'Expected at least one waste item to have at least 2 EWC codes for R07'
+    )
   }
 
   return pass()
