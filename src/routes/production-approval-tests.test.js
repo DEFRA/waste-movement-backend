@@ -21,6 +21,8 @@ import { productionApprovalTests } from './production-approval-tests.js'
 import { PRODUCTION_APPROVAL_TEST_SCENARIO_IDS } from '../common/constants/production-approval-tests.js'
 import * as runProductionApprovalTests from '../services/production-approval-tests/run-production-approval-tests.js'
 import { createMovementRequest } from '../test/utils/createMovementRequest.js'
+import { errorHandler } from '../plugins/error-handler.js'
+import { failAction } from '../common/helpers/fail-action.js'
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockReturnValue(true)
@@ -35,9 +37,23 @@ describe('Production Approval Tests Route Tests', () => {
   })
 
   beforeAll(async () => {
-    server = hapi.server()
+    server = hapi.server({
+      routes: {
+        validate: {
+          options: {
+            abortEarly: false
+          },
+          failAction
+        }
+      }
+    })
     server.route([...createReceiptMovement, productionApprovalTests])
-    await server.register([requestLogger, mongoDb, requestTracing])
+    await server.register([
+      requestLogger,
+      mongoDb,
+      requestTracing,
+      errorHandler
+    ])
     await server.initialize()
 
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
@@ -144,18 +160,18 @@ describe('Production Approval Tests Route Tests', () => {
   })
 
   it('returns a 400 error when given waste tracking ids that do not exist', async () => {
-    const invalidWastetrackingId1 = generateWasteTrackingId()
-    const invalidWastetrackingId2 = generateWasteTrackingId()
+    const invalidWasteTrackingId1 = generateWasteTrackingId()
+    const invalidWasteTrackingId2 = generateWasteTrackingId()
 
     payload = [
       ...payload,
       {
         scenarioId: PRODUCTION_APPROVAL_TEST_SCENARIO_IDS.R03,
-        wasteTrackingId: invalidWastetrackingId1
+        wasteTrackingId: invalidWasteTrackingId1
       },
       {
         scenarioId: PRODUCTION_APPROVAL_TEST_SCENARIO_IDS.R04,
-        wasteTrackingId: invalidWastetrackingId2
+        wasteTrackingId: invalidWasteTrackingId2
       }
     ]
 
@@ -172,7 +188,7 @@ describe('Production Approval Tests Route Tests', () => {
           {
             key: 'wasteTrackingId',
             errorType: 'InvalidValue',
-            message: `Could not find waste input(s) for the following id(s): ${invalidWastetrackingId1}, ${invalidWastetrackingId2}`
+            message: `Could not find waste input(s) for the following id(s): ${invalidWasteTrackingId1}, ${invalidWasteTrackingId2}`
           }
         ]
       }
@@ -185,18 +201,30 @@ describe('Production Approval Tests Route Tests', () => {
     payload = [
       ...payload,
       {
-        scenarioId: PRODUCTION_APPROVAL_TEST_SCENARIO_IDS.R03,
+        scenarioId: PRODUCTION_APPROVAL_TEST_SCENARIO_IDS.R01,
         wasteTrackingId: invalidWastetrackingId
       }
     ]
 
-    const { statusCode } = await server.inject({
+    const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/production-approval-tests',
       payload
     })
 
     expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(result).toEqual({
+      validation: {
+        errors: [
+          {
+            key: 'ProductionApprovalTestRequest',
+            errorType: 'InvalidValue',
+            message:
+              '"ProductionApprovalTestRequest" contains a duplicate scenarioId value'
+          }
+        ]
+      }
+    })
   })
 
   it('returns a 500 error when an error is thrown', async () => {

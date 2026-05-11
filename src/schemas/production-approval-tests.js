@@ -1,5 +1,6 @@
 import Joi from 'joi'
 import { productionApprovalTestScenarioIds } from '../common/constants/production-approval-tests.js'
+import { PRODUCTION_APPROVAL_TEST_ERRORS } from '../common/constants/validation-error-messages.js'
 
 export const productionApprovalTestsSchema = Joi.array()
   .items(
@@ -11,10 +12,28 @@ export const productionApprovalTestsSchema = Joi.array()
     })
   )
   .min(1)
-  .unique((a, b) => a.scenarioId === b.scenarioId)
+  .custom(validateUniqueScenarioIds)
   .required()
   .messages({
-    // Custom message rather than the default so it can be made more helpful by adding 'scenarioId'
-    'array.unique': '{:#label} contains a duplicate scenarioId value'
+    'InvalidValue.scenarioIdUnique':
+      PRODUCTION_APPROVAL_TEST_ERRORS.SCENARIO_ID_UNIQUE
   })
   .label('ProductionApprovalTestRequest')
+
+/**
+ * Validates the request scenarioId values are unique.
+ *
+ * Custom validator rather than using array.unique so that the error response
+ * key and message are consistant with other errors.
+ *
+ * @param {[Object]} value - The request payload
+ * @param {Object} helpers - The collections in which to find the waste inputs
+ *
+ * @returns {[Object] | Object} The request payload if valid, otherwise an error object
+ */
+function validateUniqueScenarioIds(value, helpers) {
+  const uniqueScenarioIds = new Set(value.map(({ scenarioId }) => scenarioId))
+  return uniqueScenarioIds.size === value.length
+    ? value
+    : helpers.error('InvalidValue.scenarioIdUnique')
+}

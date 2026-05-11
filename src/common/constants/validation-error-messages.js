@@ -71,3 +71,7 @@ export const CONSIGNMENT_ERRORS = {
 export const AUTHORISATION_ERRORS = {
   INVALID: '{{#label}} must be in a valid UK format'
 }
+
+export const PRODUCTION_APPROVAL_TEST_ERRORS = {
+  SCENARIO_ID_UNIQUE: '{:#label} contains a duplicate scenarioId value'
+}
