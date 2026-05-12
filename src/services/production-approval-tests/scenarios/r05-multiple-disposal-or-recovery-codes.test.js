@@ -1,6 +1,6 @@
 import { runScenarioR05Tests } from './r05-multiple-disposal-or-recovery-codes.js'
-import { buildWasteInput, buildWasteItem } from './test-helpers.js'
-import { PAT_STATUS } from './status.js'
+import { buildWasteInput, buildWasteItem } from '../test-helpers.js'
+import { PAT_STATUS } from '../status.js'
 
 describe('runScenarioR05Tests', () => {
   it('passes when a waste item has multiple disposal or recovery codes', () => {

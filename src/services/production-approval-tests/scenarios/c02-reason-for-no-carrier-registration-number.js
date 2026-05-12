@@ -1,4 +1,4 @@
-import { fail, pass } from './status.js'
+import { fail, pass } from '../status.js'
 
 export function runScenarioC02Tests(wasteInput) {
   const reasonForNoRegistrationNumber =

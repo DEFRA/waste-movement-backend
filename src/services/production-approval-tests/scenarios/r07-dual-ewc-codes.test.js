@@ -1,6 +1,6 @@
 import { runScenarioR07Tests } from './r07-dual-ewc-codes.js'
-import { buildWasteInput, buildWasteItem } from './test-helpers.js'
-import { PAT_STATUS } from './status.js'
+import { buildWasteInput, buildWasteItem } from '../test-helpers.js'
+import { PAT_STATUS } from '../status.js'
 
 describe('runScenarioR07Tests', () => {
   it('passes when a waste item has 2 EWC codes', () => {

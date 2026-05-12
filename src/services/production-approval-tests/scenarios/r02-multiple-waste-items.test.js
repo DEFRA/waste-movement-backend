@@ -1,6 +1,6 @@
 import { runScenarioR02Tests } from './r02-multiple-waste-items.js'
-import { buildWasteInput, buildWasteItem } from './test-helpers.js'
-import { PAT_STATUS } from './status.js'
+import { buildWasteInput, buildWasteItem } from '../test-helpers.js'
+import { PAT_STATUS } from '../status.js'
 
 describe('runScenarioR02Tests', () => {
   it('passes when there are 2 waste items', () => {

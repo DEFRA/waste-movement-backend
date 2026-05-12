@@ -1,4 +1,4 @@
-import { fail, pass } from './status.js'
+import { fail, pass } from '../status.js'
 
 const MIN_DUAL_EWC_CODES = 2
 

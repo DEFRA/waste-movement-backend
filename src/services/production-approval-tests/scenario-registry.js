@@ -1,10 +1,10 @@
-import { runScenarioR01Tests } from './r01-single-waste-item.js'
-import { runScenarioR02Tests } from './r02-multiple-waste-items.js'
-import { runScenarioR03Tests } from './r03-road-transport.js'
-import { runScenarioR04Tests } from './r04-no-disposal-or-recovery-codes.js'
-import { runScenarioR05Tests } from './r05-multiple-disposal-or-recovery-codes.js'
-import { runScenarioR07Tests } from './r07-dual-ewc-codes.js'
-import { runScenarioC02Tests } from './c02-reason-for-no-carrier-registration-number.js'
+import { runScenarioR01Tests } from './scenarios/r01-single-waste-item.js'
+import { runScenarioR02Tests } from './scenarios/r02-multiple-waste-items.js'
+import { runScenarioR03Tests } from './scenarios/r03-road-transport.js'
+import { runScenarioR04Tests } from './scenarios/r04-no-disposal-or-recovery-codes.js'
+import { runScenarioR05Tests } from './scenarios/r05-multiple-disposal-or-recovery-codes.js'
+import { runScenarioR07Tests } from './scenarios/r07-dual-ewc-codes.js'
+import { runScenarioC02Tests } from './scenarios/c02-reason-for-no-carrier-registration-number.js'
 
 export const SCENARIO_REGISTRY = {
   R01: runScenarioR01Tests,

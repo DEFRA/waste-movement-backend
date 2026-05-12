@@ -1,6 +1,6 @@
 import { runScenarioR03Tests } from './r03-road-transport.js'
-import { buildWasteInput } from './test-helpers.js'
-import { PAT_STATUS } from './status.js'
+import { buildWasteInput } from '../test-helpers.js'
+import { PAT_STATUS } from '../status.js'
 
 describe('runScenarioR03Tests', () => {
   it('passes when carrier meansOfTransport is Road', () => {

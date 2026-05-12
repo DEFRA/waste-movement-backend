@@ -1,4 +1,4 @@
-import { fail, pass } from './status.js'
+import { fail, pass } from '../status.js'
 
 export function runScenarioR01Tests(wasteInput) {
   const wasteItems = wasteInput?.receipt?.movement?.wasteItems ?? []

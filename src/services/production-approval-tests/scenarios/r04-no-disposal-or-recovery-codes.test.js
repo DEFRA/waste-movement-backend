@@ -1,6 +1,6 @@
 import { runScenarioR04Tests } from './r04-no-disposal-or-recovery-codes.js'
-import { buildWasteInput, buildWasteItem } from './test-helpers.js'
-import { PAT_STATUS } from './status.js'
+import { buildWasteInput, buildWasteItem } from '../test-helpers.js'
+import { PAT_STATUS } from '../status.js'
 
 describe('runScenarioR04Tests', () => {
   it('passes when no waste items have disposal or recovery codes', () => {

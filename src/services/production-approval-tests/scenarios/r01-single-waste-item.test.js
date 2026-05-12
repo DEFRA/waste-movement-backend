@@ -1,6 +1,6 @@
 import { runScenarioR01Tests } from './r01-single-waste-item.js'
-import { buildWasteInput, buildWasteItem } from './test-helpers.js'
-import { PAT_STATUS } from './status.js'
+import { buildWasteInput, buildWasteItem } from '../test-helpers.js'
+import { PAT_STATUS } from '../status.js'
 
 describe('runScenarioR01Tests', () => {
   it('passes with 1 waste item that has a disposal or recovery code, no POPs and no hazardous', () => {
