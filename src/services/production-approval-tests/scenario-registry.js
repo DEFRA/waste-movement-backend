@@ -5,6 +5,7 @@ import { runScenarioR04Tests } from './scenarios/r04-no-disposal-or-recovery-cod
 import { runScenarioR05Tests } from './scenarios/r05-multiple-disposal-or-recovery-codes.js'
 import { runScenarioR07Tests } from './scenarios/r07-dual-ewc-codes.js'
 import { runScenarioC02Tests } from './scenarios/c02-reason-for-no-carrier-registration-number.js'
+import { runScenarioP01Tests } from './scenarios/p01-pops-components.js'
 
 export const SCENARIO_REGISTRY = {
   R01: runScenarioR01Tests,
@@ -13,7 +14,8 @@ export const SCENARIO_REGISTRY = {
   R04: runScenarioR04Tests,
   R05: runScenarioR05Tests,
   R07: runScenarioR07Tests,
-  C02: runScenarioC02Tests
+  C02: runScenarioC02Tests,
+  P01: runScenarioP01Tests
 }
 
 export const SUPPORTED_SCENARIO_IDS = Object.keys(SCENARIO_REGISTRY)
