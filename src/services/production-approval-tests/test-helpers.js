@@ -1,15 +1,19 @@
-export function buildWasteInput({ wasteItems, carrier } = {}) {
+export function buildWasteInput({ wasteItems, carrier, brokerOrDealer } = {}) {
+  const movement = {
+    carrier: carrier ?? {
+      meansOfTransport: 'Road',
+      vehicleRegistration: 'AB12 CDE'
+    },
+    wasteItems: wasteItems ?? [buildWasteItem()]
+  }
+
+  if (brokerOrDealer !== undefined) {
+    movement.brokerOrDealer = brokerOrDealer
+  }
+
   return {
     wasteTrackingId: 'wt-test',
-    receipt: {
-      movement: {
-        carrier: carrier ?? {
-          meansOfTransport: 'Road',
-          vehicleRegistration: 'AB12 CDE'
-        },
-        wasteItems: wasteItems ?? [buildWasteItem()]
-      }
-    }
+    receipt: { movement }
   }
 }
 
