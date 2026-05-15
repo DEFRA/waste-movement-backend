@@ -1,4 +1,9 @@
-export function buildWasteInput({ wasteItems, carrier, brokerOrDealer } = {}) {
+export function buildWasteInput({
+  wasteItems,
+  carrier,
+  brokerOrDealer,
+  reasonForNoConsignmentCode
+} = {}) {
   const movement = {
     carrier: carrier ?? {
       meansOfTransport: 'Road',
@@ -9,6 +14,10 @@ export function buildWasteInput({ wasteItems, carrier, brokerOrDealer } = {}) {
 
   if (brokerOrDealer !== undefined) {
     movement.brokerOrDealer = brokerOrDealer
+  }
+
+  if (reasonForNoConsignmentCode !== undefined) {
+    movement.reasonForNoConsignmentCode = reasonForNoConsignmentCode
   }
 
   return {
