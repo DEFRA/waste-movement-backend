@@ -9,6 +9,7 @@ import { runScenarioP01Tests } from './scenarios/p01-pops-components.js'
 import { runScenarioB01Tests } from './scenarios/b01-broker-dealer-involvement.js'
 import { runScenarioH01Tests } from './scenarios/h01-multiple-hazardous-components.js'
 import { runScenarioH03Tests } from './scenarios/h03-reason-for-no-consignment-code.js'
+import { runScenarioX01Tests } from './scenarios/x01-pops-and-hazardous-components.js'
 
 export const SCENARIO_REGISTRY = {
   R01: runScenarioR01Tests,
@@ -21,7 +22,8 @@ export const SCENARIO_REGISTRY = {
   P01: runScenarioP01Tests,
   B01: runScenarioB01Tests,
   H01: runScenarioH01Tests,
-  H03: runScenarioH03Tests
+  H03: runScenarioH03Tests,
+  X01: runScenarioX01Tests
 }
 
 export const SUPPORTED_SCENARIO_IDS = Object.keys(SCENARIO_REGISTRY)
