@@ -2,8 +2,15 @@ import { audit } from '@defra/cdp-auditing'
 import { createLogger } from './logger.js'
 import { AUDIT_LOGGER_TYPE } from '../../constants/audit-logger.js'
 import { metricsCounter } from '../metrics.js'
+import { config } from '../../../config.js'
 
 const logger = createLogger()
+
+function getApiCode(data) {
+  return (
+    data?.apiCode ?? data?.receipt?.apiCode ?? data?.receipt?.movement?.apiCode
+  )
+}
 
 /**
  * Logs a message to the CDP audit endpoint
@@ -35,6 +42,22 @@ export function auditLogger({
 
     if (typeof data !== 'object') {
       throw new TypeError('Audit data must be provided as an object')
+    }
+
+    const excludedOrgApiCodes = config.get('excludedOrgApiCodes')
+
+    if (excludedOrgApiCodes.includes(getApiCode(data))) {
+      logger.info(
+        {
+          type,
+          traceId,
+          wasteTrackingId,
+          revision
+        },
+        `Audit log NOT sent for movement: ${wasteTrackingId} revision: ${revision}`
+      )
+
+      return true
     }
 
     audit({ metadata: { type, traceId, version }, data })

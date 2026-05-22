@@ -3,6 +3,10 @@ import * as cdpAuditing from '@defra/cdp-auditing'
 import * as logger from '../logging/logger.js'
 import { AUDIT_LOGGER_TYPE } from '../../constants/audit-logger.js'
 import * as metrics from '../metrics.js'
+import { config } from '../../../config.js'
+
+const WASTE_TRACKING_ID = '2578ZCY8'
+const API_CODE = '926a654e-f87d-4348-bf0c-2c21ab954e09'
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest
@@ -24,10 +28,10 @@ describe('Audit Logger Tests', () => {
         traceId: 'abc-def-123',
         version: 2,
         data: {
-          wasteTrackingId: '2578ZCY8',
-          receipt: { apiCode: '926a654e-f87d-4348-bf0c-2c21ab954e09' }
+          wasteTrackingId: WASTE_TRACKING_ID,
+          receipt: { apiCode: API_CODE }
         },
-        wasteTrackingId: '2578ZCY8',
+        wasteTrackingId: WASTE_TRACKING_ID,
         revision: 1
       }
     })
@@ -51,10 +55,10 @@ describe('Audit Logger Tests', () => {
         {
           type: params.type,
           traceId: params.traceId,
-          wasteTrackingId: '2578ZCY8',
+          wasteTrackingId: WASTE_TRACKING_ID,
           revision: 1
         },
-        'Audit log sent for movement: 2578ZCY8 revision: 1'
+        `Audit log sent for movement: ${WASTE_TRACKING_ID} revision: 1`
       )
     })
 
@@ -88,7 +92,7 @@ describe('Audit Logger Tests', () => {
           type: 'created',
           traceId: params.traceId,
           version: params.version,
-          wasteTrackingId: '2578ZCY8',
+          wasteTrackingId: WASTE_TRACKING_ID,
           revision: 1
         },
         `Failed to call audit endpoint: Audit type must be one of: ${Object.values(AUDIT_LOGGER_TYPE).join(', ')}`
@@ -114,7 +118,7 @@ describe('Audit Logger Tests', () => {
           type: params.type,
           traceId: params.traceId,
           version: params.version,
-          wasteTrackingId: '2578ZCY8',
+          wasteTrackingId: WASTE_TRACKING_ID,
           revision: 1
         },
         'Failed to call audit endpoint: Audit data must be provided as an object'
@@ -140,7 +144,7 @@ describe('Audit Logger Tests', () => {
           type: params.type,
           traceId: params.traceId,
           version: params.version,
-          wasteTrackingId: '2578ZCY8',
+          wasteTrackingId: WASTE_TRACKING_ID,
           revision: 1
         },
         'Failed to call audit endpoint: Audit data must be provided as an object'
@@ -160,6 +164,26 @@ describe('Audit Logger Tests', () => {
         })
       ).toThrowError(
         'Failed to call audit endpoint: Audit data must be provided as an object'
+      )
+    })
+    it('should not call the audit endpoint when the apiCode is excluded', () => {
+      const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+      const infoLogSpy = jest.spyOn(logger.createLogger(), 'info')
+
+      config.set('excludedOrgApiCodes', [API_CODE])
+
+      const result = auditLogger(params)
+
+      expect(result).toBeTruthy()
+      expect(auditSpy).not.toHaveBeenCalled()
+      expect(infoLogSpy).toHaveBeenCalledWith(
+        {
+          type: params.type,
+          traceId: params.traceId,
+          wasteTrackingId: WASTE_TRACKING_ID,
+          revision: 1
+        },
+        `Audit log NOT sent for movement: ${WASTE_TRACKING_ID} revision: 1`
       )
     })
   })
