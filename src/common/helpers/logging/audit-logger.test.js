@@ -7,10 +7,12 @@ import { config } from '../../../config.js'
 
 const WASTE_TRACKING_ID = '2578ZCY8'
 const API_CODE = '926a654e-f87d-4348-bf0c-2c21ab954e09'
+const ORG_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest
     .fn()
+    .mockImplementationOnce(() => true)
     .mockImplementationOnce(() => true)
     .mockImplementationOnce(() => true)
     .mockImplementation(() => {
@@ -166,13 +168,42 @@ describe('Audit Logger Tests', () => {
         'Failed to call audit endpoint: Audit data must be provided as an object'
       )
     })
-    it('should not call the audit endpoint when the apiCode is excluded', () => {
+    it('should call the audit endpoint when the submitting organisation is not in the excluded list', () => {
+      const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+
+      config.set('excludedSubmittingOrganisations', [
+        'ffffffff-ffff-ffff-ffff-ffffffffffff'
+      ])
+
+      const result = auditLogger({
+        ...params,
+        data: {
+          ...params.data,
+          submittingOrganisation: {
+            defraCustomerOrganisationId: ORG_ID
+          }
+        }
+      })
+
+      expect(result).toBeTruthy()
+      expect(auditSpy).toHaveBeenCalled()
+    })
+
+    it('should not call the audit endpoint when the submitting organisation is excluded', () => {
       const auditSpy = jest.spyOn(cdpAuditing, 'audit')
       const infoLogSpy = jest.spyOn(logger.createLogger(), 'info')
 
-      config.set('excludedOrgApiCodes', [API_CODE])
+      config.set('excludedSubmittingOrganisations', [ORG_ID])
 
-      const result = auditLogger(params)
+      const result = auditLogger({
+        ...params,
+        data: {
+          ...params.data,
+          submittingOrganisation: {
+            defraCustomerOrganisationId: ORG_ID
+          }
+        }
+      })
 
       expect(result).toBeTruthy()
       expect(auditSpy).not.toHaveBeenCalled()

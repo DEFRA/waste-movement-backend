@@ -6,12 +6,6 @@ import { config } from '../../../config.js'
 
 const logger = createLogger()
 
-function getApiCode(data) {
-  return (
-    data?.apiCode ?? data?.receipt?.apiCode ?? data?.receipt?.movement?.apiCode
-  )
-}
-
 /**
  * Logs a message to the CDP audit endpoint
  * @param params - The params to use to call the audit endpoint
@@ -44,9 +38,15 @@ export function auditLogger({
       throw new TypeError('Audit data must be provided as an object')
     }
 
-    const excludedOrgApiCodes = config.get('excludedOrgApiCodes')
+    const excludedSubmittingOrganisations = config.get(
+      'excludedSubmittingOrganisations'
+    )
 
-    if (excludedOrgApiCodes.includes(getApiCode(data))) {
+    if (
+      excludedSubmittingOrganisations.includes(
+        data?.submittingOrganisation?.defraCustomerOrganisationId
+      )
+    ) {
       logger.info(
         {
           type,
