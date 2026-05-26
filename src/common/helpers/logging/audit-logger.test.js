@@ -214,7 +214,7 @@ describe('Audit Logger Tests', () => {
           wasteTrackingId: WASTE_TRACKING_ID,
           revision: 1
         },
-        `Audit log NOT sent for movement: ${WASTE_TRACKING_ID} revision: 1`
+        `Audit log NOT sent as the organisation id is in the exclude list: ${WASTE_TRACKING_ID} revision: 1`
       )
     })
   })
