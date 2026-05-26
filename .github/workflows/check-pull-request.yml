@@ -65,7 +65,7 @@ jobs:
           ACCESS_CRED_QA_NON_PROD: ${{ secrets.ACCESS_CRED_QA_NON_PROD }}
           AUTH_PASSWORD_QA_NON_PROD: ${{ secrets.AUTH_PASSWORD_QA_NON_PROD }}
           ACCESS_CRED_PRODUCTION_APPROVAL_TESTS: ${{ secrets.ACCESS_CRED_PRODUCTION_APPROVAL_TESTS }}
-          EXCLUDED_SUBMITTING_ORGANISATION_IDS: ${{ secrets.EXCLUDED_SUBMITTING_ORGANISATION_IDS || '' }}
+          EXCLUDED_SUBMITTING_ORGANISATION_IDS: ${{ secrets.EXCLUDED_SUBMITTING_ORGANISATION_IDS }}
         run: |
           docker compose up -d --wait
           docker compose ps
