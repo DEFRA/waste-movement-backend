@@ -54,7 +54,7 @@ export function auditLogger({
           wasteTrackingId,
           revision
         },
-        `Audit log NOT sent for movement: ${wasteTrackingId} revision: ${revision}`
+        `Audit log NOT sent as the organisation id is in the exclude list: ${wasteTrackingId} revision: ${revision}`
       )
 
       return true
