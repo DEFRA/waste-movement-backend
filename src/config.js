@@ -3,9 +3,11 @@ import convictFormatWithValidator from 'convict-format-with-validator'
 
 import { convictValidateMongoUri } from './common/helpers/convict/validate-mongo-uri.js'
 import { convictValidateOrgApiCodes } from './common/helpers/convict/validate-org-api-codes.js'
+import { convictValidateExcludeSubmittingOrganisations } from './common/helpers/convict/validate-exclude-submitting-organisations.js'
 
 convict.addFormat(convictValidateMongoUri)
 convict.addFormat(convictValidateOrgApiCodes)
+convict.addFormat(convictValidateExcludeSubmittingOrganisations)
 convict.addFormats(convictFormatWithValidator)
 
 const isProduction = process.env.NODE_ENV === 'production'
@@ -138,6 +140,12 @@ const config = convict({
       '00000000-0000-0000-0000-000000000000=00000000-0000-0000-0000-000000000000'
     ),
     env: 'ORG_API_CODES'
+  },
+  excludedSubmittingOrganisations: {
+    doc: 'The submitting organisation ids that are excluded from going to GIO and the regulators, this variable is stored as a comma separated string secret and is injected into the docker container in CDP environments',
+    format: 'excluded-submitting-organisations',
+    default: '',
+    env: 'EXCLUDED_SUBMITTING_ORGANISATION_IDS'
   },
   services: {
     wasteTracking: {

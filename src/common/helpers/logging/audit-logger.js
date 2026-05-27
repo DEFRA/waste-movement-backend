@@ -2,6 +2,7 @@ import { audit } from '@defra/cdp-auditing'
 import { createLogger } from './logger.js'
 import { AUDIT_LOGGER_TYPE } from '../../constants/audit-logger.js'
 import { metricsCounter } from '../metrics.js'
+import { config } from '../../../config.js'
 
 const logger = createLogger()
 
@@ -35,6 +36,28 @@ export function auditLogger({
 
     if (typeof data !== 'object') {
       throw new TypeError('Audit data must be provided as an object')
+    }
+
+    const excludedSubmittingOrganisations = config.get(
+      'excludedSubmittingOrganisations'
+    )
+
+    if (
+      excludedSubmittingOrganisations.includes(
+        data?.submittingOrganisation?.defraCustomerOrganisationId
+      )
+    ) {
+      logger.info(
+        {
+          type,
+          traceId,
+          wasteTrackingId,
+          revision
+        },
+        `Audit log NOT sent as the organisation id is in the exclude list: ${wasteTrackingId} revision: ${revision}`
+      )
+
+      return true
     }
 
     audit({ metadata: { type, traceId, version }, data })
