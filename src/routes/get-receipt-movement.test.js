@@ -2,7 +2,7 @@ import { expect, describe, beforeAll, afterAll, it, jest } from '@jest/globals'
 import hapi from '@hapi/hapi'
 import { mongoDb } from '../common/helpers/mongodb.js'
 import { requestLogger } from '../common/helpers/logging/request-logger.js'
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { HTTP_STATUS } from 'waste-movement-utils'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 import { getReceiptMovement } from './get-receipt-movement.js'
 import * as movementGet from '../services/movement-get.js'
@@ -55,7 +55,7 @@ describe('Get Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(statusCode).toEqual(HTTP_STATUS.OK)
     expect(result).toEqual([
       {
         wasteTrackingId: '26NWSI1G',
@@ -82,7 +82,7 @@ describe('Get Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
 
     expect(getWasteInputsSpy).not.toHaveBeenCalled()
   })
@@ -98,7 +98,7 @@ describe('Get Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.NOT_FOUND)
+    expect(statusCode).toEqual(HTTP_STATUS.NOT_FOUND)
 
     expect(getWasteInputsSpy).toHaveBeenCalledWith({
       db: expect.any(Db),
@@ -117,7 +117,7 @@ describe('Get Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR)
+    expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
       statusCode: 500,
       error: 'Error',

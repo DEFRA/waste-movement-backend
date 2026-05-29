@@ -1,9 +1,11 @@
 import Joi from 'joi'
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import {
+  HTTP_STATUS,
+  backoffOptions,
+  BULK_RESPONSE_STATUS
+} from 'waste-movement-utils'
 import { backOff } from 'exponential-backoff'
-import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
 import { updateBulkWasteInput } from '../services/movement-update-bulk.js'
-import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 import {
   badRequestResponse,
   generateResponseWithValidationWarnings,
@@ -12,6 +14,9 @@ import {
 import { bulkUpdateMovementRequestSchema } from '../schemas/bulk-receipt.js'
 import { getOrganisationValidationError } from '../common/helpers/validate-organisation.js'
 import { metricsCounter } from '../common/helpers/metrics.js'
+import { createLogger } from '../common/helpers/logging/logger.js'
+
+const logger = createLogger()
 
 async function findWithHistoryFallback(
   wasteInputsCollection,
@@ -34,7 +39,7 @@ function noMovementsUpdatedResponse(h, payload) {
       status: BULK_RESPONSE_STATUS.NO_MOVEMENTS_UPDATED,
       movements: payload.map(() => ({}))
     })
-    .code(HTTP_STATUS_CODES.OK)
+    .code(HTTP_STATUS.OK)
 }
 
 function getIdempotencyResponse(h, existingWasteInputs, payload) {
@@ -69,7 +74,7 @@ function getNotFoundResponse(h, wasteInputsToUpdate) {
         }
       })
     )
-    .code(HTTP_STATUS_CODES.BAD_REQUEST)
+    .code(HTTP_STATUS.BAD_REQUEST)
 }
 
 function getOrgValidationResponse(h, payload, wasteInputsToUpdate) {
@@ -100,7 +105,7 @@ function getOrgValidationResponse(h, payload, wasteInputsToUpdate) {
         }
       })
     )
-    .code(HTTP_STATUS_CODES.BAD_REQUEST)
+    .code(HTTP_STATUS.BAD_REQUEST)
 }
 
 const updateBulkReceiptMovement = {
@@ -119,7 +124,7 @@ const updateBulkReceiptMovement = {
       'hapi-swagger': {
         params: {},
         responses: {
-          [HTTP_STATUS_CODES.OK]: {
+          [HTTP_STATUS.OK]: {
             description: 'Successfully updated waste inputs'
           },
           ...badRequestResponse
@@ -187,7 +192,7 @@ const updateBulkReceiptMovement = {
             request.getTraceId(),
             wasteInputsToUpdate
           ),
-        BACKOFF_OPTIONS
+        backoffOptions(logger)
       )
 
       if (!movements) {
@@ -203,7 +208,7 @@ const updateBulkReceiptMovement = {
           status: BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED,
           movements: generateResponseWithValidationWarnings(payload)
         })
-        .code(HTTP_STATUS_CODES.OK)
+        .code(HTTP_STATUS.OK)
     } catch (error) {
       return handleRouteError(h, error)
     }

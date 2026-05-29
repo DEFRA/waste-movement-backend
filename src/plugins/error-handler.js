@@ -1,5 +1,4 @@
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
-import { getErrorCategory } from '../common/constants/validation-error-categories.js'
+import { HTTP_STATUS, getErrorCategory } from 'waste-movement-utils'
 
 export const errorHandler = {
   plugin: {
@@ -16,7 +15,7 @@ export const errorHandler = {
         // Check if it's a validation error (Boom error with status 400)
         if (
           response.isBoom &&
-          response.output?.statusCode === HTTP_STATUS_CODES.BAD_REQUEST
+          response.output?.statusCode === HTTP_STATUS.BAD_REQUEST
         ) {
           // Access the validation error details
           const validationErrors = response.details
@@ -87,7 +86,7 @@ export const errorHandler = {
           }
 
           // Return the custom formatted error
-          return h.response(customError).code(HTTP_STATUS_CODES.BAD_REQUEST)
+          return h.response(customError).code(HTTP_STATUS.BAD_REQUEST)
         }
 
         // If not a validation error, continue with the default response

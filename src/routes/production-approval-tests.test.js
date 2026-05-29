@@ -12,13 +12,15 @@ import { createReceiptMovement } from './create-receipt-movement.js'
 import { mongoDb } from '../common/helpers/mongodb.js'
 import { requestLogger } from '../common/helpers/logging/request-logger.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import {
+  HTTP_STATUS,
+  PRODUCTION_APPROVAL_TEST_SCENARIO_IDS
+} from 'waste-movement-utils'
 import { config } from '../config.js'
 import { base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 import { productionApprovalTestsRequestPayload } from '../test/data/production-approval-tests.js'
 import { productionApprovalTests } from './production-approval-tests.js'
-import { PRODUCTION_APPROVAL_TEST_SCENARIO_IDS } from '../common/constants/production-approval-tests.js'
 import * as runProductionApprovalTests from '../services/production-approval-tests/run-production-approval-tests.js'
 import { createMovementRequest } from '../test/utils/createMovementRequest.js'
 import { errorHandler } from '../plugins/error-handler.js'
@@ -75,7 +77,7 @@ describe('Production Approval Tests Route Tests', () => {
       }
     })
 
-    expect(createR01TestData.statusCode).toEqual(HTTP_STATUS_CODES.NO_CONTENT)
+    expect(createR01TestData.statusCode).toEqual(HTTP_STATUS.NO_CONTENT)
     expect(createR01TestData.result).toEqual(null)
 
     const createR02TestData = await server.inject({
@@ -89,7 +91,7 @@ describe('Production Approval Tests Route Tests', () => {
       }
     })
 
-    expect(createR02TestData.statusCode).toEqual(HTTP_STATUS_CODES.NO_CONTENT)
+    expect(createR02TestData.statusCode).toEqual(HTTP_STATUS.NO_CONTENT)
     expect(createR02TestData.result).toEqual(null)
   })
 
@@ -104,7 +106,7 @@ describe('Production Approval Tests Route Tests', () => {
       payload
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(statusCode).toEqual(HTTP_STATUS.OK)
     expect(result).toEqual([
       {
         scenarioId: payload[0].scenarioId,
@@ -136,7 +138,7 @@ describe('Production Approval Tests Route Tests', () => {
       payload
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(statusCode).toEqual(HTTP_STATUS.OK)
     expect(result).toEqual([
       {
         scenarioId: payload[0].scenarioId,
@@ -181,7 +183,7 @@ describe('Production Approval Tests Route Tests', () => {
       payload
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
       validation: {
         errors: [
@@ -212,7 +214,7 @@ describe('Production Approval Tests Route Tests', () => {
       payload
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
       validation: {
         errors: [
@@ -242,11 +244,11 @@ describe('Production Approval Tests Route Tests', () => {
       payload
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR)
+    expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
       error: 'Error',
       message: errorMessage,
-      statusCode: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR
+      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR
     })
   })
 })

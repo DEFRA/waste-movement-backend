@@ -1,4 +1,4 @@
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { HTTP_STATUS } from 'waste-movement-utils'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { ValidationError } from '../common/helpers/errors/validation-error.js'
 import { productionApprovalTestsSchema } from '../schemas/production-approval-tests.js'
@@ -52,7 +52,7 @@ const productionApprovalTests = {
 
       const response = runProductionApprovalTests(productionApprovalTestData)
 
-      return h.response(response).code(HTTP_STATUS_CODES.OK)
+      return h.response(response).code(HTTP_STATUS.OK)
     } catch (error) {
       return handleRouteError(h, error)
     }

@@ -2,7 +2,7 @@ import { config } from '../config.js'
 import { createServer } from '../server.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { HTTP_STATUS } from 'waste-movement-utils'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 import { formatBulkUploadValidationErrors } from './error-handler.js'
 import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
@@ -45,7 +45,7 @@ describe('Error Handler', () => {
       }
     })
 
-    expect(createResult.statusCode).toEqual(HTTP_STATUS_CODES.NO_CONTENT)
+    expect(createResult.statusCode).toEqual(HTTP_STATUS.NO_CONTENT)
     expect(createResult.result).toEqual(null)
   })
 

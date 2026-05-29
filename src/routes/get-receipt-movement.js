@@ -1,4 +1,4 @@
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { HTTP_STATUS } from 'waste-movement-utils'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { getWasteInputs } from '../services/movement-get.js'
 import { getReceiptMovementSchema } from '../schemas/get-receipt-movement.js'
@@ -31,7 +31,7 @@ const getReceiptMovement = {
         )
       }
 
-      return h.response(wasteInputs).code(HTTP_STATUS_CODES.OK)
+      return h.response(wasteInputs).code(HTTP_STATUS.OK)
     } catch (error) {
       return handleRouteError(h, error)
     }

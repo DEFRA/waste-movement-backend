@@ -1,4 +1,4 @@
-import { PRODUCTION_APPROVAL_TEST_SCENARIO_IDS } from '../../common/constants/production-approval-tests.js'
+import { PRODUCTION_APPROVAL_TEST_SCENARIO_IDS } from 'waste-movement-utils'
 import { generateWasteTrackingId } from '../generate-waste-tracking-id.js'
 
 export const productionApprovalTestsRequestPayload = [

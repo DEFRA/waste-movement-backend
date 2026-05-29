@@ -1,13 +1,13 @@
 import Joi from 'joi'
-import { HTTP_STATUS_CODES } from '../constants/http-status-codes.js'
+import { HTTP_STATUS } from 'waste-movement-utils'
 import { MongoServerError } from 'mongodb'
 import { generateAllValidationWarnings } from './validation-warnings/validation-warnings.js'
 
 const badRequestResponse = {
-  [HTTP_STATUS_CODES.BAD_REQUEST]: {
+  [HTTP_STATUS.BAD_REQUEST]: {
     description: 'Bad Request',
     schema: Joi.object({
-      statusCode: Joi.number().valid(HTTP_STATUS_CODES.BAD_REQUEST),
+      statusCode: Joi.number().valid(HTTP_STATUS.BAD_REQUEST),
       error: Joi.string(),
       message: Joi.string()
     }).label('BadRequestResponse')
@@ -15,7 +15,7 @@ const badRequestResponse = {
 }
 
 function handleRouteError(h, error) {
-  let statusCode = error.statusCode || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR
+  let statusCode = error.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR
   let errorName = error.name
   let message = error.message
 
@@ -35,7 +35,7 @@ function handleRouteError(h, error) {
     error instanceof MongoServerError &&
     message === 'Document failed validation'
   ) {
-    statusCode = HTTP_STATUS_CODES.BAD_REQUEST
+    statusCode = HTTP_STATUS.BAD_REQUEST
     errorName = 'ValidationError'
     message = JSON.stringify(
       error.errorResponse.errInfo

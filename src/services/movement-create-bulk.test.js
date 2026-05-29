@@ -11,8 +11,7 @@ import { base64EncodedOrgApiCodes, orgId1 } from '../test/data/apiCodes.js'
 import { config } from '../config.js'
 import { createBulkWasteInput } from './movement-create-bulk.js'
 import * as cdpAuditing from '@defra/cdp-auditing'
-import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
-import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
+import { AUDIT_LOGGER_TYPE, BULK_RESPONSE_STATUS } from 'waste-movement-utils'
 
 jest.mock('@hapi/hoek', () => ({
   wait: jest.fn()

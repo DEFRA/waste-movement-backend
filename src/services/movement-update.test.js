@@ -20,7 +20,7 @@ import {
 import { config } from '../config.js'
 import { ValidationError } from '../common/helpers/errors/validation-error.js'
 import * as cdpAuditing from '@defra/cdp-auditing'
-import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
+import { AUDIT_LOGGER_TYPE } from 'waste-movement-utils'
 import * as logger from '../common/helpers/logging/logger.js'
 
 jest.mock('@hapi/hoek', () => ({

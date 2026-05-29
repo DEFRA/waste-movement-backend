@@ -1,7 +1,7 @@
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { createHistoryEntry } from '../common/helpers/create-history-entry.js'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
-import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
+import { AUDIT_LOGGER_TYPE } from 'waste-movement-utils'
 import { findWasteInputs } from '../common/helpers/find-waste-inputs.js'
 
 const logger = createLogger()
