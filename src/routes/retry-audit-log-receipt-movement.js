@@ -1,7 +1,6 @@
 import Joi from 'joi'
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { HTTP_STATUS, AUDIT_LOGGER_TYPE } from 'waste-movement-utils'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
-import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
 import { retryAuditLogSchema } from '../schemas/retry-audit-log.js'
 
 const retryAuditLogReceiptMovement = {
@@ -17,12 +16,12 @@ const retryAuditLogReceiptMovement = {
       'hapi-swagger': {
         params: {},
         responses: {
-          [HTTP_STATUS_CODES.OK]: {
+          [HTTP_STATUS.OK]: {
             description:
               'Successfully retried the sending of a receipt movement to the audit log',
             schema: Joi.object({})
           },
-          [HTTP_STATUS_CODES.BAD_REQUEST]: {
+          [HTTP_STATUS.BAD_REQUEST]: {
             description: 'Bad Request',
             schema: Joi.object({
               validation: Joi.object({
@@ -67,11 +66,11 @@ const retryAuditLogReceiptMovement = {
       if (!wasteInput) {
         return h
           .response({
-            statusCode: HTTP_STATUS_CODES.NOT_FOUND,
+            statusCode: HTTP_STATUS.NOT_FOUND,
             error: 'Not Found',
             message: `Waste input with values ${JSON.stringify({ traceId, wasteTrackingId, revision })} not found`
           })
-          .code(HTTP_STATUS_CODES.NOT_FOUND)
+          .code(HTTP_STATUS.NOT_FOUND)
       }
 
       auditLogger({
@@ -86,10 +85,9 @@ const retryAuditLogReceiptMovement = {
         shouldThrowError: true
       })
 
-      return h.response({}).code(HTTP_STATUS_CODES.OK)
+      return h.response({}).code(HTTP_STATUS.OK)
     } catch (error) {
-      const statusCode =
-        error.statusCode || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR
+      const statusCode = error.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR
 
       return h
         .response({

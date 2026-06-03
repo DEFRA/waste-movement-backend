@@ -12,7 +12,7 @@ import { base64EncodedOrgApiCodes, orgId1 } from '../test/data/apiCodes.js'
 import { config } from '../config.js'
 import { updateBulkWasteInput } from './movement-update-bulk.js'
 import * as cdpAuditing from '@defra/cdp-auditing'
-import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
+import { AUDIT_LOGGER_TYPE } from 'waste-movement-utils'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 
 jest.mock('@hapi/hoek', () => ({

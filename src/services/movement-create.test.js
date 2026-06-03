@@ -1,6 +1,6 @@
 import { createWasteInput } from './movement-create.js'
 import * as cdpAuditing from '@defra/cdp-auditing'
-import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
+import { AUDIT_LOGGER_TYPE } from 'waste-movement-utils'
 import * as logger from '../common/helpers/logging/logger.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 

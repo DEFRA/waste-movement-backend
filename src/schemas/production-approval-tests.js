@@ -1,6 +1,8 @@
 import Joi from 'joi'
-import { productionApprovalTestScenarioIds } from '../common/constants/production-approval-tests.js'
-import { PRODUCTION_APPROVAL_TEST_ERRORS } from '../common/constants/validation-error-messages.js'
+import {
+  productionApprovalTestScenarioIds,
+  PRODUCTION_APPROVAL_TEST_ERRORS
+} from 'waste-movement-utils'
 
 export const productionApprovalTestsSchema = Joi.array()
   .items(

@@ -7,7 +7,7 @@ import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { expect } from '@jest/globals'
 import { config } from '../config.js'
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { HTTP_STATUS } from 'waste-movement-utils'
 import {
   orgId1,
   base64EncodedOrgApiCodes,
@@ -24,12 +24,17 @@ jest.mock('../services/movement-update.js', () => {
   return { updateWasteInput: jest.fn(actualFunction) }
 })
 
-jest.mock('../common/constants/exponential-backoff.js', () => ({
-  BACKOFF_OPTIONS: {
-    numOfAttempts: 3,
-    startingDelay: 1
+jest.mock('waste-movement-utils', () => {
+  const originalModule = jest.requireActual('waste-movement-utils')
+
+  return {
+    ...originalModule,
+    backoffOptions: () => ({
+      numOfAttempts: 3,
+      startingDelay: 1
+    })
   }
-}))
+})
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockReturnValue(true)
@@ -260,7 +265,7 @@ describe('movementUpdate Route Tests', () => {
       payload: updatePayload
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
       validation: {
         errors: [
@@ -305,7 +310,7 @@ describe('movementUpdate Route Tests', () => {
         payload: updatePayload
       })
 
-      expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+      expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
       expect(result).toEqual({
         validation: {
           errors: [
@@ -350,7 +355,7 @@ describe('movementUpdate Route Tests', () => {
       payload: updatePayload
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
       validation: {
         errors: [
@@ -383,9 +388,9 @@ describe('movementUpdate Route Tests', () => {
       payload: updatePayload
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.NOT_FOUND)
+    expect(statusCode).toEqual(HTTP_STATUS.NOT_FOUND)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS_CODES.NOT_FOUND,
+      statusCode: HTTP_STATUS.NOT_FOUND,
       error: 'Not Found',
       message: 'Waste input with ID nonexistent-id not found'
     })
@@ -429,7 +434,7 @@ describe('movementUpdate Route Tests', () => {
       payload: updatePayload
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
       validation: {
         errors: [
@@ -474,7 +479,7 @@ describe('movementUpdate Route Tests', () => {
       payload
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(statusCode).toEqual(HTTP_STATUS.OK)
 
     const actualWasteInput = await testMongoDb
       .collection('waste-inputs')
@@ -511,9 +516,9 @@ describe('movementUpdate Route Tests', () => {
       payload
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR)
+    expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       error: 'Error',
       message: errorMessage
     })

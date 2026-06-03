@@ -1,6 +1,6 @@
 import { productionApprovalTestsSchema } from './production-approval-tests.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
-import { PRODUCTION_APPROVAL_TEST_SCENARIO_IDS } from '../common/constants/production-approval-tests.js'
+import { PRODUCTION_APPROVAL_TEST_SCENARIO_IDS } from 'waste-movement-utils'
 import { productionApprovalTestsRequestPayload } from '../test/data/production-approval-tests.js'
 
 describe('productionApprovalTestsSchema', () => {

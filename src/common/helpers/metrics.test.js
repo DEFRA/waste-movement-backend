@@ -2,7 +2,7 @@ import { StorageResolution, Unit } from 'aws-embedded-metrics'
 
 import { config } from '../../config.js'
 import { metricsCounter } from './metrics.js'
-import { AUDIT_LOGGER_TYPE } from '../constants/audit-logger.js'
+import { AUDIT_LOGGER_TYPE } from 'waste-movement-utils'
 
 const mockPutMetric = jest.fn()
 const mockPutDimensions = jest.fn()

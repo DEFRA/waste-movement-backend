@@ -1,5 +1,5 @@
 import { createLogger } from '../common/helpers/logging/logger.js'
-import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
+import { AUDIT_LOGGER_TYPE } from 'waste-movement-utils'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 import { findWasteInputs } from '../common/helpers/find-waste-inputs.js'
 

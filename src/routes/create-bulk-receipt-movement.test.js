@@ -3,12 +3,11 @@ import hapi from '@hapi/hapi'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { mongoDb } from '../common/helpers/mongodb.js'
 import { requestLogger } from '../common/helpers/logging/request-logger.js'
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { HTTP_STATUS, BULK_RESPONSE_STATUS } from 'waste-movement-utils'
 import * as movementCreateBulk from '../services/movement-create-bulk.js'
 import { config } from '../config.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 import { createBulkReceiptMovement } from './create-bulk-receipt-movement.js'
-import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 import * as batch from '../common/helpers/batch.js'
 import * as metricsCounter from '../common/helpers/metrics.js'
@@ -46,12 +45,17 @@ const assertMetricsCounterWasCalled = (metricsCounterSpy) => {
   )
 }
 
-jest.mock('../common/constants/exponential-backoff.js', () => ({
-  BACKOFF_OPTIONS: {
-    numOfAttempts: 3,
-    startingDelay: 1
+jest.mock('waste-movement-utils', () => {
+  const originalModule = jest.requireActual('waste-movement-utils')
+
+  return {
+    ...originalModule,
+    backoffOptions: () => ({
+      numOfAttempts: 3,
+      startingDelay: 1
+    })
   }
-}))
+})
 
 jest.mock('../common/helpers/http-client.js', () => ({
   httpClients: {
@@ -164,7 +168,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.CREATED)
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
       status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
       movements: [
@@ -228,7 +232,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.CREATED)
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
       status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
       movements: [
@@ -299,7 +303,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(statusCode).toEqual(HTTP_STATUS.OK)
     expect(result).toEqual({
       status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
       movements: [
@@ -334,7 +338,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(statusCode).toEqual(HTTP_STATUS.OK)
     expect(result).toEqual({
       status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
       movements: [
@@ -370,7 +374,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.CREATED)
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
       status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
       movements: [
@@ -404,7 +408,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.CREATED)
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
       status: BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
       movements: [
@@ -468,9 +472,9 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR)
+    expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       error: 'Error',
       message: errorMessage
     })
@@ -497,9 +501,9 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR)
+    expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       error: 'Error',
       message:
         "Created wasteTrackingId count (0) doesn't match the request payload count (2) for bulkId (fccbd30d-3082-494d-b470-15b13a7bbaa8)"

@@ -1,5 +1,5 @@
 import { ValidationError } from './validation-error.js'
-import { HTTP_STATUS_CODES } from '../../constants/http-status-codes.js'
+import { HTTP_STATUS } from 'waste-movement-utils'
 
 describe('ValidationError', () => {
   it('should use default errorType when not provided', () => {
@@ -9,7 +9,7 @@ describe('ValidationError', () => {
     expect(error.key).toBe('testKey')
     expect(error.message).toBe('test message')
     expect(error.errorType).toBe('UnexpectedError')
-    expect(error.statusCode).toBe(HTTP_STATUS_CODES.BAD_REQUEST)
+    expect(error.statusCode).toBe(HTTP_STATUS.BAD_REQUEST)
   })
 
   it('should use provided errorType', () => {

@@ -10,8 +10,7 @@ import { config } from '../config.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import * as auditLogger from '../common/helpers/logging/audit-logger.js'
-import { AUDIT_LOGGER_TYPE } from '../common/constants/audit-logger.js'
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { AUDIT_LOGGER_TYPE, HTTP_STATUS } from 'waste-movement-utils'
 import * as cdpAuditing from '@defra/cdp-auditing'
 import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
 
@@ -63,7 +62,7 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(createResult.statusCode).toEqual(HTTP_STATUS_CODES.NO_CONTENT)
+    expect(createResult.statusCode).toEqual(HTTP_STATUS.NO_CONTENT)
     expect(createResult.result).toEqual(null)
 
     const updateResult = await server.inject({
@@ -77,7 +76,7 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       }
     })
 
-    expect(updateResult.statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(updateResult.statusCode).toEqual(HTTP_STATUS.OK)
     expect(updateResult.result).toEqual(null)
 
     wasteInputsRecord = await testMongoDb
@@ -106,7 +105,7 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       payload: { traceId: traceId2 }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(statusCode).toEqual(HTTP_STATUS.OK)
     expect(result).toEqual({})
 
     expect(auditLoggerSpy).toHaveBeenCalledWith({
@@ -128,7 +127,7 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       payload: { wasteTrackingId, revision }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(statusCode).toEqual(HTTP_STATUS.OK)
     expect(result).toEqual({})
 
     expect(auditLoggerSpy).toHaveBeenCalledWith({
@@ -150,7 +149,7 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       payload: { traceId }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(statusCode).toEqual(HTTP_STATUS.OK)
     expect(result).toEqual({})
 
     expect(auditLoggerSpy).toHaveBeenCalledWith({
@@ -172,7 +171,7 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       payload: { wasteTrackingId, revision: 1 }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS_CODES.OK)
+    expect(statusCode).toEqual(HTTP_STATUS.OK)
     expect(result).toEqual({})
 
     expect(auditLoggerSpy).toHaveBeenCalledWith({

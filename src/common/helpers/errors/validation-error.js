@@ -1,10 +1,10 @@
-import { HTTP_STATUS_CODES } from '../../constants/http-status-codes.js'
+import { HTTP_STATUS } from 'waste-movement-utils'
 
 export class ValidationError extends Error {
   constructor(key, message, errorType = 'UnexpectedError') {
     super(message)
     this.name = 'ValidationError'
-    this.statusCode = HTTP_STATUS_CODES.BAD_REQUEST
+    this.statusCode = HTTP_STATUS.BAD_REQUEST
     this.errorType = errorType
     this.key = key
   }

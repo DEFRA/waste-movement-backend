@@ -1,12 +1,14 @@
 import { WasteInput } from '../domain/wasteInput.js'
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import {
+  HTTP_STATUS,
+  backoffOptions,
+  BULK_RESPONSE_STATUS
+} from 'waste-movement-utils'
 import { backOff } from 'exponential-backoff'
-import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
 import { createBulkWasteInput } from '../services/movement-create-bulk.js'
 import { httpClients } from '../common/helpers/http-client.js'
 import { config } from '../config.js'
 import { getBatches } from '../common/helpers/batch.js'
-import { BULK_RESPONSE_STATUS } from '../common/constants/bulk-response-status.js'
 import {
   badRequestResponse,
   generateResponseWithValidationWarnings,
@@ -15,6 +17,9 @@ import {
 import { bulkReceiveMovementRequestSchema } from '../schemas/bulk-receipt.js'
 import Joi from 'joi'
 import { metricsCounter } from '../common/helpers/metrics.js'
+import { createLogger } from '../common/helpers/logging/logger.js'
+
+const logger = createLogger
 
 const createBulkReceiptMovement = {
   method: 'POST',
@@ -32,7 +37,7 @@ const createBulkReceiptMovement = {
       'hapi-swagger': {
         params: {},
         responses: {
-          [HTTP_STATUS_CODES.NO_CONTENT]: {
+          [HTTP_STATUS.NO_CONTENT]: {
             description: 'Successfully created waste inputs'
           },
           ...badRequestResponse
@@ -69,7 +74,7 @@ const createBulkReceiptMovement = {
               wasteTrackingId: wasteInput.wasteTrackingId
             }))
           })
-          .code(HTTP_STATUS_CODES.OK)
+          .code(HTTP_STATUS.OK)
       }
 
       const batchSize = config.get('services.wasteTrackingBatchSize')
@@ -102,7 +107,7 @@ const createBulkReceiptMovement = {
       const createdMovements = await backOff(
         () =>
           createBulkWasteInput(request.db, request.mongoClient, wasteInputs),
-        BACKOFF_OPTIONS
+        backoffOptions(logger)
       )
 
       collectMetrics(createdMovements)
@@ -119,7 +124,7 @@ const createBulkReceiptMovement = {
           status: createdMovements.status,
           movements: response
         })
-        .code(HTTP_STATUS_CODES.CREATED)
+        .code(HTTP_STATUS.CREATED)
     } catch (error) {
       return handleRouteError(h, error)
     }

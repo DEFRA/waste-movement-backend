@@ -1,6 +1,6 @@
 import { audit } from '@defra/cdp-auditing'
 import { createLogger } from './logger.js'
-import { AUDIT_LOGGER_TYPE } from '../../constants/audit-logger.js'
+import { AUDIT_LOGGER_TYPE } from 'waste-movement-utils'
 import { metricsCounter } from '../metrics.js'
 import { config } from '../../../config.js'
 

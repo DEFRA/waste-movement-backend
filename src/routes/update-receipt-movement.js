@@ -1,12 +1,14 @@
 import { updateWasteInput } from '../services/movement-update.js'
 import { movementSchema } from '../schemas/movement.js'
 import Joi from 'joi'
-import { HTTP_STATUS_CODES } from '../common/constants/http-status-codes.js'
+import { HTTP_STATUS, backoffOptions } from 'waste-movement-utils'
 import { updatePlugins } from './update-plugins.js'
 import { backOff } from 'exponential-backoff'
-import { BACKOFF_OPTIONS } from '../common/constants/exponential-backoff.js'
 import { getOrganisationValidationError } from '../common/helpers/validate-organisation.js'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
+import { createLogger } from '../common/helpers/logging/logger.js'
+
+const logger = createLogger
 
 const updateReceiptMovement = {
   method: 'PUT',
@@ -36,11 +38,11 @@ const updateReceiptMovement = {
       if (!existing) {
         return h
           .response({
-            statusCode: HTTP_STATUS_CODES.NOT_FOUND,
+            statusCode: HTTP_STATUS.NOT_FOUND,
             error: 'Not Found',
             message: `Waste input with ID ${wasteTrackingId} not found`
           })
-          .code(HTTP_STATUS_CODES.NOT_FOUND)
+          .code(HTTP_STATUS.NOT_FOUND)
       }
 
       const orgError = getOrganisationValidationError(
@@ -65,7 +67,7 @@ const updateReceiptMovement = {
             'receipt.movement',
             submittingOrganisation
           ),
-        BACKOFF_OPTIONS
+        backoffOptions(logger)
       )
 
       if (result instanceof Error) {
@@ -75,14 +77,14 @@ const updateReceiptMovement = {
       if (result.matchedCount === 0) {
         return h
           .response({
-            statusCode: HTTP_STATUS_CODES.NOT_FOUND,
+            statusCode: HTTP_STATUS.NOT_FOUND,
             error: 'Not Found',
             message: `Waste input with ID ${wasteTrackingId} not found`
           })
-          .code(HTTP_STATUS_CODES.NOT_FOUND)
+          .code(HTTP_STATUS.NOT_FOUND)
       }
 
-      return h.response().code(HTTP_STATUS_CODES.OK)
+      return h.response().code(HTTP_STATUS.OK)
     } catch (error) {
       return handleRouteError(h, error)
     }
