@@ -1,7 +1,12 @@
 import Joi from 'joi'
-import { HTTP_STATUS } from 'waste-movement-utils'
+import {
+  HTTP_STATUS,
+  generateAllValidationWarnings
+} from 'waste-movement-utils'
 import { MongoServerError } from 'mongodb'
-import { generateAllValidationWarnings } from './validation-warnings/validation-warnings.js'
+import { createLogger } from '../helpers/logging/logger.js'
+
+const logger = createLogger()
 
 const badRequestResponse = {
   [HTTP_STATUS.BAD_REQUEST]: {
@@ -61,7 +66,11 @@ function generateResponseWithValidationWarnings(payload, wasteTrackingIds) {
   return payload.map((item, index) => {
     const wasteTrackingId = wasteTrackingIds?.[index] ?? item.wasteTrackingId
     const response = wasteTrackingIds ? { wasteTrackingId } : {}
-    const warnings = generateAllValidationWarnings(item, wasteTrackingId)
+    const warnings = generateAllValidationWarnings(
+      item,
+      wasteTrackingId,
+      logger
+    )
 
     if (warnings.length > 0) {
       response.validation = { warnings }
