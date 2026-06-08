@@ -109,6 +109,7 @@ jobs:
           AUTH_PASSWORD_QA_NON_PROD: ${{ secrets.AUTH_PASSWORD_QA_NON_PROD }}
           AUTH_PASSWORD_PRODUCTION_APPROVAL_TESTS: ${{ secrets.AUTH_PASSWORD_PRODUCTION_APPROVAL_TESTS }}
         run: |
+          npm run test
           npm run test:zap-gate
 
       - name: Generate Test Report
