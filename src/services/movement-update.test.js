@@ -24,6 +24,7 @@ import { AUDIT_LOGGER_TYPE } from 'waste-movement-utils'
 import * as logger from '../common/helpers/logging/logger.js'
 
 jest.mock('@hapi/hoek', () => ({
+  ...jest.requireActual('@hapi/hoek'),
   wait: jest.fn()
 }))
 
