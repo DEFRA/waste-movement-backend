@@ -1,4 +1,4 @@
-import { HTTP_STATUS, getErrorCategory } from 'waste-movement-utils'
+import { HTTP_STATUS, validationErrorFormatter } from 'waste-movement-utils'
 
 export const errorHandler = {
   plugin: {
@@ -17,71 +17,19 @@ export const errorHandler = {
           response.isBoom &&
           response.output?.statusCode === HTTP_STATUS.BAD_REQUEST
         ) {
-          // Access the validation error details
-          const validationErrors = response.details
-          const unexpectedErrors = []
-          const isBulkUploadEndpoint = request.path.startsWith('/bulk/')
-
-          // Transform validation errors to the required format
-          const formattedErrors = validationErrors.map((err) => {
-            const errorType = getErrorCategory(err.type)
-
-            if (errorType === 'UnexpectedError') {
-              unexpectedErrors.push(err)
-            }
-
-            // Determine the error key
-            // For most errors, Joi provides the path (e.g., ['fieldName'])
-            // However, custom validators at the schema level don't have path context
-            let key = err.path.join('.')
-
-            // Fallback to the label
-            if (!key && err.context.label) {
-              key = err.context.label
-            }
-
-            return {
-              key,
-              errorType,
-              message: err.message
-            }
-          })
-
-          // Create the custom error format
-          let customError = {
-            validation: {
-              errors: formattedErrors
-            }
-          }
+          let customError = validationErrorFormatter(response, logger)
 
           // Re-format per-item errors for bulk upload endpoints
-          const hasPerItemErrors = formattedErrors.some((error) =>
+          const hasPerItemErrors = customError.validation.errors.some((error) =>
             /^\d+(\.|$)/.test(error.key)
           )
+          const isBulkUploadEndpoint = request.path.startsWith('/bulk/')
 
           if (isBulkUploadEndpoint && hasPerItemErrors) {
             customError = formatBulkUploadValidationErrors(
               request.payload,
               customError.validation.errors,
               logger
-            )
-          }
-
-          // Log all validation errors in a single consolidated entry
-          if (unexpectedErrors.length > 0) {
-            logger.error(
-              {
-                validationErrors: formattedErrors,
-                unexpectedErrors,
-                totalErrors: formattedErrors.length,
-                unexpectedCount: unexpectedErrors.length
-              },
-              `Validation failed with unexpected error types, mapped to UnexpectedError`
-            )
-          } else {
-            logger.error(
-              { err: formattedErrors },
-              `Validation failed ${JSON.stringify(formattedErrors)}`
             )
           }
 
