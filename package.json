@@ -34,7 +34,7 @@
     "@hapi/basic": "7.0.2",
     "@hapi/boom": "10.0.1",
     "@hapi/hapi": "21.3.12",
-    "@hapi/inert": "7.1.0",
+    "@hapi/inert": "7.1.1",
     "@hapi/vision": "7.0.3",
     "aws-embedded-metrics": "4.2.0",
     "aws4": "1.13.2",
@@ -46,7 +46,7 @@
     "hapi-pulse": "3.0.1",
     "hapi-swagger": "17.3.2",
     "https-proxy-agent": "7.0.5",
-    "joi": "17.13.3",
+    "joi": "18.2.1",
     "mongo-locks": "3.0.2",
     "mongodb": "6.10.0",
     "mongodb-memory-server": "10.3.0",
@@ -76,6 +76,7 @@
   "overrides": {
     "@shelf/jest-mongodb": {
       "mongodb-memory-server": "10.2.0"
-    }
+    },
+    "joi": "$joi"
   }
 }
