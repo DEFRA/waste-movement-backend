@@ -16,6 +16,7 @@ import { AUDIT_LOGGER_TYPE } from 'waste-movement-utils'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 
 jest.mock('@hapi/hoek', () => ({
+  ...jest.requireActual('@hapi/hoek'),
   wait: jest.fn()
 }))
 

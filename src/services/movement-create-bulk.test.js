@@ -14,6 +14,7 @@ import * as cdpAuditing from '@defra/cdp-auditing'
 import { AUDIT_LOGGER_TYPE, BULK_RESPONSE_STATUS } from 'waste-movement-utils'
 
 jest.mock('@hapi/hoek', () => ({
+  ...jest.requireActual('@hapi/hoek'),
   wait: jest.fn()
 }))
 
