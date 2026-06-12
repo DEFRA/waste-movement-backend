@@ -1,5 +1,8 @@
-import { sourceOfComponentsProvided, validPopNames } from 'waste-movement-utils'
-import { TEST_DATA } from '../../schemas/test-constants.js'
+import {
+  sourceOfComponentsProvided,
+  validPopNames,
+  TEST_DATA
+} from 'waste-movement-utils'
 import { apiCode1 } from '../data/apiCodes.js'
 
 export function createMovementRequest(overrides) {
