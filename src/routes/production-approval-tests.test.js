@@ -7,10 +7,6 @@ import {
   it,
   jest
 } from '@jest/globals'
-import hapi from '@hapi/hapi'
-import { createReceiptMovement } from './create-receipt-movement.js'
-import { mongoDb } from '../common/helpers/mongodb.js'
-import { requestLogger } from '../common/helpers/logging/request-logger.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import {
   HTTP_STATUS,
@@ -18,13 +14,14 @@ import {
 } from 'waste-movement-utils'
 import { config } from '../config.js'
 import { base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
-import { requestTracing } from '../common/helpers/request-tracing.js'
 import { productionApprovalTestsRequestPayload } from '../test/data/production-approval-tests.js'
-import { productionApprovalTests } from './production-approval-tests.js'
 import * as runProductionApprovalTests from '../services/production-approval-tests/run-production-approval-tests.js'
 import { createMovementRequest } from '../test/utils/createMovementRequest.js'
-import { errorHandler } from '../plugins/error-handler.js'
-import { failAction } from '../common/helpers/fail-action.js'
+import {
+  requestBasicAuthTest1,
+  userBasicAuthTest1
+} from '../test/data/basic-auth.js'
+import { createServer } from '../server.js'
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockReturnValue(true)
@@ -34,31 +31,18 @@ describe('Production Approval Tests Route Tests', () => {
   let server
   let payload
 
+  const traceId = 'created-trace-id-123'
+
   beforeEach(() => {
     payload = JSON.parse(JSON.stringify(productionApprovalTestsRequestPayload))
   })
 
   beforeAll(async () => {
-    server = hapi.server({
-      routes: {
-        validate: {
-          options: {
-            abortEarly: false
-          },
-          failAction
-        }
-      }
-    })
-    server.route([...createReceiptMovement, productionApprovalTests])
-    await server.register([
-      requestLogger,
-      mongoDb,
-      requestTracing,
-      errorHandler
-    ])
-    await server.initialize()
-
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
+
+    process.env.ACCESS_CRED_TEST1 = userBasicAuthTest1
+
+    server = await createServer()
 
     const testWasteItem = {
       ...createMovementRequest().wasteItems[0],
@@ -69,7 +53,10 @@ describe('Production Approval Tests Route Tests', () => {
     const createR01TestData = await server.inject({
       method: 'POST',
       url: `/movements/${productionApprovalTestsRequestPayload[0].wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': 'trace-id-123' },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload: {
         movement: createMovementRequest({
           wasteItems: [testWasteItem]
@@ -83,7 +70,10 @@ describe('Production Approval Tests Route Tests', () => {
     const createR02TestData = await server.inject({
       method: 'POST',
       url: `/movements/${productionApprovalTestsRequestPayload[1].wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': 'trace-id-123' },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload: {
         movement: createMovementRequest({
           wasteItems: [testWasteItem, testWasteItem]
@@ -103,7 +93,11 @@ describe('Production Approval Tests Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/production-approval-tests',
-      payload
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.OK)
@@ -135,7 +129,11 @@ describe('Production Approval Tests Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/production-approval-tests',
-      payload
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.OK)
@@ -180,7 +178,11 @@ describe('Production Approval Tests Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/production-approval-tests',
-      payload
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
@@ -211,7 +213,11 @@ describe('Production Approval Tests Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/production-approval-tests',
-      payload
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
@@ -241,7 +247,11 @@ describe('Production Approval Tests Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/production-approval-tests',
-      payload
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
@@ -250,5 +260,15 @@ describe('Production Approval Tests Route Tests', () => {
       message: errorMessage,
       statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR
     })
+  })
+
+  it('should return 401 when request is unauthenticated', async () => {
+    const { statusCode } = await server.inject({
+      method: 'POST',
+      url: '/production-approval-tests',
+      payload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
   })
 })

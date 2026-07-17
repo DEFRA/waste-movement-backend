@@ -1,16 +1,16 @@
 import { expect, describe, beforeAll, afterAll, it, jest } from '@jest/globals'
-import hapi from '@hapi/hapi'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
-import { mongoDb } from '../common/helpers/mongodb.js'
-import { requestLogger } from '../common/helpers/logging/request-logger.js'
 import { HTTP_STATUS, BULK_RESPONSE_STATUS } from 'waste-movement-utils'
 import * as movementCreateBulk from '../services/movement-create-bulk.js'
 import { config } from '../config.js'
-import { requestTracing } from '../common/helpers/request-tracing.js'
-import { createBulkReceiptMovement } from './create-bulk-receipt-movement.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 import * as batch from '../common/helpers/batch.js'
 import * as metricsCounter from '../common/helpers/metrics.js'
+import {
+  requestBasicAuthTest1,
+  userBasicAuthTest1
+} from '../test/data/basic-auth.js'
+import { createServer } from '../server.js'
 
 const assertMetricsCounterWasCalled = (metricsCounterSpy) => {
   expect(metricsCounterSpy).toHaveBeenCalledTimes(4)
@@ -118,10 +118,9 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     config.set('mongo.uri', mongoUri)
     config.set('mongo.readPreference', 'primary')
 
-    server = hapi.server()
-    server.route(createBulkReceiptMovement)
-    await server.register([requestLogger, mongoDb, requestTracing])
-    await server.initialize()
+    process.env.ACCESS_CRED_TEST1 = userBasicAuthTest1
+
+    server = await createServer()
   })
 
   afterAll(async () => {
@@ -164,7 +163,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -228,7 +228,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -290,7 +291,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -299,7 +301,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -325,7 +328,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -334,7 +338,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -360,7 +365,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload: [{ ...payload[0], wasteTrackingId: '26NWSIXF' }],
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
     await wasteInputsCollection.updateOne({ bulkId }, { $inc: { revision: 1 } })
@@ -370,7 +376,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -394,7 +401,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload: [{ ...payload[0], wasteTrackingId: '26NWSIXF' }],
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
     await wasteInputsCollection.updateOne({ bulkId }, { $inc: { revision: 1 } })
@@ -404,7 +412,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -426,7 +435,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     }
 
@@ -468,7 +478,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -497,7 +508,8 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       url: `/bulk/${bulkId}/movements/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -511,5 +523,15 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
 
     expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(0)
     expect(metricsCounterSpy).not.toHaveBeenCalled()
+  })
+
+  it('should return 401 when request is unauthenticated', async () => {
+    const { statusCode } = await server.inject({
+      method: 'POST',
+      url: `/bulk/${bulkId}/movements/receive`,
+      payload
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
   })
 })

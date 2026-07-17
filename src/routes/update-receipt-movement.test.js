@@ -1,8 +1,3 @@
-import hapi from '@hapi/hapi'
-import { updateReceiptMovement } from './update-receipt-movement.js'
-import { createReceiptMovement } from './create-receipt-movement.js'
-import { requestLogger } from '../common/helpers/logging/request-logger.js'
-import { mongoDb } from '../common/helpers/mongodb.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { expect } from '@jest/globals'
@@ -14,8 +9,12 @@ import {
   apiCode3
 } from '../test/data/apiCodes.js'
 import * as movementUpdate from '../services/movement-update.js'
-import { requestTracing } from '../common/helpers/request-tracing.js'
 import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
+import {
+  requestBasicAuthTest1,
+  userBasicAuthTest1
+} from '../test/data/basic-auth.js'
+import { createServer } from '../server.js'
 
 jest.mock('../services/movement-update.js', () => {
   const { updateWasteInput: actualFunction } = jest.requireActual(
@@ -60,11 +59,9 @@ describe('movementUpdate Route Tests', () => {
     config.set('mongo.uri', mongoUri)
     config.set('mongo.readPreference', 'primary')
 
-    server = hapi.server()
-    server.route(createReceiptMovement)
-    server.route(updateReceiptMovement)
-    await server.register([requestLogger, mongoDb, requestTracing])
-    await server.initialize()
+    process.env.ACCESS_CRED_TEST1 = userBasicAuthTest1
+
+    server = await createServer()
   })
 
   afterAll(async () => {
@@ -88,7 +85,10 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload
     })
 
@@ -150,7 +150,10 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload
     })
 
@@ -197,7 +200,10 @@ describe('movementUpdate Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload: updatePayload
     })
 
@@ -221,7 +227,8 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       payload: updatePayload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -244,7 +251,10 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload: createPayload
     })
 
@@ -261,7 +271,10 @@ describe('movementUpdate Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload: updatePayload
     })
 
@@ -290,7 +303,10 @@ describe('movementUpdate Route Tests', () => {
       const createResult = await server.inject({
         method: 'POST',
         url: `/movements/${wasteTrackingId}/receive`,
-        headers: { 'x-cdp-request-id': traceId },
+        headers: {
+          'x-cdp-request-id': traceId,
+          Authorization: `Basic ${requestBasicAuthTest1}`
+        },
         payload: createPayload
       })
 
@@ -306,7 +322,10 @@ describe('movementUpdate Route Tests', () => {
       const { statusCode, result } = await server.inject({
         method: 'PUT',
         url: `/movements/${wasteTrackingId}/receive`,
-        headers: { 'x-cdp-request-id': traceId },
+        headers: {
+          'x-cdp-request-id': traceId,
+          Authorization: `Basic ${requestBasicAuthTest1}`
+        },
         payload: updatePayload
       })
 
@@ -334,7 +353,10 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload: createPayload
     })
 
@@ -351,7 +373,10 @@ describe('movementUpdate Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload: updatePayload
     })
 
@@ -384,7 +409,10 @@ describe('movementUpdate Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/nonexistent-id/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload: updatePayload
     })
 
@@ -411,7 +439,10 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload: createPayload
     })
 
@@ -430,7 +461,10 @@ describe('movementUpdate Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload: updatePayload
     })
 
@@ -465,7 +499,10 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload
     })
 
@@ -475,7 +512,10 @@ describe('movementUpdate Route Tests', () => {
     const { statusCode } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload
     })
 
@@ -499,7 +539,10 @@ describe('movementUpdate Route Tests', () => {
     const createResult = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload
     })
 
@@ -512,7 +555,10 @@ describe('movementUpdate Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'PUT',
       url: `/movements/${wasteTrackingId}/receive`,
-      headers: { 'x-cdp-request-id': traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
       payload
     })
 
@@ -523,5 +569,17 @@ describe('movementUpdate Route Tests', () => {
       message: errorMessage
     })
     expect(updateWasteInputSpy).toHaveBeenCalledTimes(3)
+  })
+
+  it('should return 401 when request is unauthenticated', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+
+    const { statusCode } = await server.inject({
+      method: 'PUT',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: { movement: createTestPayload() }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
   })
 })

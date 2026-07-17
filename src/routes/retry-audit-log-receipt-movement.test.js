@@ -1,18 +1,16 @@
-import hapi from '@hapi/hapi'
-import { retryAuditLogReceiptMovement } from './retry-audit-log-receipt-movement.js'
-import { requestLogger } from '../common/helpers/logging/request-logger.js'
-import { mongoDb } from '../common/helpers/mongodb.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
-import { createReceiptMovement } from './create-receipt-movement.js'
-import { updateReceiptMovement } from './update-receipt-movement.js'
 import { config } from '../config.js'
-import { requestTracing } from '../common/helpers/request-tracing.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import * as auditLogger from '../common/helpers/logging/audit-logger.js'
 import { AUDIT_LOGGER_TYPE, HTTP_STATUS } from 'waste-movement-utils'
 import * as cdpAuditing from '@defra/cdp-auditing'
 import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
+import {
+  requestBasicAuthTest1,
+  userBasicAuthTest1
+} from '../test/data/basic-auth.js'
+import { createServer } from '../server.js'
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockImplementation(() => true)
@@ -44,12 +42,9 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
     config.set('mongo.uri', mongoUri)
     config.set('mongo.readPreference', 'primary')
 
-    server = hapi.server()
-    server.route(createReceiptMovement)
-    server.route(updateReceiptMovement)
-    server.route(retryAuditLogReceiptMovement)
-    await server.register([requestLogger, mongoDb, requestTracing])
-    await server.initialize()
+    process.env.ACCESS_CRED_TEST1 = userBasicAuthTest1
+
+    server = await createServer()
 
     const createResult = await server.inject({
       method: 'POST',
@@ -58,7 +53,8 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
         movement: createTestPayload()
       },
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -72,7 +68,8 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
         movement: createTestPayload()
       },
       headers: {
-        'x-cdp-request-id': traceId2
+        'x-cdp-request-id': traceId2,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -102,7 +99,11 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/movements/retry-audit-log',
-      payload: { traceId: traceId2 }
+      payload: { traceId: traceId2 },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.OK)
@@ -124,7 +125,11 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/movements/retry-audit-log',
-      payload: { wasteTrackingId, revision }
+      payload: { wasteTrackingId, revision },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.OK)
@@ -146,7 +151,11 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/movements/retry-audit-log',
-      payload: { traceId }
+      payload: { traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.OK)
@@ -168,7 +177,11 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/movements/retry-audit-log',
-      payload: { wasteTrackingId, revision: 1 }
+      payload: { wasteTrackingId, revision: 1 },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.OK)
@@ -188,7 +201,11 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/movements/retry-audit-log',
-      payload: { traceId: '997776364a3a0546c18a76d042adf285' }
+      payload: { traceId: '997776364a3a0546c18a76d042adf285' },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(404)
@@ -204,7 +221,11 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/movements/retry-audit-log',
-      payload: { wasteTrackingId: wasteTrackingId2, revision }
+      payload: { wasteTrackingId: wasteTrackingId2, revision },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(404)
@@ -225,7 +246,11 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: '/movements/retry-audit-log',
-      payload: { traceId }
+      payload: { traceId },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(500)
@@ -234,5 +259,15 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       message: `Failed to call audit endpoint: ${errorMessage}`,
       statusCode: 500
     })
+  })
+
+  it('should return 401 when request is unauthenticated', async () => {
+    const { statusCode } = await server.inject({
+      method: 'POST',
+      url: '/movements/retry-audit-log',
+      payload: { traceId }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
   })
 })

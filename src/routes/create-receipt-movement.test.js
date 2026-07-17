@@ -7,11 +7,7 @@ import {
   it,
   jest
 } from '@jest/globals'
-import hapi from '@hapi/hapi'
-import { createReceiptMovement } from './create-receipt-movement.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
-import { mongoDb } from '../common/helpers/mongodb.js'
-import { requestLogger } from '../common/helpers/logging/request-logger.js'
 import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { HTTP_STATUS } from 'waste-movement-utils'
 import * as movementCreate from '../services/movement-create.js'
@@ -22,9 +18,13 @@ import {
   orgId3,
   apiCode3
 } from '../test/data/apiCodes.js'
-import { requestTracing } from '../common/helpers/request-tracing.js'
 import * as metrics from '../common/helpers/metrics.js'
 import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
+import {
+  requestBasicAuthTest1,
+  userBasicAuthTest1
+} from '../test/data/basic-auth.js'
+import { createServer } from '../server.js'
 
 jest.mock('../services/movement-create.js', () => {
   const { createWasteInput: actualFunction } = jest.requireActual(
@@ -58,14 +58,15 @@ describe('movement Route Tests', () => {
   const traceId = 'created-trace-id-123'
 
   beforeAll(async () => {
-    server = hapi.server()
-    server.route(createReceiptMovement)
-    await server.register([requestLogger, mongoDb, requestTracing])
-    await server.initialize()
     const testMongo = await createTestMongoDb()
     mongoClient = testMongo.client
     testMongoDb = testMongo.db
+
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
+
+    process.env.ACCESS_CRED_TEST1 = userBasicAuthTest1
+
+    server = await createServer()
   })
 
   afterAll(async () => {
@@ -96,7 +97,8 @@ describe('movement Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       payload: expectedPayload,
       headers: {
-        'x-cdp-request-id': traceId
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -137,7 +139,11 @@ describe('movement Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      payload
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
@@ -162,7 +168,11 @@ describe('movement Route Tests', () => {
     const { statusCode } = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      payload: invalidPayload
+      payload: invalidPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(400)
@@ -186,7 +196,11 @@ describe('movement Route Tests', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: `/movements/${wasteTrackingId}/receive`,
-      payload
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
@@ -216,7 +230,11 @@ describe('movement Route Tests', () => {
       const { statusCode, result } = await server.inject({
         method: 'POST',
         url: `/movements/${wasteTrackingId}/receive`,
-        payload
+        payload,
+        headers: {
+          'x-cdp-request-id': traceId,
+          Authorization: `Basic ${requestBasicAuthTest1}`
+        }
       })
 
       expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
@@ -256,7 +274,8 @@ describe('movement Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': 'trace-123'
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -290,7 +309,8 @@ describe('movement Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       payload,
       headers: {
-        'x-cdp-request-id': 'trace-123'
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -323,7 +343,8 @@ describe('movement Route Tests', () => {
         movement
       },
       headers: {
-        'x-cdp-request-id': 'trace-456'
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
@@ -336,5 +357,17 @@ describe('movement Route Tests', () => {
 
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
     expect(actualWasteInput.submittingOrganisation).toBeNull()
+  })
+
+  it('should return 401 when request is unauthenticated', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+
+    const { statusCode } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: { movement: createTestPayload() }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
   })
 })
