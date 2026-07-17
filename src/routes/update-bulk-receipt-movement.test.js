@@ -1,10 +1,14 @@
 import { expect, describe, beforeAll, afterAll, it, jest } from '@jest/globals'
 import hapi from '@hapi/hapi'
-import Basic from '@hapi/basic'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { mongoDb } from '../common/helpers/mongodb.js'
 import { requestLogger } from '../common/helpers/logging/request-logger.js'
-import { HTTP_STATUS, BULK_RESPONSE_STATUS } from 'waste-movement-utils'
+import {
+  HTTP_STATUS,
+  BULK_RESPONSE_STATUS,
+  basicAuth,
+  getEnvVars
+} from 'waste-movement-utils'
 import * as movementUpdateBulk from '../services/movement-update-bulk.js'
 import { requestTracing } from '../common/helpers/request-tracing.js'
 import { updateBulkReceiptMovement } from './update-bulk-receipt-movement.js'
@@ -612,12 +616,9 @@ describe('Update Bulk Receipt Movement Auth Tests', () => {
         }
       }
     })
-    await server.register(Basic)
-    server.auth.strategy('service-token', 'basic', {
-      validate: async () => ({ isValid: false, credentials: {} })
-    })
-    server.auth.default('service-token')
     server.route(updateBulkReceiptMovement)
+    await server.register([basicAuth(getEnvVars('ACCESS_CRED_'))])
+    server.auth.default('basic')
     await server.initialize()
   })
 

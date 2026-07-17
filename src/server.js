@@ -1,5 +1,4 @@
 import Hapi from '@hapi/hapi'
-import Basic from '@hapi/basic'
 import Inert from '@hapi/inert'
 import Vision from '@hapi/vision'
 
@@ -14,20 +13,7 @@ import { requestTracing } from './common/helpers/request-tracing.js'
 import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { swagger } from './plugins/swagger.js'
 import { errorHandler } from './plugins/error-handler.js'
-import { getEnvVars } from './common/helpers/env-vars.js'
-
-function createAuthValidation(serviceCredentials) {
-  serviceCredentials = serviceCredentials || []
-
-  return async (_request, username, password) => {
-    const base64EncodedCredentials = btoa(`${username}=${password}`)
-    const matchingCredential = serviceCredentials.find(
-      (cred) => cred === base64EncodedCredentials
-    )
-
-    return { isValid: !!matchingCredential, credentials: { username } }
-  }
-}
+import { basicAuth, getEnvVars } from 'waste-movement-utils'
 
 async function createServer() {
   setupProxy()
@@ -77,14 +63,6 @@ async function createServer() {
 
   await server.register([Inert, Vision])
   await server.register(swagger)
-  await server.register(Basic)
-
-  const serviceCredentials = getEnvVars('ACCESS_CRED_')
-  server.auth.strategy('service-token', 'basic', {
-    validate: createAuthValidation(serviceCredentials)
-  })
-  server.auth.default('service-token')
-
   await server.register(router)
   await server.register([
     requestLogger,
@@ -92,10 +70,13 @@ async function createServer() {
     secureContext,
     pulse,
     mongoDb,
+    basicAuth(getEnvVars('ACCESS_CRED_')),
     errorHandler
   ])
+
+  server.auth.default('basic')
 
   return server
 }
 
-export { createServer, createAuthValidation }
+export { createServer }
