@@ -48,34 +48,50 @@ export async function createProductionApprovalTest(db, clientId, results) {
   }
 }
 
+/**
+ * Builds a summary of Production Approval Test results
+ *
+ * @param {Array} results - The Production Approval Test results
+ *
+ * @returns {Object} The Production Approval Test summary
+ */
 export function buildProductionApprovalTestResultsSummary(results) {
   if (!Array.isArray(results)) {
-    throw new Error(
+    throw new TypeError(
       `buildProductionApprovalTestResultsSummary() expected 'results' to be array but instead got '${typeof results}'`
     )
   }
 
   return results.reduce(
-    (info, result) => {
-      info.totalPassed += result.status === PAT_STATUS.PASS ? 1 : 0
-      info.totalFailed += result.status === PAT_STATUS.FAIL ? 1 : 0
-      info.results[result.scenarioId] = result
-      return info
+    (summary, result) => {
+      summary.totalPassed += result.status === PAT_STATUS.PASS ? 1 : 0
+      summary.totalFailed += result.status === PAT_STATUS.FAIL ? 1 : 0
+      summary.results[result.scenarioId] = result
+      return summary
     },
     {
       total: productionApprovalTestScenarioIds.length,
       totalSubmitted: results.length,
       totalPassed: 0,
       totalFailed: 0,
-      results: buildDefaultResultsObject(productionApprovalTestScenarioIds)
+      results: buildDefaultProductionApprovalTestResultsObject(
+        productionApprovalTestScenarioIds
+      )
     }
   )
 }
 
-export function buildDefaultResultsObject(results) {
+/**
+ * Builds a default Production Approval Test results object
+ *
+ * @param {Array} results - The Production Approval Test results
+ *
+ * @returns {Object} The Production Approval Test results object
+ */
+export function buildDefaultProductionApprovalTestResultsObject(results) {
   if (!Array.isArray(results)) {
-    throw new Error(
-      `buildDefaultResultsObject() expected 'results' to be array but instead got '${typeof results}'`
+    throw new TypeError(
+      `buildDefaultProductionApprovalTestResultsObject() expected 'results' to be array but instead got '${typeof results}'`
     )
   }
 

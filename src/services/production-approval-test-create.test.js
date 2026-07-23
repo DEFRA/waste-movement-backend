@@ -1,6 +1,6 @@
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import {
-  buildDefaultResultsObject,
+  buildDefaultProductionApprovalTestResultsObject,
   createProductionApprovalTest,
   buildProductionApprovalTestResultsSummary
 } from './production-approval-test-create.js'
@@ -119,7 +119,7 @@ describe('production-approval-test-create', () => {
         })
       }
 
-      expect(() =>
+      await expect(() =>
         createProductionApprovalTest(mockDb, clientId, testResultData)
       ).rejects.toThrowError(
         'Failed to create production approval test: Inserted id is undefined'
@@ -159,7 +159,11 @@ describe('production-approval-test-create', () => {
         totalFailed: 5,
         results: {
           ...productionApprovalTestsResults,
-          ...buildDefaultResultsObject(['R01', 'R02', 'R03'])
+          ...buildDefaultProductionApprovalTestResultsObject([
+            'R01',
+            'R02',
+            'R03'
+          ])
         }
       })
     })
@@ -172,7 +176,9 @@ describe('production-approval-test-create', () => {
         totalSubmitted: 0,
         totalPassed: 0,
         totalFailed: 0,
-        results: buildDefaultResultsObject(productionApprovalTestScenarioIds)
+        results: buildDefaultProductionApprovalTestResultsObject(
+          productionApprovalTestScenarioIds
+        )
       })
     })
 
@@ -187,9 +193,13 @@ describe('production-approval-test-create', () => {
     })
   })
 
-  describe('#buildDefaultResultsObject', () => {
+  describe('#buildDefaultProductionApprovalTestResultsObject', () => {
     it('should return the correct results when given scenario ids', () => {
-      const result = buildDefaultResultsObject(['R01', 'R02', 'R03'])
+      const result = buildDefaultProductionApprovalTestResultsObject([
+        'R01',
+        'R02',
+        'R03'
+      ])
 
       expect(result).toEqual({
         R01: {
@@ -215,9 +225,11 @@ describe('production-approval-test-create', () => {
 
     it('should throw an error when not given an array', () => {
       expect(() =>
-        buildDefaultResultsObject(productionApprovalTestsResults)
+        buildDefaultProductionApprovalTestResultsObject(
+          productionApprovalTestsResults
+        )
       ).toThrowError(
-        `buildDefaultResultsObject() expected 'results' to be array but instead got 'object'`
+        `buildDefaultProductionApprovalTestResultsObject() expected 'results' to be array but instead got 'object'`
       )
     })
   })

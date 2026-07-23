@@ -53,14 +53,16 @@ const productionApprovalTests = {
         wasteInput: wasteInputs.get(payloadItem.wasteTrackingId)
       }))
 
-      const results = runProductionApprovalTests(productionApprovalTestData)
+      const testResults = runProductionApprovalTests(productionApprovalTestData)
       const { submissionId } = await createProductionApprovalTest(
         db,
         headers['x-dwt-client-id'],
-        results
+        testResults
       )
 
-      return h.response({ submissionId, results }).code(HTTP_STATUS.OK)
+      return h
+        .response({ submissionId, results: testResults })
+        .code(HTTP_STATUS.OK)
     } catch (error) {
       return handleRouteError(h, error)
     }
