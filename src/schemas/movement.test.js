@@ -1,4 +1,4 @@
-import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
+import { createTestPayload } from './test-helpers/waste-test-helpers.js'
 import { movementSchema } from './movement.js'
 
 describe('movementSchema', () => {
@@ -21,6 +21,19 @@ describe('movementSchema', () => {
   it('should accept valid payload with apiCode inside movement', () => {
     const payload = {
       movement: createTestPayload()
+    }
+
+    const { error } = movementSchema.validate(payload)
+
+    expect(error).toBeUndefined()
+  })
+
+  it('should accept valid payload with clientId inside movement', () => {
+    const payload = {
+      movement: {
+        ...createTestPayload(),
+        clientId: 'test-client-id'
+      }
     }
 
     const { error } = movementSchema.validate(payload)

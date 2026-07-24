@@ -49,12 +49,16 @@ const createReceiptMovement = [
         let requestOrgId
 
         const { wasteTrackingId } = request.params
-        const { submittingOrganisation, apiCode, ...movementData } =
+        const { submittingOrganisation, apiCode, clientId, ...movementData } =
           request.payload.movement
         const wasteInput = new WasteInput()
 
         wasteInput.wasteTrackingId = wasteTrackingId
         wasteInput.traceId = request.getTraceId()
+
+        if (clientId) {
+          wasteInput.clientId = clientId
+        }
 
         if (submittingOrganisation?.defraCustomerOrganisationId) {
           wasteInput.submittingOrganisation = {
