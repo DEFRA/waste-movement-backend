@@ -191,6 +191,33 @@ describe('movementUpdate Route Tests', () => {
     expect(historicState[1].receipt.movement).toEqual(payload.movement)
   })
 
+  it('persists clientId at the top level on update', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const clientId = 'test-client-id'
+
+    const createResult = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      },
+      payload: { movement: createTestPayload() }
+    })
+    expect(createResult.statusCode).toEqual(204)
+
+    await updateReceipt(
+      wasteTrackingId,
+      { movement: { ...createTestPayload(), clientId } },
+      traceId
+    )
+
+    const actualWasteInput = await getCurrentWasteInput(wasteTrackingId)
+    expect(actualWasteInput.clientId).toEqual(clientId)
+    // clientId is stored top-level, not nested inside the receipt movement
+    expect(actualWasteInput.receipt.movement.clientId).toBeUndefined()
+  })
+
   it('returns 404 when updating a non-existent waste input', async () => {
     const wasteTrackingId = 'nonexistent-id'
     const updatePayload = {

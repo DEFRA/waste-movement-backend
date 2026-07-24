@@ -370,4 +370,41 @@ describe('movement Route Tests', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
   })
+
+  it('persists clientId at the top level when provided', async () => {
+    const { createWasteInput: actualFunction } = jest.requireActual(
+      '../services/movement-create.js'
+    )
+    movementCreate.createWasteInput.mockImplementation(actualFunction)
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
+    const wasteTrackingId = generateWasteTrackingId()
+    const clientId = 'test-client-id'
+    const payload = {
+      movement: {
+        ...createTestPayload(),
+        clientId
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': 'trace-client',
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(204)
+    expect(result).toBeNull()
+
+    const actualWasteInput = await testMongoDb
+      .collection('waste-inputs')
+      .findOne({ _id: wasteTrackingId })
+
+    expect(actualWasteInput.clientId).toEqual(clientId)
+    // clientId is stored top-level, not nested inside the receipt movement
+    expect(actualWasteInput.receipt.movement.clientId).toBeUndefined()
+  })
 })
