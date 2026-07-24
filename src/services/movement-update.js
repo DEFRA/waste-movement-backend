@@ -64,8 +64,7 @@ export async function updateWasteInput(
   mongoClient,
   traceId,
   fieldToUpdate = undefined,
-  submittingOrganisation = null,
-  clientId = null
+  { submittingOrganisation = null, clientId = null } = {}
 ) {
   const session = mongoClient.startSession()
 
