@@ -7,6 +7,7 @@ let mongoConfig = config.get('mongo')
 
 const wasteInputsCollection = 'waste-inputs'
 const wasteInputsHistoryCollection = 'waste-inputs-history'
+const productionApprovalTestsCollection = 'production-approval-tests'
 
 export const mongoDb = {
   plugin: {
@@ -90,6 +91,10 @@ async function createIndexes(db) {
   await db
     .collection(wasteInputsHistoryCollection)
     .createIndex({ bulkId: 1, revision: 1 })
+
+  await db
+    .collection(productionApprovalTestsCollection)
+    .createIndex({ clientId: 1 })
 }
 
 async function addSchemaValidation(db, collection) {

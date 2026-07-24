@@ -3,6 +3,8 @@ import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { ValidationError } from '../common/helpers/errors/validation-error.js'
 import { productionApprovalTestsSchema } from '../schemas/production-approval-tests.js'
 import { runProductionApprovalTests } from '../services/production-approval-tests/run-production-approval-tests.js'
+import { createProductionApprovalTest } from '../services/production-approval-test-create.js'
+import { headersSchema } from '../schemas/headers.js'
 
 const productionApprovalTests = {
   method: 'POST',
@@ -11,12 +13,13 @@ const productionApprovalTests = {
     tags: ['production-approval-tests'],
     description: 'Run one or more production approval tests',
     validate: {
-      payload: productionApprovalTestsSchema
+      payload: productionApprovalTestsSchema,
+      headers: headersSchema
     }
   },
   handler: async (request, h) => {
     try {
-      const { db, payload } = request
+      const { db, payload, headers } = request
       const payloadWasteTrackingIds = payload.map(
         ({ wasteTrackingId }) => wasteTrackingId
       )
@@ -50,9 +53,16 @@ const productionApprovalTests = {
         wasteInput: wasteInputs.get(payloadItem.wasteTrackingId)
       }))
 
-      const response = runProductionApprovalTests(productionApprovalTestData)
+      const testResults = runProductionApprovalTests(productionApprovalTestData)
+      const { submissionId } = await createProductionApprovalTest(
+        db,
+        headers['x-dwt-client-id'],
+        testResults
+      )
 
-      return h.response(response).code(HTTP_STATUS.OK)
+      return h
+        .response({ submissionId, results: testResults })
+        .code(HTTP_STATUS.OK)
     } catch (error) {
       return handleRouteError(h, error)
     }

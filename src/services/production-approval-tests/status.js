@@ -1,7 +1,8 @@
 export const PAT_STATUS = {
   PASS: 'Pass',
   FAIL: 'Fail',
-  ERROR: 'Error'
+  ERROR: 'Error',
+  NOT_SUBMITTED: 'Not Submitted'
 }
 
 export const pass = () => ({ status: PAT_STATUS.PASS, message: '' })
