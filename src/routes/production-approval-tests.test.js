@@ -22,6 +22,7 @@ import {
   userBasicAuthTest1
 } from '../test/data/basic-auth.js'
 import { createServer } from '../server.js'
+import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockReturnValue(true)
@@ -30,14 +31,27 @@ jest.mock('@defra/cdp-auditing', () => ({
 describe('Production Approval Tests Route Tests', () => {
   let server
   let payload
+  let mongoClient
+  let testMongoDb
+  let replicaSet
+  let mongoUri
 
   const traceId = 'created-trace-id-123'
+  const clientId = 'client-id-123'
 
   beforeEach(() => {
     payload = JSON.parse(JSON.stringify(productionApprovalTestsRequestPayload))
   })
 
   beforeAll(async () => {
+    const testMongo = await createTestMongoDb(true)
+    mongoClient = testMongo.client
+    testMongoDb = testMongo.db
+    mongoUri = testMongo.mongoUri
+    replicaSet = testMongo.replicaSet
+
+    config.set('mongo.uri', mongoUri)
+    config.set('mongo.readPreference', 'primary')
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
 
     process.env.ACCESS_CRED_TEST1 = userBasicAuthTest1
@@ -85,8 +99,16 @@ describe('Production Approval Tests Route Tests', () => {
     expect(createR02TestData.result).toEqual(null)
   })
 
+  beforeEach(async () => {
+    await testMongoDb.collection('production-approval-tests').deleteMany({})
+  })
+
   afterAll(async () => {
+    if (replicaSet) {
+      await replicaSet.stop()
+    }
     await server.stop()
+    await mongoClient.close()
   })
 
   it('runs production approval tests when given a valid payload', async () => {
@@ -96,25 +118,33 @@ describe('Production Approval Tests Route Tests', () => {
       payload,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': clientId,
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
+    const createdProductionApprovalTest = await testMongoDb
+      .collection('production-approval-tests')
+      .findOne({ clientId })
+
     expect(statusCode).toEqual(HTTP_STATUS.OK)
-    expect(result).toEqual([
-      {
-        scenarioId: payload[0].scenarioId,
-        wasteTrackingId: payload[0].wasteTrackingId,
-        status: 'Pass',
-        message: ''
-      },
-      {
-        scenarioId: payload[1].scenarioId,
-        wasteTrackingId: payload[1].wasteTrackingId,
-        status: 'Pass',
-        message: ''
-      }
-    ])
+    expect(result).toEqual({
+      submissionId: createdProductionApprovalTest._id,
+      results: [
+        {
+          scenarioId: payload[0].scenarioId,
+          wasteTrackingId: payload[0].wasteTrackingId,
+          status: 'Pass',
+          message: ''
+        },
+        {
+          scenarioId: payload[1].scenarioId,
+          wasteTrackingId: payload[1].wasteTrackingId,
+          status: 'Pass',
+          message: ''
+        }
+      ]
+    })
   })
 
   it('runs production approval tests when given a valid payload with duplicate waste tracking ids', async () => {
@@ -132,31 +162,39 @@ describe('Production Approval Tests Route Tests', () => {
       payload,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': clientId,
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
+    const createdProductionApprovalTest = await testMongoDb
+      .collection('production-approval-tests')
+      .findOne({ clientId })
+
     expect(statusCode).toEqual(HTTP_STATUS.OK)
-    expect(result).toEqual([
-      {
-        scenarioId: payload[0].scenarioId,
-        wasteTrackingId: payload[0].wasteTrackingId,
-        status: 'Pass',
-        message: ''
-      },
-      {
-        scenarioId: payload[1].scenarioId,
-        wasteTrackingId: payload[1].wasteTrackingId,
-        status: 'Pass',
-        message: ''
-      },
-      {
-        scenarioId: payload[2].scenarioId,
-        wasteTrackingId: payload[2].wasteTrackingId,
-        status: 'Pass',
-        message: ''
-      }
-    ])
+    expect(result).toEqual({
+      submissionId: createdProductionApprovalTest._id,
+      results: [
+        {
+          scenarioId: payload[0].scenarioId,
+          wasteTrackingId: payload[0].wasteTrackingId,
+          status: 'Pass',
+          message: ''
+        },
+        {
+          scenarioId: payload[1].scenarioId,
+          wasteTrackingId: payload[1].wasteTrackingId,
+          status: 'Pass',
+          message: ''
+        },
+        {
+          scenarioId: payload[2].scenarioId,
+          wasteTrackingId: payload[2].wasteTrackingId,
+          status: 'Pass',
+          message: ''
+        }
+      ]
+    })
   })
 
   it('returns a 400 error when given waste tracking ids that do not exist', async () => {
@@ -181,6 +219,7 @@ describe('Production Approval Tests Route Tests', () => {
       payload,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': clientId,
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
@@ -216,6 +255,7 @@ describe('Production Approval Tests Route Tests', () => {
       payload,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': clientId,
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
@@ -250,6 +290,7 @@ describe('Production Approval Tests Route Tests', () => {
       payload,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': clientId,
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
