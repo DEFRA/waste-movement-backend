@@ -77,6 +77,6 @@
       "mongodb-memory-server": "10.2.0"
     },
     "joi": "$joi",
-    "js-yaml": "4.2.0"
+    "js-yaml": "4.3.0"
   }
 }
