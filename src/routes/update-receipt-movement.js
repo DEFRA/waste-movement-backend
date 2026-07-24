@@ -65,8 +65,7 @@ const updateReceiptMovement = {
             request.mongoClient,
             request.getTraceId(),
             'receipt.movement',
-            submittingOrganisation,
-            clientId
+            { submittingOrganisation, clientId }
           ),
         backoffOptions(logger)
       )

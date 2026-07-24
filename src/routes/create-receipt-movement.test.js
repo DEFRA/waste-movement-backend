@@ -397,7 +397,7 @@ describe('movement Route Tests', () => {
     })
 
     expect(statusCode).toEqual(204)
-    expect(result).toEqual(null)
+    expect(result).toBeNull()
 
     const actualWasteInput = await testMongoDb
       .collection('waste-inputs')
