@@ -54,6 +54,7 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       },
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
@@ -69,6 +70,7 @@ describe('Retry Audit Log Receipt Movement Route Tests', () => {
       },
       headers: {
         'x-cdp-request-id': traceId2,
+        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })

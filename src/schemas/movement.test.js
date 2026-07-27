@@ -28,19 +28,6 @@ describe('movementSchema', () => {
     expect(error).toBeUndefined()
   })
 
-  it('should accept valid payload with clientId inside movement', () => {
-    const payload = {
-      movement: {
-        ...createTestPayload(),
-        clientId: 'test-client-id'
-      }
-    }
-
-    const { error } = movementSchema.validate(payload)
-
-    expect(error).toBeUndefined()
-  })
-
   it('should return an error when movement is missing', () => {
     const payload = {
       movement: undefined

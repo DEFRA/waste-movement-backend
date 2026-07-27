@@ -1,5 +1,6 @@
 import { createWasteInput } from '../services/movement-create.js'
 import { movementSchema } from '../schemas/movement.js'
+import { headersSchema } from '../schemas/headers.js'
 import { WasteInput } from '../domain/wasteInput.js'
 import Joi from 'joi'
 import { HTTP_STATUS, backoffOptions } from 'waste-movement-utils'
@@ -21,6 +22,7 @@ const createReceiptMovement = [
       description: 'Create a new waste input with a receipt movement',
       validate: {
         payload: movementSchema,
+        headers: headersSchema,
         params: Joi.object({
           wasteTrackingId: Joi.string().required()
         })
@@ -49,16 +51,13 @@ const createReceiptMovement = [
         let requestOrgId
 
         const { wasteTrackingId } = request.params
-        const { submittingOrganisation, apiCode, clientId, ...movementData } =
+        const { submittingOrganisation, apiCode, ...movementData } =
           request.payload.movement
         const wasteInput = new WasteInput()
 
         wasteInput.wasteTrackingId = wasteTrackingId
         wasteInput.traceId = request.getTraceId()
-
-        if (clientId) {
-          wasteInput.clientId = clientId
-        }
+        wasteInput.clientId = request.headers['x-dwt-client-id']
 
         if (submittingOrganisation?.defraCustomerOrganisationId) {
           wasteInput.submittingOrganisation = {
