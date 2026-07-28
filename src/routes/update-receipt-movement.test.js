@@ -87,7 +87,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload
@@ -153,7 +152,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload
@@ -202,7 +200,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload: { movement: createTestPayload() }
@@ -232,7 +229,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload: updatePayload
@@ -285,7 +281,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload: createPayload
@@ -306,7 +301,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload: updatePayload
@@ -339,7 +333,6 @@ describe('movementUpdate Route Tests', () => {
         url: `/movements/${wasteTrackingId}/receive`,
         headers: {
           'x-cdp-request-id': traceId,
-          'x-dwt-client-id': 'test-client-id',
           Authorization: `Basic ${requestBasicAuthTest1}`
         },
         payload: createPayload
@@ -359,7 +352,6 @@ describe('movementUpdate Route Tests', () => {
         url: `/movements/${wasteTrackingId}/receive`,
         headers: {
           'x-cdp-request-id': traceId,
-          'x-dwt-client-id': 'test-client-id',
           Authorization: `Basic ${requestBasicAuthTest1}`
         },
         payload: updatePayload
@@ -391,7 +383,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload: createPayload
@@ -412,7 +403,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload: updatePayload
@@ -449,7 +439,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/nonexistent-id/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload: updatePayload
@@ -480,7 +469,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload: createPayload
@@ -503,7 +491,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload: updatePayload
@@ -542,7 +529,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload
@@ -556,7 +542,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload
@@ -584,7 +569,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload
@@ -601,7 +585,6 @@ describe('movementUpdate Route Tests', () => {
       url: `/movements/${wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload

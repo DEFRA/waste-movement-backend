@@ -40,7 +40,6 @@ describe('Error Handler', () => {
       },
       headers: {
         'x-cdp-request-id': traceId,
-        'x-dwt-client-id': 'test-client-id',
         authorization:
           'Basic d2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpOjRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
       }
