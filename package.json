@@ -76,6 +76,11 @@
     "@shelf/jest-mongodb": {
       "mongodb-memory-server": "10.2.0"
     },
-    "joi": "$joi"
+    "joi": "$joi",
+    "brace-expansion": "5.0.8",
+    "minimatch": "^10.2.5",
+    "postcss": "^8.5.18",
+    "babel-plugin-istanbul": "^7.0.0",
+    "test-exclude": "^7.0.1"
   }
 }
