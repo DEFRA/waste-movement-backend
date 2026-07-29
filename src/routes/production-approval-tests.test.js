@@ -69,6 +69,7 @@ describe('Production Approval Tests Route Tests', () => {
       url: `/movements/${productionApprovalTestsRequestPayload[0].wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': clientId,
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload: {
@@ -86,6 +87,7 @@ describe('Production Approval Tests Route Tests', () => {
       url: `/movements/${productionApprovalTestsRequestPayload[1].wasteTrackingId}/receive`,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': clientId,
         Authorization: `Basic ${requestBasicAuthTest1}`
       },
       payload: {
