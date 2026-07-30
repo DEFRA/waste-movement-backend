@@ -27,11 +27,8 @@ function buildUpdateSet(
   const updateSet = {
     ...(fieldToUpdate ? { [fieldToUpdate]: { ...updateData } } : updateData),
     lastUpdatedAt: new Date(),
-    traceId
-  }
-
-  if (clientId) {
-    updateSet.clientId = clientId
+    traceId,
+    clientId
   }
 
   if (submittingOrganisation?.defraCustomerOrganisationId) {
