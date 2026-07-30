@@ -99,6 +99,9 @@ jobs:
           PROXY_MODE: zap
           ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
           AUTH_DISABLED: ${{ secrets.AUTH_DISABLED }}
+          COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
+          COGNITO_CLIENT_SECRET: ${{ secrets.COGNITO_CLIENT_SECRET }}
+          COGNITO_OAUTH_BASE_URL: ${{ secrets.COGNITO_OAUTH_BASE_URL }}
           ENVIRONMENT: ${{ vars.ENVIRONMENT }}
           API_LOGGING: true
           JIRA_BASE_URL: https://eaflood.atlassian.net/browse
