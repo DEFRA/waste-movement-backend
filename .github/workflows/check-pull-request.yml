@@ -98,7 +98,8 @@ jobs:
           HTTP_PROXY: http://localhost:8080
           PROXY_MODE: zap
           ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
-          AUTH_DISABLED: true
+          AUTH_DISABLED: ${{ secrets.AUTH_DISABLED }}
+          ENVIRONMENT: ${{ vars.ENVIRONMENT }}
           API_LOGGING: true
           JIRA_BASE_URL: https://eaflood.atlassian.net/browse
           PROFILE: integration
