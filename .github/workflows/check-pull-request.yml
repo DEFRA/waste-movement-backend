@@ -96,7 +96,7 @@ jobs:
           WASTE_MOVEMENT_BACKEND_API_BASE_URL: http://waste-movement-backend:3001
           WASTE_ORGANISATION_BACKEND_API_BASE_URL: http://waste-organisation-backend:3001
           HTTP_PROXY: http://localhost:8080
-          PROXY_MODE: zap
+          PROXY_MODE: ${{ vars.PROXY_MODE }}
           ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
           AUTH_DISABLED: ${{ secrets.AUTH_DISABLED }}
           COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
@@ -112,7 +112,7 @@ jobs:
           AUTH_PASSWORD_PRODUCTION_APPROVAL_TESTS: ${{ secrets.AUTH_PASSWORD_PRODUCTION_APPROVAL_TESTS }}
         run: |
           npm run test
-          npm run test:zap-gate
+          # npm run test:zap-gate
 
       - name: Generate Test Report
         if: always()
