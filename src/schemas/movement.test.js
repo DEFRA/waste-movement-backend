@@ -1,4 +1,4 @@
-import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
+import { createTestPayload } from './test-helpers/waste-test-helpers.js'
 import { movementSchema } from './movement.js'
 
 describe('movementSchema', () => {

@@ -1,5 +1,6 @@
 import { updateWasteInput } from '../services/movement-update.js'
 import { movementSchema } from '../schemas/movement.js'
+import { headersSchema } from '../schemas/headers.js'
 import Joi from 'joi'
 import { HTTP_STATUS, backoffOptions } from 'waste-movement-utils'
 import { updatePlugins } from './update-plugins.js'
@@ -19,6 +20,7 @@ const updateReceiptMovement = {
       'Update an existing waste input with new receipt movement data',
     validate: {
       payload: movementSchema,
+      headers: headersSchema,
       params: Joi.object({
         wasteTrackingId: Joi.string().required()
       })
@@ -28,6 +30,7 @@ const updateReceiptMovement = {
   handler: async (request, h) => {
     try {
       const { wasteTrackingId } = request.params
+      const clientId = request.headers['x-dwt-client-id']
       const { submittingOrganisation, ...movementData } =
         request.payload.movement
 
@@ -65,7 +68,7 @@ const updateReceiptMovement = {
             request.mongoClient,
             request.getTraceId(),
             'receipt.movement',
-            submittingOrganisation
+            { submittingOrganisation, clientId }
           ),
         backoffOptions(logger)
       )

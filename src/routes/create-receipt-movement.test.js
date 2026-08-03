@@ -98,6 +98,7 @@ describe('movement Route Tests', () => {
       payload: expectedPayload,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
@@ -142,6 +143,7 @@ describe('movement Route Tests', () => {
       payload,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
@@ -171,6 +173,7 @@ describe('movement Route Tests', () => {
       payload: invalidPayload,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
@@ -199,6 +202,7 @@ describe('movement Route Tests', () => {
       payload,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
@@ -233,6 +237,7 @@ describe('movement Route Tests', () => {
         payload,
         headers: {
           'x-cdp-request-id': traceId,
+          'x-dwt-client-id': 'test-client-id',
           Authorization: `Basic ${requestBasicAuthTest1}`
         }
       })
@@ -275,6 +280,7 @@ describe('movement Route Tests', () => {
       payload,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
@@ -310,6 +316,7 @@ describe('movement Route Tests', () => {
       payload,
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
@@ -344,6 +351,7 @@ describe('movement Route Tests', () => {
       },
       headers: {
         'x-cdp-request-id': traceId,
+        'x-dwt-client-id': 'test-client-id',
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
@@ -369,5 +377,57 @@ describe('movement Route Tests', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
+  })
+
+  it('returns 400 when the x-dwt-client-id header is missing', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+
+    const { statusCode } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload: { movement: createTestPayload() },
+      headers: {
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+  })
+
+  it('persists clientId at the top level when provided', async () => {
+    const { createWasteInput: actualFunction } = jest.requireActual(
+      '../services/movement-create.js'
+    )
+    movementCreate.createWasteInput.mockImplementation(actualFunction)
+    config.set('orgApiCodes', base64EncodedOrgApiCodes)
+    const wasteTrackingId = generateWasteTrackingId()
+    const clientId = 'test-client-id'
+    const payload = {
+      movement: {
+        ...createTestPayload()
+      }
+    }
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': 'trace-client',
+        'x-dwt-client-id': 'test-client-id',
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(204)
+    expect(result).toBeNull()
+
+    const actualWasteInput = await testMongoDb
+      .collection('waste-inputs')
+      .findOne({ _id: wasteTrackingId })
+
+    expect(actualWasteInput.clientId).toEqual(clientId)
+    // clientId is stored top-level, not nested inside the receipt movement
+    expect(actualWasteInput.receipt.movement.clientId).toBeUndefined()
   })
 })
