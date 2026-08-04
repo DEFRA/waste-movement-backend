@@ -1,4 +1,4 @@
-import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
+import { generateWasteTrackingId } from 'waste-movement-utils'
 import { getReceiptMovementSchema } from './get-receipt-movement.js'
 
 describe('getReceiptMovementSchema', () => {

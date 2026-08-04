@@ -1,7 +1,9 @@
-import { HTTP_STATUS } from 'waste-movement-utils'
+import {
+  HTTP_STATUS,
+  productionApprovalTestsSchema
+} from 'waste-movement-utils'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { ValidationError } from '../common/helpers/errors/validation-error.js'
-import { productionApprovalTestsSchema } from '../schemas/production-approval-tests.js'
 import { runProductionApprovalTests } from '../services/production-approval-tests/run-production-approval-tests.js'
 import { createProductionApprovalTest } from '../services/production-approval-test-create.js'
 import { headersSchema } from '../schemas/headers.js'

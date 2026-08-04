@@ -1,9 +1,12 @@
-import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 import { config } from '../config.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import * as auditLogger from '../common/helpers/logging/audit-logger.js'
-import { AUDIT_LOGGER_TYPE, HTTP_STATUS } from 'waste-movement-utils'
+import {
+  AUDIT_LOGGER_TYPE,
+  HTTP_STATUS,
+  generateWasteTrackingId
+} from 'waste-movement-utils'
 import * as cdpAuditing from '@defra/cdp-auditing'
 import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
 import {

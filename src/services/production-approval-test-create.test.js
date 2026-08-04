@@ -4,10 +4,12 @@ import {
   createProductionApprovalTest,
   buildProductionApprovalTestResultsSummary
 } from './production-approval-test-create.js'
-import { productionApprovalTestsResults } from '../test/data/production-approval-tests.js'
 import { ObjectId } from 'mongodb'
 import * as metrics from '../common/helpers/metrics.js'
-import { productionApprovalTestScenarioIds } from 'waste-movement-utils'
+import {
+  productionApprovalTestScenarioIds,
+  productionApprovalTestsResults
+} from 'waste-movement-utils'
 import { PAT_STATUS } from './production-approval-tests/status.js'
 
 describe('production-approval-test-create', () => {
