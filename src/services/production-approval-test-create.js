@@ -2,7 +2,7 @@ import { productionApprovalTestScenarioIds } from 'waste-movement-utils'
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { metricsCounter } from '../common/helpers/metrics.js'
 import { ProductionApprovalTest } from '../domain/productionApprovalTest.js'
-import { PAT_STATUS } from '../services/production-approval-tests/status.js'
+import { PAT_STATUS } from './production-approval-tests/status.js'
 
 const logger = createLogger()
 
@@ -25,7 +25,6 @@ export async function createProductionApprovalTest(db, clientId, results) {
     }
 
     const metricsDimensions = {
-      createdAt: productionApprovalTest.createdAt,
       clientId,
       totalScenarios: resultsSummary.total,
       totalScenariosSubmitted: resultsSummary.totalSubmitted,
@@ -37,7 +36,20 @@ export async function createProductionApprovalTest(db, clientId, results) {
       metricsDimensions[`status${result.scenarioId}`] = result.status
     })
 
-    await metricsCounter('productionApprovalTest.create', 1, metricsDimensions)
+    // CloudWatch only returns a metric when queried with its full dimension
+    // set, so the dashboard metrics are emitted separately at low cardinality.
+    // Dashboards aggregate across clientId via SEARCH() wildcards.
+    await Promise.all([
+      metricsCounter('productionApprovalTest.create', 1, metricsDimensions),
+      metricsCounter('pat.submissions', 1, { clientId }),
+      ...Object.values(resultsSummary.results).map((result) =>
+        metricsCounter('pat.scenario.result', 1, {
+          clientId,
+          scenario: result.scenarioId,
+          result: result.status
+        })
+      )
+    ])
 
     return { submissionId: insertedId }
   } catch (error) {
