@@ -84,11 +84,15 @@ describe('production-approval-test-create', () => {
         ]
       })
 
+      // The submission summary and count metrics, plus one per scenario
+      expect(metricsCounterSpy).toHaveBeenCalledTimes(
+        2 + productionApprovalTestScenarioIds.length
+      )
+
       expect(metricsCounterSpy).toHaveBeenCalledWith(
         'productionApprovalTest.create',
         1,
         {
-          createdAt: createdProductionApprovalTest.createdAt,
           clientId,
           totalScenarios: 12,
           totalScenariosSubmitted: 9,
@@ -108,6 +112,29 @@ describe('production-approval-test-create', () => {
           statusX01: 'Fail'
         }
       )
+
+      expect(metricsCounterSpy).toHaveBeenCalledWith('pat.submissions', 1, {
+        clientId
+      })
+
+      expect(metricsCounterSpy).toHaveBeenCalledWith('pat.scenario.result', 1, {
+        clientId,
+        scenario: 'C02',
+        result: PAT_STATUS.PASS
+      })
+
+      expect(metricsCounterSpy).toHaveBeenCalledWith('pat.scenario.result', 1, {
+        clientId,
+        scenario: 'B01',
+        result: PAT_STATUS.FAIL
+      })
+
+      // Scenarios absent from the submission are still reported
+      expect(metricsCounterSpy).toHaveBeenCalledWith('pat.scenario.result', 1, {
+        clientId,
+        scenario: 'R01',
+        result: PAT_STATUS.NOT_SUBMITTED
+      })
     })
 
     it('should throw an error if inserted id is undefined', async () => {
