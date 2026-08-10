@@ -1,8 +1,7 @@
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
-import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import { expect } from '@jest/globals'
 import { config } from '../config.js'
-import { HTTP_STATUS } from 'waste-movement-utils'
+import { HTTP_STATUS, generateWasteTrackingId } from 'waste-movement-utils'
 import {
   orgId1,
   base64EncodedOrgApiCodes,

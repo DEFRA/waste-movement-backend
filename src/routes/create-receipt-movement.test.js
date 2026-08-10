@@ -8,8 +8,7 @@ import {
   jest
 } from '@jest/globals'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
-import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
-import { HTTP_STATUS } from 'waste-movement-utils'
+import { HTTP_STATUS, generateWasteTrackingId } from 'waste-movement-utils'
 import * as movementCreate from '../services/movement-create.js'
 import { config } from '../config.js'
 import {

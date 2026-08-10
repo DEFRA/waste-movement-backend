@@ -7,14 +7,14 @@ import {
   it,
   jest
 } from '@jest/globals'
-import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
 import {
   HTTP_STATUS,
-  PRODUCTION_APPROVAL_TEST_SCENARIO_IDS
+  PRODUCTION_APPROVAL_TEST_SCENARIO_IDS,
+  generateWasteTrackingId,
+  productionApprovalTestsRequestPayload
 } from 'waste-movement-utils'
 import { config } from '../config.js'
 import { base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
-import { productionApprovalTestsRequestPayload } from '../test/data/production-approval-tests.js'
 import * as runProductionApprovalTests from '../services/production-approval-tests/run-production-approval-tests.js'
 import { createMovementRequest } from '../test/utils/createMovementRequest.js'
 import {

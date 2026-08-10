@@ -1,5 +1,5 @@
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
-import { generateWasteTrackingId } from '../test/generate-waste-tracking-id.js'
+import { generateWasteTrackingId } from 'waste-movement-utils'
 import { getWasteInputs } from './movement-get.js'
 import { orgId1 } from '../test/data/apiCodes.js'
 
