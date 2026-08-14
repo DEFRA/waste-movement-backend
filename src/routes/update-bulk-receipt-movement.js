@@ -199,9 +199,20 @@ const updateBulkReceiptMovement = {
         return noMovementsUpdatedResponse(h, payload)
       }
 
-      movements.forEach(() =>
+      movements.forEach((_, index) => {
         metricsCounter('receipts.received.bulk', 1, { endpointType: 'put' })
-      )
+        const existing = wasteInputsToUpdate[index]
+        logger.info(
+          {
+            organization: {
+              id:
+                existing.submittingOrganisation?.defraCustomerOrganisationId ??
+                existing.orgId
+            }
+          },
+          'Bulk receipt movement updated'
+        )
+      })
 
       return h
         .response({

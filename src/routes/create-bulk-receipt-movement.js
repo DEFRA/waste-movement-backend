@@ -19,7 +19,7 @@ import Joi from 'joi'
 import { metricsCounter } from '../common/helpers/metrics.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 
-const logger = createLogger
+const logger = createLogger()
 
 const createBulkReceiptMovement = {
   method: 'POST',
@@ -110,7 +110,7 @@ const createBulkReceiptMovement = {
         backoffOptions(logger)
       )
 
-      collectMetrics(createdMovements)
+      collectMetricsAndLogs(createdMovements)
 
       const response = generateResponseWithValidationWarnings(
         payload,
@@ -151,7 +151,7 @@ function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
 }
 
 /**
- * Collects metrics for the created movements
+ * Collects metrics and logs for the created movements
  *
  * @param {Object} createdMovements - The created movements
  * @param {String} createdMovements.status - The status of the created movements
@@ -159,13 +159,20 @@ function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
  *
  * @returns {void}
  */
-function collectMetrics(createdMovements) {
+function collectMetricsAndLogs(createdMovements) {
   if (createdMovements.status === BULK_RESPONSE_STATUS.MOVEMENTS_CREATED) {
     createdMovements.wasteInputs.forEach((wasteInput) => {
+      const orgId =
+        wasteInput.submittingOrganisation.defraCustomerOrganisationId
       metricsCounter('receipts.received.bulk', 1, { endpointType: 'post' })
-      metricsCounter('receiver.orgId.bulk', 1, {
-        orgId: wasteInput.submittingOrganisation.defraCustomerOrganisationId
-      })
+      metricsCounter('receiver.orgId.bulk', 1, { orgId })
+      // ECS field name (organization.id) so the OpenSearch dashboards can
+      // aggregate on it (DWTA-354). clientId is intentionally absent for
+      // the bulk API.
+      logger.info(
+        { organization: { id: orgId } },
+        'Bulk receipt movement created'
+      )
     })
   }
 }

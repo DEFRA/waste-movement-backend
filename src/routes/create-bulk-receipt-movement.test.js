@@ -11,6 +11,23 @@ import {
   userBasicAuthTest1
 } from '../test/data/basic-auth.js'
 import { createServer } from '../server.js'
+import { createLogger } from '../common/helpers/logging/logger.js'
+
+const assertOrgIdWasLogged = (loggerInfoSpy) => {
+  const orgIdLogs = loggerInfoSpy.mock.calls.filter(
+    ([, message]) => message === 'Bulk receipt movement created'
+  )
+  expect(orgIdLogs).toEqual([
+    [
+      { organization: { id: 'fd98d4ef34e33b34fc8fad03f8c385' } },
+      'Bulk receipt movement created'
+    ],
+    [
+      { organization: { id: 'fd98d4ef34e33b34fc8fad03f8c385' } },
+      'Bulk receipt movement created'
+    ]
+  ])
+}
 
 const assertMetricsCounterWasCalled = (metricsCounterSpy) => {
   expect(metricsCounterSpy).toHaveBeenCalledTimes(4)
@@ -149,6 +166,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       'createBulkWasteInput'
     )
     const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+    const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     movementCreateBulk.createBulkWasteInput
       .mockImplementationOnce(() => {
@@ -204,6 +222,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(3)
 
     assertMetricsCounterWasCalled(metricsCounterSpy)
+    assertOrgIdWasLogged(loggerInfoSpy)
   })
 
   it('creates multiple waste inputs with a waste input containing a warning', async () => {
