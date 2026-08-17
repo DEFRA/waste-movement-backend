@@ -1,5 +1,5 @@
 import Joi from 'joi'
-import { HTTP_STATUS, AUDIT_LOGGER_TYPE } from 'waste-movement-utils'
+import { HTTP_STATUS, AUDIT_LOGGER_TYPE } from '@defra/waste-movement-utils'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 import { retryAuditLogSchema } from '../schemas/retry-audit-log.js'
 

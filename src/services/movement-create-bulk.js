@@ -1,4 +1,7 @@
-import { AUDIT_LOGGER_TYPE, BULK_RESPONSE_STATUS } from 'waste-movement-utils'
+import {
+  AUDIT_LOGGER_TYPE,
+  BULK_RESPONSE_STATUS
+} from '@defra/waste-movement-utils'
 import { findWasteInputs } from '../common/helpers/find-waste-inputs.js'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 import { createLogger } from '../common/helpers/logging/logger.js'

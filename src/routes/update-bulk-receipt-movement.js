@@ -3,7 +3,7 @@ import {
   HTTP_STATUS,
   backoffOptions,
   BULK_RESPONSE_STATUS
-} from 'waste-movement-utils'
+} from '@defra/waste-movement-utils'
 import { backOff } from 'exponential-backoff'
 import { updateBulkWasteInput } from '../services/movement-update-bulk.js'
 import {

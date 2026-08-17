@@ -1,6 +1,6 @@
 import { expect, describe, beforeAll, afterAll, it, jest } from '@jest/globals'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
-import { HTTP_STATUS, BULK_RESPONSE_STATUS } from 'waste-movement-utils'
+import { HTTP_STATUS, BULK_RESPONSE_STATUS } from '@defra/waste-movement-utils'
 import * as movementUpdateBulk from '../services/movement-update-bulk.js'
 import {
   orgId1,
@@ -33,8 +33,8 @@ const assertMetricsCounterWasCalled = (metricsCounterSpy) => {
   )
 }
 
-jest.mock('waste-movement-utils', () => {
-  const originalModule = jest.requireActual('waste-movement-utils')
+jest.mock('@defra/waste-movement-utils', () => {
+  const originalModule = jest.requireActual('@defra/waste-movement-utils')
 
   return {
     ...originalModule,

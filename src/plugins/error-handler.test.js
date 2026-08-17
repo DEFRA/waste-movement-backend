@@ -1,7 +1,10 @@
 import { config } from '../config.js'
 import { createServer } from '../server.js'
 import { base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
-import { HTTP_STATUS, generateWasteTrackingId } from 'waste-movement-utils'
+import {
+  HTTP_STATUS,
+  generateWasteTrackingId
+} from '@defra/waste-movement-utils'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 import { formatBulkUploadValidationErrors } from './error-handler.js'
 import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'

@@ -1,7 +1,10 @@
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { expect } from '@jest/globals'
 import { config } from '../config.js'
-import { HTTP_STATUS, generateWasteTrackingId } from 'waste-movement-utils'
+import {
+  HTTP_STATUS,
+  generateWasteTrackingId
+} from '@defra/waste-movement-utils'
 import {
   orgId1,
   base64EncodedOrgApiCodes,
@@ -22,8 +25,8 @@ jest.mock('../services/movement-update.js', () => {
   return { updateWasteInput: jest.fn(actualFunction) }
 })
 
-jest.mock('waste-movement-utils', () => {
-  const originalModule = jest.requireActual('waste-movement-utils')
+jest.mock('@defra/waste-movement-utils', () => {
+  const originalModule = jest.requireActual('@defra/waste-movement-utils')
 
   return {
     ...originalModule,

@@ -1,4 +1,4 @@
-import { generateWasteTrackingId } from 'waste-movement-utils'
+import { generateWasteTrackingId } from '@defra/waste-movement-utils'
 import { retryAuditLogSchema } from './retry-audit-log.js'
 
 describe('retryAuditLogSchema', () => {

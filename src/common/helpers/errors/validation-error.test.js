@@ -1,5 +1,5 @@
 import { ValidationError } from './validation-error.js'
-import { HTTP_STATUS } from 'waste-movement-utils'
+import { HTTP_STATUS } from '@defra/waste-movement-utils'
 
 describe('ValidationError', () => {
   it('should use default errorType when not provided', () => {
