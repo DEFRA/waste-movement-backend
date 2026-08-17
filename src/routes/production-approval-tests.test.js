@@ -12,7 +12,7 @@ import {
   PRODUCTION_APPROVAL_TEST_SCENARIO_IDS,
   generateWasteTrackingId,
   productionApprovalTestsRequestPayload
-} from 'waste-movement-utils'
+} from '@defra/waste-movement-utils'
 import { config } from '../config.js'
 import { base64EncodedOrgApiCodes } from '../test/data/apiCodes.js'
 import * as runProductionApprovalTests from '../services/production-approval-tests/run-production-approval-tests.js'

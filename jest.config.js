@@ -25,7 +25,7 @@ export default {
       '@defra/hapi-tracing', // Supports ESM only
       'node-fetch', // Supports ESM only
       'uuid',
-      'waste-movement-utils'
+      '@defra/waste-movement-utils'
     ].join('|')}/)`
   ]
 }

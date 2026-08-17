@@ -1,4 +1,7 @@
-import { HTTP_STATUS, validationErrorFormatter } from 'waste-movement-utils'
+import {
+  HTTP_STATUS,
+  validationErrorFormatter
+} from '@defra/waste-movement-utils'
 
 export const errorHandler = {
   plugin: {
