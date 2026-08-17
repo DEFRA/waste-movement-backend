@@ -2,9 +2,9 @@ import Joi from 'joi'
 import {
   HTTP_STATUS,
   generateAllValidationWarnings
-} from 'waste-movement-utils'
+} from '@defra/waste-movement-utils'
 import { MongoServerError } from 'mongodb'
-import { createLogger } from '../helpers/logging/logger.js'
+import { createLogger } from './logging/logger.js'
 
 const logger = createLogger()
 

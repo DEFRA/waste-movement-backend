@@ -1,7 +1,7 @@
 import { auditLogger } from './audit-logger.js'
 import * as cdpAuditing from '@defra/cdp-auditing'
 import * as logger from '../logging/logger.js'
-import { AUDIT_LOGGER_TYPE } from 'waste-movement-utils'
+import { AUDIT_LOGGER_TYPE } from '@defra/waste-movement-utils'
 import * as metrics from '../metrics.js'
 import { config } from '../../../config.js'
 

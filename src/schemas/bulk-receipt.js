@@ -1,5 +1,5 @@
 import Joi from 'joi'
-import { receiveMovementRequestSchema } from 'waste-movement-utils'
+import { receiveMovementRequestSchema } from '@defra/waste-movement-utils'
 import { config } from '../config.js'
 
 const bulkRecordLimit = config.get('bulk.recordLimit')

@@ -2,7 +2,7 @@ import {
   sourceOfComponentsProvided,
   validPopNames,
   TEST_DATA
-} from 'waste-movement-utils'
+} from '@defra/waste-movement-utils'
 import { apiCode1 } from '../data/apiCodes.js'
 
 export function createMovementRequest(overrides) {

@@ -1,4 +1,4 @@
-import { productionApprovalTestScenarioIds } from 'waste-movement-utils'
+import { productionApprovalTestScenarioIds } from '@defra/waste-movement-utils'
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { metricsCounter } from '../common/helpers/metrics.js'
 import { ProductionApprovalTest } from '../domain/productionApprovalTest.js'

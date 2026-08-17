@@ -1,7 +1,7 @@
 import {
   HTTP_STATUS,
   productionApprovalTestsSchema
-} from 'waste-movement-utils'
+} from '@defra/waste-movement-utils'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { ValidationError } from '../common/helpers/errors/validation-error.js'
 import { runProductionApprovalTests } from '../services/production-approval-tests/run-production-approval-tests.js'

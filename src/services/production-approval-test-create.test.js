@@ -9,7 +9,7 @@ import * as metrics from '../common/helpers/metrics.js'
 import {
   productionApprovalTestScenarioIds,
   productionApprovalTestsResults
-} from 'waste-movement-utils'
+} from '@defra/waste-movement-utils'
 import { PAT_STATUS } from './production-approval-tests/status.js'
 
 describe('production-approval-test-create', () => {

@@ -1,4 +1,4 @@
-import { HTTP_STATUS } from 'waste-movement-utils'
+import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { getWasteInputs } from '../services/movement-get.js'
 import { getReceiptMovementSchema } from '../schemas/get-receipt-movement.js'

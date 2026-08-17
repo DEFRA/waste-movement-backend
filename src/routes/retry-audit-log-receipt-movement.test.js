@@ -6,7 +6,7 @@ import {
   AUDIT_LOGGER_TYPE,
   HTTP_STATUS,
   generateWasteTrackingId
-} from 'waste-movement-utils'
+} from '@defra/waste-movement-utils'
 import * as cdpAuditing from '@defra/cdp-auditing'
 import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
 import {
