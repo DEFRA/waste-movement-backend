@@ -108,6 +108,32 @@ function getOrgValidationResponse(h, payload, wasteInputsToUpdate) {
     .code(HTTP_STATUS.BAD_REQUEST)
 }
 
+/**
+ * Collects metrics and logs for the updated movements
+ *
+ * @param {Object[]} movements - The updated movements
+ * @param {Object[]} wasteInputsToUpdate - The existing waste inputs, positionally
+ * aligned with the movements
+ *
+ * @returns {void}
+ */
+function collectMetricsAndLogs(movements, wasteInputsToUpdate) {
+  movements.forEach((_, index) => {
+    metricsCounter('receipts.received.bulk', 1, { endpointType: 'put' })
+    const existing = wasteInputsToUpdate[index]
+    logger.info(
+      {
+        organisation: {
+          id:
+            existing.submittingOrganisation?.defraCustomerOrganisationId ??
+            existing.orgId
+        }
+      },
+      'Bulk receipt movement updated'
+    )
+  })
+}
+
 const updateBulkReceiptMovement = {
   method: 'PUT',
   path: '/bulk/{bulkId}/movements/receive',
@@ -199,9 +225,7 @@ const updateBulkReceiptMovement = {
         return noMovementsUpdatedResponse(h, payload)
       }
 
-      movements.forEach(() =>
-        metricsCounter('receipts.received.bulk', 1, { endpointType: 'put' })
-      )
+      collectMetricsAndLogs(movements, wasteInputsToUpdate)
 
       return h
         .response({
