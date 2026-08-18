@@ -123,7 +123,7 @@ function collectMetricsAndLogs(movements, wasteInputsToUpdate) {
     const existing = wasteInputsToUpdate[index]
     logger.info(
       {
-        organization: {
+        organisation: {
           id:
             existing.submittingOrganisation?.defraCustomerOrganisationId ??
             existing.orgId

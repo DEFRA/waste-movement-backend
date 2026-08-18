@@ -166,11 +166,11 @@ function collectMetricsAndLogs(createdMovements) {
         wasteInput.submittingOrganisation.defraCustomerOrganisationId
       metricsCounter('receipts.received.bulk', 1, { endpointType: 'post' })
       metricsCounter('receiver.orgId.bulk', 1, { orgId })
-      // ECS field name (organization.id) so the OpenSearch dashboards can
+      // Structured organisation.id field so the OpenSearch dashboards can
       // aggregate on it (DWTA-354). clientId is intentionally absent for
       // the bulk API.
       logger.info(
-        { organization: { id: orgId } },
+        { organisation: { id: orgId } },
         'Bulk receipt movement created'
       )
     })
