@@ -19,11 +19,21 @@ const assertOrgIdWasLogged = (loggerInfoSpy) => {
   )
   expect(orgIdLogs).toEqual([
     [
-      { organisation: { id: 'fd98d4ef34e33b34fc8fad03f8c385' } },
+      {
+        event: {
+          reference: 'fd98d4ef34e33b34fc8fad03f8c385',
+          action: 'bulk-receipt-movement-created'
+        }
+      },
       'Bulk receipt movement created'
     ],
     [
-      { organisation: { id: 'fd98d4ef34e33b34fc8fad03f8c385' } },
+      {
+        event: {
+          reference: 'fd98d4ef34e33b34fc8fad03f8c385',
+          action: 'bulk-receipt-movement-created'
+        }
+      },
       'Bulk receipt movement created'
     ]
   ])

@@ -166,11 +166,16 @@ function collectMetricsAndLogs(createdMovements) {
         wasteInput.submittingOrganisation.defraCustomerOrganisationId
       metricsCounter('receipts.received.bulk', 1, { endpointType: 'post' })
       metricsCounter('receiver.orgId.bulk', 1, { orgId })
-      // Structured organisation.id field so the OpenSearch dashboards can
-      // aggregate on it (DWTA-354). clientId is intentionally absent for
-      // the bulk API.
+      // CDP's log pipeline only indexes its allowlisted ECS fields, so the
+      // organisation id rides in event.reference (DWTA-354). tenant.id (the
+      // client id) is intentionally absent for the bulk API.
       logger.info(
-        { organisation: { id: orgId } },
+        {
+          event: {
+            reference: orgId,
+            action: 'bulk-receipt-movement-created'
+          }
+        },
         'Bulk receipt movement created'
       )
     })

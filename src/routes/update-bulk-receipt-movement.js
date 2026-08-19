@@ -121,12 +121,15 @@ function collectMetricsAndLogs(movements, wasteInputsToUpdate) {
   movements.forEach((_, index) => {
     metricsCounter('receipts.received.bulk', 1, { endpointType: 'put' })
     const existing = wasteInputsToUpdate[index]
+    // CDP's log pipeline only indexes its allowlisted ECS fields, so the
+    // organisation id rides in event.reference (DWTA-354).
     logger.info(
       {
-        organisation: {
-          id:
+        event: {
+          reference:
             existing.submittingOrganisation?.defraCustomerOrganisationId ??
-            existing.orgId
+            existing.orgId,
+          action: 'bulk-receipt-movement-updated'
         }
       },
       'Bulk receipt movement updated'
