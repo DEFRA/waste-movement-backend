@@ -1,4 +1,7 @@
-import { productionApprovalTestScenarioIds } from '@defra/waste-movement-utils'
+import {
+  METRIC_NAMES,
+  productionApprovalTestScenarioIds
+} from '@defra/waste-movement-utils'
 import { createLogger } from '../common/helpers/logging/logger.js'
 import { metricsCounter } from '../common/helpers/metrics.js'
 import { ProductionApprovalTest } from '../domain/productionApprovalTest.js'
@@ -32,8 +35,15 @@ export async function createProductionApprovalTest(db, clientId, results) {
       totalScenariosFailed: resultsSummary.totalFailed
     }
 
+    logger.info(
+      `${METRIC_NAMES.PAT_SUBMISSION} - scenarios: ${resultsSummary.total} - submitted: ${resultsSummary.totalSubmitted} - passed: ${resultsSummary.totalPassed} - failed: ${resultsSummary.totalFailed}`
+    )
+
     Object.values(resultsSummary.results).forEach((result) => {
       metricsDimensions[`status${result.scenarioId}`] = result.status
+      logger.info(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - ${result.scenarioId} - ${result.status}`
+      )
     })
 
     // CloudWatch only returns a metric when queried with its full dimension
