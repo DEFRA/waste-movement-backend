@@ -3,7 +3,11 @@ import { movementSchema } from '../schemas/movement.js'
 import { headersSchema } from '../schemas/headers.js'
 import { WasteInput } from '../domain/wasteInput.js'
 import Joi from 'joi'
-import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
+import {
+  HTTP_STATUS,
+  METRIC_NAMES,
+  backoffOptions
+} from '@defra/waste-movement-utils'
 import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
 import { config } from '../config.js'
 import { backOff } from 'exponential-backoff'
@@ -11,7 +15,7 @@ import { metricsCounter } from '../common/helpers/metrics.js'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 
-const logger = createLogger
+const logger = createLogger()
 
 const createReceiptMovement = [
   {
@@ -79,6 +83,7 @@ const createReceiptMovement = [
         )
 
         metricsCounter('receiver.orgId', 1, { orgId: requestOrgId })
+        logger.info(`${METRIC_NAMES.RECEIPTS_RECEIVED} - post`)
 
         return h.response().code(HTTP_STATUS.NO_CONTENT)
       } catch (error) {

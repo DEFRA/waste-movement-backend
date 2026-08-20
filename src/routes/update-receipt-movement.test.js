@@ -3,6 +3,7 @@ import { expect } from '@jest/globals'
 import { config } from '../config.js'
 import {
   HTTP_STATUS,
+  METRIC_NAMES,
   generateWasteTrackingId
 } from '@defra/waste-movement-utils'
 import {
@@ -17,6 +18,7 @@ import {
   userBasicAuthTest1
 } from '../test/data/basic-auth.js'
 import { createServer } from '../server.js'
+import { createLogger } from '../common/helpers/logging/logger.js'
 
 jest.mock('../services/movement-update.js', () => {
   const { updateWasteInput: actualFunction } = jest.requireActual(
@@ -83,6 +85,7 @@ describe('movementUpdate Route Tests', () => {
     const payload = {
       movement: createTestPayload()
     }
+    const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     const createResult = await server.inject({
       method: 'POST',
@@ -136,6 +139,10 @@ describe('movementUpdate Route Tests', () => {
     expect(historicState[0].receipt.movement).toEqual(payload.movement)
 
     expect(updateWasteInputSpy).toHaveBeenCalledTimes(3)
+
+    expect(infoLoggerSpy).toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
+    )
   })
 
   async function getCurrentWasteInput(wasteTrackingId) {
@@ -149,6 +156,7 @@ describe('movementUpdate Route Tests', () => {
     const payload = {
       movement: createTestPayload()
     }
+    const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     const createResult = await server.inject({
       method: 'POST',
@@ -193,11 +201,16 @@ describe('movementUpdate Route Tests', () => {
     expect(historicState[1].wasteTrackingId).toEqual(wasteTrackingId)
     expect(historicState[1].revision).toEqual(2)
     expect(historicState[1].receipt.movement).toEqual(payload.movement)
+
+    expect(infoLoggerSpy).toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
+    )
   })
 
   it('persists clientId at the top level on update', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const clientId = 'test-client-id'
+    const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     const createResult = await server.inject({
       method: 'POST',
@@ -221,6 +234,10 @@ describe('movementUpdate Route Tests', () => {
     expect(actualWasteInput.clientId).toEqual(clientId)
     // clientId is stored top-level, not nested inside the receipt movement
     expect(actualWasteInput.receipt.movement.clientId).toBeUndefined()
+
+    expect(infoLoggerSpy).toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
+    )
   })
 
   it('returns 404 when updating a non-existent waste input', async () => {
@@ -228,6 +245,7 @@ describe('movementUpdate Route Tests', () => {
     const updatePayload = {
       movement: createTestPayload()
     }
+    const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     const { statusCode, result } = await server.inject({
       method: 'PUT',
@@ -252,6 +270,10 @@ describe('movementUpdate Route Tests', () => {
       .findOne({ _id: wasteTrackingId })
 
     expect(actualWasteInput).toEqual(null)
+
+    expect(infoLoggerSpy).not.toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
+    )
   })
 
   async function updateReceipt(wasteTrackingId, updatePayload, traceId) {
@@ -281,6 +303,7 @@ describe('movementUpdate Route Tests', () => {
     const createPayload = {
       movement: createTestPayload()
     }
+    const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     const createResult = await server.inject({
       method: 'POST',
@@ -326,6 +349,10 @@ describe('movementUpdate Route Tests', () => {
         ]
       }
     })
+
+    expect(infoLoggerSpy).not.toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
+    )
   })
 
   it.each([undefined, null, ''])(
@@ -335,6 +362,7 @@ describe('movementUpdate Route Tests', () => {
       const createPayload = {
         movement: createTestPayload()
       }
+      const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
       const createResult = await server.inject({
         method: 'POST',
@@ -379,6 +407,10 @@ describe('movementUpdate Route Tests', () => {
           ]
         }
       })
+
+      expect(infoLoggerSpy).not.toHaveBeenCalledWith(
+        `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
+      )
     }
   )
 
@@ -387,6 +419,7 @@ describe('movementUpdate Route Tests', () => {
     const createPayload = {
       movement: createTestPayload()
     }
+    const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     const createResult = await server.inject({
       method: 'POST',
@@ -433,6 +466,10 @@ describe('movementUpdate Route Tests', () => {
         ]
       }
     })
+
+    expect(infoLoggerSpy).not.toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
+    )
   })
 
   it('returns 404 when submittingOrganisation is provided but waste input does not exist', async () => {
@@ -445,6 +482,7 @@ describe('movementUpdate Route Tests', () => {
         }
       }
     }
+    const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     const { statusCode, result } = await server.inject({
       method: 'PUT',
@@ -463,6 +501,10 @@ describe('movementUpdate Route Tests', () => {
       error: 'Not Found',
       message: 'Waste input with ID nonexistent-id not found'
     })
+
+    expect(infoLoggerSpy).not.toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
+    )
   })
 
   it('rejects when submittingOrganisation does not match the original record', async () => {
@@ -476,6 +518,7 @@ describe('movementUpdate Route Tests', () => {
         }
       }
     }
+    const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     const createResult = await server.inject({
       method: 'POST',
@@ -524,6 +567,10 @@ describe('movementUpdate Route Tests', () => {
         ]
       }
     })
+
+    expect(infoLoggerSpy).not.toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
+    )
   })
 
   it('updates a waste input with submittingOrganisation', async () => {
@@ -537,6 +584,7 @@ describe('movementUpdate Route Tests', () => {
         }
       }
     }
+    const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     // First create a movement with submittingOrganisation
     const createResult = await server.inject({
@@ -573,6 +621,10 @@ describe('movementUpdate Route Tests', () => {
     expect(actualWasteInput.submittingOrganisation).toEqual({
       defraCustomerOrganisationId: orgId1
     })
+
+    expect(infoLoggerSpy).toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
+    )
   })
 
   it('handles error when updating a waste input fails', async () => {
@@ -580,6 +632,7 @@ describe('movementUpdate Route Tests', () => {
     const payload = {
       movement: createTestPayload()
     }
+    const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     const createResult = await server.inject({
       method: 'POST',
@@ -616,10 +669,15 @@ describe('movementUpdate Route Tests', () => {
       message: errorMessage
     })
     expect(updateWasteInputSpy).toHaveBeenCalledTimes(3)
+
+    expect(infoLoggerSpy).not.toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
+    )
   })
 
   it('should return 401 when request is unauthenticated', async () => {
     const wasteTrackingId = generateWasteTrackingId()
+    const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     const { statusCode } = await server.inject({
       method: 'PUT',
@@ -628,5 +686,9 @@ describe('movementUpdate Route Tests', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
+
+    expect(infoLoggerSpy).not.toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
+    )
   })
 })
