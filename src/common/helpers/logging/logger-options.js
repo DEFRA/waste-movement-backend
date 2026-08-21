@@ -1,6 +1,7 @@
 import { ecsFormat } from '@elastic/ecs-pino-format'
 import { config } from '../../../config.js'
 import { getTraceId } from '@defra/hapi-tracing'
+import { getClientId } from '../../../plugins/logger.js'
 
 const logConfig = config.get('log')
 const serviceName = config.get('serviceName')
@@ -29,8 +30,12 @@ export const loggerOptions = {
   mixin() {
     const mixinValues = {}
     const traceId = getTraceId()
+    const xDwtClientId = getClientId()
     if (traceId) {
       mixinValues.trace = { id: traceId }
+    }
+    if (xDwtClientId) {
+      mixinValues.tenant = { id: xDwtClientId }
     }
     return mixinValues
   }
