@@ -2,7 +2,8 @@ import Joi from 'joi'
 import {
   HTTP_STATUS,
   backoffOptions,
-  BULK_RESPONSE_STATUS
+  BULK_RESPONSE_STATUS,
+  METRIC_NAMES
 } from '@defra/waste-movement-utils'
 import { backOff } from 'exponential-backoff'
 import { updateBulkWasteInput } from '../services/movement-update-bulk.js'
@@ -119,20 +120,17 @@ function getOrgValidationResponse(h, payload, wasteInputsToUpdate) {
  */
 function collectMetricsAndLogs(movements, wasteInputsToUpdate) {
   movements.forEach((_, index) => {
-    metricsCounter('receipts.received.bulk', 1, { endpointType: 'put' })
     const existing = wasteInputsToUpdate[index]
-    // CDP's log pipeline only indexes its allowlisted ECS fields, so the
-    // organisation id rides in event.reference (DWTA-354).
+    const orgId =
+      existing.submittingOrganisation?.defraCustomerOrganisationId ??
+      existing.orgId
+    metricsCounter('receipts.received.bulk', 1, { endpointType: 'put' })
+    // Specifying the org id in event.reference as it could be different for different
+    // movements in a bulk upload and this should override the default org id set for
+    // all log messages
     logger.info(
-      {
-        event: {
-          reference:
-            existing.submittingOrganisation?.defraCustomerOrganisationId ??
-            existing.orgId,
-          action: 'bulk-receipt-movement-updated'
-        }
-      },
-      'Bulk receipt movement updated'
+      { event: { reference: orgId } },
+      `${METRIC_NAMES.RECEIPTS_RECEIVED_BULK} - put`
     )
   })
 }

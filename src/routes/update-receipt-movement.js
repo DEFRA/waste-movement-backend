@@ -2,14 +2,18 @@ import { updateWasteInput } from '../services/movement-update.js'
 import { movementSchema } from '../schemas/movement.js'
 import { headersSchema } from '../schemas/headers.js'
 import Joi from 'joi'
-import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
+import {
+  HTTP_STATUS,
+  METRIC_NAMES,
+  backoffOptions
+} from '@defra/waste-movement-utils'
 import { updatePlugins } from './update-plugins.js'
 import { backOff } from 'exponential-backoff'
 import { getOrganisationValidationError } from '../common/helpers/validate-organisation.js'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 
-const logger = createLogger
+const logger = createLogger()
 
 const updateReceiptMovement = {
   method: 'PUT',
@@ -76,6 +80,8 @@ const updateReceiptMovement = {
       if (result instanceof Error) {
         throw result
       }
+
+      logger.info(`${METRIC_NAMES.RECEIPTS_RECEIVED} - put`)
 
       if (result.matchedCount === 0) {
         return h

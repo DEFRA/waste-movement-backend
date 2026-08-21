@@ -1,6 +1,10 @@
 import { expect, describe, beforeAll, afterAll, it, jest } from '@jest/globals'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
-import { HTTP_STATUS, BULK_RESPONSE_STATUS } from '@defra/waste-movement-utils'
+import {
+  HTTP_STATUS,
+  BULK_RESPONSE_STATUS,
+  METRIC_NAMES
+} from '@defra/waste-movement-utils'
 import * as movementCreateBulk from '../services/movement-create-bulk.js'
 import { config } from '../config.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
@@ -14,28 +18,13 @@ import { createServer } from '../server.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 
 const assertOrgIdWasLogged = (loggerInfoSpy) => {
+  const logMessage = `${METRIC_NAMES.RECEIPTS_RECEIVED_BULK} - post`
   const orgIdLogs = loggerInfoSpy.mock.calls.filter(
-    ([, message]) => message === 'Bulk receipt movement created'
+    ([, message]) => message === logMessage
   )
   expect(orgIdLogs).toEqual([
-    [
-      {
-        event: {
-          reference: 'fd98d4ef34e33b34fc8fad03f8c385',
-          action: 'bulk-receipt-movement-created'
-        }
-      },
-      'Bulk receipt movement created'
-    ],
-    [
-      {
-        event: {
-          reference: 'fd98d4ef34e33b34fc8fad03f8c385',
-          action: 'bulk-receipt-movement-created'
-        }
-      },
-      'Bulk receipt movement created'
-    ]
+    [{ event: { reference: 'fd98d4ef34e33b34fc8fad03f8c385' } }, logMessage],
+    [{ event: { reference: 'fd98d4ef34e33b34fc8fad03f8c385' } }, logMessage]
   ])
 }
 
@@ -243,6 +232,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       'createBulkWasteInput'
     )
     const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+    const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     movementCreateBulk.createBulkWasteInput
       .mockImplementationOnce(() => {
@@ -310,6 +300,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(3)
 
     assertMetricsCounterWasCalled(metricsCounterSpy)
+    assertOrgIdWasLogged(loggerInfoSpy)
   })
 
   it('should return existing waste tracking ids when provided with a bulk id which has already been used by the POST endpoint in the waste-inputs collection', async () => {
@@ -388,6 +379,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
 
   it('should create new waste inputs when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs collection', async () => {
     const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+    const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     await server.inject({
       method: 'POST',
@@ -420,10 +412,12 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     })
 
     assertMetricsCounterWasCalled(metricsCounterSpy)
+    assertOrgIdWasLogged(loggerInfoSpy)
   })
 
   it('should create new waste inputs when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs-history collection', async () => {
     const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+    const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     await server.inject({
       method: 'POST',
@@ -456,6 +450,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     })
 
     assertMetricsCounterWasCalled(metricsCounterSpy)
+    assertOrgIdWasLogged(loggerInfoSpy)
   })
 
   it('can handle multiple concurrent requests with the same bulkId', async () => {
@@ -497,6 +492,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       'createBulkWasteInput'
     )
     const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+    const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     movementCreateBulk.createBulkWasteInput.mockRejectedValue(
       new Error(errorMessage)
@@ -521,6 +517,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
 
     expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(3)
     expect(metricsCounterSpy).not.toHaveBeenCalled()
+    expect(loggerInfoSpy).not.toHaveBeenCalled()
   })
 
   it("throws an error when the number of waste tracking ids generated doesn't match the number of movements in the payload", async () => {
