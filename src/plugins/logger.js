@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 const asyncLocalStorage = new AsyncLocalStorage()
 
 /**
- * Return's the request's trace id, if set else null.
+ * Return's the request's client id, if set else null.
  * @return {string|null}
  */
 const getClientId = () => asyncLocalStorage.getStore()?.get('clientId')
