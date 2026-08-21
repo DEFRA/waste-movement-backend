@@ -2,7 +2,8 @@ import { WasteInput } from '../domain/wasteInput.js'
 import {
   HTTP_STATUS,
   backoffOptions,
-  BULK_RESPONSE_STATUS
+  BULK_RESPONSE_STATUS,
+  METRIC_NAMES
 } from '@defra/waste-movement-utils'
 import { backOff } from 'exponential-backoff'
 import { createBulkWasteInput } from '../services/movement-create-bulk.js'
@@ -166,17 +167,12 @@ function collectMetricsAndLogs(createdMovements) {
         wasteInput.submittingOrganisation.defraCustomerOrganisationId
       metricsCounter('receipts.received.bulk', 1, { endpointType: 'post' })
       metricsCounter('receiver.orgId.bulk', 1, { orgId })
-      // CDP's log pipeline only indexes its allowlisted ECS fields, so the
-      // organisation id rides in event.reference (DWTA-354). tenant.id (the
-      // client id) is intentionally absent for the bulk API.
+      // Specifying the org id in event.reference as it could be different for different
+      // movements in a bulk upload and this should override the default org id set for
+      // all log messages
       logger.info(
-        {
-          event: {
-            reference: orgId,
-            action: 'bulk-receipt-movement-created'
-          }
-        },
-        'Bulk receipt movement created'
+        { event: { reference: orgId } },
+        `${METRIC_NAMES.RECEIPTS_RECEIVED_BULK} - post`
       )
     })
   }

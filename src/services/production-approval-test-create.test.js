@@ -7,10 +7,12 @@ import {
 import { ObjectId } from 'mongodb'
 import * as metrics from '../common/helpers/metrics.js'
 import {
+  METRIC_NAMES,
   productionApprovalTestScenarioIds,
   productionApprovalTestsResults
 } from '@defra/waste-movement-utils'
 import { PAT_STATUS } from './production-approval-tests/status.js'
+import { createLogger } from '../common/helpers/logging/logger.js'
 
 describe('production-approval-test-create', () => {
   // Remove R01, R02 and R03 from the results so these results will be in a 'Not Submitted' state
@@ -43,6 +45,7 @@ describe('production-approval-test-create', () => {
 
     it('should create a production approval test and return the inserted id', async () => {
       const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
+      const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
       const result = await createProductionApprovalTest(
         db,
@@ -137,6 +140,46 @@ describe('production-approval-test-create', () => {
         scenario: 'R01',
         result: PAT_STATUS.NOT_SUBMITTED
       })
+
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SUBMISSION} - scenarios: 12 - submitted: 9 - passed: 4 - failed: 5`
+      )
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - R01 - ${PAT_STATUS.NOT_SUBMITTED}`
+      )
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - R02 - ${PAT_STATUS.NOT_SUBMITTED}`
+      )
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - R03 - ${PAT_STATUS.NOT_SUBMITTED}`
+      )
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - R04 - ${PAT_STATUS.FAIL}`
+      )
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - R05 - ${PAT_STATUS.FAIL}`
+      )
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - R07 - ${PAT_STATUS.PASS}`
+      )
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - C02 - ${PAT_STATUS.PASS}`
+      )
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - B01 - ${PAT_STATUS.FAIL}`
+      )
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - P01 - ${PAT_STATUS.PASS}`
+      )
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - H01 - ${PAT_STATUS.FAIL}`
+      )
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - H03 - ${PAT_STATUS.PASS}`
+      )
+      expect(infoLoggerSpy).toHaveBeenCalledWith(
+        `${METRIC_NAMES.PAT_SCENARIO_RESULT} - X01 - ${PAT_STATUS.FAIL}`
+      )
     })
 
     it('should throw an error if inserted id is undefined', async () => {

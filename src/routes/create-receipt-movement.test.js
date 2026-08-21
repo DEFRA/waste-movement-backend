@@ -10,6 +10,7 @@ import {
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import {
   HTTP_STATUS,
+  METRIC_NAMES,
   generateWasteTrackingId
 } from '@defra/waste-movement-utils'
 import * as movementCreate from '../services/movement-create.js'
@@ -27,6 +28,7 @@ import {
   userBasicAuthTest1
 } from '../test/data/basic-auth.js'
 import { createServer } from '../server.js'
+import * as logger from '../common/helpers/logging/logger.js'
 
 jest.mock('../services/movement-create.js', () => {
   const { createWasteInput: actualFunction } = jest.requireActual(
@@ -85,6 +87,7 @@ describe('movement Route Tests', () => {
     }
     const createWasteInputSpy = jest.spyOn(movementCreate, 'createWasteInput')
     const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
+    const infoLoggerSpy = jest.spyOn(logger.createLogger(), 'info')
 
     movementCreate.createWasteInput
       .mockImplementationOnce(() => {
@@ -127,6 +130,9 @@ describe('movement Route Tests', () => {
     expect(metricsCounterSpy).toHaveBeenCalledWith('receiver.orgId', 1, {
       orgId: actualWasteInput.orgId
     })
+    expect(infoLoggerSpy).toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - post`
+    )
   })
 
   it('handles error when creating a waste input fails', async () => {
@@ -136,6 +142,7 @@ describe('movement Route Tests', () => {
     }
     const createWasteInputSpy = jest.spyOn(movementCreate, 'createWasteInput')
     const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
+    const infoLoggerSpy = jest.spyOn(logger.createLogger(), 'info')
 
     movementCreate.createWasteInput.mockRejectedValue(new Error(errorMessage))
 
@@ -160,6 +167,7 @@ describe('movement Route Tests', () => {
     expect(createWasteInputSpy).toHaveBeenCalledTimes(3)
 
     expect(metricsCounterSpy).not.toHaveBeenCalled()
+    expect(infoLoggerSpy).not.toHaveBeenCalled()
   })
 
   it('does not create waste input when validation fails', async () => {
@@ -275,6 +283,7 @@ describe('movement Route Tests', () => {
         }
       }
     }
+    const infoLoggerSpy = jest.spyOn(logger.createLogger(), 'info')
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -298,6 +307,10 @@ describe('movement Route Tests', () => {
     expect(actualWasteInput.submittingOrganisation).toEqual({
       defraCustomerOrganisationId: orgId1
     })
+
+    expect(infoLoggerSpy).toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - post`
+    )
   })
 
   it('creates a waste input with submittingOrganisation and ignores apiCode mismatch', async () => {
@@ -311,6 +324,7 @@ describe('movement Route Tests', () => {
         }
       }
     }
+    const infoLoggerSpy = jest.spyOn(logger.createLogger(), 'info')
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -334,6 +348,10 @@ describe('movement Route Tests', () => {
     expect(actualWasteInput.submittingOrganisation).toEqual({
       defraCustomerOrganisationId: orgId3
     })
+
+    expect(infoLoggerSpy).toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - post`
+    )
   })
 
   it('creates a waste input without submittingOrganisation', async () => {
@@ -344,6 +362,7 @@ describe('movement Route Tests', () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
     const wasteTrackingId = generateWasteTrackingId()
     const movement = createTestPayload()
+    const infoLoggerSpy = jest.spyOn(logger.createLogger(), 'info')
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -367,6 +386,10 @@ describe('movement Route Tests', () => {
 
     expect(actualWasteInput.wasteTrackingId).toEqual(wasteTrackingId)
     expect(actualWasteInput.submittingOrganisation).toBeNull()
+
+    expect(infoLoggerSpy).toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIPTS_RECEIVED} - post`
+    )
   })
 
   it('should return 401 when request is unauthenticated', async () => {
