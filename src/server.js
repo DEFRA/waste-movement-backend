@@ -14,7 +14,7 @@ import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { swagger } from './plugins/swagger.js'
 import { errorHandler } from './plugins/error-handler.js'
 import { basicAuth, getEnvVars } from '@defra/waste-movement-utils'
-import { logging } from './plugins/logger.js'
+import { requestCustomLogger } from './plugins/request-custom-logger.js'
 
 async function createServer() {
   setupProxy()
@@ -68,12 +68,12 @@ async function createServer() {
   await server.register([
     requestLogger,
     requestTracing,
+    requestCustomLogger,
     secureContext,
     pulse,
     mongoDb,
     basicAuth(getEnvVars('ACCESS_CRED_')),
-    errorHandler,
-    logging
+    errorHandler
   ])
 
   server.auth.default('basic')
