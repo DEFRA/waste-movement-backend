@@ -14,7 +14,6 @@ import {
 } from '../test/data/apiCodes.js'
 import { config } from '../config.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
-import * as metricsCounter from '../common/helpers/metrics.js'
 import {
   requestBasicAuthTest1,
   userBasicAuthTest1
@@ -31,22 +30,6 @@ const assertOrgIdWasLogged = (loggerInfoSpy) => {
     [{ event: { reference: 'fd98d4ef34e33b34fc8fad03f8c385' } }, logMessage],
     [{ event: { reference: 'fd98d4ef34e33b34fc8fad03f8c385' } }, logMessage]
   ])
-}
-
-const assertMetricsCounterWasCalled = (metricsCounterSpy) => {
-  expect(metricsCounterSpy).toHaveBeenCalledTimes(2)
-  expect(metricsCounterSpy).toHaveBeenNthCalledWith(
-    1,
-    'receipts.received.bulk',
-    1,
-    { endpointType: 'put' }
-  )
-  expect(metricsCounterSpy).toHaveBeenNthCalledWith(
-    2,
-    'receipts.received.bulk',
-    1,
-    { endpointType: 'put' }
-  )
 }
 
 jest.mock('@defra/waste-movement-utils', () => {
@@ -158,7 +141,6 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       movementUpdateBulk,
       'updateBulkWasteInput'
     )
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
     const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     movementUpdateBulk.updateBulkWasteInput
@@ -191,7 +173,6 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
 
     expect(updateBulkWasteInputSpy).toHaveBeenCalledTimes(3)
 
-    assertMetricsCounterWasCalled(metricsCounterSpy)
     assertOrgIdWasLogged(loggerInfoSpy)
   })
 
@@ -200,7 +181,6 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       movementUpdateBulk,
       'updateBulkWasteInput'
     )
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
     const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     payload[0].wasteItems[0].disposalOrRecoveryCodes = []
@@ -237,12 +217,10 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
 
     expect(updateBulkWasteInputSpy).toHaveBeenCalledTimes(1)
 
-    assertMetricsCounterWasCalled(metricsCounterSpy)
     assertOrgIdWasLogged(loggerInfoSpy)
   })
 
   it('should return NO_MOVEMENTS_UPDATED when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs collection', async () => {
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
     const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     // Update the seed data to have revision > 1 with the update bulkId
@@ -267,12 +245,10 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       movements: [{}, {}]
     })
 
-    expect(metricsCounterSpy).not.toHaveBeenCalled()
     expect(loggerInfoSpy).not.toHaveBeenCalled()
   })
 
   it('should return NO_MOVEMENTS_UPDATED when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs-history collection', async () => {
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
     const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     await wasteInputsHistoryCollection.insertMany([
@@ -312,12 +288,10 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       movements: [{}, {}]
     })
 
-    expect(metricsCounterSpy).not.toHaveBeenCalled()
     expect(loggerInfoSpy).not.toHaveBeenCalled()
   })
 
   it('should proceed with update when bulkId exists with revision 1 only (POST endpoint bulkId)', async () => {
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
     const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     // Seed data already has revision: 1 with createBulkId
@@ -339,7 +313,6 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       movements: [{}, {}]
     })
 
-    assertMetricsCounterWasCalled(metricsCounterSpy)
     assertOrgIdWasLogged(loggerInfoSpy)
   })
 
@@ -429,7 +402,6 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
   it('should succeed when apiCode org matches the original record', async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
 
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
     const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     const apiCodeItem = createBulkMovementRequest({
@@ -456,7 +428,6 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     expect(statusCode).toEqual(HTTP_STATUS.OK)
     expect(result.status).toEqual(BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED)
 
-    assertMetricsCounterWasCalled(metricsCounterSpy)
     assertOrgIdWasLogged(loggerInfoSpy)
   })
 
@@ -507,7 +478,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
       movementUpdateBulk,
       'updateBulkWasteInput'
     )
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+    const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     movementUpdateBulk.updateBulkWasteInput.mockRejectedValue(
       new Error(errorMessage)
@@ -531,7 +502,7 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(updateBulkWasteInputSpy).toHaveBeenCalledTimes(3)
-    expect(metricsCounterSpy).not.toHaveBeenCalled()
+    expect(loggerInfoSpy).not.toHaveBeenCalled()
   })
 
   it('should return 400 when payload is an empty array', async () => {

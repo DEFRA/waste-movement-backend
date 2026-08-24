@@ -2,7 +2,6 @@ import { auditLogger } from './audit-logger.js'
 import * as cdpAuditing from '@defra/cdp-auditing'
 import * as logger from '../logging/logger.js'
 import { AUDIT_LOGGER_TYPE, METRIC_NAMES } from '@defra/waste-movement-utils'
-import * as metrics from '../metrics.js'
 import { config } from '../../../config.js'
 
 const WASTE_TRACKING_ID = '2578ZCY8'
@@ -83,7 +82,6 @@ describe('Audit Logger Tests', () => {
       const mockLogger = logger.createLogger()
       const errorLogSpy = jest.spyOn(mockLogger, 'error')
       const infoLogSpy = jest.spyOn(mockLogger, 'info')
-      const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
 
       const result = auditLogger({
         ...params,
@@ -101,10 +99,6 @@ describe('Audit Logger Tests', () => {
         },
         `Failed to call audit endpoint: Audit type must be one of: ${Object.values(AUDIT_LOGGER_TYPE).join(', ')}`
       )
-      expect(metricsCounterSpy).toHaveBeenCalledWith('audit.errors.failed', 1, {
-        auditLogType: 'created',
-        traceId: params.traceId
-      })
       expect(infoLogSpy).toHaveBeenCalledWith(
         `${METRIC_NAMES.AUDIT_ERRORS_FAILED} - created`
       )
@@ -114,7 +108,6 @@ describe('Audit Logger Tests', () => {
       const mockLogger = logger.createLogger()
       const errorLogSpy = jest.spyOn(mockLogger, 'error')
       const infoLogSpy = jest.spyOn(mockLogger, 'info')
-      const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
 
       const result = auditLogger({
         ...params,
@@ -132,10 +125,6 @@ describe('Audit Logger Tests', () => {
         },
         'Failed to call audit endpoint: Audit data must be provided as an object'
       )
-      expect(metricsCounterSpy).toHaveBeenCalledWith('audit.errors.failed', 1, {
-        auditLogType: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
-        traceId: params.traceId
-      })
       expect(infoLogSpy).toHaveBeenCalledWith(
         `${METRIC_NAMES.AUDIT_ERRORS_FAILED} - ${AUDIT_LOGGER_TYPE.MOVEMENT_CREATED}`
       )
@@ -145,7 +134,6 @@ describe('Audit Logger Tests', () => {
       const mockLogger = logger.createLogger()
       const errorLogSpy = jest.spyOn(mockLogger, 'error')
       const infoLogSpy = jest.spyOn(mockLogger, 'info')
-      const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
 
       const result = auditLogger({
         ...params,
@@ -163,10 +151,6 @@ describe('Audit Logger Tests', () => {
         },
         'Failed to call audit endpoint: Audit data must be provided as an object'
       )
-      expect(metricsCounterSpy).toHaveBeenCalledWith('audit.errors.failed', 1, {
-        auditLogType: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
-        traceId: params.traceId
-      })
       expect(infoLogSpy).toHaveBeenCalledWith(
         `${METRIC_NAMES.AUDIT_ERRORS_FAILED} - ${AUDIT_LOGGER_TYPE.MOVEMENT_CREATED}`
       )

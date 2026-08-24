@@ -14,7 +14,6 @@ import {
 } from '../common/helpers/bulk-route-helpers.js'
 import { bulkUpdateMovementRequestSchema } from '../schemas/bulk-receipt.js'
 import { getOrganisationValidationError } from '../common/helpers/validate-organisation.js'
-import { metricsCounter } from '../common/helpers/metrics.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 
 const logger = createLogger()
@@ -110,7 +109,7 @@ function getOrgValidationResponse(h, payload, wasteInputsToUpdate) {
 }
 
 /**
- * Collects metrics and logs for the updated movements
+ * Collects logs for the updated movements
  *
  * @param {Object[]} movements - The updated movements
  * @param {Object[]} wasteInputsToUpdate - The existing waste inputs, positionally
@@ -118,13 +117,12 @@ function getOrgValidationResponse(h, payload, wasteInputsToUpdate) {
  *
  * @returns {void}
  */
-function collectMetricsAndLogs(movements, wasteInputsToUpdate) {
+function collectLogs(movements, wasteInputsToUpdate) {
   movements.forEach((_, index) => {
     const existing = wasteInputsToUpdate[index]
     const orgId =
       existing.submittingOrganisation?.defraCustomerOrganisationId ??
       existing.orgId
-    metricsCounter('receipts.received.bulk', 1, { endpointType: 'put' })
     // Specifying the org id in event.reference as it could be different for different
     // movements in a bulk upload and this should override the default org id set for
     // all log messages
@@ -226,7 +224,7 @@ const updateBulkReceiptMovement = {
         return noMovementsUpdatedResponse(h, payload)
       }
 
-      collectMetricsAndLogs(movements, wasteInputsToUpdate)
+      collectLogs(movements, wasteInputsToUpdate)
 
       return h
         .response({

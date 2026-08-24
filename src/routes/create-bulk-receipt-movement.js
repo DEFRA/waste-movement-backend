@@ -17,7 +17,6 @@ import {
 } from '../common/helpers/bulk-route-helpers.js'
 import { bulkReceiveMovementRequestSchema } from '../schemas/bulk-receipt.js'
 import Joi from 'joi'
-import { metricsCounter } from '../common/helpers/metrics.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 
 const logger = createLogger()
@@ -111,7 +110,7 @@ const createBulkReceiptMovement = {
         backoffOptions(logger)
       )
 
-      collectMetricsAndLogs(createdMovements)
+      collectLogs(createdMovements)
 
       const response = generateResponseWithValidationWarnings(
         payload,
@@ -152,7 +151,7 @@ function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
 }
 
 /**
- * Collects metrics and logs for the created movements
+ * Collects logs for the created movements
  *
  * @param {Object} createdMovements - The created movements
  * @param {String} createdMovements.status - The status of the created movements
@@ -160,13 +159,11 @@ function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
  *
  * @returns {void}
  */
-function collectMetricsAndLogs(createdMovements) {
+function collectLogs(createdMovements) {
   if (createdMovements.status === BULK_RESPONSE_STATUS.MOVEMENTS_CREATED) {
     createdMovements.wasteInputs.forEach((wasteInput) => {
       const orgId =
         wasteInput.submittingOrganisation.defraCustomerOrganisationId
-      metricsCounter('receipts.received.bulk', 1, { endpointType: 'post' })
-      metricsCounter('receiver.orgId.bulk', 1, { orgId })
       // Specifying the org id in event.reference as it could be different for different
       // movements in a bulk upload and this should override the default org id set for
       // all log messages

@@ -21,7 +21,6 @@ import {
   orgId3,
   apiCode3
 } from '../test/data/apiCodes.js'
-import * as metrics from '../common/helpers/metrics.js'
 import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
 import {
   requestBasicAuthTest1,
@@ -86,7 +85,6 @@ describe('movement Route Tests', () => {
       movement: createTestPayload()
     }
     const createWasteInputSpy = jest.spyOn(movementCreate, 'createWasteInput')
-    const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
     const infoLoggerSpy = jest.spyOn(logger.createLogger(), 'info')
 
     movementCreate.createWasteInput
@@ -126,10 +124,6 @@ describe('movement Route Tests', () => {
 
     expect(createWasteInputSpy).toHaveBeenCalledTimes(3)
 
-    expect(metricsCounterSpy).toHaveBeenCalledTimes(1)
-    expect(metricsCounterSpy).toHaveBeenCalledWith('receiver.orgId', 1, {
-      orgId: actualWasteInput.orgId
-    })
     expect(infoLoggerSpy).toHaveBeenCalledWith(
       `${METRIC_NAMES.RECEIPTS_RECEIVED} - post`
     )
@@ -141,7 +135,6 @@ describe('movement Route Tests', () => {
       movement: createTestPayload()
     }
     const createWasteInputSpy = jest.spyOn(movementCreate, 'createWasteInput')
-    const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
     const infoLoggerSpy = jest.spyOn(logger.createLogger(), 'info')
 
     movementCreate.createWasteInput.mockRejectedValue(new Error(errorMessage))
@@ -166,7 +159,6 @@ describe('movement Route Tests', () => {
 
     expect(createWasteInputSpy).toHaveBeenCalledTimes(3)
 
-    expect(metricsCounterSpy).not.toHaveBeenCalled()
     expect(infoLoggerSpy).not.toHaveBeenCalled()
   })
 

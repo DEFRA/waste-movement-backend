@@ -11,7 +11,6 @@ import {
 import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
 import { config } from '../config.js'
 import { backOff } from 'exponential-backoff'
-import { metricsCounter } from '../common/helpers/metrics.js'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 
@@ -82,7 +81,6 @@ const createReceiptMovement = [
           backoffOptions(logger)
         )
 
-        metricsCounter('receiver.orgId', 1, { orgId: requestOrgId })
         logger.info(`${METRIC_NAMES.RECEIPTS_RECEIVED} - post`)
 
         return h.response().code(HTTP_STATUS.NO_CONTENT)
