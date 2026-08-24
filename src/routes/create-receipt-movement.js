@@ -51,8 +51,6 @@ const createReceiptMovement = [
     },
     handler: async (request, h) => {
       try {
-        let requestOrgId
-
         const { wasteTrackingId } = request.params
         const { submittingOrganisation, apiCode, ...movementData } =
           request.payload.movement
@@ -68,11 +66,9 @@ const createReceiptMovement = [
               submittingOrganisation.defraCustomerOrganisationId
           }
           wasteInput.receipt = { movement: movementData }
-          requestOrgId = submittingOrganisation.defraCustomerOrganisationId
         } else {
           const orgApiCodes = config.get('orgApiCodes')
-          requestOrgId = getOrgIdForApiCode(apiCode, orgApiCodes)
-          wasteInput.orgId = requestOrgId
+          wasteInput.orgId = getOrgIdForApiCode(apiCode, orgApiCodes)
           wasteInput.receipt = { movement: { apiCode, ...movementData } }
         }
 
