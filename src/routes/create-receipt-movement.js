@@ -11,7 +11,6 @@ import {
 import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
 import { config } from '../config.js'
 import { backOff } from 'exponential-backoff'
-import { metricsCounter } from '../common/helpers/metrics.js'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 
@@ -52,8 +51,6 @@ const createReceiptMovement = [
     },
     handler: async (request, h) => {
       try {
-        let requestOrgId
-
         const { wasteTrackingId } = request.params
         const { submittingOrganisation, apiCode, ...movementData } =
           request.payload.movement
@@ -69,11 +66,9 @@ const createReceiptMovement = [
               submittingOrganisation.defraCustomerOrganisationId
           }
           wasteInput.receipt = { movement: movementData }
-          requestOrgId = submittingOrganisation.defraCustomerOrganisationId
         } else {
           const orgApiCodes = config.get('orgApiCodes')
-          requestOrgId = getOrgIdForApiCode(apiCode, orgApiCodes)
-          wasteInput.orgId = requestOrgId
+          wasteInput.orgId = getOrgIdForApiCode(apiCode, orgApiCodes)
           wasteInput.receipt = { movement: { apiCode, ...movementData } }
         }
 
@@ -82,7 +77,6 @@ const createReceiptMovement = [
           backoffOptions(logger)
         )
 
-        metricsCounter('receiver.orgId', 1, { orgId: requestOrgId })
         logger.info(`${METRIC_NAMES.RECEIPTS_RECEIVED} - post`)
 
         return h.response().code(HTTP_STATUS.NO_CONTENT)

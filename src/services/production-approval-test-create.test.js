@@ -5,7 +5,6 @@ import {
   buildProductionApprovalTestResultsSummary
 } from './production-approval-test-create.js'
 import { ObjectId } from 'mongodb'
-import * as metrics from '../common/helpers/metrics.js'
 import {
   METRIC_NAMES,
   productionApprovalTestScenarioIds,
@@ -44,7 +43,6 @@ describe('production-approval-test-create', () => {
     })
 
     it('should create a production approval test and return the inserted id', async () => {
-      const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
       const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
       const result = await createProductionApprovalTest(
@@ -89,58 +87,6 @@ describe('production-approval-test-create', () => {
         ]
       })
 
-      // The submission summary and count metrics, plus one per scenario
-      expect(metricsCounterSpy).toHaveBeenCalledTimes(
-        2 + productionApprovalTestScenarioIds.length
-      )
-
-      expect(metricsCounterSpy).toHaveBeenCalledWith(
-        'productionApprovalTest.create',
-        1,
-        {
-          clientId,
-          totalScenarios: 12,
-          totalScenariosSubmitted: 9,
-          totalScenariosPassed: 4,
-          totalScenariosFailed: 5,
-          statusB01: 'Fail',
-          statusC02: 'Pass',
-          statusH01: 'Fail',
-          statusH03: 'Pass',
-          statusP01: 'Pass',
-          statusR01: 'Not Submitted',
-          statusR02: 'Not Submitted',
-          statusR03: 'Not Submitted',
-          statusR04: 'Fail',
-          statusR05: 'Fail',
-          statusR07: 'Pass',
-          statusX01: 'Fail'
-        }
-      )
-
-      expect(metricsCounterSpy).toHaveBeenCalledWith('pat.submissions', 1, {
-        clientId
-      })
-
-      expect(metricsCounterSpy).toHaveBeenCalledWith('pat.scenario.result', 1, {
-        clientId,
-        scenario: 'C02',
-        result: PAT_STATUS.PASS
-      })
-
-      expect(metricsCounterSpy).toHaveBeenCalledWith('pat.scenario.result', 1, {
-        clientId,
-        scenario: 'B01',
-        result: PAT_STATUS.FAIL
-      })
-
-      // Scenarios absent from the submission are still reported
-      expect(metricsCounterSpy).toHaveBeenCalledWith('pat.scenario.result', 1, {
-        clientId,
-        scenario: 'R01',
-        result: PAT_STATUS.NOT_SUBMITTED
-      })
-
       expect(infoLoggerSpy).toHaveBeenCalledWith(
         `${METRIC_NAMES.PAT_SUBMISSION} - scenarios: 12 - submitted: 9 - passed: 4 - failed: 5`
       )
@@ -183,7 +129,7 @@ describe('production-approval-test-create', () => {
     })
 
     it('should throw an error if inserted id is undefined', async () => {
-      const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
+      const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
       const mockDb = {
         collection: () => ({
@@ -197,11 +143,11 @@ describe('production-approval-test-create', () => {
         'Failed to create production approval test: Inserted id is undefined'
       )
 
-      expect(metricsCounterSpy).not.toHaveBeenCalled()
+      expect(infoLoggerSpy).not.toHaveBeenCalled()
     })
 
     it('should handle database errors', async () => {
-      const metricsCounterSpy = jest.spyOn(metrics, 'metricsCounter')
+      const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
       const mockDb = {
         collection: jest.fn().mockImplementation(() => {
@@ -216,7 +162,7 @@ describe('production-approval-test-create', () => {
         `Failed to create production approval test: ${mockError.message}`
       )
 
-      expect(metricsCounterSpy).not.toHaveBeenCalled()
+      expect(infoLoggerSpy).not.toHaveBeenCalled()
     })
   })
 

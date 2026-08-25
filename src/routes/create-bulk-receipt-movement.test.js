@@ -9,7 +9,6 @@ import * as movementCreateBulk from '../services/movement-create-bulk.js'
 import { config } from '../config.js'
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 import * as batch from '../common/helpers/batch.js'
-import * as metricsCounter from '../common/helpers/metrics.js'
 import {
   requestBasicAuthTest1,
   userBasicAuthTest1
@@ -26,39 +25,6 @@ const assertOrgIdWasLogged = (loggerInfoSpy) => {
     [{ event: { reference: 'fd98d4ef34e33b34fc8fad03f8c385' } }, logMessage],
     [{ event: { reference: 'fd98d4ef34e33b34fc8fad03f8c385' } }, logMessage]
   ])
-}
-
-const assertMetricsCounterWasCalled = (metricsCounterSpy) => {
-  expect(metricsCounterSpy).toHaveBeenCalledTimes(4)
-  expect(metricsCounterSpy).toHaveBeenNthCalledWith(
-    1,
-    'receipts.received.bulk',
-    1,
-    { endpointType: 'post' }
-  )
-  expect(metricsCounterSpy).toHaveBeenNthCalledWith(
-    2,
-    'receiver.orgId.bulk',
-    1,
-    {
-      orgId: 'fd98d4ef34e33b34fc8fad03f8c385'
-    }
-  )
-  expect(metricsCounterSpy).toHaveBeenNthCalledWith(
-    3,
-    'receipts.received.bulk',
-    1,
-    { endpointType: 'post' }
-  )
-
-  expect(metricsCounterSpy).toHaveBeenNthCalledWith(
-    4,
-    'receiver.orgId.bulk',
-    1,
-    {
-      orgId: 'fd98d4ef34e33b34fc8fad03f8c385'
-    }
-  )
 }
 
 jest.mock('@defra/waste-movement-utils', () => {
@@ -164,7 +130,6 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       movementCreateBulk,
       'createBulkWasteInput'
     )
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
     const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     movementCreateBulk.createBulkWasteInput
@@ -220,7 +185,6 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
 
     expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(3)
 
-    assertMetricsCounterWasCalled(metricsCounterSpy)
     assertOrgIdWasLogged(loggerInfoSpy)
   })
 
@@ -231,7 +195,6 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       movementCreateBulk,
       'createBulkWasteInput'
     )
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
     const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     movementCreateBulk.createBulkWasteInput
@@ -299,12 +262,11 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
 
     expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(3)
 
-    assertMetricsCounterWasCalled(metricsCounterSpy)
     assertOrgIdWasLogged(loggerInfoSpy)
   })
 
   it('should return existing waste tracking ids when provided with a bulk id which has already been used by the POST endpoint in the waste-inputs collection', async () => {
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+    const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     await server.inject({
       method: 'POST',
@@ -335,13 +297,13 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       ]
     })
 
-    // Expect metricsCounter to be called twice as the endpoint is called twice above, metricsCounter
-    // should only called the first time
-    assertMetricsCounterWasCalled(metricsCounterSpy)
+    // Expect the org id to be logged twice as the endpoint is called twice above, the
+    // movements should only be logged the first time
+    assertOrgIdWasLogged(loggerInfoSpy)
   })
 
   it('should return existing waste tracking ids when provided with a bulk id which has already been used by the POST endpoint in the waste-inputs-history collection', async () => {
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+    const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     await server.inject({
       method: 'POST',
@@ -372,13 +334,12 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       ]
     })
 
-    // Expect metricsCounter to be called twice as the endpoint is called twice above, metricsCounter
-    // should only called the first time
-    assertMetricsCounterWasCalled(metricsCounterSpy)
+    // Expect the org id to be logged twice as the endpoint is called twice above, the
+    // movements should only be logged the first time
+    assertOrgIdWasLogged(loggerInfoSpy)
   })
 
   it('should create new waste inputs when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs collection', async () => {
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
     const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     await server.inject({
@@ -411,12 +372,10 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       ]
     })
 
-    assertMetricsCounterWasCalled(metricsCounterSpy)
     assertOrgIdWasLogged(loggerInfoSpy)
   })
 
   it('should create new waste inputs when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs-history collection', async () => {
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
     const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     await server.inject({
@@ -449,7 +408,6 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       ]
     })
 
-    assertMetricsCounterWasCalled(metricsCounterSpy)
     assertOrgIdWasLogged(loggerInfoSpy)
   })
 
@@ -491,7 +449,6 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       movementCreateBulk,
       'createBulkWasteInput'
     )
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
     const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     movementCreateBulk.createBulkWasteInput.mockRejectedValue(
@@ -516,7 +473,6 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(3)
-    expect(metricsCounterSpy).not.toHaveBeenCalled()
     expect(loggerInfoSpy).not.toHaveBeenCalled()
   })
 
@@ -527,7 +483,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       movementCreateBulk,
       'createBulkWasteInput'
     )
-    const metricsCounterSpy = jest.spyOn(metricsCounter, 'metricsCounter')
+    const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -548,7 +504,7 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     })
 
     expect(createBulkWasteInputSpy).toHaveBeenCalledTimes(0)
-    expect(metricsCounterSpy).not.toHaveBeenCalled()
+    expect(loggerInfoSpy).not.toHaveBeenCalled()
   })
 
   it('should return 401 when request is unauthenticated', async () => {

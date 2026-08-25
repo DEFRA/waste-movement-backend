@@ -3,7 +3,6 @@ import {
   productionApprovalTestScenarioIds
 } from '@defra/waste-movement-utils'
 import { createLogger } from '../common/helpers/logging/logger.js'
-import { metricsCounter } from '../common/helpers/metrics.js'
 import { ProductionApprovalTest } from '../domain/productionApprovalTest.js'
 import { PAT_STATUS } from './production-approval-tests/status.js'
 
@@ -27,39 +26,15 @@ export async function createProductionApprovalTest(db, clientId, results) {
       throw new Error('Inserted id is undefined')
     }
 
-    const metricsDimensions = {
-      clientId,
-      totalScenarios: resultsSummary.total,
-      totalScenariosSubmitted: resultsSummary.totalSubmitted,
-      totalScenariosPassed: resultsSummary.totalPassed,
-      totalScenariosFailed: resultsSummary.totalFailed
-    }
-
     logger.info(
       `${METRIC_NAMES.PAT_SUBMISSION} - scenarios: ${resultsSummary.total} - submitted: ${resultsSummary.totalSubmitted} - passed: ${resultsSummary.totalPassed} - failed: ${resultsSummary.totalFailed}`
     )
 
     Object.values(resultsSummary.results).forEach((result) => {
-      metricsDimensions[`status${result.scenarioId}`] = result.status
       logger.info(
         `${METRIC_NAMES.PAT_SCENARIO_RESULT} - ${result.scenarioId} - ${result.status}`
       )
     })
-
-    // CloudWatch only returns a metric when queried with its full dimension
-    // set, so the dashboard metrics are emitted separately at low cardinality.
-    // Dashboards aggregate across clientId via SEARCH() wildcards.
-    await Promise.all([
-      metricsCounter('productionApprovalTest.create', 1, metricsDimensions),
-      metricsCounter('pat.submissions', 1, { clientId }),
-      ...Object.values(resultsSummary.results).map((result) =>
-        metricsCounter('pat.scenario.result', 1, {
-          clientId,
-          scenario: result.scenarioId,
-          result: result.status
-        })
-      )
-    ])
 
     return { submissionId: insertedId }
   } catch (error) {

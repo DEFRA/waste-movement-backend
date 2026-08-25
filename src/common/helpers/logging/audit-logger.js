@@ -1,7 +1,6 @@
 import { audit } from '@defra/cdp-auditing'
 import { createLogger } from './logger.js'
 import { AUDIT_LOGGER_TYPE, METRIC_NAMES } from '@defra/waste-movement-utils'
-import { metricsCounter } from '../metrics.js'
 import { config } from '../../../config.js'
 
 const logger = createLogger()
@@ -87,7 +86,6 @@ export function auditLogger({
       logErrorMessage
     )
 
-    metricsCounter('audit.errors.failed', 1, { auditLogType: type, traceId })
     logger.info(`${METRIC_NAMES.AUDIT_ERRORS_FAILED} - ${type}`)
 
     if (shouldThrowError) {
