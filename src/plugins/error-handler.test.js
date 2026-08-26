@@ -320,6 +320,72 @@ describe('Error Handler', () => {
     })
   })
 
+  describe('Malformed JSON payload', () => {
+    const malformedJsonEndpoints = [
+      [
+        'single create movement',
+        'POST',
+        `/movements/${wasteTrackingId}/receive`
+      ],
+      [
+        'single update movement',
+        'PUT',
+        `/movements/${wasteTrackingId}/receive`
+      ],
+      ['retry audit log', 'POST', '/movements/retry-audit-log'],
+      ['bulk create movements', 'POST', '/bulk/bulk-id/movements/receive'],
+      ['bulk update movements', 'PUT', '/bulk/bulk-id/movements/receive'],
+      ['production approval tests', 'POST', '/production-approval-tests']
+    ]
+
+    test.each(malformedJsonEndpoints)(
+      'should return 400 for structurally malformed JSON on the %s endpoint',
+      async (_name, method, url) => {
+        const response = await server.inject({
+          method,
+          url,
+          payload: '{"receiver" "value"}',
+          headers: {
+            'content-type': 'application/json',
+            authorization:
+              'Basic d2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpOjRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+          }
+        })
+
+        expect(response.statusCode).toBe(400)
+        expect(response.result).toEqual({
+          validation: {
+            errors: [
+              {
+                key: 'payload',
+                errorType: 'InvalidFormat',
+                message: 'Invalid request payload JSON format'
+              }
+            ]
+          }
+        })
+      }
+    )
+
+    test('should return 400 for an invalid JSON escape sequence', async () => {
+      const response = await server.inject({
+        method: 'POST',
+        url: `/movements/${wasteTrackingId}/receive`,
+        payload: '{"receiver":{"authorisationNumber":"po9099ci\\D12345"}}',
+        headers: {
+          'content-type': 'application/json',
+          authorization:
+            'Basic d2FzdGUtbW92ZW1lbnQtZXh0ZXJuYWwtYXBpOjRkNWQ0OGNiLTQ1NmEtNDcwYS04ODE0LWVhZTI3NThiZTkwZA=='
+        }
+      })
+
+      expect(response.statusCode).toBe(400)
+      expect(response.result.validation.errors[0].errorType).toBe(
+        'InvalidFormat'
+      )
+    })
+  })
+
   describe('Granular Error Categories', () => {
     test('should return InvalidType for wrong data type (string where number expected)', async () => {
       const basePayload = createBulkMovementRequest()

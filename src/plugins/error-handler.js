@@ -3,6 +3,19 @@ import {
   validationErrorFormatter
 } from '@defra/waste-movement-utils'
 
+// Payload parse failures (e.g. malformed JSON) are Boom 400s with no Joi `details`
+const formatPayloadParseError = (response) => ({
+  validation: {
+    errors: [
+      {
+        key: 'payload',
+        errorType: 'InvalidFormat',
+        message: response.output.payload.message
+      }
+    ]
+  }
+})
+
 export const errorHandler = {
   plugin: {
     name: 'errorHandler',
@@ -20,7 +33,9 @@ export const errorHandler = {
           response.isBoom &&
           response.output?.statusCode === HTTP_STATUS.BAD_REQUEST
         ) {
-          let customError = validationErrorFormatter(response, logger)
+          let customError = Array.isArray(response.details)
+            ? validationErrorFormatter(response, logger)
+            : formatPayloadParseError(response)
 
           // Re-format per-item errors for bulk upload endpoints
           const hasPerItemErrors = customError.validation.errors.some((error) =>
