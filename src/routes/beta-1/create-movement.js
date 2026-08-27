@@ -9,7 +9,8 @@ import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
 import { createMovementSchema } from '../../schemas/beta-1.js'
 
-const logger = createLogger()
+const apiVersion = 'beta-1'
+const logger = createLogger({ apiVersion })
 
 const createMovement = {
   method: 'POST',
