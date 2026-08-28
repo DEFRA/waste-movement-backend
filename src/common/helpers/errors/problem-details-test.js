@@ -6,6 +6,7 @@ import {
   toProblemDetailsResponse,
   failAction
 } from './problem-details.js'
+import { HTTP_STATUS } from '@defra/waste-movement-utils'
 
 const createMockRes = () => {
   return {
@@ -26,56 +27,70 @@ const createMockRes = () => {
   }
 }
 
+const insufficientFundsType = 'https://example.com/probs/insufficient-funds'
+const insufficientFundsTitle = 'Insufficient Funds'
+const insufficientFundsDetail = 'Your balance is 30, but the cost is 50.'
+const cost = 50
+const balance = 30
+const orderInstance = '/orders/999'
+const error = 'Something broke'
+const basicError = 'Basic error'
+const noOrderFound = 'No order exists with that id.'
+const lowBalance = 'Your balance is too low.'
+
 describe('ProblemDetails', () => {
   it('sets standard fields from the constructor', () => {
     const problem = new ProblemDetails({
-      type: 'https://example.com/probs/insufficient-funds',
-      title: 'Insufficient Funds',
-      status: 403,
-      detail: 'Your balance is 30, but the cost is 50.',
+      type: insufficientFundsType,
+      title: insufficientFundsTitle,
+      status: HTTP_STATUS.FORBIDDEN,
+      detail: insufficientFundsDetail,
       instance: '/accounts/123/transactions/abc'
     })
 
-    expect(problem.type).toBe('https://example.com/probs/insufficient-funds')
-    expect(problem.title).toBe('Insufficient Funds')
-    expect(problem.status).toBe(403)
-    expect(problem.detail).toBe('Your balance is 30, but the cost is 50.')
+    expect(problem.type).toBe(insufficientFundsType)
+    expect(problem.title).toBe(insufficientFundsTitle)
+    expect(problem.status).toBe(HTTP_STATUS.FORBIDDEN)
+    expect(problem.detail).toBe(insufficientFundsDetail)
     expect(problem.instance).toBe('/accounts/123/transactions/abc')
   })
 
   it('defaults type to "about:blank" when not provided', () => {
-    const problem = new ProblemDetails({ title: 'Oops', status: 500 })
+    const problem = new ProblemDetails({
+      title: 'Oops',
+      status: HTTP_STATUS.INTERNAL_SERVER_ERROR
+    })
     expect(problem.type).toBe('about:blank')
   })
 
   it('stores unknown fields as extensions', () => {
     const problem = new ProblemDetails({
-      title: 'Insufficient Funds',
-      status: 403,
-      balance: 30,
-      cost: 50
+      title: insufficientFundsTitle,
+      status: HTTP_STATUS.FORBIDEN,
+      balance,
+      cost
     })
 
-    expect(problem.extensions).toEqual({ balance: 30, cost: 50 })
+    expect(problem.extensions).toEqual({ balance, cost })
   })
 
   describe('toJSON()', () => {
     it('includes extensions and omits empty optional fields', () => {
       const problem = new ProblemDetails({
-        title: 'Insufficient Funds',
-        status: 403,
-        balance: 30,
-        cost: 50
+        title: insufficientFundsTitle,
+        status: HTTP_STATUS.FORBIDEN,
+        balance,
+        cost
       })
 
       const json = problem.toJSON()
 
       expect(json).toEqual({
         type: 'about:blank',
-        title: 'Insufficient Funds',
-        status: 403,
-        balance: 30,
-        cost: 50
+        title: insufficientFundsTitle,
+        status: HTTP_STATUS.FORBIDEN,
+        balance,
+        cost
       })
       expect(json.detail).toBeUndefined()
       expect(json.instance).toBeUndefined()
@@ -84,17 +99,17 @@ describe('ProblemDetails', () => {
     it('includes detail and instance when present', () => {
       const problem = new ProblemDetails({
         title: 'Not Found',
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         detail: 'No order with that id.',
-        instance: '/orders/999'
+        instance: orderInstance
       })
 
       expect(problem.toJSON()).toEqual({
         type: 'about:blank',
         title: 'Not Found',
-        status: 404,
+        status: HTTP_STATUS.NOT_FOUND,
         detail: 'No order with that id.',
-        instance: '/orders/999'
+        instance: orderInstance
       })
     })
   })
@@ -105,7 +120,7 @@ describe('toProblemDetails', () => {
     const problem = new ProblemDetails({
       type: 'https://example.com/probs/validation-error',
       title: 'Validation Failed',
-      status: 400,
+      status: HTTP_STATUS.BAD_REQUEST,
       detail: 'Bad input.'
     })
 
@@ -115,34 +130,34 @@ describe('toProblemDetails', () => {
   })
 
   it('converts a plain Error using defaults', () => {
-    const err = new Error('Something broke')
+    const err = new Error(error)
 
     const result = toProblemDetails(err)
 
     expect(result).toEqual({
       type: 'about:blank',
       title: 'Error', // err.name defaults to "Error"
-      status: 500,
-      detail: 'Something broke'
+      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      detail: error
     })
   })
 
   it('uses a custom error name as the title', () => {
-    const err = new Error('No order exists with that id.')
+    const err = new Error(noOrderFound)
     err.name = 'NotFoundError'
 
-    const result = toProblemDetails(err, { status: 404 })
+    const result = toProblemDetails(err, { status: HTTP_STATUS.NOT_FOUND })
 
     expect(result.title).toBe('NotFoundError')
-    expect(result.status).toBe(404)
-    expect(result.detail).toBe('No order exists with that id.')
+    expect(result.status).toBe(HTTP_STATUS.NOT_FOUND)
+    expect(result.detail).toBe(noOrderFound)
   })
 
   it('includes instance when provided', () => {
-    const err = new Error('Rate limited')
+    const err = new Error('Not Found')
 
     const result = toProblemDetails(err, {
-      status: 429,
+      status: HTTP_STATUS.NOT_FOUND,
       instance: '/api/heavy-task'
     })
 
@@ -166,18 +181,20 @@ describe('toProblemDetailsResponse', () => {
   })
 
   it('sets the response status code from the problem', () => {
-    const err = new Error('No order exists with that id.')
+    const err = new Error(noOrderFound)
     err.name = 'NotFoundError'
 
-    toProblemDetailsResponse(res, err, { status: 404 })
+    toProblemDetailsResponse(res, err, { status: HTTP_STATUS.NOT_FOUND })
 
-    expect(res.statusCode).toBe(404)
+    expect(res.statusCode).toBe(HTTP_STATUS.NOT_FOUND)
   })
 
   it('sets Content-Type to application/problem+json', () => {
-    const err = new Error('Something broke')
+    const err = new Error(error)
 
-    toProblemDetailsResponse(res, err, { status: 500 })
+    toProblemDetailsResponse(res, err, {
+      status: HTTP_STATUS.INTERNAL_SERVER_ERROR
+    })
 
     expect(res.headers['Content-Type']).toBe('application/problem+json')
   })
@@ -187,107 +204,107 @@ describe('toProblemDetailsResponse', () => {
     err.name = 'RateLimitError'
 
     toProblemDetailsResponse(res, err, {
-      status: 429,
+      status: HTTP_STATUS.BAD_REQUEST,
       instance: '/api/heavy-task',
       headers: { 'Retry-After': '30' }
     })
 
     expect(res.headers['Retry-After']).toBe('30')
-    expect(res.statusCode).toBe(429)
+    expect(res.statusCode).toBe(HTTP_STATUS.BAD_REQUEST)
   })
 
   it('returns the problem details payload without calling res.json itself', () => {
-    const err = new Error('No order exists with that id.')
+    const err = new Error(noOrderFound)
     err.name = 'NotFoundError'
 
     const problem = toProblemDetailsResponse(res, err, {
-      status: 404,
-      instance: '/orders/999'
+      status: HTTP_STATUS.BAD_REQUEST,
+      instance: orderInstance
     })
 
     expect(problem).toEqual({
       type: 'about:blank',
       title: 'NotFoundError',
-      status: 404,
-      detail: 'No order exists with that id.',
-      instance: '/orders/999'
+      status: HTTP_STATUS.BAD_REQUEST,
+      detail: noOrderFound,
+      instance: orderInstance
     })
     expect(res.json).not.toHaveBeenCalled()
   })
 
   it('passes through a pre-built ProblemDetails error correctly', () => {
     const problemErr = new ProblemDetails({
-      type: 'https://example.com/probs/insufficient-funds',
-      title: 'Insufficient Funds',
-      status: 403,
-      detail: 'Your balance is 30, but the cost is 50.',
-      balance: 30,
-      cost: 50
+      type: insufficientFundsType,
+      title: insufficientFundsTitle,
+      status: HTTP_STATUS.BAD_REQUEST,
+      detail: insufficientFundsDetail,
+      balance,
+      cost
     })
 
     const result = toProblemDetailsResponse(res, problemErr)
 
-    expect(res.statusCode).toBe(403)
+    expect(res.statusCode).toBe(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      type: 'https://example.com/probs/insufficient-funds',
-      title: 'Insufficient Funds',
-      status: 403,
-      detail: 'Your balance is 30, but the cost is 50.',
-      balance: 30,
-      cost: 50
+      type: insufficientFundsType,
+      title: insufficientFundsTitle,
+      status: HTTP_STATUS.BAD_REQUEST,
+      detail: insufficientFundsDetail,
+      balance,
+      cost
     })
   })
 
   it('does not set headers beyond Content-Type when none are passed', () => {
-    const err = new Error('Basic error')
+    const err = new Error(basicError)
 
-    toProblemDetailsResponse(res, err, { status: 400 })
+    toProblemDetailsResponse(res, err, { status: HTTP_STATUS.BAD_REQUEST })
 
     expect(Object.keys(res.headers)).toEqual(['Content-Type'])
   })
 })
 describe('toProblemDetails', () => {
   it('merges extensions into a plain error result', () => {
-    const err = new Error('Your balance is too low.')
+    const err = new Error(lowBalance)
     err.name = 'InsufficientFundsError'
 
     const result = toProblemDetails(err, {
-      status: 403,
+      status: HTTP_STATUS.FORBIDDEN,
       instance: '/accounts/123/transactions/abc',
-      extensions: { balance: 30, cost: 50 }
+      extensions: { balance, cost }
     })
 
     expect(result).toEqual({
       type: 'about:blank',
       title: 'InsufficientFundsError',
-      status: 403,
-      detail: 'Your balance is too low.',
+      status: HTTP_STATUS.FORBIDDEN,
+      detail: lowBalance,
       instance: '/accounts/123/transactions/abc',
-      balance: 30,
-      cost: 50
+      balance,
+      cost
     })
   })
 
   it('omits extensions key entirely when not provided (plain error)', () => {
-    const err = new Error('Basic error')
+    const err = new Error(basicError)
 
-    const result = toProblemDetails(err, { status: 400 })
+    const result = toProblemDetails(err, { status: HTTP_STATUS.BAD_REQUEST })
 
     expect(result).toEqual({
       type: 'about:blank',
       title: 'Error',
-      status: 400,
+      status: HTTP_STATUS.BAD_REQUEST,
       detail: 'Basic error'
     })
   })
 
   it('merges call-time extensions on top of a ProblemDetails instance', () => {
     const problem = new ProblemDetails({
-      title: 'Insufficient Funds',
-      status: 403,
-      detail: 'Your balance is 30, but the cost is 50.',
-      balance: 30,
-      cost: 50
+      title: insufficientFundsTitle,
+      status: HTTP_STATUS.FORBIDDEN,
+      detail: insufficientFundsDetail,
+      balance,
+      cost
     })
 
     // caller adds a field not present on the original instance
@@ -297,37 +314,37 @@ describe('toProblemDetails', () => {
 
     expect(result).toEqual({
       type: 'about:blank',
-      title: 'Insufficient Funds',
-      status: 403,
-      detail: 'Your balance is 30, but the cost is 50.',
-      balance: 30,
-      cost: 50,
+      title: insufficientFundsTitle,
+      status: HTTP_STATUS.FORBIDDEN,
+      detail: insufficientFundsDetail,
+      balance,
+      cost,
       retryable: false
     })
   })
 
   it('lets call-time extensions override matching fields (last write wins)', () => {
     const problem = new ProblemDetails({
-      title: 'Insufficient Funds',
-      status: 403,
-      balance: 30
+      title: insufficientFundsTitle,
+      status: HTTP_STATUS.FORBIDDEN,
+      balance
     })
 
     const result = toProblemDetails(problem, {
-      extensions: { balance: 999 } // overrides the instance's own value
+      extensions: { balance } // overrides the instance's own value
     })
 
-    expect(result.balance).toBe(999)
+    expect(result.balance).toBe(balance)
   })
 
   it('does not mutate the original ProblemDetails instance when merging extensions', () => {
     const problem = new ProblemDetails({
-      title: 'Insufficient Funds',
-      status: 403,
-      balance: 30
+      title: insufficientFundsTitle,
+      status: HTTP_STATUS.FORBIDDEN,
+      balance
     })
 
-    toProblemDetails(problem, { extensions: { balance: 999 } })
+    toProblemDetails(problem, { extensions: { balance } })
 
     // original instance's extensions object should be untouched
     expect(problem.extensions.balance).toBe(30)
@@ -337,36 +354,36 @@ describe('toProblemDetails', () => {
 describe('toProblemDetailsResponse', () => {
   const res = createMockRes()
   it('passes extensions through to the returned payload', () => {
-    const err = new Error('Your balance is too low.')
+    const err = new Error(lowBalance)
     err.name = 'InsufficientFundsError'
 
     const problem = toProblemDetailsResponse(res, err, {
-      status: 403,
+      status: HTTP_STATUS.FORBIDDEN,
       instance: '/accounts/123/transactions/abc',
-      extensions: { balance: 30, cost: 50 }
+      extensions: { balance, cost }
     })
 
     expect(problem).toEqual({
       type: 'about:blank',
       title: 'InsufficientFundsError',
-      status: 403,
-      detail: 'Your balance is too low.',
+      status: HTTP_STATUS.FORBIDDEN,
+      detail: lowBalance,
       instance: '/accounts/123/transactions/abc',
-      balance: 30,
-      cost: 50
+      balance,
+      cost
     })
     // extensions shouldn't leak into headers or status handling
-    expect(res.statusCode).toBe(403)
+    expect(res.statusCode).toBe(HTTP_STATUS.FORBIDDEN)
     expect(res.headers['Content-Type']).toBe('application/problem+json')
   })
 
   it('works with extensions and a ProblemDetails instance together', () => {
     const problemErr = new ProblemDetails({
-      type: 'https://example.com/probs/insufficient-funds',
-      title: 'Insufficient Funds',
-      status: 403,
-      balance: 30,
-      cost: 50
+      type: insufficientFundsType,
+      title: insufficientFundsTitle,
+      status: HTTP_STATUS.FORBIDDEN,
+      balance,
+      cost
     })
 
     const result = toProblemDetailsResponse(res, problemErr, {
@@ -374,11 +391,11 @@ describe('toProblemDetailsResponse', () => {
     })
 
     expect(result).toEqual({
-      type: 'https://example.com/probs/insufficient-funds',
-      title: 'Insufficient Funds',
-      status: 403,
-      balance: 30,
-      cost: 50,
+      type: insufficientFundsType,
+      title: insufficientFundsTitle,
+      status: HTTP_STATUS.FORBIDDEN,
+      balance,
+      cost,
       retryable: false
     })
   })
@@ -417,7 +434,7 @@ describe('failAction', () => {
       payload: { email: 'not-an-email', age: -1 }
     })
 
-    expect(res.statusCode).toBe(400)
+    expect(res.statusCode).toBe(HTTP_STATUS.BAD_REQUEST)
   })
 
   it('sets content-type to application/problem+json', async () => {
@@ -441,7 +458,7 @@ describe('failAction', () => {
     expect(body).toMatchObject({
       type: 'https://example.com/errors/validation-error',
       title: expect.any(String),
-      status: 400,
+      status: HTTP_STATUS.BAD_REQUEST,
       instance: '/users'
     })
   })
@@ -484,7 +501,7 @@ describe('failAction', () => {
       payload: { email: 'user@example.com', age: 30 }
     })
 
-    expect(res.statusCode).toBe(200)
+    expect(res.statusCode).toBe(HTTP_STATUS.OK)
     expect(JSON.parse(res.payload)).toEqual({ ok: true })
   })
 })
