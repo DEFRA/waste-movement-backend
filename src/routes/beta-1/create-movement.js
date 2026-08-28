@@ -3,11 +3,14 @@ import { createMovementRecord } from '../../services/movement-create-v2.js'
 import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { backOff } from 'exponential-backoff'
 import { httpClients } from '../../common/helpers/http-client.js'
-import { handleRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
 import { createMovementSchema } from '../../schemas/beta-1.js'
+import {
+  toProblemDetailsResponse,
+  failAction
+} from '../../common/helpers/errors/problem-details.js'
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
@@ -19,7 +22,8 @@ const createMovement = {
     tags: ['movements'],
     description: 'Create a new waste movement',
     validate: {
-      payload: createMovementSchema
+      payload: createMovementSchema,
+      failAction
     },
     plugins: {
       'hapi-swagger': {
@@ -88,7 +92,9 @@ const createMovement = {
         .header('x-request-id', traceId)
         .message('Successfully created a waste movement')
     } catch (error) {
-      return handleRouteError(h, error)
+      return toProblemDetailsResponse(h, error, {
+        instance: `/${apiVersion}/movements`
+      })
     }
   }
 }

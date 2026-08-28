@@ -87,7 +87,7 @@ describe('movement Route Tests version: beta-1', () => {
       .spyOn(movementCreate, 'createMovementRecord')
       .mockRejectedValue(new Error(errorMessage))
 
-    const { statusCode, result } = await server.inject({
+    const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url: `/${endpointVersion}/movements`,
       payload: goodPayload,
@@ -99,10 +99,13 @@ describe('movement Route Tests version: beta-1', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      error: 'Error',
-      message: errorMessage
+      type: 'about:blank',
+      title: 'Error',
+      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      detail: 'Database connection failed',
+      instance: '/beta-1/movements'
     })
+    expect(headers['content-type']).toEqual('application/problem+json')
 
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(
       backoffOptionsConfig.numOfAttempts
@@ -127,13 +130,21 @@ describe('movement Route Tests version: beta-1', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(result.validation.errors).toEqual([
-      {
-        errorType: 'NotProvided',
-        key: 'apiCode',
-        message: '"apiCode" is required'
-      }
-    ])
+
+    expect(result).toEqual({
+      type: 'https://example.com/errors/validation-error',
+      title: "Your request parameters didn't validate",
+      status: HTTP_STATUS.BAD_REQUEST,
+      detail: 'Validation failed for 1 field(s)',
+      instance: '/beta-1/movements',
+      'invalid-params': [
+        {
+          name: 'apiCode',
+          reason: 'apiCode is required'
+        }
+      ]
+    })
+
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
@@ -146,7 +157,7 @@ describe('movement Route Tests version: beta-1', () => {
       'createMovementRecord'
     )
 
-    const { statusCode } = await server.inject({
+    const { statusCode, result } = await server.inject({
       method: 'POST',
       url: `/${endpointVersion}/movements`,
       payload: invalidPayload,
@@ -156,7 +167,41 @@ describe('movement Route Tests version: beta-1', () => {
       }
     })
 
+    expect(result).toEqual({
+      type: 'about:blank',
+      title: 'ValidationError',
+      status: HTTP_STATUS.BAD_REQUEST,
+      detail: 'the API Code supplied is invalid',
+      instance: '/beta-1/movements'
+    })
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
+  })
+
+  it('should return 401 when request is unauthenticated', async () => {
+    const invalidPayload = {
+      apiCode: apiCode3
+    }
+    const createMovementRecordSpy = jest.spyOn(
+      movementCreate,
+      'createMovementRecord'
+    )
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements`,
+      payload: invalidPayload,
+      headers: {
+        'x-cdp-request-id': traceId
+      }
+    })
+
+    expect(result).toEqual({
+      error: 'Unauthorized',
+      message: 'Missing authentication',
+      statusCode: HTTP_STATUS.UNAUTHORIZED
+    })
+    expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
