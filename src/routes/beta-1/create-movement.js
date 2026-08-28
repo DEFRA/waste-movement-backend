@@ -28,20 +28,26 @@ const createMovement = {
           [HTTP_STATUS.CREATED]: {
             description: 'Successfully created waste movement',
             schema: Joi.object({
-              movementId: Joi.string()
-                .required()
-                .description(
-                  'Unique identifier for a waste movement, minted by the server on `POST /movements`'
-                )
-                .example('25HRA0B2')
+              data: Joi.object({
+                movementId: Joi.string()
+                  .required()
+                  .description(
+                    'Unique identifier for a waste movement, minted by the server on `POST /movements`'
+                  )
+                  .example('25HRA0B2')
+              }).required(),
+              validation: Joi.object({ warnings: Joi.array() }).required()
             })
           },
           [HTTP_STATUS.BAD_REQUEST]: {
             description: 'Bad Request',
             schema: Joi.object({
-              statusCode: Joi.number().valid(HTTP_STATUS.BAD_REQUEST),
-              error: Joi.string(),
-              message: Joi.string()
+              type: Joi.string().required(),
+              title: Joi.string().required(),
+              detail: Joi.string().required(),
+              instance: Joi.string().required(),
+              requestId: Joi.string().required(),
+              errors: Joi.array().required()
             }).label('BadRequestResponse')
           }
         }
@@ -49,13 +55,14 @@ const createMovement = {
     }
   },
   handler: async (request, h) => {
-    const movement = request.payload
-    getOrgIdForApiCode(movement.apiCode, config.get('orgApiCodes')) //validate apiCode
-    const wasteTrackingResponse = await httpClients.wasteTracking.get('/next')
-    const movementId = wasteTrackingResponse.payload.wasteTrackingId
-    movement.movementId = movementId
-
     try {
+      const traceId = request.getTraceId()
+      const movement = request.payload
+      getOrgIdForApiCode(movement.apiCode, config.get('orgApiCodes')) //validate apiCode
+      const wasteTrackingResponse = await httpClients.wasteTracking.get('/next')
+      const movementId = wasteTrackingResponse.payload.wasteTrackingId
+      movement.movementId = movementId
+
       await backOff(
         () =>
           createMovementRecord(
@@ -65,16 +72,20 @@ const createMovement = {
           ),
         backoffOptions(createLogger)
       )
-      const response = { movementId }
+      const responseBody = {
+        data: { movementId },
+        validation: { warnings: [] }
+      }
 
       logger.info(
-        `Successfully created waste movement with id ${response.movementId}`,
-        response
+        `Successfully created waste movement with id ${movementId}`,
+        responseBody
       )
 
       return h
-        .response(response)
+        .response(responseBody)
         .code(HTTP_STATUS.CREATED)
+        .header('x-request-id', traceId)
         .message('Successfully created a waste movement')
     } catch (error) {
       return handleRouteError(h, error)

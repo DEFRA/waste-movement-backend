@@ -63,17 +63,22 @@ describe('movement Route Tests version: beta-1', () => {
       .spyOn(movementCreate, 'createMovementRecord')
       .mockResolvedValue(goodPayload)
 
-    const { statusCode, result } = await server.inject({
+    const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url: `/${endpointVersion}/movements`,
       payload: goodPayload,
       headers: {
+        'x-cdp-request-id': traceId,
         Authorization: `Basic ${requestBasicAuthTest1}`
       }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
-    expect(result).toHaveProperty('movementId')
+    expect(result).toEqual({
+      data: { movementId: expect.any(String) },
+      validation: { warnings: [] }
+    })
+    expect(headers['x-request-id']).toEqual(traceId) //expect.any(String))
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
   })
 
@@ -151,30 +156,7 @@ describe('movement Route Tests version: beta-1', () => {
       }
     })
 
-    expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-    expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
-  })
-
-  it('should return 401 when request is unauthenticated', async () => {
-    const invalidPayload = {
-      apiCode: apiCode3
-    }
-    const createMovementRecordSpy = jest.spyOn(
-      movementCreate,
-      'createMovementRecord'
-    )
-
-    const { statusCode } = await server.inject({
-      method: 'POST',
-      url: `/${endpointVersion}/movements`,
-      payload: invalidPayload,
-      headers: {
-        'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`
-      }
-    })
-
-    expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
