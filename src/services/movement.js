@@ -20,3 +20,10 @@ export const createMovementRecord = async (db, movement) => {
     throw error
   }
 }
+
+export const getMovementRecord = async (db, movementId) => {
+  const movementsCollection = db.collection(movementsCollectionId)
+  const movementRecord = await movementsCollection.findOne({ id: movementId })
+
+  return movementRecord
+}
