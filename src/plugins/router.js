@@ -1,4 +1,5 @@
 import { health } from '../routes/health.js'
+import { createMovement as createMovementBeta1 } from '../routes/beta-1/create-movement.js'
 import { createReceiptMovement } from '../routes/create-receipt-movement.js'
 import { updateReceiptMovement } from '../routes/update-receipt-movement.js'
 import { retryAuditLogReceiptMovement } from '../routes/retry-audit-log-receipt-movement.js'
@@ -14,7 +15,6 @@ const router = {
   plugin: {
     name: 'router',
     register: async (server, _options) => {
-      // Register all routes
       const routes = [
         health,
         ...createReceiptMovement,
@@ -34,8 +34,32 @@ const router = {
         routes.push(...extTestRoutes)
       }
 
-      // Register routes directly
       server.route(routes)
+
+      const versionedRouteGroups = [
+        {
+          prefix: '/beta-1',
+          routes: [createMovementBeta1]
+        }
+      ]
+
+      await Promise.all(
+        versionedRouteGroups.map(({ prefix, routes: groupRoutes }) =>
+          server.register(
+            {
+              plugin: {
+                name: `router-${prefix.replace('/', '')}`,
+                register: (srv) => {
+                  srv.route(groupRoutes)
+                }
+              }
+            },
+            {
+              routes: { prefix }
+            }
+          )
+        )
+      )
     }
   }
 }

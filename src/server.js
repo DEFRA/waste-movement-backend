@@ -45,14 +45,16 @@ async function createServer() {
           'authorization',
           'content-type',
           'x-requested-with',
-          'x-api-key'
+          'x-api-key',
+          'x-request-id'
         ],
         additionalExposedHeaders: [
           'accept',
           'authorization',
           'content-type',
           'x-requested-with',
-          'x-api-key'
+          'x-api-key',
+          'x-request-id'
         ],
         credentials: true
       }
