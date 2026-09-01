@@ -46,7 +46,7 @@ describe('collection Route Tests version: beta-1', () => {
   it('creates a collection when a valid apiCode and movementId are provided', async () => {
     const getMovementRecordSpy = jest
       .spyOn(movementService, 'getMovementRecord')
-      .mockResolvedValue(goodPayload)
+      .mockResolvedValue({ id: goodMovementId })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -59,6 +59,29 @@ describe('collection Route Tests version: beta-1', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({})
+    expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('handles when given movementId is not in the system', async () => {
+    const getMovementRecordSpy = jest
+      .spyOn(movementService, 'getMovementRecord')
+      .mockResolvedValue(null)
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements/${goodMovementId}/collection`,
+      payload: goodPayload,
+      headers: {
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.NOT_FOUND)
+    expect(result).toEqual({
+      error: 'Not Found',
+      message: 'movementId not found',
+      statusCode: HTTP_STATUS.NOT_FOUND
+    })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
   })
 

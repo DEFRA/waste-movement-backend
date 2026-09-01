@@ -6,7 +6,7 @@ import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
 import { createCollectionSchema } from '../../schemas/beta-1.js'
-import { Boom } from '@hapi/boom'
+import { notFound } from '@hapi/boom'
 
 const logger = createLogger()
 
@@ -47,7 +47,9 @@ const createCollection = {
       getOrgIdForApiCode(payload.apiCode, config.get('orgApiCodes')) //validate apiCode
       const movementRecord = await getMovementRecord(request.db, { movementId })
 
-      if (!movementRecord) throw Boom.notFound('movementId not found')
+      if (!movementRecord) {
+        return notFound('movementId not found')
+      }
 
       const response = {}
 
