@@ -18,7 +18,7 @@ import {
 import { bulkReceiveMovementRequestSchema } from '../schemas/bulk-receipt.js'
 import Joi from 'joi'
 import { createLogger } from '../common/helpers/logging/logger.js'
-import { requireLock } from '../common/helpers/mongo-lock.js'
+import { acquireLock } from '../common/helpers/mongo-lock.js'
 
 const logger = createLogger()
 
@@ -47,25 +47,8 @@ const createBulkReceiptMovement = {
     }
   },
   handler: async (request, h) => {
-    const { bulkId } = request.params
-
     try {
-      // Requests sharing a bulkId must be serialised. Without this, two
-      // concurrent requests both read "no movements yet", both allocate their
-      // own waste tracking ids and both insert, producing two distinct sets of
-      // movements for one bulkId. `lock` is non-blocking and returns null when
-      // the lock is held, so `requireLock` throws and backOff retries until the
-      // in-flight request releases it.
-      const lock = await backOff(
-        () => requireLock(request.locker, bulkLockKey(bulkId)),
-        backoffOptions(logger)
-      )
-
-      try {
-        return await createMovementsForBulkId(request, h)
-      } finally {
-        await lock.free()
-      }
+      return await createOrReturnExistingMovements(request, h)
     } catch (error) {
       return handleRouteError(h, error)
     }
@@ -73,6 +56,83 @@ const createBulkReceiptMovement = {
 }
 
 const bulkLockKey = (bulkId) => `bulk-receipt-movement-create-${bulkId}`
+
+const LOCK_CONTENTION_ATTEMPTS = 8
+const LOCK_CONTENTION_DELAY_MS = 100
+const MAX_LOCK_CONTENTION_DELAY_MS = 800
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * Returns the movements already stored against the bulk id, otherwise creates
+ * them while holding the bulk id lock.
+ *
+ * Requests sharing a bulkId must not create concurrently: without the lock both
+ * read "no movements yet", both allocate their own waste tracking ids and both
+ * insert, leaving two distinct sets of movements for one bulkId.
+ *
+ * `lock` is non-blocking and yields null while another request holds it, so a
+ * request that loses the race waits and re-reads rather than queueing on the
+ * lock. By then the winner has committed and the read returns its movements.
+ * Only lock contention is retried here — errors raised while creating are left
+ * to propagate, since createBulkWasteInput already applies its own backoff.
+ *
+ * @param {Object} request - The request
+ * @param {Object} h - The response toolkit
+ *
+ * @returns {Promise<Object>} The response
+ */
+async function createOrReturnExistingMovements(request, h) {
+  const { bulkId } = request.params
+
+  for (let attempt = 0; attempt < LOCK_CONTENTION_ATTEMPTS; attempt++) {
+    const existingWasteInputs = await findExistingWasteInputs(request, bulkId)
+
+    if (existingWasteInputs.length > 0) {
+      return existingMovementsResponse(h, existingWasteInputs)
+    }
+
+    const lock = await acquireLock(request.locker, bulkLockKey(bulkId))
+
+    if (lock) {
+      try {
+        return await createMovementsForBulkId(request, h)
+      } finally {
+        await lock.free()
+      }
+    }
+
+    await wait(
+      Math.min(
+        LOCK_CONTENTION_DELAY_MS * 2 ** attempt,
+        MAX_LOCK_CONTENTION_DELAY_MS
+      )
+    )
+  }
+
+  throw new Error(
+    `Timed out waiting for the bulk upload in progress for bulkId (${bulkId})`
+  )
+}
+
+/**
+ * Builds the response for a bulk id whose movements already exist.
+ *
+ * @param {Object} h - The response toolkit
+ * @param {Array} existingWasteInputs - The existing waste inputs
+ *
+ * @returns {Object} The response
+ */
+function existingMovementsResponse(h, existingWasteInputs) {
+  return h
+    .response({
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
+      movements: existingWasteInputs.map((wasteInput) => ({
+        wasteTrackingId: wasteInput.wasteTrackingId
+      }))
+    })
+    .code(HTTP_STATUS.OK)
+}
 
 /**
  * Finds the movements already stored against a bulk id, checking the history
@@ -144,17 +204,12 @@ async function createMovementsForBulkId(request, h) {
     payload
   } = request
 
+  // Re-checked under the lock: a competing request may have committed between
+  // the caller's read and this request acquiring the lock.
   const existingWasteInputs = await findExistingWasteInputs(request, bulkId)
 
   if (existingWasteInputs.length > 0) {
-    return h
-      .response({
-        status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
-        movements: existingWasteInputs.map((wasteInput) => ({
-          wasteTrackingId: wasteInput.wasteTrackingId
-        }))
-      })
-      .code(HTTP_STATUS.OK)
+    return existingMovementsResponse(h, existingWasteInputs)
   }
 
   const wasteTrackingIds = await allocateWasteTrackingIds(payload, bulkId)
