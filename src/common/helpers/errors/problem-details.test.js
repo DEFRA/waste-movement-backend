@@ -116,7 +116,7 @@ describe('toProblemDetails', () => {
 
     expect(result).toEqual({
       type: 'about:blank',
-      title: 'Error', // err.name defaults to "Error"
+      title: 'Error',
       status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       detail: error
     })
@@ -262,144 +262,6 @@ describe('toProblemDetailsResponse', () => {
   })
 })
 
-// describe('toProblemDetails', () => {
-//   it('merges extensions into a plain error result', () => {
-//     const err = new Error(lowBalance)
-//     err.name = 'InsufficientFundsError'
-
-//     const result = toProblemDetails(err, {
-//       status: HTTP_STATUS.FORBIDDEN,
-//       instance: '/accounts/123/transactions/abc',
-//       extensions: { balance, cost }
-//     })
-
-//     expect(result).toEqual({
-//       type: 'about:blank',
-//       title: 'InsufficientFundsError',
-//       status: HTTP_STATUS.FORBIDDEN,
-//       detail: lowBalance,
-//       instance: '/accounts/123/transactions/abc',
-//       balance,
-//       cost
-//     })
-//   })
-
-//   it('omits extensions key entirely when not provided (plain error)', () => {
-//     const err = new Error(basicError)
-
-//     const result = toProblemDetails(err, { status: HTTP_STATUS.BAD_REQUEST })
-
-//     expect(result).toEqual({
-//       type: 'about:blank',
-//       title: 'Error',
-//       status: HTTP_STATUS.BAD_REQUEST,
-//       detail: 'Basic error'
-//     })
-//   })
-
-//   it('merges call-time extensions on top of a ProblemDetails instance', () => {
-//     const problem = new ProblemDetails({
-//       title: insufficientFundsTitle,
-//       status: HTTP_STATUS.FORBIDDEN,
-//       detail: insufficientFundsDetail,
-//       balance,
-//       cost
-//     })
-
-//     // caller adds a field not present on the original instance
-//     const result = toProblemDetails(problem, {
-//       extensions: { retryable: false }
-//     })
-
-//     expect(result).toEqual({
-//       type: 'about:blank',
-//       title: insufficientFundsTitle,
-//       status: HTTP_STATUS.FORBIDDEN,
-//       detail: insufficientFundsDetail,
-//       balance,
-//       cost,
-//       retryable: false
-//     })
-//   })
-
-//   it('lets call-time extensions override matching fields (last write wins)', () => {
-//     const problem = new ProblemDetails({
-//       title: insufficientFundsTitle,
-//       status: HTTP_STATUS.FORBIDDEN,
-//       balance
-//     })
-
-//     const result = toProblemDetails(problem, {
-//       extensions: { balance } // overrides the instance's own value
-//     })
-
-//     expect(result.balance).toBe(balance)
-//   })
-
-//   it('does not mutate the original ProblemDetails instance when merging extensions', () => {
-//     const problem = new ProblemDetails({
-//       title: insufficientFundsTitle,
-//       status: HTTP_STATUS.FORBIDDEN,
-//       balance
-//     })
-
-//     toProblemDetails(problem, { extensions: { balance } })
-
-//     // original instance's extensions object should be untouched
-//     expect(problem.extensions.balance).toBe(30)
-//   })
-// })
-
-// describe('toProblemDetailsResponse', () => {
-//   const res = createMockRes()
-//   it('passes extensions through to the returned payload', () => {
-//     const err = new Error(lowBalance)
-//     err.name = 'InsufficientFundsError'
-
-//     const problem = toProblemDetailsResponse(res, err, {
-//       status: HTTP_STATUS.FORBIDDEN,
-//       instance: '/accounts/123/transactions/abc',
-//       extensions: { balance, cost }
-//     })
-
-//     expect(problem).toEqual({
-//       type: 'about:blank',
-//       title: 'InsufficientFundsError',
-//       status: HTTP_STATUS.FORBIDDEN,
-//       detail: lowBalance,
-//       instance: '/accounts/123/transactions/abc',
-//       balance,
-//       cost
-//     })
-//     // extensions shouldn't leak into headers or status handling
-//     expect(res.statusCode).toBe(HTTP_STATUS.FORBIDDEN)
-//     expect(res.headers['Content-Type']).toBe('application/problem+json')
-//   })
-
-//   it('works with extensions and a ProblemDetails instance together', () => {
-//     const problemErr = new ProblemDetails({
-//       type: insufficientFundsType,
-//       title: insufficientFundsTitle,
-//       status: HTTP_STATUS.FORBIDDEN,
-//       balance,
-//       cost
-//     })
-
-//     const result = toProblemDetailsResponse(res, problemErr, {
-//       extensions: { retryable: false }
-//     })
-
-//     expect(result).toEqual({
-//       type: insufficientFundsType,
-//       title: insufficientFundsTitle,
-//       status: HTTP_STATUS.FORBIDDEN,
-//       balance,
-//       cost,
-//       retryable: false
-//     })
-//   })
-// })
-
 describe('failAction', () => {
   let server
 
@@ -466,12 +328,10 @@ describe('failAction', () => {
     const res = await server.inject({
       method: 'POST',
       url: '/users',
-      payload: {} // both email and age missing
+      payload: {}
     })
     const body = JSON.parse(res.payload)
 
-    // Note: Joi defaults to abortEarly, so only the first missing field
-    // shows up unless the schema sets { abortEarly: false }.
     expect(Array.isArray(body['invalid-params'])).toBe(true)
     expect(body['invalid-params'].length).toBeGreaterThan(0)
     expect(body['invalid-params'][0]).toHaveProperty('name')
@@ -486,8 +346,6 @@ describe('failAction', () => {
     })
     const body = JSON.parse(res.payload)
 
-    // Default hapi/Boom validation error shape has statusCode/error/message,
-    // not our RFC 9457 shape — if takeover() were missing/broken, this would fail.
     expect(body).not.toHaveProperty('statusCode')
     expect(body).not.toHaveProperty('error')
     expect(body).toHaveProperty('type')
