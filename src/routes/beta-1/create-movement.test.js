@@ -99,13 +99,11 @@ describe('movement Route Tests version: beta-1', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      type: 'about:blank',
-      title: 'Error',
-      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      detail: 'Database connection failed',
-      instance: '/beta-1/movements'
+      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      error: 'Error',
+      message: errorMessage
     })
-    expect(headers['content-type']).toEqual('application/problem+json')
+    expect(headers['content-type']).toContain('application/json')
 
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(
       backoffOptionsConfig.numOfAttempts
@@ -132,17 +130,15 @@ describe('movement Route Tests version: beta-1', () => {
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
 
     expect(result).toEqual({
-      type: 'https://example.com/errors/validation-error',
-      title: "Your request parameters didn't validate",
-      status: HTTP_STATUS.BAD_REQUEST,
-      detail: 'Validation failed for 1 field(s)',
-      instance: '/beta-1/movements',
-      'invalid-params': [
-        {
-          name: 'apiCode',
-          reason: 'apiCode is required'
-        }
-      ]
+      validation: {
+        errors: [
+          {
+            key: 'apiCode',
+            errorType: 'NotProvided',
+            message: '"apiCode" is required'
+          }
+        ]
+      }
     })
 
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
@@ -168,11 +164,15 @@ describe('movement Route Tests version: beta-1', () => {
     })
 
     expect(result).toEqual({
-      type: 'about:blank',
-      title: 'ValidationError',
-      status: HTTP_STATUS.BAD_REQUEST,
-      detail: 'the API Code supplied is invalid',
-      instance: '/beta-1/movements'
+      validation: {
+        errors: [
+          {
+            key: 'apiCode',
+            errorType: 'InvalidValue',
+            message: 'the API Code supplied is invalid'
+          }
+        ]
+      }
     })
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)

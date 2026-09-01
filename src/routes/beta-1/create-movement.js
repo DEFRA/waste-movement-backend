@@ -8,9 +8,9 @@ import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
 import { createMovementSchema } from '../../schemas/beta-1.js'
 import {
-  toProblemDetailsResponse,
-  failAction
-} from '../../common/helpers/errors/problem-details.js'
+  badRequestResponse,
+  handleRouteError
+} from '../../common/helpers/bulk-route-helpers.js'
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
@@ -22,8 +22,7 @@ const createMovement = {
     tags: ['movements'],
     description: 'Create a new waste movement',
     validate: {
-      payload: createMovementSchema,
-      failAction
+      payload: createMovementSchema
     },
     plugins: {
       'hapi-swagger': {
@@ -43,17 +42,7 @@ const createMovement = {
               validation: Joi.object({ warnings: Joi.array() }).required()
             })
           },
-          [HTTP_STATUS.BAD_REQUEST]: {
-            description: 'Bad Request',
-            schema: Joi.object({
-              type: Joi.string().required(),
-              title: Joi.string().required(),
-              detail: Joi.string().required(),
-              instance: Joi.string().required(),
-              requestId: Joi.string().required(),
-              errors: Joi.array().required()
-            }).label('BadRequestResponse')
-          }
+          ...badRequestResponse
         }
       }
     }
@@ -92,9 +81,7 @@ const createMovement = {
         .header('x-request-id', traceId)
         .message('Successfully created a waste movement')
     } catch (error) {
-      return toProblemDetailsResponse(h, error, {
-        instance: `/${apiVersion}/movements`
-      })
+      return handleRouteError(h, error)
     }
   }
 }
