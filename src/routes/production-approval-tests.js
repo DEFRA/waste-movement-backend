@@ -22,6 +22,7 @@ const productionApprovalTests = {
   handler: async (request, h) => {
     try {
       const { db, payload, headers } = request
+      const clientId = headers['x-dwt-client-id']
       const payloadWasteTrackingIds = payload.map(
         ({ wasteTrackingId }) => wasteTrackingId
       )
@@ -36,6 +37,18 @@ const productionApprovalTests = {
             new Map()
           )
         )
+
+      const doesEveryWasteTrackingIdMatchClientId = wasteInputs
+        .values()
+        .every((wasteInput) => wasteInput.clientId === clientId)
+
+      if (!doesEveryWasteTrackingIdMatchClientId) {
+        throw new ValidationError(
+          'wasteTrackingId',
+          'One or more waste tracking ids are not valid for the client id',
+          'InvalidValue'
+        )
+      }
 
       const nonExistentWasteTrackingIds = findNonExistentWasteTrackingIds(
         payloadWasteTrackingIds,
@@ -58,7 +71,7 @@ const productionApprovalTests = {
       const testResults = runProductionApprovalTests(productionApprovalTestData)
       const { submissionId } = await createProductionApprovalTest(
         db,
-        headers['x-dwt-client-id'],
+        clientId,
         testResults
       )
 
