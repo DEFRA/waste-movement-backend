@@ -277,6 +277,33 @@ describe('Production Approval Tests Route Tests', () => {
     })
   })
 
+  it('returns a 400 error when attempting to run production approval tests for a waste tracking id with a different client id', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: '/production-approval-tests',
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        'x-dwt-client-id': 'a-different-client-id',
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result).toEqual({
+      validation: {
+        errors: [
+          {
+            key: 'wasteTrackingId',
+            errorType: 'InvalidValue',
+            message:
+              'One or more waste tracking ids are not valid for the client id'
+          }
+        ]
+      }
+    })
+  })
+
   it('returns a 500 error when an error is thrown', async () => {
     const errorMessage = 'Internal Server Error'
 
