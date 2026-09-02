@@ -10,9 +10,9 @@ import { config } from '../../config.js'
 import { recordDeliverySchema } from '../../schemas/beta-1.js'
 import {
   createDeliveryId,
-  createDeliveryRecord,
-  findMovementIds
-} from '../../services/delivery-create.js'
+  createDeliveryRecord
+} from '../../services/delivery.js'
+import { findMovementIds } from '../../services/movement.js'
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })

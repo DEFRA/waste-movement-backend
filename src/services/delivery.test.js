@@ -1,8 +1,4 @@
-import {
-  createDeliveryId,
-  createDeliveryRecord,
-  findMovementIds
-} from './delivery-create.js'
+import { createDeliveryId, createDeliveryRecord } from './delivery.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { httpClients } from '../common/helpers/http-client.js'
 
@@ -14,10 +10,9 @@ jest.mock('../common/helpers/http-client.js', () => ({
   }
 }))
 
-describe('delivery-create', () => {
+describe('delivery', () => {
   let client
   let db
-  let movementsCollection
   let deliveriesCollection
 
   beforeAll(async () => {
@@ -44,9 +39,7 @@ describe('delivery-create', () => {
   })
 
   beforeEach(async () => {
-    movementsCollection = db.collection('movements')
     deliveriesCollection = db.collection('deliveries')
-    await movementsCollection.deleteMany({})
     await deliveriesCollection.deleteMany({})
     httpClients.wasteTracking.get.mockReset()
   })
@@ -61,37 +54,6 @@ describe('delivery-create', () => {
 
       expect(result).toBe('25KMT4Z9')
       expect(httpClients.wasteTracking.get).toHaveBeenCalledWith('/next')
-    })
-  })
-
-  describe('findMovementIds', () => {
-    it('returns all movementIds that exist', async () => {
-      await movementsCollection.insertMany([
-        { movementId: '25HRA0B1' },
-        { movementId: '25HRA0B2' }
-      ])
-
-      const result = await findMovementIds(db, ['25HRA0B1', '25HRA0B2'])
-
-      expect(result).toEqual(['25HRA0B1', '25HRA0B2'])
-    })
-
-    it('omits movementIds that do not exist', async () => {
-      await movementsCollection.insertOne({ movementId: '25HRA0B1' })
-
-      const result = await findMovementIds(db, [
-        '25HRA0B1',
-        '25HRA0B2',
-        '25HRA0B3'
-      ])
-
-      expect(result).toEqual(['25HRA0B1'])
-    })
-
-    it('returns an empty array when none exist', async () => {
-      const result = await findMovementIds(db, ['25HRA0B1'])
-
-      expect(result).toEqual([])
     })
   })
 

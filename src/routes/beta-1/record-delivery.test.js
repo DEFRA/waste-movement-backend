@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import * as deliveryCreate from '../../services/delivery-create.js'
+import * as delivery from '../../services/delivery.js'
 import { config } from '../../config.js'
 import {
   apiCode1,
@@ -181,7 +181,7 @@ describe('POST /beta-1/deliveries', () => {
       .insertOne({ movementId: movementId1 })
 
     jest
-      .spyOn(deliveryCreate, 'createDeliveryRecord')
+      .spyOn(delivery, 'createDeliveryRecord')
       .mockRejectedValue(new Error('Database connection failed'))
 
     const { statusCode, result } = await server.inject({
