@@ -18,6 +18,7 @@ import {
 import { bulkReceiveMovementRequestSchema } from '../schemas/bulk-receipt.js'
 import Joi from 'joi'
 import { createLogger } from '../common/helpers/logging/logger.js'
+import { acquireLock } from '../common/helpers/mongo-lock.js'
 
 const logger = createLogger()
 
@@ -47,88 +48,197 @@ const createBulkReceiptMovement = {
   },
   handler: async (request, h) => {
     try {
-      const {
-        params: { bulkId },
-        payload
-      } = request
-      const wasteInputsCollection = request.db.collection('waste-inputs')
-      const wasteInputsHistoryCollection = request.db.collection(
-        'waste-inputs-history'
-      )
-
-      const filters = { bulkId, revision: 1 }
-      const existingWasteInputs = await wasteInputsCollection
-        .find(filters)
-        .toArray()
-        .then((result) =>
-          result.length > 0
-            ? result
-            : wasteInputsHistoryCollection.find(filters).toArray()
-        )
-
-      if (existingWasteInputs.length > 0) {
-        return h
-          .response({
-            status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
-            movements: existingWasteInputs.map((wasteInput) => ({
-              wasteTrackingId: wasteInput.wasteTrackingId
-            }))
-          })
-          .code(HTTP_STATUS.OK)
-      }
-
-      const batchSize = config.get('services.wasteTrackingBatchSize')
-      const wasteTrackingIds = []
-      const payloadBatches = getBatches(batchSize, payload)
-
-      for (const payloadBatch of payloadBatches) {
-        const batchWasteTrackingIds = await Promise.all(
-          payloadBatch.map(() => httpClients.wasteTracking.get('/next'))
-        ).then((results) => {
-          return results.map((result) => result?.payload?.wasteTrackingId)
-        })
-
-        wasteTrackingIds.push(...batchWasteTrackingIds)
-      }
-
-      if (wasteTrackingIds.length !== payload.length) {
-        throw new Error(
-          `Created wasteTrackingId count (${wasteTrackingIds.length}) doesn't match the request payload count (${payload.length}) for bulkId (${bulkId})`
-        )
-      }
-
-      const wasteInputs = createWasteInputs(
-        payload,
-        wasteTrackingIds,
-        request.getTraceId(),
-        bulkId
-      )
-
-      const createdMovements = await backOff(
-        () =>
-          createBulkWasteInput(request.db, request.mongoClient, wasteInputs),
-        backoffOptions(logger)
-      )
-
-      collectLogs(createdMovements)
-
-      const response = generateResponseWithValidationWarnings(
-        payload,
-        createdMovements.wasteInputs.map(
-          ({ wasteTrackingId }) => wasteTrackingId
-        )
-      )
-
-      return h
-        .response({
-          status: createdMovements.status,
-          movements: response
-        })
-        .code(HTTP_STATUS.CREATED)
+      return await createOrReturnExistingMovements(request, h)
     } catch (error) {
       return handleRouteError(h, error)
     }
   }
+}
+
+const bulkLockKey = (bulkId) => `bulk-receipt-movement-create-${bulkId}`
+
+const LOCK_CONTENTION_ATTEMPTS = 8
+const LOCK_CONTENTION_DELAY_MS = 100
+const MAX_LOCK_CONTENTION_DELAY_MS = 800
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * Returns the movements already stored against the bulk id, otherwise creates
+ * them while holding the bulk id lock.
+ *
+ * Requests sharing a bulkId must not create concurrently: without the lock both
+ * read "no movements yet", both allocate their own waste tracking ids and both
+ * insert, leaving two distinct sets of movements for one bulkId.
+ *
+ * `lock` is non-blocking and yields null while another request holds it, so a
+ * request that loses the race waits and re-reads rather than queueing on the
+ * lock. By then the winner has committed and the read returns its movements.
+ * Only lock contention is retried here — errors raised while creating are left
+ * to propagate, since createBulkWasteInput already applies its own backoff.
+ *
+ * @param {Object} request - The request
+ * @param {Object} h - The response toolkit
+ *
+ * @returns {Promise<Object>} The response
+ */
+async function createOrReturnExistingMovements(request, h) {
+  const { bulkId } = request.params
+
+  for (let attempt = 0; attempt < LOCK_CONTENTION_ATTEMPTS; attempt++) {
+    const existingWasteInputs = await findExistingWasteInputs(request, bulkId)
+
+    if (existingWasteInputs.length > 0) {
+      return existingMovementsResponse(h, existingWasteInputs)
+    }
+
+    const lock = await acquireLock(request.locker, bulkLockKey(bulkId))
+
+    if (lock) {
+      try {
+        return await createMovementsForBulkId(request, h)
+      } finally {
+        await lock.free()
+      }
+    }
+
+    await wait(
+      Math.min(
+        LOCK_CONTENTION_DELAY_MS * 2 ** attempt,
+        MAX_LOCK_CONTENTION_DELAY_MS
+      )
+    )
+  }
+
+  throw new Error(
+    `Timed out waiting for the bulk upload in progress for bulkId (${bulkId})`
+  )
+}
+
+/**
+ * Builds the response for a bulk id whose movements already exist.
+ *
+ * @param {Object} h - The response toolkit
+ * @param {Array} existingWasteInputs - The existing waste inputs
+ *
+ * @returns {Object} The response
+ */
+function existingMovementsResponse(h, existingWasteInputs) {
+  return h
+    .response({
+      status: BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
+      movements: existingWasteInputs.map((wasteInput) => ({
+        wasteTrackingId: wasteInput.wasteTrackingId
+      }))
+    })
+    .code(HTTP_STATUS.OK)
+}
+
+/**
+ * Finds the movements already stored against a bulk id, checking the history
+ * collection when the current collection holds none.
+ *
+ * @param {Object} request - The request
+ * @param {String} bulkId - The bulk id
+ *
+ * @returns {Promise<Array>} The existing waste inputs
+ */
+function findExistingWasteInputs(request, bulkId) {
+  const filters = { bulkId, revision: 1 }
+
+  return request.db
+    .collection('waste-inputs')
+    .find(filters)
+    .toArray()
+    .then((result) =>
+      result.length > 0
+        ? result
+        : request.db.collection('waste-inputs-history').find(filters).toArray()
+    )
+}
+
+/**
+ * Claims a waste tracking id for every movement in the payload, in batches.
+ *
+ * @param {Array} payload - The request payload
+ * @param {String} bulkId - The bulk id
+ *
+ * @returns {Promise<Array>} The waste tracking ids
+ */
+async function allocateWasteTrackingIds(payload, bulkId) {
+  const batchSize = config.get('services.wasteTrackingBatchSize')
+  const wasteTrackingIds = []
+  const payloadBatches = getBatches(batchSize, payload)
+
+  for (const payloadBatch of payloadBatches) {
+    const batchWasteTrackingIds = await Promise.all(
+      payloadBatch.map(() => httpClients.wasteTracking.get('/next'))
+    ).then((results) => {
+      return results.map((result) => result?.payload?.wasteTrackingId)
+    })
+
+    wasteTrackingIds.push(...batchWasteTrackingIds)
+  }
+
+  if (wasteTrackingIds.length !== payload.length) {
+    throw new Error(
+      `Created wasteTrackingId count (${wasteTrackingIds.length}) doesn't match the request payload count (${payload.length}) for bulkId (${bulkId})`
+    )
+  }
+
+  return wasteTrackingIds
+}
+
+/**
+ * Creates the movements for a bulk id, or returns the movements already stored
+ * against it. Callers must hold the bulk id lock.
+ *
+ * @param {Object} request - The request
+ * @param {Object} h - The response toolkit
+ *
+ * @returns {Promise<Object>} The response
+ */
+async function createMovementsForBulkId(request, h) {
+  const {
+    params: { bulkId },
+    payload
+  } = request
+
+  // Re-checked under the lock: a competing request may have committed between
+  // the caller's read and this request acquiring the lock.
+  const existingWasteInputs = await findExistingWasteInputs(request, bulkId)
+
+  if (existingWasteInputs.length > 0) {
+    return existingMovementsResponse(h, existingWasteInputs)
+  }
+
+  const wasteTrackingIds = await allocateWasteTrackingIds(payload, bulkId)
+
+  const wasteInputs = createWasteInputs(
+    payload,
+    wasteTrackingIds,
+    request.getTraceId(),
+    bulkId
+  )
+
+  const createdMovements = await backOff(
+    () => createBulkWasteInput(request.db, request.mongoClient, wasteInputs),
+    backoffOptions(logger)
+  )
+
+  collectLogs(createdMovements)
+
+  const response = generateResponseWithValidationWarnings(
+    payload,
+    createdMovements.wasteInputs.map(({ wasteTrackingId }) => wasteTrackingId)
+  )
+
+  return h
+    .response({
+      status: createdMovements.status,
+      movements: response
+    })
+    .code(HTTP_STATUS.CREATED)
 }
 
 function createWasteInputs(payload, wasteTrackingIds, traceId, bulkId) {
