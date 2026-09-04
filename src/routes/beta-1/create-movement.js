@@ -1,5 +1,5 @@
 import Joi from 'joi'
-import { createMovementRecord } from '../../services/movement-create-v2.js'
+import { createMovementRecord } from '../../services/movement.js'
 import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { backOff } from 'exponential-backoff'
 import { httpClients } from '../../common/helpers/http-client.js'
