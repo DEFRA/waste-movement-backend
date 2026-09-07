@@ -51,7 +51,10 @@ const createCollection = {
         return notFound('movementId not found')
       }
 
-      const response = {}
+      const response = {
+        data: null,
+        validation: { warnings: [] }
+      }
 
       logger.info(
         'Successfully created waste movement collection',

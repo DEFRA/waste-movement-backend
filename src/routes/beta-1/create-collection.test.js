@@ -58,7 +58,10 @@ describe('collection Route Tests version: beta-1', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
-    expect(result).toEqual({})
+    expect(result).toEqual({
+      data: null,
+      validation: { warnings: [] }
+    })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
   })
 
