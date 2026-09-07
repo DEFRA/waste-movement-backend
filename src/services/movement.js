@@ -4,6 +4,13 @@ import { createLogger } from '../common/helpers/logging/logger.js'
 const logger = createLogger()
 const movementsCollectionId = 'movements'
 
+export const getMovementRecord = async (db, movementId) => {
+  const movementsCollection = db.collection(movementsCollectionId)
+  const movementRecord = await movementsCollection.findOne({ movementId })
+
+  return movementRecord
+}
+
 /**
  * Looks up the given movement IDs in the `movements` collection and returns
  * the subset that exist.

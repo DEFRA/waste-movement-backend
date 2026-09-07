@@ -1,7 +1,11 @@
-import { createMovementRecord, findMovementIds } from './movement.js'
+import {
+  createMovementRecord,
+  findMovementIds,
+  getMovementRecord
+} from './movement.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 
-describe('movement', () => {
+describe('movement service', () => {
   let client
   let db
   let movementsCollection
@@ -10,15 +14,104 @@ describe('movement', () => {
     const testMongo = await createTestMongoDb()
     client = testMongo.client
     db = testMongo.db
+
+    jest.useFakeTimers({
+      doNotFake: [
+        'nextTick',
+        'setImmediate',
+        'setTimeout',
+        'clearTimeout',
+        'setInterval',
+        'clearInterval'
+      ]
+    })
   })
 
   afterAll(async () => {
     await client.close()
+    jest.clearAllTimers()
+    jest.useRealTimers()
   })
 
   beforeEach(async () => {
     movementsCollection = db.collection('movements')
     await movementsCollection.deleteMany({})
+  })
+
+  describe('getMovementRecord', () => {
+    let client
+    let db
+    let movementsCollection
+
+    beforeAll(async () => {
+      const testMongo = await createTestMongoDb()
+      client = testMongo.client
+      db = testMongo.db
+
+      jest.useFakeTimers({
+        doNotFake: [
+          'nextTick',
+          'setImmediate',
+          'setTimeout',
+          'clearTimeout',
+          'setInterval',
+          'clearInterval'
+        ]
+      })
+    })
+
+    afterAll(async () => {
+      await client.close()
+      jest.clearAllTimers()
+      jest.useRealTimers()
+    })
+
+    beforeEach(async () => {
+      movementsCollection = db.collection('movements')
+      await movementsCollection.deleteMany({})
+    })
+
+    it('should get a movement with the given movementId ', async () => {
+      const id = 'ourGeneratedId'
+      const now = new Date().toISOString()
+      const mockMovement = { movementId: id }
+
+      const result = await createMovementRecord(db, mockMovement)
+
+      const recordInDb = await getMovementRecord(db, id)
+
+      expect(result).toEqual({ movementId: id })
+
+      expect(recordInDb).toEqual({
+        _id: expect.any(Object),
+        createdAt: now,
+        movementId: id
+      })
+    })
+
+    it('should return null when a movmentId is not found', async () => {
+      const id = 'nonExistentId'
+      const recordInDb = await getMovementRecord(db, id)
+
+      expect(recordInDb).toBeNull()
+    })
+
+    it('should handle database errors ', async () => {
+      const id = 'ourGeneratedId'
+      const mockMovementId = id
+      const mockError = new Error('Database error')
+
+      await expect(
+        getMovementRecord(
+          {
+            collection: jest.fn().mockImplementation(() => {
+              throw mockError
+            })
+          },
+          mockMovementId
+        )
+      ).rejects.toThrow(mockError.message)
+    })
   })
 
   describe('findMovementIds', () => {

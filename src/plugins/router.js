@@ -1,5 +1,6 @@
 import { health } from '../routes/health.js'
 import { createMovement as createMovementBeta1 } from '../routes/beta-1/create-movement.js'
+import { createCollection as createCollectionBeta1 } from '../routes/beta-1/create-collection.js'
 import { recordDelivery as recordDeliveryBeta1 } from '../routes/beta-1/record-delivery.js'
 import { createReceiptMovement } from '../routes/create-receipt-movement.js'
 import { updateReceiptMovement } from '../routes/update-receipt-movement.js'
@@ -40,7 +41,11 @@ const router = {
       const versionedRouteGroups = [
         {
           prefix: '/beta-1',
-          routes: [createMovementBeta1, recordDeliveryBeta1]
+          routes: [
+            createMovementBeta1,
+            createCollectionBeta1,
+            recordDeliveryBeta1
+          ]
         }
       ]
 
