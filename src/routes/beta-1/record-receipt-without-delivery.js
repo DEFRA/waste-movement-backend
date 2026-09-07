@@ -18,7 +18,7 @@ const logger = createLogger({ apiVersion })
 
 const recordReceiptWithoutDelivery = {
   method: 'POST',
-  path: '/deliveries/receipt',
+  path: '/receipts',
   options: {
     tags: ['movements', 'deliveries', 'receipts'],
     description: 'Record receipt of waste without a Delivery ID',

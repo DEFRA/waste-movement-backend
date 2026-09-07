@@ -40,9 +40,9 @@ jest.mock('../../common/helpers/http-client.js', () => ({
   }
 }))
 
-describe('POST /beta-1/deliveries/receipt', () => {
+describe('POST /beta-1/receipts', () => {
   let server
-  const url = '/beta-1/deliveries/receipt'
+  const url = '/beta-1/receipts'
   const authHeaders = { Authorization: `Basic ${requestBasicAuthTest1}` }
 
   beforeAll(async () => {
