@@ -34,29 +34,32 @@ describe('createMovementRecord', () => {
     await movementsCollection.deleteMany({})
   })
 
-  it('should create an appropriate movement in the db and return just the id', async () => {
-    const id = 'ourGeneratedId'
+  it('should create a movement in the db and return the movementId', async () => {
+    const movementId = '25HRA0B2'
     const now = new Date().toISOString()
-    const mockMovement = { id }
+    const mockMovement = {
+      movementId,
+      orgId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
+    }
 
     const result = await createMovementRecord(db, mockMovement)
 
     const recordInDb = await movementsCollection.findOne({
-      id
+      movementId
     })
 
-    expect(result).toEqual({ id })
+    expect(result).toEqual({ movementId })
 
     expect(recordInDb).toEqual({
       _id: expect.any(Object),
       createdAt: now,
-      id
+      ...mockMovement
     })
   })
 
   it('should handle database errors ', async () => {
-    const id = 'ourGeneratedId'
-    const mockMovement = { id }
+    const movementId = '25HRA0B2'
+    const mockMovement = { movementId }
     const mockError = new Error('Database error')
 
     await expect(

@@ -21,7 +21,7 @@ export async function createDeliveryId() {
  * @param {{ deliveryId: string, movementIds: string[], orgId: string }} delivery
  * @returns {Promise<{ deliveryId: string }>}
  */
-export async function createDeliveryRecord(db, delivery) {
+export const createDeliveryRecord = async (db, delivery) => {
   try {
     const extendedDelivery = {
       ...delivery,

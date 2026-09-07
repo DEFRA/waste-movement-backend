@@ -60,6 +60,7 @@ const recordDelivery = {
     const { apiCode, movementIds } = request.payload
 
     try {
+      const traceId = request.getTraceId()
       const orgId = getOrgIdForApiCode(apiCode, config.get('orgApiCodes'))
 
       const foundMovementIds = await findMovementIds(request.db, movementIds)
@@ -94,8 +95,9 @@ const recordDelivery = {
 
       return h
         .response({ data: { deliveryId }, validation: { warnings: [] } })
-        .header('x-request-id', getTraceId() || randomUUID())
         .code(HTTP_STATUS.CREATED)
+        .header('x-request-id', traceId)
+        .message('Successfully recorded a delivery')
     } catch (error) {
       return handleRouteError(h, error)
     }

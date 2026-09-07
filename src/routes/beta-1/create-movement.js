@@ -50,20 +50,15 @@ const createMovement = {
     }
   },
   handler: async (request, h) => {
+    const { apiCode } = request.payload
+
     try {
       const traceId = request.getTraceId()
-      const movement = request.payload
-      getOrgIdForApiCode(movement.apiCode, config.get('orgApiCodes'))
+      const orgId = getOrgIdForApiCode(apiCode, config.get('orgApiCodes'))
       const movementId = await createMovementId()
-      movement.movementId = movementId
 
       await backOff(
-        () =>
-          createMovementRecord(
-            request.db,
-            { movementId },
-            request.getTraceId()
-          ),
+        () => createMovementRecord(request.db, { movementId, orgId }),
         backoffOptions(createLogger)
       )
       const responseBody = {

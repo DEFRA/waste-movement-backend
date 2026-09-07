@@ -14,18 +14,25 @@ export async function createMovementId() {
   return wasteTrackingResponse.payload.wasteTrackingId
 }
 
+/**
+ * Persists a new movement record.
+ *
+ * @param {import('mongodb').Db} db
+ * @param {{ movementId: string, orgId: string }} movement
+ * @returns {Promise<{ movementId: string }>}
+ */
 export const createMovementRecord = async (db, movement) => {
   try {
-    const now = new Date().toISOString()
     const extendedMovement = {
       ...movement,
-      createdAt: now
+      createdAt: new Date().toISOString()
     }
 
-    const movementsCollection = db.collection(movementsCollectionId)
-    await movementsCollection.insertOne(structuredClone(extendedMovement))
+    await db
+      .collection(movementsCollectionId)
+      .insertOne(structuredClone(extendedMovement))
 
-    return { id: extendedMovement.id }
+    return { movementId: extendedMovement.movementId }
   } catch (error) {
     logger.error({ error }, 'Failed to create movement')
     throw error
