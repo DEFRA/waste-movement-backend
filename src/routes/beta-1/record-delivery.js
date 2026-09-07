@@ -60,7 +60,7 @@ const recordDelivery = {
     const { apiCode, movementIds } = request.payload
 
     try {
-      const traceId = request.getTraceId()
+      const traceId = getTraceId() || randomUUID()
       const orgId = getOrgIdForApiCode(apiCode, config.get('orgApiCodes'))
 
       const foundMovementIds = await findMovementIds(request.db, movementIds)

@@ -1,9 +1,11 @@
+import { randomUUID } from 'node:crypto'
 import Joi from 'joi'
 import {
   createMovementId,
   createMovementRecord
 } from '../../services/movement.js'
 import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
+import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
@@ -53,7 +55,7 @@ const createMovement = {
     const { apiCode } = request.payload
 
     try {
-      const traceId = request.getTraceId()
+      const traceId = getTraceId() || randomUUID()
       const orgId = getOrgIdForApiCode(apiCode, config.get('orgApiCodes'))
       const movementId = await createMovementId()
 
