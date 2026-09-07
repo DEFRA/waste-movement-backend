@@ -38,7 +38,7 @@ export async function createMovementId() {
  * Persists a new movement record.
  *
  * @param {import('mongodb').Db} db
- * @param {{ movementId: string, orgId: string }} movement
+ * @param {import('../domain/movement.js').Movement} movement
  * @returns {Promise<{ movementId: string }>}
  */
 export const createMovementRecord = async (db, movement) => {
