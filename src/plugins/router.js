@@ -2,6 +2,8 @@ import { health } from '../routes/health.js'
 import { createMovement as createMovementBeta1 } from '../routes/beta-1/create-movement.js'
 import { createCollection as createCollectionBeta1 } from '../routes/beta-1/create-collection.js'
 import { recordDelivery as recordDeliveryBeta1 } from '../routes/beta-1/record-delivery.js'
+import { recordReceipt as recordReceiptBeta1 } from '../routes/beta-1/record-receipt.js'
+import { recordReceiptWithoutDelivery as recordReceiptWithoutDeliveryBeta1 } from '../routes/beta-1/record-receipt-without-delivery.js'
 import { createReceiptMovement } from '../routes/create-receipt-movement.js'
 import { updateReceiptMovement } from '../routes/update-receipt-movement.js'
 import { retryAuditLogReceiptMovement } from '../routes/retry-audit-log-receipt-movement.js'
@@ -44,7 +46,9 @@ const router = {
           routes: [
             createMovementBeta1,
             createCollectionBeta1,
-            recordDeliveryBeta1
+            recordDeliveryBeta1,
+            recordReceiptBeta1,
+            recordReceiptWithoutDeliveryBeta1
           ]
         }
       ]

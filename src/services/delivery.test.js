@@ -1,4 +1,8 @@
-import { createDeliveryId, createDeliveryRecord } from './delivery.js'
+import {
+  createDeliveryId,
+  createDeliveryRecord,
+  deliveryExists
+} from './delivery.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { httpClients } from '../common/helpers/http-client.js'
 
@@ -54,6 +58,23 @@ describe('delivery', () => {
 
       expect(result).toBe('25KMT4Z9')
       expect(httpClients.wasteTracking.get).toHaveBeenCalledWith('/next')
+    })
+  })
+
+  describe('deliveryExists', () => {
+    it('returns true when a delivery with the given id exists', async () => {
+      const deliveryId = '25KMT4Z9'
+      await deliveriesCollection.insertOne({ deliveryId })
+
+      const result = await deliveryExists(db, deliveryId)
+
+      expect(result).toBe(true)
+    })
+
+    it('returns false when no delivery with the given id exists', async () => {
+      const result = await deliveryExists(db, '25KMT4Z9')
+
+      expect(result).toBe(false)
     })
   })
 

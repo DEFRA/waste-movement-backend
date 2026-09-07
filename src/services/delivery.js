@@ -9,9 +9,24 @@ const deliveriesCollectionId = 'deliveries'
  *
  * @returns {Promise<string>}
  */
-export async function createDeliveryId() {
+export const createDeliveryId = async () => {
   const wasteTrackingResponse = await httpClients.wasteTracking.get('/next')
   return wasteTrackingResponse.payload.wasteTrackingId
+}
+
+/**
+ * Checks whether a delivery with the given id exists.
+ *
+ * @param {import('mongodb').Db} db
+ * @param {string} deliveryId
+ * @returns {Promise<boolean>}
+ */
+export const deliveryExists = async (db, deliveryId) => {
+  const delivery = await db
+    .collection(deliveriesCollectionId)
+    .findOne({ deliveryId }, { projection: { deliveryId: 1 } })
+
+  return Boolean(delivery)
 }
 
 /**

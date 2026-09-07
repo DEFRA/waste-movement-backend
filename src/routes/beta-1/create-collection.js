@@ -1,6 +1,8 @@
+import { randomUUID } from 'node:crypto'
 import Joi from 'joi'
 import { getMovementRecord } from '../../services/movement.js'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
+import { getTraceId } from '@defra/hapi-tracing'
 import { handleRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
@@ -40,11 +42,12 @@ const createCollection = {
     }
   },
   handler: async (request, h) => {
-    const payload = request.payload
-    const movementId = request.params.movementId
+    const { apiCode } = request.payload
+    const { movementId } = request.params
 
     try {
-      getOrgIdForApiCode(payload.apiCode, config.get('orgApiCodes')) //validate apiCode
+      const traceId = getTraceId() || randomUUID()
+      getOrgIdForApiCode(apiCode, config.get('orgApiCodes'))
       const movementRecord = await getMovementRecord(request.db, movementId)
 
       if (!movementRecord) {
@@ -65,6 +68,7 @@ const createCollection = {
       return h
         .response(response)
         .code(HTTP_STATUS.CREATED)
+        .header('x-request-id', traceId)
         .message('Successfully created a waste movement collection')
     } catch (error) {
       return handleRouteError(h, error)

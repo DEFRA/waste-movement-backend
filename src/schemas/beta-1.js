@@ -24,3 +24,26 @@ export const recordDeliverySchema = Joi.object({
       'One or more Movement IDs delivered together at this delivery.'
     )
 })
+
+export const recordReceiptSchema = Joi.object({
+  apiCode
+})
+
+export const recordReceiptWithoutDeliverySchema = Joi.object({
+  apiCode,
+  reason: Joi.string()
+    .required()
+    .description(
+      'Mandatory explanation for why this receipt is being recorded without a Delivery ID.'
+    )
+    .example(
+      'No delivery was recorded prior to receipt; waste received directly from the producer.'
+    )
+})
+
+export const deliveryIdParamsSchema = Joi.object({
+  deliveryId: Joi.string()
+    .required()
+    .description('Delivery ID minted by `POST /deliveries`.')
+    .example('25KMT4Z9')
+})
