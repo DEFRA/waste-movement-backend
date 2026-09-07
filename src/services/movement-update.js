@@ -1,7 +1,6 @@
 import { ValidationError } from '../common/helpers/errors/validation-error.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
-import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
-import { config } from '../config.js'
+import { resolveOrgIdForApiCode } from './organisation.js'
 import { AUDIT_LOGGER_TYPE } from '@defra/waste-movement-utils'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 import { createHistoryEntry } from '../common/helpers/create-history-entry.js'
@@ -88,7 +87,7 @@ export async function updateWasteInput(
 
     const requestOrgId = submittingOrganisation?.defraCustomerOrganisationId
       ? submittingOrganisation.defraCustomerOrganisationId
-      : getOrgIdForApiCode(updateData.apiCode, config.get('orgApiCodes'))
+      : resolveOrgIdForApiCode(updateData.apiCode)
 
     const revision = existingWasteInput.revision
     let result

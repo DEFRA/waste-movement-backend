@@ -8,8 +8,7 @@ import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
-import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
-import { config } from '../../config.js'
+import { resolveOrgIdForApiCode } from '../../services/organisation.js'
 import { createMovementSchema } from '../../schemas/beta-1.js'
 import {
   badRequestResponse,
@@ -56,7 +55,7 @@ const createMovement = {
 
     try {
       const traceId = getTraceId() || randomUUID()
-      const orgId = getOrgIdForApiCode(apiCode, config.get('orgApiCodes'))
+      const orgId = resolveOrgIdForApiCode(apiCode)
       const movementId = await createMovementId()
 
       await backOff(

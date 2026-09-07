@@ -1,6 +1,5 @@
-import { getOrgIdForApiCode } from './validate-api-code.js'
+import { resolveOrgIdForApiCode } from '../../services/organisation.js'
 import { ValidationError } from './errors/validation-error.js'
-import { config } from '../../config.js'
 
 export function getOrganisationValidationError(item, existing) {
   if (item.submittingOrganisation) {
@@ -17,10 +16,7 @@ export function getOrganisationValidationError(item, existing) {
     return null
   }
 
-  const requestOrgId = getOrgIdForApiCode(
-    item.apiCode,
-    config.get('orgApiCodes')
-  )
+  const requestOrgId = resolveOrgIdForApiCode(item.apiCode)
   if (existing.orgId !== requestOrgId) {
     return new ValidationError(
       'apiCode',
