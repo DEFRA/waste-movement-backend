@@ -26,19 +26,11 @@ export const recordDeliverySchema = Joi.object({
 })
 
 export const recordReceiptSchema = Joi.object({
-  apiCode: Joi.string()
-    .uuid()
-    .required()
-    .description('Unique identifier of the submitting organisation.')
-    .example('25b14080-5e77-4f91-9957-2482a0cb8775')
+  apiCode
 })
 
 export const recordReceiptWithoutDeliverySchema = Joi.object({
-  apiCode: Joi.string()
-    .uuid()
-    .required()
-    .description('Unique identifier of the submitting organisation.')
-    .example('25b14080-5e77-4f91-9957-2482a0cb8775'),
+  apiCode,
   reason: Joi.string()
     .required()
     .description(

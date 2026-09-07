@@ -4,11 +4,16 @@ import { createLogger } from '../common/helpers/logging/logger.js'
 const logger = createLogger()
 const movementsCollectionId = 'movements'
 
+/**
+ * Looks up a movement record by its movement ID.
+ *
+ * @param {import('mongodb').Db} db
+ * @param {string} movementId
+ * @returns {Promise<import('../common/types/movement.js').MovementRecord | null>}
+ */
 export const getMovementRecord = async (db, movementId) => {
   const movementsCollection = db.collection(movementsCollectionId)
-  const movementRecord = await movementsCollection.findOne({ movementId })
-
-  return movementRecord
+  return movementsCollection.findOne({ movementId })
 }
 
 /**
@@ -19,7 +24,7 @@ export const getMovementRecord = async (db, movementId) => {
  * @param {string[]} movementIds
  * @returns {Promise<string[]>} the movement IDs that were found
  */
-export async function findMovementIds(db, movementIds) {
+export const findMovementIds = async (db, movementIds) => {
   const movementsCollection = db.collection(movementsCollectionId)
   const found = await movementsCollection
     .find(
@@ -36,7 +41,7 @@ export async function findMovementIds(db, movementIds) {
  *
  * @returns {Promise<string>}
  */
-export async function createMovementId() {
+export const createMovementId = async () => {
   const wasteTrackingResponse = await httpClients.wasteTracking.get('/next')
   return wasteTrackingResponse.payload.wasteTrackingId
 }
