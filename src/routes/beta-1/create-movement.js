@@ -1,8 +1,12 @@
+import { randomUUID } from 'node:crypto'
 import Joi from 'joi'
-import { createMovementRecord } from '../../services/movement-create-v2.js'
+import {
+  createMovementId,
+  createMovementRecord
+} from '../../services/movement.js'
 import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
+import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
-import { httpClients } from '../../common/helpers/http-client.js'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
@@ -48,21 +52,15 @@ const createMovement = {
     }
   },
   handler: async (request, h) => {
+    const { apiCode } = request.payload
+
     try {
-      const traceId = request.getTraceId()
-      const movement = request.payload
-      getOrgIdForApiCode(movement.apiCode, config.get('orgApiCodes')) //validate apiCode
-      const wasteTrackingResponse = await httpClients.wasteTracking.get('/next')
-      const movementId = wasteTrackingResponse.payload.wasteTrackingId
-      movement.movementId = movementId
+      const traceId = getTraceId() || randomUUID()
+      const orgId = getOrgIdForApiCode(apiCode, config.get('orgApiCodes'))
+      const movementId = await createMovementId()
 
       await backOff(
-        () =>
-          createMovementRecord(
-            request.db,
-            { movementId },
-            request.getTraceId()
-          ),
+        () => createMovementRecord(request.db, { movementId, orgId }),
         backoffOptions(createLogger)
       )
       const responseBody = {
