@@ -15,6 +15,21 @@ export async function createDeliveryId() {
 }
 
 /**
+ * Checks whether a delivery with the given id exists.
+ *
+ * @param {import('mongodb').Db} db
+ * @param {string} deliveryId
+ * @returns {Promise<boolean>}
+ */
+export async function deliveryExists(db, deliveryId) {
+  const delivery = await db
+    .collection(deliveriesCollectionId)
+    .findOne({ deliveryId }, { projection: { deliveryId: 1 } })
+
+  return Boolean(delivery)
+}
+
+/**
  * Persists a new delivery record.
  *
  * @param {import('mongodb').Db} db
