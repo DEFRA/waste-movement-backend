@@ -1,8 +1,10 @@
 import Joi from 'joi'
-import { createMovementRecord } from '../../services/movement-create-v2.js'
+import {
+  createMovementId,
+  createMovementRecord
+} from '../../services/movement-create-v2.js'
 import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { backOff } from 'exponential-backoff'
-import { httpClients } from '../../common/helpers/http-client.js'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
@@ -51,9 +53,8 @@ const createMovement = {
     try {
       const traceId = request.getTraceId()
       const movement = request.payload
-      getOrgIdForApiCode(movement.apiCode, config.get('orgApiCodes')) //validate apiCode
-      const wasteTrackingResponse = await httpClients.wasteTracking.get('/next')
-      const movementId = wasteTrackingResponse.payload.wasteTrackingId
+      getOrgIdForApiCode(movement.apiCode, config.get('orgApiCodes'))
+      const movementId = await createMovementId()
       movement.movementId = movementId
 
       await backOff(
