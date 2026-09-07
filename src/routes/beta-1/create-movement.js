@@ -2,7 +2,7 @@ import Joi from 'joi'
 import {
   createMovementId,
   createMovementRecord
-} from '../../services/movement-create-v2.js'
+} from '../../services/movement.js'
 import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'

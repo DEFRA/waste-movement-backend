@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import * as movementCreate from '../../services/movement-create-v2.js'
+import * as movementCreate from '../../services/movement.js'
 import { config } from '../../config.js'
 import {
   apiCode1,
