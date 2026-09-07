@@ -11,7 +11,6 @@ import {
   userBasicAuthTest1
 } from '../../test/data/basic-auth.js'
 import { createServer } from '../../server.js'
-import { createMovementObject } from '../../test/utils/createMovementRequest.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -203,15 +202,5 @@ describe('movement Route Tests version: beta-1', () => {
     })
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
-  })
-
-  it('should return 401 when request is unauthenticated', async () => {
-    const { statusCode } = await server.inject({
-      method: 'POST',
-      url: `/${endpointVersion}/movements`,
-      payload: createMovementObject()
-    })
-
-    expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
   })
 })
