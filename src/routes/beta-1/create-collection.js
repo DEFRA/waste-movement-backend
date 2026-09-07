@@ -45,7 +45,7 @@ const createCollection = {
 
     try {
       getOrgIdForApiCode(payload.apiCode, config.get('orgApiCodes')) //validate apiCode
-      const movementRecord = await getMovementRecord(request.db, { movementId })
+      const movementRecord = await getMovementRecord(request.db, movementId)
 
       if (!movementRecord) {
         return notFound('movementId not found')

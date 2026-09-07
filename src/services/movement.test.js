@@ -38,45 +38,6 @@ describe('movement service', () => {
     await movementsCollection.deleteMany({})
   })
 
-  describe('createMovementRecord', () => {
-    it('should create an appropriate movement in the db and return just the id', async () => {
-      const id = 'ourGeneratedId'
-      const now = new Date().toISOString()
-      const mockMovement = { id }
-
-      const result = await createMovementRecord(db, mockMovement)
-
-      const recordInDb = await movementsCollection.findOne({
-        id
-      })
-
-      expect(result).toEqual({ id })
-
-      expect(recordInDb).toEqual({
-        _id: expect.any(Object),
-        createdAt: now,
-        id
-      })
-    })
-
-    it('should handle database errors ', async () => {
-      const id = 'ourGeneratedId'
-      const mockMovement = { id }
-      const mockError = new Error('Database error')
-
-      await expect(
-        createMovementRecord(
-          {
-            collection: jest.fn().mockImplementation(() => {
-              throw mockError
-            })
-          },
-          mockMovement
-        )
-      ).rejects.toThrow(mockError.message)
-    })
-  })
-
   describe('getMovementRecord', () => {
     let client
     let db
@@ -113,18 +74,18 @@ describe('movement service', () => {
     it('should get a movement with the given movementId ', async () => {
       const id = 'ourGeneratedId'
       const now = new Date().toISOString()
-      const mockMovement = { id }
+      const mockMovement = { movementId: id }
 
       const result = await createMovementRecord(db, mockMovement)
 
       const recordInDb = await getMovementRecord(db, id)
 
-      expect(result).toEqual({ id })
+      expect(result).toEqual({ movementId: id })
 
       expect(recordInDb).toEqual({
         _id: expect.any(Object),
         createdAt: now,
-        id
+        movementId: id
       })
     })
 
@@ -181,6 +142,66 @@ describe('movement service', () => {
       const result = await findMovementIds(db, ['25HRA0B1'])
 
       expect(result).toEqual([])
+    })
+  })
+
+  describe('createMovementRecord', () => {
+    beforeAll(() => {
+      jest.useFakeTimers({
+        doNotFake: [
+          'nextTick',
+          'setImmediate',
+          'setTimeout',
+          'clearTimeout',
+          'setInterval',
+          'clearInterval'
+        ]
+      })
+    })
+
+    afterAll(() => {
+      jest.clearAllTimers()
+      jest.useRealTimers()
+    })
+
+    it('should create a movement in the db and return the movementId', async () => {
+      const movementId = '25HRA0B2'
+      const now = new Date().toISOString()
+      const mockMovement = {
+        movementId,
+        orgId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
+      }
+
+      const result = await createMovementRecord(db, mockMovement)
+
+      const recordInDb = await movementsCollection.findOne({
+        movementId
+      })
+
+      expect(result).toEqual({ movementId })
+
+      expect(recordInDb).toEqual({
+        _id: expect.any(Object),
+        createdAt: now,
+        ...mockMovement
+      })
+    })
+
+    it('should handle database errors ', async () => {
+      const movementId = '25HRA0B2'
+      const mockMovement = { movementId }
+      const mockError = new Error('Database error')
+
+      await expect(
+        createMovementRecord(
+          {
+            collection: jest.fn().mockImplementation(() => {
+              throw mockError
+            })
+          },
+          mockMovement
+        )
+      ).rejects.toThrow(mockError.message)
     })
   })
 })

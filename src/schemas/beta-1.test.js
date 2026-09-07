@@ -1,5 +1,31 @@
-import { recordDeliverySchema } from './beta-1.js'
+import { createMovementSchema, recordDeliverySchema } from './beta-1.js'
 import { apiCode1 } from '../test/data/apiCodes.js'
+
+describe('createMovementSchema', () => {
+  it('accepts a valid payload', () => {
+    const { error } = createMovementSchema.validate({
+      apiCode: apiCode1
+    })
+
+    expect(error).toBeUndefined()
+  })
+
+  it('requires apiCode', () => {
+    const { error } = createMovementSchema.validate({})
+
+    expect(error.details[0].path).toEqual(['apiCode'])
+    expect(error.details[0].type).toBe('any.required')
+  })
+
+  it('requires apiCode to be a uuid', () => {
+    const { error } = createMovementSchema.validate({
+      apiCode: 'not-a-uuid'
+    })
+
+    expect(error.details[0].path).toEqual(['apiCode'])
+    expect(error.details[0].type).toBe('string.guid')
+  })
+})
 
 describe('recordDeliverySchema', () => {
   it('accepts a valid payload', () => {
