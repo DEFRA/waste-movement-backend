@@ -30,7 +30,7 @@ const router = {
       const nonProdRoutes = [getReceiptMovement, productionApprovalTests]
       const extTestRoutes = [productionApprovalTests]
 
-      if (['local', 'dev', 'test, perf-test'].includes(environment)) {
+      if (['local', 'dev', 'test', 'perf-test'].includes(environment)) {
         routes.push(...nonProdRoutes)
       }
 
