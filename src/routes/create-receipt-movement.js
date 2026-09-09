@@ -8,8 +8,7 @@ import {
   METRIC_NAMES,
   backoffOptions
 } from '@defra/waste-movement-utils'
-import { getOrgIdForApiCode } from '../common/helpers/validate-api-code.js'
-import { config } from '../config.js'
+import { resolveOrgIdForApiCode } from '../services/organisation.js'
 import { backOff } from 'exponential-backoff'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
@@ -67,8 +66,7 @@ const createReceiptMovement = [
           }
           wasteInput.receipt = { movement: movementData }
         } else {
-          const orgApiCodes = config.get('orgApiCodes')
-          wasteInput.orgId = getOrgIdForApiCode(apiCode, orgApiCodes)
+          wasteInput.orgId = resolveOrgIdForApiCode(apiCode)
           wasteInput.receipt = { movement: { apiCode, ...movementData } }
         }
 

@@ -4,15 +4,14 @@ import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
-import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { handleRouteError } from '../../common/helpers/bulk-route-helpers.js'
-import { config } from '../../config.js'
 import { recordDeliverySchema } from '../../schemas/beta-1.js'
 import {
   createDeliveryId,
   createDeliveryRecord
 } from '../../services/delivery.js'
 import { findMovementIds } from '../../services/movement.js'
+import { resolveOrgIdForApiCode } from '../../services/organisation.js'
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
@@ -61,7 +60,7 @@ const recordDelivery = {
 
     try {
       const traceId = getTraceId() || randomUUID()
-      const orgId = getOrgIdForApiCode(apiCode, config.get('orgApiCodes'))
+      const orgId = resolveOrgIdForApiCode(apiCode)
 
       const foundMovementIds = await findMovementIds(request.db, movementIds)
       const missingMovementIds = movementIds.filter(
