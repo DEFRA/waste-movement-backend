@@ -45,7 +45,7 @@
     "hapi-pulse": "3.0.1",
     "hapi-swagger": "17.3.2",
     "https-proxy-agent": "7.0.5",
-    "joi": "18.2.1",
+    "joi": "18.2.5",
     "mongo-locks": "3.0.2",
     "mongodb": "6.10.0",
     "mongodb-memory-server": "10.3.0",
@@ -79,6 +79,7 @@
     "minimatch": "^10.2.5",
     "postcss": "^8.5.18",
     "babel-plugin-istanbul": "^7.0.0",
-    "test-exclude": "^7.0.1"
+    "test-exclude": "^7.0.1",
+    "js-yaml": "5.4.1"
   }
 }
