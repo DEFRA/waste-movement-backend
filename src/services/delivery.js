@@ -33,7 +33,7 @@ export const deliveryExists = async (db, deliveryId) => {
  * Persists a new delivery record.
  *
  * @param {import('mongodb').Db} db
- * @param {{ deliveryId: string, movementIds: string[], orgId: string }} delivery
+ * @param {import('../domain/delivery.js').Delivery} delivery
  * @returns {Promise<{ deliveryId: string }>}
  */
 export const createDeliveryRecord = async (db, delivery) => {
