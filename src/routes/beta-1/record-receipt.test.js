@@ -116,11 +116,14 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(result.validation.errors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ key: 'apiCode', errorType: 'NotProvided' })
-      ])
-    )
+    expect(result).toEqual({
+      defaultError: new Error('Invalid request payload input'),
+      detail: '"apiCode" is required',
+      instance: '/beta-1/deliveries/25KMT4Z9/receipt',
+      status: HTTP_STATUS.BAD_REQUEST,
+      title: 'Bad Request',
+      type: 'https://api.example.com/errors/bad-request'
+    })
   })
 
   it('returns a 400 when the apiCode is invalid', async () => {
@@ -135,22 +138,17 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'apiCode',
-            errorType: 'InvalidValue',
-            message: 'the API Code supplied is invalid'
-          }
-        ]
-      }
+      detail: 'the API Code supplied is invalid',
+      instance: '/beta-1/deliveries/25KMT4Z9/receipt',
+      status: HTTP_STATUS.BAD_REQUEST,
+      title: 'Bad Request',
+      type: 'https://api.example.com/errors/bad-request'
     })
   })
 
   it('returns a 500 when the delivery lookup fails', async () => {
-    jest
-      .spyOn(delivery, 'deliveryExists')
-      .mockRejectedValue(new Error('Database connection failed'))
+    const error = 'Database connection failed'
+    jest.spyOn(delivery, 'deliveryExists').mockRejectedValue(new Error(error))
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -161,9 +159,11 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      error: 'Error',
-      message: 'Database connection failed'
+      detail: error,
+      instance: '/beta-1/deliveries/25KMT4Z9/receipt',
+      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      title: 'Internal Server Error',
+      type: 'https://api.example.com/errors/internal-server-error'
     })
   })
 

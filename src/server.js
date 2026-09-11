@@ -13,7 +13,11 @@ import { requestTracing } from './common/helpers/request-tracing.js'
 import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { swagger } from './plugins/swagger.js'
 import { errorHandler } from './plugins/error-handler.js'
-import { basicAuth, getEnvVars } from '@defra/waste-movement-utils'
+import {
+  basicAuth,
+  formatErrorToRFC9457Response,
+  getEnvVars
+} from '@defra/waste-movement-utils'
 import { requestCustomLogger } from './plugins/request-custom-logger.js'
 
 async function createServer() {
@@ -75,6 +79,7 @@ async function createServer() {
     pulse,
     mongoDb,
     basicAuth(getEnvVars('ACCESS_CRED_')),
+    formatErrorToRFC9457Response,
     errorHandler
   ])
 

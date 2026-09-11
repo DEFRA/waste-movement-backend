@@ -119,15 +119,14 @@ describe('POST /beta-1/deliveries', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(result.validation.errors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ key: 'apiCode', errorType: 'NotProvided' }),
-        expect.objectContaining({
-          key: 'movementIds',
-          errorType: 'NotProvided'
-        })
-      ])
-    )
+    expect(result).toEqual({
+      defaultError: new Error('Invalid request payload input'),
+      detail: '"apiCode" is required. "movementIds" is required',
+      instance: '/beta-1/deliveries',
+      status: HTTP_STATUS.BAD_REQUEST,
+      title: 'Bad Request',
+      type: 'https://api.example.com/errors/bad-request'
+    })
   })
 
   it('returns a 400 when the apiCode is invalid', async () => {
@@ -140,15 +139,11 @@ describe('POST /beta-1/deliveries', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'apiCode',
-            errorType: 'InvalidValue',
-            message: 'the API Code supplied is invalid'
-          }
-        ]
-      }
+      detail: 'the API Code supplied is invalid',
+      instance: '/beta-1/deliveries',
+      status: HTTP_STATUS.BAD_REQUEST,
+      title: 'Bad Request',
+      type: 'https://api.example.com/errors/bad-request'
     })
   })
 
@@ -169,9 +164,11 @@ describe('POST /beta-1/deliveries', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS.BAD_REQUEST,
-      error: 'Error',
-      message: `No movement exists for movement ID(s): ${movementId2}`
+      detail: 'No movement exists for movement ID(s): 25HRA0B2',
+      instance: '/beta-1/deliveries',
+      status: HTTP_STATUS.BAD_REQUEST,
+      title: 'Bad Request',
+      type: 'https://api.example.com/errors/bad-request'
     })
   })
 
@@ -193,19 +190,28 @@ describe('POST /beta-1/deliveries', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      error: 'Error',
-      message: 'Database connection failed'
+      detail: 'Database connection failed',
+      instance: '/beta-1/deliveries',
+      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      title: 'Internal Server Error',
+      type: 'https://api.example.com/errors/internal-server-error'
     })
   })
 
   it('returns 401 when unauthenticated', async () => {
-    const { statusCode } = await server.inject({
+    const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
       payload: { apiCode: apiCode1, movementIds: [movementId1] }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
+    expect(result).toEqual({
+      detail: 'Missing authentication',
+      instance: '/beta-1/deliveries',
+      status: HTTP_STATUS.UNAUTHORIZED,
+      title: 'Unauthorized',
+      type: 'https://api.example.com/errors/unauthorized'
+    })
   })
 })
