@@ -5,13 +5,13 @@ import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
-import { handleRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { config } from '../../config.js'
 import { recordReceiptWithoutDeliverySchema } from '../../schemas/beta-1.js'
 import {
   createDeliveryId,
   createDeliveryRecord
 } from '../../services/delivery.js'
+import { handleNewRouteError } from '../../common/helpers/bulk-route-helpers.js'
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
@@ -87,7 +87,7 @@ const recordReceiptWithoutDelivery = {
         .header('x-request-id', traceId)
         .message('Successfully recorded a receipt without a delivery')
     } catch (error) {
-      return handleRouteError(h, error)
+      return handleNewRouteError(error)
     }
   }
 }

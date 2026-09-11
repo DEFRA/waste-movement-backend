@@ -5,7 +5,6 @@ import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
-import { handleRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { config } from '../../config.js'
 import { recordDeliverySchema } from '../../schemas/beta-1.js'
 import {
@@ -13,6 +12,8 @@ import {
   createDeliveryRecord
 } from '../../services/delivery.js'
 import { findMovementIds } from '../../services/movement.js'
+import { badRequest } from '@hapi/boom'
+import { handleNewRouteError } from '../../common/helpers/bulk-route-helpers.js'
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
@@ -72,9 +73,7 @@ const recordDelivery = {
         const message = `No movement exists for movement ID(s): ${missingMovementIds.join(', ')}`
         logger.error({ movementIds, missingMovementIds }, message)
 
-        const error = new Error(message)
-        error.statusCode = HTTP_STATUS.BAD_REQUEST
-        throw error
+        throw badRequest(message)
       }
 
       const deliveryId = await createDeliveryId()
@@ -99,7 +98,7 @@ const recordDelivery = {
         .header('x-request-id', traceId)
         .message('Successfully recorded a delivery')
     } catch (error) {
-      return handleRouteError(h, error)
+      return handleNewRouteError(error)
     }
   }
 }

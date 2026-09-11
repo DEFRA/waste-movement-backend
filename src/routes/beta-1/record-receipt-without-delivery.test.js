@@ -108,12 +108,14 @@ describe('POST /beta-1/receipts', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(result.validation.errors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ key: 'apiCode', errorType: 'NotProvided' }),
-        expect.objectContaining({ key: 'reason', errorType: 'NotProvided' })
-      ])
-    )
+    expect(result).toEqual({
+      defaultError: new Error('Invalid request payload input'),
+      detail: '"apiCode" is required. "reason" is required',
+      instance: '/beta-1/receipts',
+      status: HTTP_STATUS.BAD_REQUEST,
+      title: 'Bad Request',
+      type: 'https://api.example.com/errors/bad-request'
+    })
   })
 
   it('returns a 400 when the apiCode is invalid', async () => {
@@ -126,22 +128,19 @@ describe('POST /beta-1/receipts', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'apiCode',
-            errorType: 'InvalidValue',
-            message: 'the API Code supplied is invalid'
-          }
-        ]
-      }
+      detail: 'the API Code supplied is invalid',
+      instance: '/beta-1/receipts',
+      status: HTTP_STATUS.BAD_REQUEST,
+      title: 'Bad Request',
+      type: 'https://api.example.com/errors/bad-request'
     })
   })
 
   it('returns a 500 when persisting the delivery fails', async () => {
+    const error = 'Database connection failed'
     jest
       .spyOn(delivery, 'createDeliveryRecord')
-      .mockRejectedValue(new Error('Database connection failed'))
+      .mockRejectedValue(new Error(error))
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -152,9 +151,11 @@ describe('POST /beta-1/receipts', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      error: 'Error',
-      message: 'Database connection failed'
+      detail: error,
+      instance: '/beta-1/receipts',
+      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      title: 'Internal Server Error',
+      type: 'https://api.example.com/errors/internal-server-error'
     })
   })
 
