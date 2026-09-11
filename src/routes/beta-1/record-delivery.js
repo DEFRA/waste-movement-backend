@@ -6,6 +6,7 @@ import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { handleRouteError } from '../../common/helpers/bulk-route-helpers.js'
+import { WASTE_TYPE } from '../../common/constants/waste-type.js'
 import { config } from '../../config.js'
 import { recordDeliverySchema } from '../../schemas/beta-1.js'
 import {
@@ -33,16 +34,34 @@ const recordDelivery = {
         responses: {
           [HTTP_STATUS.CREATED]: {
             description:
-              'Delivery recorded. Body carries the new Delivery ID and any validation warnings.',
+              'Delivery recorded. Body carries the new Delivery ID(s) and any validation warnings.',
             schema: Joi.object({
               data: Joi.object({
-                deliveryId: Joi.string()
-                  .required()
-                  .description(
-                    'Unique identifier for a delivery, minted by the server on `POST /deliveries`'
+                deliveries: Joi.array()
+                  .items(
+                    Joi.object({
+                      deliveryId: Joi.string()
+                        .required()
+                        .description(
+                          'Unique identifier for a delivery, minted by the server on `POST /deliveries`'
+                        )
+                        .example('25KMT4Z9'),
+                      movementIds: Joi.array()
+                        .items(Joi.string())
+                        .required()
+                        .description(
+                          'The Movement IDs bundled into this delivery.'
+                        )
+                        .example(['25HRA0B2', '25TKP3C9']),
+                      wasteType: Joi.string()
+                        .valid(...Object.values(WASTE_TYPE))
+                        .required()
+                        .description('The waste type of this delivery.')
+                        .example(WASTE_TYPE.NON_HAZARDOUS)
+                    })
                   )
-                  .example('25KMT4Z9')
-              }),
+                  .required()
+              }).required(),
               validation: Joi.object({
                 warnings: Joi.array().items(Joi.object())
               })
@@ -78,12 +97,17 @@ const recordDelivery = {
       }
 
       const deliveryId = await createDeliveryId()
+      // For now, all movements submitted together are bundled into a single
+      // delivery and treated as non-hazardous. Splitting a submission into
+      // multiple deliveries by waste type is not yet supported.
+      const wasteType = WASTE_TYPE.NON_HAZARDOUS
 
       await backOff(
         () =>
           createDeliveryRecord(request.db, {
             deliveryId,
             movementIds,
+            wasteType,
             orgId
           }),
         backoffOptions(logger)
@@ -94,7 +118,10 @@ const recordDelivery = {
       })
 
       return h
-        .response({ data: { deliveryId }, validation: { warnings: [] } })
+        .response({
+          data: { deliveries: [{ deliveryId, movementIds, wasteType }] },
+          validation: { warnings: [] }
+        })
         .code(HTTP_STATUS.CREATED)
         .header('x-request-id', traceId)
         .message('Successfully recorded a delivery')

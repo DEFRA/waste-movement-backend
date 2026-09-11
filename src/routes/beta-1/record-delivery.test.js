@@ -77,7 +77,15 @@ describe('POST /beta-1/deliveries', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: { deliveryId: '25KMT4Z9' },
+      data: {
+        deliveries: [
+          {
+            deliveryId: '25KMT4Z9',
+            movementIds: [movementId1, movementId2],
+            wasteType: 'NON_HAZARDOUS'
+          }
+        ]
+      },
       validation: { warnings: [] }
     })
     expect(headers['x-request-id']).toBeDefined()
@@ -89,6 +97,7 @@ describe('POST /beta-1/deliveries', () => {
     expect(recordInDb).toMatchObject({
       deliveryId: '25KMT4Z9',
       movementIds: [movementId1, movementId2],
+      wasteType: 'NON_HAZARDOUS',
       orgId: orgId1
     })
   })
