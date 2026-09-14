@@ -148,6 +148,12 @@ const config = convict({
       default: 'https://waste-tracking-id-backend.dev.cdp-int.defra.cloud',
       env: 'WASTE_TRACKING_SERVICE_URL'
     },
+    clientSync: {
+      doc: 'Waste Tracking Client Sync Service URL',
+      format: String,
+      default: 'https://dwt-client-sync.dev.cdp-int.defra.cloud',
+      env: 'DWT_CLIENT_SYNC_SERVICE_URL'
+    },
     wasteTrackingBatchSize: {
       doc: 'Waste Tracking Service batch size',
       format: Number,
@@ -187,7 +193,8 @@ const config = convict({
 
 const overrideConfig = {
   services: {
-    wasteTracking: `https://waste-tracking-id-backend.${config.get('cdpEnvironment')}.cdp-int.defra.cloud`
+    wasteTracking: `https://waste-tracking-id-backend.${config.get('cdpEnvironment')}.cdp-int.defra.cloud`,
+    clientSync: `https://dwt-client-sync.${config.get('cdpEnvironment')}.cdp-int.defra.cloud`
   }
 }
 
