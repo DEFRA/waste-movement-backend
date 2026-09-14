@@ -13,6 +13,7 @@ import { config } from '../config.js'
 import { backOff } from 'exponential-backoff'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
+import { getClient } from '../common/helpers/get-client.js'
 
 const logger = createLogger()
 
@@ -55,10 +56,14 @@ const createReceiptMovement = [
         const { submittingOrganisation, apiCode, ...movementData } =
           request.payload.movement
         const wasteInput = new WasteInput()
+        const { clientId, clientName } = await getClient(
+          config.get('serviceName'),
+          request.headers['x-dwt-client-id']
+        )
 
         wasteInput.wasteTrackingId = wasteTrackingId
         wasteInput.traceId = request.getTraceId()
-        wasteInput.clientId = request.headers['x-dwt-client-id']
+        wasteInput.client = { clientId, clientName }
 
         if (submittingOrganisation?.defraCustomerOrganisationId) {
           wasteInput.submittingOrganisation = {

@@ -23,10 +23,20 @@ import {
 } from '../test/data/basic-auth.js'
 import { createServer } from '../server.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
+import { httpClients } from '../common/helpers/http-client.js'
+import { client } from '../test/data/client.js'
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockReturnValue(true)
 }))
+
+jest.mock('../common/helpers/http-client.js', () => ({
+  httpClients: {
+    clientSync: { get: jest.fn() }
+  }
+}))
+
+httpClients.clientSync.get.mockResolvedValue({ payload: client })
 
 describe('Production Approval Tests Route Tests', () => {
   let server
@@ -37,7 +47,7 @@ describe('Production Approval Tests Route Tests', () => {
   let mongoUri
 
   const traceId = 'created-trace-id-123'
-  const clientId = 'client-id-123'
+  const clientId = client.clientId
 
   beforeEach(() => {
     payload = JSON.parse(JSON.stringify(productionApprovalTestsRequestPayload))
