@@ -19,6 +19,8 @@ import {
 } from '../test/data/basic-auth.js'
 import { createServer } from '../server.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
+import { httpClients } from '../common/helpers/http-client.js'
+import { client } from '../test/data/client.js'
 
 jest.mock('../services/movement-update.js', () => {
   const { updateWasteInput: actualFunction } = jest.requireActual(
@@ -42,6 +44,14 @@ jest.mock('@defra/waste-movement-utils', () => {
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockReturnValue(true)
 }))
+
+jest.mock('../common/helpers/http-client.js', () => ({
+  httpClients: {
+    clientSync: { get: jest.fn() }
+  }
+}))
+
+httpClients.clientSync.get.mockResolvedValue({ payload: client })
 
 describe('movementUpdate Route Tests', () => {
   let server
