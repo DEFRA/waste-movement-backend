@@ -114,7 +114,7 @@ describe('POST /beta-1/receipts', () => {
       instance: '/beta-1/receipts',
       status: HTTP_STATUS.BAD_REQUEST,
       title: 'Bad Request',
-      type: 'https://api.example.com/errors/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
     })
   })
 
@@ -132,7 +132,7 @@ describe('POST /beta-1/receipts', () => {
       instance: '/beta-1/receipts',
       status: HTTP_STATUS.BAD_REQUEST,
       title: 'Bad Request',
-      type: 'https://api.example.com/errors/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
     })
   })
 
@@ -155,17 +155,24 @@ describe('POST /beta-1/receipts', () => {
       instance: '/beta-1/receipts',
       status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       title: 'Internal Server Error',
-      type: 'https://api.example.com/errors/internal-server-error'
+      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error'
     })
   })
 
   it('returns 401 when unauthenticated', async () => {
-    const { statusCode } = await server.inject({
+    const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
       payload: { apiCode: apiCode1, reason }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
+    expect(result).toEqual({
+      detail: 'Missing authentication',
+      instance: '/beta-1/receipts',
+      status: HTTP_STATUS.UNAUTHORIZED,
+      title: 'Unauthorized',
+      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
+    })
   })
 })

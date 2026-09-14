@@ -125,7 +125,7 @@ describe('POST /beta-1/deliveries', () => {
       instance: '/beta-1/deliveries',
       status: HTTP_STATUS.BAD_REQUEST,
       title: 'Bad Request',
-      type: 'https://api.example.com/errors/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
     })
   })
 
@@ -143,7 +143,7 @@ describe('POST /beta-1/deliveries', () => {
       instance: '/beta-1/deliveries',
       status: HTTP_STATUS.BAD_REQUEST,
       title: 'Bad Request',
-      type: 'https://api.example.com/errors/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
     })
   })
 
@@ -168,7 +168,7 @@ describe('POST /beta-1/deliveries', () => {
       instance: '/beta-1/deliveries',
       status: HTTP_STATUS.BAD_REQUEST,
       title: 'Bad Request',
-      type: 'https://api.example.com/errors/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
     })
   })
 
@@ -194,7 +194,7 @@ describe('POST /beta-1/deliveries', () => {
       instance: '/beta-1/deliveries',
       status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       title: 'Internal Server Error',
-      type: 'https://api.example.com/errors/internal-server-error'
+      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error'
     })
   })
 
@@ -211,7 +211,7 @@ describe('POST /beta-1/deliveries', () => {
       instance: '/beta-1/deliveries',
       status: HTTP_STATUS.UNAUTHORIZED,
       title: 'Unauthorized',
-      type: 'https://api.example.com/errors/unauthorized'
+      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
     })
   })
 })
