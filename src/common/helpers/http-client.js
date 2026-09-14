@@ -157,7 +157,8 @@ function createServiceClient(baseUrl, httpClient) {
  * HTTP clients for different services
  */
 const httpClients = {
-  wasteTracking: createServiceClient(config.get('services.wasteTracking'))
+  wasteTracking: createServiceClient(config.get('services.wasteTracking')),
+  clientSync: createServiceClient(config.get('services.clientSync'))
 }
 
 export { httpClients, makeRequest, createServiceClient }
