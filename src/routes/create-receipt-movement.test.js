@@ -28,6 +28,8 @@ import {
 } from '../test/data/basic-auth.js'
 import { createServer } from '../server.js'
 import * as logger from '../common/helpers/logging/logger.js'
+import { client } from '../test/data/client.js'
+import { httpClients } from '../common/helpers/http-client.js'
 
 jest.mock('../services/movement-create.js', () => {
   const { createWasteInput: actualFunction } = jest.requireActual(
@@ -52,6 +54,12 @@ jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockReturnValue(true)
 }))
 
+jest.mock('../common/helpers/http-client.js', () => ({
+  httpClients: {
+    clientSync: { get: jest.fn() }
+  }
+}))
+
 describe('movement Route Tests', () => {
   let server
   let mongoClient
@@ -59,6 +67,8 @@ describe('movement Route Tests', () => {
 
   const errorMessage = 'Database connection failed'
   const traceId = 'created-trace-id-123'
+
+  httpClients.clientSync.get.mockResolvedValue({ payload: client })
 
   beforeAll(async () => {
     const testMongo = await createTestMongoDb()
@@ -448,14 +458,13 @@ describe('movement Route Tests', () => {
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
   })
 
-  it('persists clientId at the top level when provided', async () => {
+  it('persists client at the top level when provided', async () => {
     const { createWasteInput: actualFunction } = jest.requireActual(
       '../services/movement-create.js'
     )
     movementCreate.createWasteInput.mockImplementation(actualFunction)
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
     const wasteTrackingId = generateWasteTrackingId()
-    const clientId = 'test-client-id'
     const payload = {
       movement: {
         ...createTestPayload()
@@ -480,8 +489,11 @@ describe('movement Route Tests', () => {
       .collection('waste-inputs')
       .findOne({ _id: wasteTrackingId })
 
-    expect(actualWasteInput.clientId).toEqual(clientId)
-    // clientId is stored top-level, not nested inside the receipt movement
-    expect(actualWasteInput.receipt.movement.clientId).toBeUndefined()
+    expect(actualWasteInput.client).toEqual({
+      clientId: client.clientId,
+      clientName: client.clientName
+    })
+    // client is stored top-level, not nested inside the receipt movement
+    expect(actualWasteInput.receipt.movement.client).toBeUndefined()
   })
 })

@@ -40,7 +40,7 @@ const productionApprovalTests = {
 
       const doesEveryWasteTrackingIdMatchClientId = wasteInputs
         .values()
-        .every((wasteInput) => wasteInput.clientId === clientId)
+        .every(({ client }) => client?.clientId === clientId)
 
       if (!doesEveryWasteTrackingIdMatchClientId) {
         throw new ValidationError(

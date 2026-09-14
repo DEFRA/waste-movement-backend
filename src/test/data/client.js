@@ -1,9 +1,5 @@
 export const client = {
-  UserPoolClient: {
-    UserPoolId: 'user-pool-id-123',
-    ClientName: 'Test Client',
-    ClientId: 'client-id-123',
-    LastModifiedDate: '2026-07-10T08:41:31.618Z',
-    CreationDate: '2026-05-19T08:25:53.785Z'
-  }
+  clientName: 'Test Client',
+  clientId: '1a2b3c4d5e6f7g8h9i0j1k2l3m',
+  tenantServiceName: 'waste-movement-external-api'
 }
