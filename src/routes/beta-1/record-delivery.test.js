@@ -199,7 +199,6 @@ describe('POST /beta-1/deliveries', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      detail: 'Database connection failed',
       instance: '/beta-1/deliveries',
       status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       title: 'Internal Server Error',

@@ -151,7 +151,6 @@ describe('POST /beta-1/receipts', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      detail: error,
       instance: '/beta-1/receipts',
       status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       title: 'Internal Server Error',

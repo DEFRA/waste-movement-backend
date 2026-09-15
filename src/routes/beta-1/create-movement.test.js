@@ -98,7 +98,6 @@ describe('movement Route Tests version: beta-1', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      detail: errorMessage,
       instance: '/beta-1/movements',
       status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       title: 'Internal Server Error',
