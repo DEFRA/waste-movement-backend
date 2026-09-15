@@ -5,6 +5,7 @@ import {
 } from '@defra/waste-movement-utils'
 import { MongoServerError } from 'mongodb'
 import { createLogger } from './logging/logger.js'
+import { boomify } from '@hapi/boom'
 
 const logger = createLogger()
 
@@ -80,8 +81,16 @@ function generateResponseWithValidationWarnings(payload, wasteTrackingIds) {
   })
 }
 
+const handleNewRouteError = (error) => {
+  return boomify(error, {
+    statusCode: error.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    override: false
+  })
+}
+
 export {
   badRequestResponse,
   handleRouteError,
+  handleNewRouteError,
   generateResponseWithValidationWarnings
 }

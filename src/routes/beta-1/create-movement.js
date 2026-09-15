@@ -13,7 +13,7 @@ import { config } from '../../config.js'
 import { createMovementSchema } from '../../schemas/beta-1.js'
 import {
   badRequestResponse,
-  handleRouteError
+  handleNewRouteError
 } from '../../common/helpers/bulk-route-helpers.js'
 
 const apiVersion = 'beta-1'
@@ -79,7 +79,7 @@ const createMovement = {
         .header('x-request-id', traceId)
         .message('Successfully created a waste movement')
     } catch (error) {
-      return handleRouteError(h, error)
+      return handleNewRouteError(error)
     }
   }
 }
