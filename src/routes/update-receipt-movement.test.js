@@ -217,9 +217,8 @@ describe('movementUpdate Route Tests', () => {
     )
   })
 
-  it('persists clientId at the top level on update', async () => {
+  it('persists client at the top level on update', async () => {
     const wasteTrackingId = generateWasteTrackingId()
-    const clientId = 'test-client-id'
     const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     const createResult = await server.inject({
@@ -241,9 +240,12 @@ describe('movementUpdate Route Tests', () => {
     )
 
     const actualWasteInput = await getCurrentWasteInput(wasteTrackingId)
-    expect(actualWasteInput.clientId).toEqual(clientId)
-    // clientId is stored top-level, not nested inside the receipt movement
-    expect(actualWasteInput.receipt.movement.clientId).toBeUndefined()
+    expect(actualWasteInput.client).toEqual({
+      clientId: client.clientId,
+      clientName: client.clientName
+    })
+    // client is stored top-level, not nested inside the receipt movement
+    expect(actualWasteInput.receipt.movement.client).toBeUndefined()
 
     expect(infoLoggerSpy).toHaveBeenCalledWith(
       `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`
