@@ -85,6 +85,7 @@ describe('delivery', () => {
       const delivery = {
         deliveryId,
         movementIds: ['25HRA0B1'],
+        wasteType: 'NON_HAZARDOUS',
         orgId: '57aed195-325e-45d5-b1fb-5f201e0324cf'
       }
 
@@ -92,7 +93,11 @@ describe('delivery', () => {
 
       const recordInDb = await deliveriesCollection.findOne({ deliveryId })
 
-      expect(result).toEqual({ deliveryId })
+      expect(result).toEqual({
+        deliveryId,
+        movementIds: delivery.movementIds,
+        wasteType: delivery.wasteType
+      })
       expect(recordInDb).toEqual({
         _id: expect.any(Object),
         createdAt: now,

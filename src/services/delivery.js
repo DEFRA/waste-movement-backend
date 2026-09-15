@@ -33,8 +33,8 @@ export const deliveryExists = async (db, deliveryId) => {
  * Persists a new delivery record.
  *
  * @param {import('mongodb').Db} db
- * @param {{ deliveryId: string, movementIds: string[], orgId: string }} delivery
- * @returns {Promise<{ deliveryId: string }>}
+ * @param {{ deliveryId: string, movementIds: string[], wasteType: string, orgId: string }} delivery
+ * @returns {Promise<{ deliveryId: string, movementIds: string[], wasteType: string }>}
  */
 export const createDeliveryRecord = async (db, delivery) => {
   try {
@@ -47,7 +47,11 @@ export const createDeliveryRecord = async (db, delivery) => {
       .collection(deliveriesCollectionId)
       .insertOne(structuredClone(extendedDelivery))
 
-    return { deliveryId: extendedDelivery.deliveryId }
+    return {
+      deliveryId: extendedDelivery.deliveryId,
+      movementIds: extendedDelivery.movementIds,
+      wasteType: extendedDelivery.wasteType
+    }
   } catch (error) {
     logger.error({ error }, 'Failed to create delivery')
     throw error
