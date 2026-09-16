@@ -131,7 +131,6 @@ describe('POST /beta-1/deliveries', () => {
     expect(result).toEqual({
       detail: '"apiCode" is required. "movementIds" is required',
       instance: '/beta-1/deliveries',
-      status: HTTP_STATUS.BAD_REQUEST,
       title: 'Bad Request',
       type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
     })
@@ -149,7 +148,6 @@ describe('POST /beta-1/deliveries', () => {
     expect(result).toEqual({
       detail: 'the API Code supplied is invalid',
       instance: '/beta-1/deliveries',
-      status: HTTP_STATUS.BAD_REQUEST,
       title: 'Bad Request',
       type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
     })
@@ -174,7 +172,6 @@ describe('POST /beta-1/deliveries', () => {
     expect(result).toEqual({
       detail: 'No movement exists for movement ID(s): 25HRA0B2',
       instance: '/beta-1/deliveries',
-      status: HTTP_STATUS.BAD_REQUEST,
       title: 'Bad Request',
       type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
     })
@@ -199,7 +196,6 @@ describe('POST /beta-1/deliveries', () => {
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
       instance: '/beta-1/deliveries',
-      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       title: 'Internal Server Error',
       type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error'
     })
@@ -216,7 +212,6 @@ describe('POST /beta-1/deliveries', () => {
     expect(result).toEqual({
       detail: 'Missing authentication',
       instance: '/beta-1/deliveries',
-      status: HTTP_STATUS.UNAUTHORIZED,
       title: 'Unauthorized',
       type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
     })
