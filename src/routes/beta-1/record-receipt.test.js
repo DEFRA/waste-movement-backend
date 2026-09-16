@@ -101,9 +101,11 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.NOT_FOUND)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS.NOT_FOUND,
-      error: 'Not Found',
-      message: `No delivery exists with delivery ID: ${deliveryId}`
+      detail: `No delivery exists with delivery ID: ${deliveryId}`,
+      instance: '/beta-1/deliveries/25KMT4Z9/receipt',
+      status: HTTP_STATUS.NOT_FOUND,
+      title: 'Not Found',
+      type: 'https://waste-tracking.service.gov.uk/problems/not-found'
     })
   })
 
@@ -116,11 +118,14 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(result.validation.errors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ key: 'apiCode', errorType: 'NotProvided' })
-      ])
-    )
+    expect(result).toEqual({
+      defaultError: new Error('Invalid request payload input'),
+      detail: '"apiCode" is required',
+      instance: '/beta-1/deliveries/25KMT4Z9/receipt',
+      status: HTTP_STATUS.BAD_REQUEST,
+      title: 'Bad Request',
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+    })
   })
 
   it('returns a 400 when the apiCode is invalid', async () => {
@@ -135,22 +140,17 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      validation: {
-        errors: [
-          {
-            key: 'apiCode',
-            errorType: 'InvalidValue',
-            message: 'the API Code supplied is invalid'
-          }
-        ]
-      }
+      detail: 'the API Code supplied is invalid',
+      instance: '/beta-1/deliveries/25KMT4Z9/receipt',
+      status: HTTP_STATUS.BAD_REQUEST,
+      title: 'Bad Request',
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
     })
   })
 
   it('returns a 500 when the delivery lookup fails', async () => {
-    jest
-      .spyOn(delivery, 'deliveryExists')
-      .mockRejectedValue(new Error('Database connection failed'))
+    const error = 'Database connection failed'
+    jest.spyOn(delivery, 'deliveryExists').mockRejectedValue(new Error(error))
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -161,19 +161,27 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      error: 'Error',
-      message: 'Database connection failed'
+      instance: '/beta-1/deliveries/25KMT4Z9/receipt',
+      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      title: 'Internal Server Error',
+      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error'
     })
   })
 
   it('returns 401 when unauthenticated', async () => {
-    const { statusCode } = await server.inject({
+    const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
       payload: { apiCode: apiCode1 }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
+    expect(result).toEqual({
+      detail: 'Missing authentication',
+      instance: url,
+      status: HTTP_STATUS.UNAUTHORIZED,
+      title: 'Unauthorized',
+      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
+    })
   })
 })

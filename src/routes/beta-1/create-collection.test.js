@@ -81,9 +81,11 @@ describe('collection Route Tests version: beta-1', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.NOT_FOUND)
     expect(result).toEqual({
-      error: 'Not Found',
-      message: 'movementId not found',
-      statusCode: HTTP_STATUS.NOT_FOUND
+      detail: 'movementId not found',
+      instance: '/beta-1/movements/movementId/collection',
+      status: HTTP_STATUS.NOT_FOUND,
+      title: 'Not Found',
+      type: 'https://waste-tracking.service.gov.uk/problems/not-found'
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
   })
@@ -106,13 +108,14 @@ describe('collection Route Tests version: beta-1', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(result.validation.errors).toEqual([
-      {
-        errorType: 'NotProvided',
-        key: 'apiCode',
-        message: '"apiCode" is required'
-      }
-    ])
+    expect(result).toEqual({
+      defaultError: new Error('Invalid request payload input'),
+      detail: '"apiCode" is required',
+      instance: '/beta-1/movements/movementId/collection',
+      status: HTTP_STATUS.BAD_REQUEST,
+      title: 'Bad Request',
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+    })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
@@ -133,9 +136,10 @@ describe('collection Route Tests version: beta-1', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      error: 'Error',
-      message: 'Database connection failed',
-      statusCode: 500
+      instance: '/beta-1/movements/movementId/collection',
+      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      title: 'Internal Server Error',
+      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error'
     })
 
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
@@ -147,7 +151,7 @@ describe('collection Route Tests version: beta-1', () => {
       'getMovementRecord'
     )
 
-    const { statusCode } = await server.inject({
+    const { statusCode, result } = await server.inject({
       method: 'POST',
       url: `/${endpointVersion}/movements/${goodMovementId}/collection`,
       payload: goodPayload,
@@ -157,6 +161,13 @@ describe('collection Route Tests version: beta-1', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
+    expect(result).toEqual({
+      detail: 'Missing authentication',
+      instance: '/beta-1/movements/movementId/collection',
+      status: HTTP_STATUS.UNAUTHORIZED,
+      title: 'Unauthorized',
+      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
+    })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 })

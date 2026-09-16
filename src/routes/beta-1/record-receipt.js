@@ -4,13 +4,14 @@ import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
-import { handleRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { config } from '../../config.js'
 import {
   recordReceiptSchema,
   deliveryIdParamsSchema
 } from '../../schemas/beta-1.js'
 import { deliveryExists } from '../../services/delivery.js'
+import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
+import { notFound } from '@hapi/boom'
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
@@ -70,13 +71,7 @@ const recordReceipt = {
         const message = `No delivery exists with delivery ID: ${deliveryId}`
         logger.error({ deliveryId }, message)
 
-        return h
-          .response({
-            statusCode: HTTP_STATUS.NOT_FOUND,
-            error: 'Not Found',
-            message
-          })
-          .code(HTTP_STATUS.NOT_FOUND)
+        return notFound(message)
       }
 
       logger.info(`Successfully recorded receipt for delivery ${deliveryId}`, {
@@ -89,7 +84,7 @@ const recordReceipt = {
         .header('x-request-id', traceId)
         .message('Successfully recorded a receipt')
     } catch (error) {
-      return handleRouteError(h, error)
+      return handleBetaRouteError(error)
     }
   }
 }
