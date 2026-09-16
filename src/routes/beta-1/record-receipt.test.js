@@ -101,9 +101,11 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.NOT_FOUND)
     expect(result).toEqual({
-      statusCode: HTTP_STATUS.NOT_FOUND,
-      error: 'Not Found',
-      message: `No delivery exists with delivery ID: ${deliveryId}`
+      detail: `No delivery exists with delivery ID: ${deliveryId}`,
+      instance: '/beta-1/deliveries/25KMT4Z9/receipt',
+      status: HTTP_STATUS.NOT_FOUND,
+      title: 'Not Found',
+      type: 'https://waste-tracking.service.gov.uk/problems/not-found'
     })
   })
 
