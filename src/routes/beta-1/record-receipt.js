@@ -10,7 +10,7 @@ import {
   deliveryIdParamsSchema
 } from '../../schemas/beta-1.js'
 import { deliveryExists } from '../../services/delivery.js'
-import { handleNewRouteError } from '../../common/helpers/bulk-route-helpers.js'
+import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { notFound } from '@hapi/boom'
 
 const apiVersion = 'beta-1'
@@ -84,7 +84,7 @@ const recordReceipt = {
         .header('x-request-id', traceId)
         .message('Successfully recorded a receipt')
     } catch (error) {
-      return handleNewRouteError(error)
+      return handleBetaRouteError(error)
     }
   }
 }

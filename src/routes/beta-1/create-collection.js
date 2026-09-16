@@ -8,7 +8,7 @@ import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
 import { createCollectionSchema } from '../../schemas/beta-1.js'
 import { notFound } from '@hapi/boom'
-import { handleNewRouteError } from '../../common/helpers/bulk-route-helpers.js'
+import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 
 const logger = createLogger()
 
@@ -71,7 +71,7 @@ const createCollection = {
         .header('x-request-id', traceId)
         .message('Successfully created a waste movement collection')
     } catch (error) {
-      return handleNewRouteError(error)
+      return handleBetaRouteError(error)
     }
   }
 }

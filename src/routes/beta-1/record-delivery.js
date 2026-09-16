@@ -14,7 +14,7 @@ import {
 } from '../../services/delivery.js'
 import { findMovementIds } from '../../services/movement.js'
 import { badRequest } from '@hapi/boom'
-import { handleNewRouteError } from '../../common/helpers/bulk-route-helpers.js'
+import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
@@ -125,7 +125,7 @@ const recordDelivery = {
         .header('x-request-id', traceId)
         .message('Successfully recorded a delivery')
     } catch (error) {
-      return handleNewRouteError(error)
+      return handleBetaRouteError(error)
     }
   }
 }

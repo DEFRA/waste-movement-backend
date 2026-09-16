@@ -81,7 +81,7 @@ function generateResponseWithValidationWarnings(payload, wasteTrackingIds) {
   })
 }
 
-const handleNewRouteError = (error) => {
+const handleBetaRouteError = (error) => {
   return boomify(error, {
     statusCode: error.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR,
     override: false
@@ -91,6 +91,6 @@ const handleNewRouteError = (error) => {
 export {
   badRequestResponse,
   handleRouteError,
-  handleNewRouteError,
+  handleBetaRouteError,
   generateResponseWithValidationWarnings
 }
