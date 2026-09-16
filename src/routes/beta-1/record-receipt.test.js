@@ -119,7 +119,6 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      defaultError: new Error('Invalid request payload input'),
       detail: '"apiCode" is required',
       instance: '/beta-1/deliveries/25KMT4Z9/receipt',
       status: HTTP_STATUS.BAD_REQUEST,

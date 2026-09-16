@@ -130,7 +130,6 @@ describe('movement Route Tests version: beta-1', () => {
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
 
     expect(result).toEqual({
-      defaultError: new Error('Invalid request payload input'),
       detail: '"apiCode" is required',
       instance: '/beta-1/movements',
       status: 400,
