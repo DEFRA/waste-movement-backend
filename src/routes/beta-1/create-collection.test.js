@@ -83,7 +83,6 @@ describe('collection Route Tests version: beta-1', () => {
     expect(result).toEqual({
       detail: 'movementId not found',
       instance: '/beta-1/movements/movementId/collection',
-      status: HTTP_STATUS.NOT_FOUND,
       title: 'Not Found',
       type: 'https://waste-tracking.service.gov.uk/problems/not-found'
     })
@@ -109,10 +108,8 @@ describe('collection Route Tests version: beta-1', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      defaultError: new Error('Invalid request payload input'),
       detail: '"apiCode" is required',
       instance: '/beta-1/movements/movementId/collection',
-      status: HTTP_STATUS.BAD_REQUEST,
       title: 'Bad Request',
       type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
     })
@@ -137,7 +134,6 @@ describe('collection Route Tests version: beta-1', () => {
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
       instance: '/beta-1/movements/movementId/collection',
-      status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       title: 'Internal Server Error',
       type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error'
     })
@@ -164,7 +160,6 @@ describe('collection Route Tests version: beta-1', () => {
     expect(result).toEqual({
       detail: 'Missing authentication',
       instance: '/beta-1/movements/movementId/collection',
-      status: HTTP_STATUS.UNAUTHORIZED,
       title: 'Unauthorized',
       type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
     })
