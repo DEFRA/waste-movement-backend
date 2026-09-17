@@ -1,0 +1,26 @@
+import { expect, describe, beforeAll, afterAll, it } from '@jest/globals'
+import { startTestService } from './helpers/test-service.js'
+import { httpRequest } from './helpers/http.js'
+import { expectStandardHeaders } from './helpers/expect-standard-headers.js'
+
+describe('GET /health', () => {
+  let testService
+
+  beforeAll(async () => {
+    testService = await startTestService()
+  })
+
+  afterAll(async () => {
+    await testService.stop()
+  })
+
+  it('returns 200 without authentication', async () => {
+    const res = await httpRequest(testService.baseUrl, '/health', {
+      auth: false
+    })
+
+    expect(res.status).toEqual(200)
+    expect(res.body).toEqual({ message: 'success' })
+    expectStandardHeaders(res)
+  })
+})
