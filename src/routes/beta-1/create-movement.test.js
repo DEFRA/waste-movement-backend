@@ -129,7 +129,14 @@ describe('movement Route Tests version: beta-1', () => {
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
 
     expect(result).toEqual({
-      detail: '"apiCode" is required',
+      detail: '1 validation error occurred',
+      errors: [
+        {
+          errorType: 'any.required',
+          message: '"apiCode" is required',
+          pointer: '/apiCode'
+        }
+      ],
       instance: '/beta-1/movements',
       title: 'Bad Request',
       type: 'https://waste-tracking.service.gov.uk/problems/bad-request'

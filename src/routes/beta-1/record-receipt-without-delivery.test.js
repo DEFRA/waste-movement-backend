@@ -109,7 +109,19 @@ describe('POST /beta-1/receipts', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      detail: '"apiCode" is required. "reason" is required',
+      detail: '2 validation errors occurred',
+      errors: [
+        {
+          errorType: 'any.required',
+          message: '"apiCode" is required',
+          pointer: '/apiCode'
+        },
+        {
+          errorType: 'any.required',
+          message: '"reason" is required',
+          pointer: '/reason'
+        }
+      ],
       instance: '/beta-1/receipts',
       title: 'Bad Request',
       type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
