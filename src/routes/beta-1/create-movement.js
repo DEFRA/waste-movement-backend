@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import Joi from 'joi'
 import {
   createMovementId,
   createMovementRecord
@@ -11,10 +10,7 @@ import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
 import { createMovementSchema } from '../../schemas/beta-1.js'
-import {
-  badRequestResponse,
-  handleBetaRouteError
-} from '../../common/helpers/bulk-route-helpers.js'
+import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
@@ -27,28 +23,6 @@ const createMovement = {
     description: 'Create a new waste movement',
     validate: {
       payload: createMovementSchema
-    },
-    plugins: {
-      'hapi-swagger': {
-        params: {},
-        responses: {
-          [HTTP_STATUS.CREATED]: {
-            description: 'Successfully created waste movement',
-            schema: Joi.object({
-              data: Joi.object({
-                movementId: Joi.string()
-                  .required()
-                  .description(
-                    'Unique identifier for a waste movement, minted by the server on `POST /movements`'
-                  )
-                  .example('25HRA0B2')
-              }).required(),
-              validation: Joi.object({ warnings: Joi.array() }).required()
-            })
-          },
-          ...badRequestResponse
-        }
-      }
     }
   },
   handler: async (request, h) => {

@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import Joi from 'joi'
 import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
@@ -28,34 +27,6 @@ const recordReceiptWithoutDelivery = {
       'the scenes and returns its Delivery ID, so the receipt stays addressable.',
     validate: {
       payload: recordReceiptWithoutDeliverySchema
-    },
-    plugins: {
-      'hapi-swagger': {
-        params: {},
-        responses: {
-          [HTTP_STATUS.CREATED]: {
-            description:
-              'Receipt recorded against a server-created empty Delivery. Body carries the new Delivery ID and any validation warnings.',
-            schema: Joi.object({
-              data: Joi.object({
-                deliveryId: Joi.string()
-                  .required()
-                  .description(
-                    'The new, empty Delivery minted for this receipt.'
-                  )
-                  .example('25KMT4Z9')
-              }),
-              validation: Joi.object({
-                warnings: Joi.array().items(Joi.object())
-              })
-            }).label('RecordReceiptWithoutDeliveryResponse')
-          },
-          [HTTP_STATUS.BAD_REQUEST]: {
-            description:
-              'The request could not be stored (validation, format or state error).'
-          }
-        }
-      }
     }
   },
   handler: async (request, h) => {
