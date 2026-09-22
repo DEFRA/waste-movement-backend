@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "beta-2/common/producer/producer-municipal.schema.json",
+  "title": "Producer (Municipal)",
+  "description": "Producer fields specific to municipal waste. organisationName and address are required; sicCode is optional. At least one of emailAddress or phoneNumber must be provided. Exactly one of authorisationNumber or reasonForNoAuthorisationNumber must be provided.",
+  "type": "object",
+  "allOf": [
+    { "$ref": "producer-base.schema.json" },
+    {
+      "type": "object",
+      "anyOf": [
+        { "properties": { "emailAddress": {} }, "required": ["emailAddress"] },
+        { "properties": { "phoneNumber": {} }, "required": ["phoneNumber"] }
+      ],
+      "oneOf": [
+        {
+          "required": ["authorisationNumber"],
+          "properties": {
+            "authorisationNumber": {},
+            "reasonForNoAuthorisationNumber": false
+          }
+        },
+        {
+          "required": ["reasonForNoAuthorisationNumber"],
+          "properties": {
+            "authorisationNumber": false,
+            "reasonForNoAuthorisationNumber": {}
+          }
+        }
+      ],
+      "properties": {
+        "wasteSource": {
+          "const": "Municipal",
+          "description": "Waste originates from a municipal source."
+        },
+        "organisationName": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Producer organisation name."
+        },
+        "authorisationNumber": {
+          "type": "string",
+          "pattern": "^\\s*(?:(?:[A-Za-z]{2}\\d{4}[A-Za-z]{2})|(?:[A-Za-z]{2}\\d{4}[A-Za-z]{2}\\/[Dd]\\d{4,5})|(?:[Ee][Pp][Rr]\\/[A-Za-z]{2}\\d{4}[A-Za-z]{2})|(?:[Ee][Pp][Rr]\\/[A-Za-z]{2}\\d{4}[A-Za-z]{2}\\/[Dd]\\d{4,5})|(?:[Ee][Aa][Ww][Mm][Ll]\\d{5,6})|(?:[Ww][Mm][Ll]\\d{5,6})|(?:[Pp][Pp][Cc]\\/[AaWwEeNn]\\/\\d{7})|(?:[Ww][Mm][Ll]\\/[LlWwEeNn]\\/\\d{7})|(?:[Ww][Mm][Ll]\\/[LlWwEeNn]\\/\\d{7}\\/\\d{2})|(?:[Pp][Pp][Cc]\\/[Aa]\\/[Ss][Ee][Pp][Aa]\\d{4}-\\d{4})|(?:[Ww][Mm][Ll]\\/[Ll]\\/[Ss][Ee][Pp][Aa]\\d{4}-\\d{4})|(?:[Ee][Aa][Ss]\\/[Pp]\\/\\d{6})|(?:[Pp]\\d{4}\\/\\d{2}[A-Za-z])|(?:[Pp]\\d{4}\\/\\d{2}[A-Za-z]\\/[Vv]\\d+)|(?:[Ww][Pp][Pp][Cc] \\d{2}\\/\\d{2})|(?:[Ww][Pp][Pp][Cc] \\d{2}\\/\\d{2}\\/[Vv]\\d+)|(?:[Ww][Mm][Ll] \\d{2}\\/\\d+(\\/[Tt])? [Ll][Nn]\\/\\d{2}\\/\\d+(\\/([MmTtCcNn]|[Vv]\\d+))*)|(?:[Ww][Mm][Ll] \\d{2}\\/\\d+ [Pp][Aa][Cc]\\/\\d{4}\\/[Ww][Cc][Ll]\\d{3}))\\s*$",
+          "description": "Producer environmental permit or exemption number, in a valid UK format. Mutually exclusive with reasonForNoAuthorisationNumber — exactly one of the two is required."
+        },
+        "reasonForNoAuthorisationNumber": {
+          "type": "string",
+          "description": "Reason no authorisationNumber is held. Free text for now — enum values TBC pending BA/policy input. Mutually exclusive with authorisationNumber — exactly one of the two is required."
+        },
+        "sicCode": {
+          "type": "string",
+          "pattern": "^\\d{5}$",
+          "description": "Five-digit Standard Industrial Classification code."
+        },
+        "emailAddress": {
+          "type": "string",
+          "format": "email",
+          "description": "Producer contact email address. At least one of emailAddress or phoneNumber must be provided."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "pattern": "^\\s*(?=(?:\\D*\\d){7,15}\\D*$)\\+?[0-9()\\-\\s]+$",
+          "description": "Producer contact phone number, in a valid format. At least one of emailAddress or phoneNumber must be provided."
+        },
+        "address": {
+          "type": "object",
+          "description": "Producer site address.",
+          "properties": {
+            "fullAddress": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Full address line."
+            },
+            "postcode": {
+              "type": "string",
+              "pattern": "^\\s*(?:(?:(([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z]\\d{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y]\\d{1,2})|(([A-Za-z]\\d[A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y]\\d?[A-Za-z])))) \\d[A-Za-z]{2})))|(?:(?:[Dd]6[Ww]|[AaC-Fc-fHhKkNnPpRrTtV-Yv-y]\\d{2}) ?[0-9AaC-Fc-fHhKkNnPpRrTtV-Yv-y]{4}))\\s*$",
+              "description": "Accepts UK postcodes and Irish Eircodes."
+            }
+          },
+          "required": ["postcode"]
+        }
+      },
+      "required": ["wasteSource", "organisationName", "address"]
+    }
+  ],
+  "propertyNames": {
+    "enum": [
+      "wasteSource",
+      "organisationName",
+      "authorisationNumber",
+      "reasonForNoAuthorisationNumber",
+      "sicCode",
+      "emailAddress",
+      "phoneNumber",
+      "address",
+      "councilMovement"
+    ]
+  }
+}
