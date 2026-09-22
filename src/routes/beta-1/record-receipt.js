@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import Joi from 'joi'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { createLogger } from '../../common/helpers/logging/logger.js'
@@ -26,35 +25,6 @@ const recordReceipt = {
     validate: {
       payload: recordReceiptSchema,
       params: deliveryIdParamsSchema
-    },
-    plugins: {
-      'hapi-swagger': {
-        params: {},
-        responses: {
-          [HTTP_STATUS.CREATED]: {
-            description:
-              'Receipt recorded against the delivery. Body carries the Delivery ID and any validation warnings.',
-            schema: Joi.object({
-              data: Joi.object({
-                deliveryId: Joi.string()
-                  .required()
-                  .description('The Delivery the receipt is recorded against.')
-                  .example('25KMT4Z9')
-              }),
-              validation: Joi.object({
-                warnings: Joi.array().items(Joi.object())
-              })
-            }).label('RecordReceiptResponse')
-          },
-          [HTTP_STATUS.NOT_FOUND]: {
-            description: 'Delivery not found.'
-          },
-          [HTTP_STATUS.BAD_REQUEST]: {
-            description:
-              'The request could not be stored (validation, format or state error).'
-          }
-        }
-      }
     }
   },
   handler: async (request, h) => {

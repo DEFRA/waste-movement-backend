@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import Joi from 'joi'
 import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
@@ -28,52 +27,6 @@ const recordDelivery = {
     notes: 'Records a delivery event and returns a Delivery ID.',
     validate: {
       payload: recordDeliverySchema
-    },
-    plugins: {
-      'hapi-swagger': {
-        params: {},
-        responses: {
-          [HTTP_STATUS.CREATED]: {
-            description:
-              'Delivery recorded. Body carries the new Delivery ID(s) and any validation warnings.',
-            schema: Joi.object({
-              data: Joi.object({
-                deliveries: Joi.array()
-                  .items(
-                    Joi.object({
-                      deliveryId: Joi.string()
-                        .required()
-                        .description(
-                          'Unique identifier for a delivery, minted by the server on `POST /deliveries`'
-                        )
-                        .example('25KMT4Z9'),
-                      movementIds: Joi.array()
-                        .items(Joi.string())
-                        .required()
-                        .description(
-                          'The Movement IDs bundled into this delivery.'
-                        )
-                        .example(['25HRA0B2', '25TKP3C9']),
-                      wasteType: Joi.string()
-                        .valid(...Object.values(WASTE_TYPE))
-                        .required()
-                        .description('The waste type of this delivery.')
-                        .example(WASTE_TYPE.NON_HAZARDOUS)
-                    })
-                  )
-                  .required()
-              }).required(),
-              validation: Joi.object({
-                warnings: Joi.array().items(Joi.object())
-              })
-            }).label('DeliveryResponse')
-          },
-          [HTTP_STATUS.BAD_REQUEST]: {
-            description:
-              'The request could not be stored (validation, format or state error).'
-          }
-        }
-      }
     }
   },
   handler: async (request, h) => {
