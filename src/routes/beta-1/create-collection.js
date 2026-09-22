@@ -5,11 +5,13 @@ import { getTraceId } from '@defra/hapi-tracing'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
-import { jsonSchemaValidator } from '../../schemas/validate/hapi-validator.js'
+import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
 import { notFound } from '@hapi/boom'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 
-const logger = createLogger()
+const apiVersion = 'beta-1'
+const logger = createLogger({ apiVersion })
+const validate = jsonSchemaValidatorFor(apiVersion)
 
 const createCollection = {
   method: 'POST',
@@ -17,7 +19,7 @@ const createCollection = {
   options: {
     description: 'Create a new waste collection',
     validate: {
-      payload: jsonSchemaValidator('beta-1/create-collection.schema.json')
+      payload: validate('create-collection')
     }
   },
   handler: async (request, h) => {

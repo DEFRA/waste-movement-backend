@@ -5,7 +5,7 @@ import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
-import { jsonSchemaValidator } from '../../schemas/validate/hapi-validator.js'
+import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
 import {
   createDeliveryId,
   createDeliveryRecord
@@ -14,6 +14,7 @@ import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
+const validate = jsonSchemaValidatorFor(apiVersion)
 
 const recordReceiptWithoutDelivery = {
   method: 'POST',
@@ -25,9 +26,7 @@ const recordReceiptWithoutDelivery = {
       'trail. Not linked to any Movement; `reason` must explain why. Creates an empty Delivery behind ' +
       'the scenes and returns its Delivery ID, so the receipt stays addressable.',
     validate: {
-      payload: jsonSchemaValidator(
-        'beta-1/record-receipt-without-delivery.schema.json'
-      )
+      payload: validate('record-receipt-without-delivery')
     }
   },
   handler: async (request, h) => {

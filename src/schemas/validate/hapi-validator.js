@@ -64,3 +64,6 @@ export const jsonSchemaValidator = (schemaId) => (value) => {
   boomError.details = details
   throw boomError
 }
+
+export const jsonSchemaValidatorFor = (version) => (name) =>
+  jsonSchemaValidator(`${version}/${name}.schema.json`)
