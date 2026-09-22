@@ -109,6 +109,54 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
     )
   })
 
+  // address and contactDetails are each defined in their own schema file
+  // (see address.test.js / contact-details.test.js for exhaustive format
+  // coverage) and pulled in here via $ref. These are thin checks that the
+  // $ref wiring is live — i.e. a malformed nested value is actually
+  // rejected when submitted as part of a producer — not a re-test of every
+  // format edge case.
+  describe('Scenario: Commercial or Municipal producer has an invalid nested field', () => {
+    test.each(['Commercial', 'Municipal'])(
+      'the payload is rejected for a %s producer when contactDetails has neither emailAddress nor phoneNumber',
+      (wasteSource) => {
+        const base =
+          wasteSource === 'Commercial' ? commercialProducer : municipalProducer
+        const payload = { ...base, contactDetails: {} }
+        expect(validateAjv(payload).valid).toBe(false)
+      }
+    )
+
+    test('the payload is rejected for a Commercial producer with a malformed postcode', () => {
+      const payload = {
+        ...commercialProducer,
+        address: { ...commercialProducer.address, postcode: 'NOTAPOSTCODE' }
+      }
+      expect(validateAjv(payload).valid).toBe(false)
+    })
+
+    test('the payload is rejected for a Commercial producer with a malformed phoneNumber', () => {
+      const payload = {
+        ...commercialProducer,
+        contactDetails: {
+          ...commercialProducer.contactDetails,
+          phoneNumber: 'not-a-number'
+        }
+      }
+      expect(validateAjv(payload).valid).toBe(false)
+    })
+
+    test('the payload is rejected for a Commercial producer with a malformed emailAddress', () => {
+      const payload = {
+        ...commercialProducer,
+        contactDetails: {
+          ...commercialProducer.contactDetails,
+          emailAddress: 'not-an-email'
+        }
+      }
+      expect(validateAjv(payload).valid).toBe(false)
+    })
+  })
+
   describe('Scenario: Commercial or Municipal producer provides neither authorisationNumber nor a reason', () => {
     test.each(['Commercial', 'Municipal'])(
       'the payload is rejected for a %s producer when neither authorisationNumber nor reasonForNoAuthorisationNumber is provided',
