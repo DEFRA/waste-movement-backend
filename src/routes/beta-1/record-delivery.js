@@ -6,7 +6,7 @@ import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { WASTE_TYPE } from '../../common/constants/waste-type.js'
 import { config } from '../../config.js'
-import { recordDeliverySchema } from '../../schemas/beta-1.js'
+import { jsonSchemaValidator } from '../../schemas/validate/hapi-validator.js'
 import {
   createDeliveryId,
   createDeliveryRecord
@@ -22,11 +22,10 @@ const recordDelivery = {
   method: 'POST',
   path: '/deliveries',
   options: {
-    tags: ['movements', 'deliveries'],
     description: 'Record a delivery',
     notes: 'Records a delivery event and returns a Delivery ID.',
     validate: {
-      payload: recordDeliverySchema
+      payload: jsonSchemaValidator('beta-1/record-delivery.schema.json')
     }
   },
   handler: async (request, h) => {

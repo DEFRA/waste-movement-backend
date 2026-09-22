@@ -130,12 +130,12 @@ describe('POST /beta-1/deliveries', () => {
       detail: '2 validation errors occurred',
       errors: [
         {
-          errorType: 'any.required',
+          errorType: 'NotProvided',
           message: '"apiCode" is required',
           pointer: '/apiCode'
         },
         {
-          errorType: 'any.required',
+          errorType: 'NotProvided',
           message: '"movementIds" is required',
           pointer: '/movementIds'
         }

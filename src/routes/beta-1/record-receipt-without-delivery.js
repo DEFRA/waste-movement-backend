@@ -5,7 +5,7 @@ import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
-import { recordReceiptWithoutDeliverySchema } from '../../schemas/beta-1.js'
+import { jsonSchemaValidator } from '../../schemas/validate/hapi-validator.js'
 import {
   createDeliveryId,
   createDeliveryRecord
@@ -19,14 +19,15 @@ const recordReceiptWithoutDelivery = {
   method: 'POST',
   path: '/receipts',
   options: {
-    tags: ['movements', 'deliveries', 'receipts'],
     description: 'Record receipt of waste without a Delivery ID',
     notes:
       'Fallback for recording receipt with no prior Delivery, e.g. waste received with no movement ' +
       'trail. Not linked to any Movement; `reason` must explain why. Creates an empty Delivery behind ' +
       'the scenes and returns its Delivery ID, so the receipt stays addressable.',
     validate: {
-      payload: recordReceiptWithoutDeliverySchema
+      payload: jsonSchemaValidator(
+        'beta-1/record-receipt-without-delivery.schema.json'
+      )
     }
   },
   handler: async (request, h) => {
