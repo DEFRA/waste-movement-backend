@@ -37,13 +37,17 @@ jest.mock('../../common/helpers/http-client.js', () => ({
   }
 }))
 
-describe('movement Route Tests version: beta-1', () => {
+describe('movement Route Tests version: beta-2', () => {
   let server
-  const endpointVersion = 'beta-1'
+  const endpointVersion = 'beta-2'
   const errorMessage = 'Database connection failed'
   const traceId = 'created-trace-id-123'
   const apiCode = apiCode1
-  const goodPayload = { apiCode }
+  const producer = {
+    wasteSource: 'Household',
+    councilMovement: true
+  }
+  const goodPayload = { apiCode, producer }
 
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
@@ -77,7 +81,7 @@ describe('movement Route Tests version: beta-1', () => {
       data: { movementId: expect.any(String) },
       validation: { warnings: [] }
     })
-    expect(headers['x-request-id']).toEqual(traceId) //expect.any(String))
+    expect(headers['x-request-id']).toEqual(traceId)
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
   })
 
@@ -98,7 +102,7 @@ describe('movement Route Tests version: beta-1', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      instance: '/beta-1/movements',
+      instance: '/beta-2/movements',
       title: 'Internal Server Error',
       type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error'
     })
@@ -109,8 +113,8 @@ describe('movement Route Tests version: beta-1', () => {
     )
   })
 
-  it('returns an error when validation fails and does not create a movement', async () => {
-    const invalidPayload = {}
+  it('returns an error when apiCode is missing and does not create a movement', async () => {
+    const invalidPayload = { producer }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -127,17 +131,51 @@ describe('movement Route Tests version: beta-1', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-
     expect(result).toEqual({
       detail: '1 validation error occurred',
       errors: [
         {
-          errorType: 'any.required',
+          errorType: 'NotProvided',
           message: '"apiCode" is required',
           pointer: '/apiCode'
         }
       ],
-      instance: '/beta-1/movements',
+      instance: '/beta-2/movements',
+      title: 'Bad Request',
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+    })
+
+    expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
+  })
+
+  it('returns an error when producer is missing and does not create a movement', async () => {
+    const invalidPayload = { apiCode }
+    const createMovementRecordSpy = jest.spyOn(
+      movementCreate,
+      'createMovementRecord'
+    )
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements`,
+      payload: invalidPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result).toEqual({
+      detail: '1 validation error occurred',
+      errors: [
+        {
+          errorType: 'NotProvided',
+          message: '"producer" is required',
+          pointer: '/producer'
+        }
+      ],
+      instance: '/beta-2/movements',
       title: 'Bad Request',
       type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
     })
@@ -146,9 +184,7 @@ describe('movement Route Tests version: beta-1', () => {
   })
 
   it('returns an error when apiCode validation fails and does not create a movement', async () => {
-    const invalidPayload = {
-      apiCode: apiCode3
-    }
+    const invalidPayload = { apiCode: apiCode3, producer }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -166,7 +202,7 @@ describe('movement Route Tests version: beta-1', () => {
 
     expect(result).toEqual({
       detail: 'the API Code supplied is invalid',
-      instance: '/beta-1/movements',
+      instance: '/beta-2/movements',
       title: 'Bad Request',
       type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
     })
@@ -175,9 +211,6 @@ describe('movement Route Tests version: beta-1', () => {
   })
 
   it('should return 401 when request is unauthenticated', async () => {
-    const invalidPayload = {
-      apiCode: apiCode3
-    }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -186,7 +219,7 @@ describe('movement Route Tests version: beta-1', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url: `/${endpointVersion}/movements`,
-      payload: invalidPayload,
+      payload: goodPayload,
       headers: {
         'x-cdp-request-id': traceId
       }

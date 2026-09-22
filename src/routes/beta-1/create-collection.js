@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import Joi from 'joi'
 import { getMovementRecord } from '../../services/movement.js'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
@@ -20,25 +19,6 @@ const createCollection = {
     description: 'Create a new waste collection',
     validate: {
       payload: createCollectionSchema
-    },
-    plugins: {
-      'hapi-swagger': {
-        params: {},
-        responses: {
-          [HTTP_STATUS.CREATED]: {
-            description: 'Successfully created waste collection',
-            schema: Joi.object({})
-          },
-          [HTTP_STATUS.BAD_REQUEST]: {
-            description: 'Bad Request',
-            schema: Joi.object({
-              statusCode: Joi.number().valid(HTTP_STATUS.BAD_REQUEST),
-              error: Joi.string(),
-              message: Joi.string()
-            }).label('BadRequestResponse')
-          }
-        }
-      }
     }
   },
   handler: async (request, h) => {
