@@ -57,14 +57,14 @@ Each of these was confirmed by probing the real code, not inferred:
 
 ## Status
 
-| Step                 | State                                                                                                                                          |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Step                 | State                                                                                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1 Producer schemas   | **done** — `src/schemas/beta-2/common/producer/` (5 files) + `src/schemas/beta-2/creation/create-movement.schema.json`, verified to load and validate under `ajv/dist/2020.js` |
-| 2 AJV harness        | not started                                                                                                                                    |
-| 3 beta-2 route       | not started                                                                                                                                    |
-| 4 beta-1 conversion  | **partially done** — `plugins['hapi-swagger']` blocks removed (`5cb0fe2`, #170). Joi→JSON Schema, AJV switch and **untagging** still to do     |
-| 5 Producer test port | not started                                                                                                                                    |
-| 6 OpenAPI specs      | **partially done** — `docs/api/openapi-beta-1.yaml` copied but untracked and still 3.0.3. 3.1 conversion and `openapi-beta-2.yaml` still to do |
+| 2 AJV harness        | not started                                                                                                                                                                    |
+| 3 beta-2 route       | not started                                                                                                                                                                    |
+| 4 beta-1 conversion  | **partially done** — `plugins['hapi-swagger']` blocks removed (`5cb0fe2`, #170). Joi→JSON Schema, AJV switch and **untagging** still to do                                     |
+| 5 Producer test port | not started                                                                                                                                                                    |
+| 6 OpenAPI specs      | **partially done** — `docs/api/openapi-beta-1.yaml` copied but untracked and still 3.0.3. 3.1 conversion and `openapi-beta-2.yaml` still to do                                 |
 
 ## Non-goals
 
@@ -173,6 +173,31 @@ both then share a single AJV instance. Path-based `$id`s are what make that safe
   On load, assert each schema's `$id` equals its path relative to `src/schemas/`, so a
   mismatch fails at import time rather than registering under an unexpected key.
 
+> **Why `ajv/dist/2020.js` and not the default build.** `ajv`'s default export is a
+> **draft-07** validator; `ajv/dist/2020.js` is a **2020-12** one. They are mutually
+> exclusive — each throws `no schema with key or ref "<other dialect>"` when fed the other's
+> `$schema`. Because the loader compiles everything at import under `strict: true`, a
+> mismatch fails at boot, not per request.
+>
+> The reason to be on 2020-12 is that **OpenAPI 3.1's default dialect is 2020-12**, which is
+> why we chose 3.1 in the first place (`const`, `propertyNames`, boolean subschemas). Keeping
+> the schemas on the same dialect means the runtime validator and the published contract are
+> provably the same artefact, with no reliance on consumers honouring a `jsonSchemaDialect`
+> override. It also unlocks `unevaluatedProperties`, the natural future replacement for the
+> hand-maintained `propertyNames: { enum: [...] }` lists.
+>
+> **No semantic risk in the port.** None of the keywords these schemas use differ between the
+> dialects. Verified by running the real producer schemas under both builds across 14 cases
+> covering every rule — forbidden fields, the authorisation XOR, the contact-method `anyOf`,
+> postcode/sicCode patterns, case sensitivity — with identical results. The port is a pure
+> `$schema` swap. The same holds for beta-1: its only array is
+> `movementIds: { items: { type: 'string' } }`, the single-schema form, identical in both
+> dialects (only the tuple form changed to `prefixItems`).
+>
+> One non-issue worth recording: `$ref` **sibling keywords** are ignored per the draft-07
+> spec but applied in 2020-12. ajv applies them in _both_ builds, so this difference does not
+> bite here.
+
 - `hapi-validator.js` — the adapter:
 
   ```js
@@ -192,9 +217,26 @@ both then share a single AJV instance. Path-based `$id`s are what make that safe
 
 - `index.test.js` — registry loads, unknown `$id` throws, `$id`/path mismatch is caught.
 
-**New dependency:** `ajv` + `ajv-formats` (both runtime deps — validation happens at request
-time). Neither appears on the Defra radar, but neither do most libraries; the radar governs
-platform technology, not npm packages.
+**New dependency:** `ajv@^8` + `ajv-formats@^3`, both **runtime** deps (`dependencies`, not
+`devDependencies`) — validation happens at request time. Neither appears on the Defra radar,
+but neither do most libraries; the radar governs platform technology, not npm packages.
+
+> ⚠️ **Hoisting trap — `ajv@6` is already present.** `node_modules/ajv` currently resolves to
+> **6.15.0**, pulled in transitively by `eslint`:
+>
+> ```
+> └─┬ eslint@9.39.2
+>   ├─┬ @eslint/eslintrc@3.3.7
+>   │ └── ajv@6.15.0 deduped
+>   └── ajv@6.15.0
+> ```
+>
+> ajv 6 is **draft-07 only and has no `dist/2020.js`**, so
+> `import Ajv2020 from 'ajv/dist/2020.js'` fails today with `ERR_MODULE_NOT_FOUND` — which
+> reads as "the path is wrong" rather than "the wrong ajv is installed". Add `ajv@^8` as an
+> explicit direct dependency; npm then gives it the root slot and demotes eslint's copy to
+> `node_modules/eslint/node_modules/ajv`. Verify after install with
+> `node -e "console.log(require('ajv/package.json').version)"` — it must report 8.x.
 
 ## Step 3 — beta-2 route
 
