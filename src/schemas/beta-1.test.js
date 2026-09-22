@@ -66,3 +66,23 @@ describe('beta-1/record-delivery.schema.json', () => {
     ).toBe(false)
   })
 })
+
+describe('beta-1/record-receipt-without-delivery.schema.json', () => {
+  const schemaId = 'beta-1/record-receipt-without-delivery.schema.json'
+
+  it('accepts a valid payload', () => {
+    expect(
+      validateAjv(schemaId, { apiCode: apiCode1, reason: 'No delivery' }).valid
+    ).toBe(true)
+  })
+
+  it('requires reason', () => {
+    expect(validateAjv(schemaId, { apiCode: apiCode1 }).valid).toBe(false)
+  })
+
+  it('rejects an empty reason', () => {
+    expect(validateAjv(schemaId, { apiCode: apiCode1, reason: '' }).valid).toBe(
+      false
+    )
+  })
+})

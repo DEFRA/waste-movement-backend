@@ -13,6 +13,7 @@
     },
     "reason": {
       "type": "string",
+      "minLength": 1,
       "description": "Mandatory explanation for why this receipt is being recorded without a Delivery ID.",
       "examples": [
         "No delivery was recorded prior to receipt; waste received directly from the producer."
