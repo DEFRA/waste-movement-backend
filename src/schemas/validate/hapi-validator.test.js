@@ -58,6 +58,24 @@ describe('jsonSchemaValidator', () => {
 
     expect(detail).toMatchObject({ path: ['reason'], type: 'OutOfRange' })
   })
+
+  test('nests the path for an error inside a sub-object', () => {
+    const id = 'beta-2/common/producer/producer-commercial.schema.json'
+    const [detail] = getDetails(id, {
+      wasteSource: 'Commercial',
+      councilMovement: false,
+      organisationName: 'ACME',
+      sicCode: '38110',
+      emailAddress: 'a@b.com',
+      authorisationNumber: 'EAS/P/123456',
+      address: { fullAddress: '10 Way', postcode: 'NOTAPOSTCODE' }
+    })
+
+    expect(detail).toMatchObject({
+      path: ['address', 'postcode'],
+      type: 'InvalidFormat'
+    })
+  })
 })
 
 describe('jsonSchemaValidatorFor', () => {
