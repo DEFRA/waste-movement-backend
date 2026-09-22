@@ -15,5 +15,6 @@
       "$ref": "../common/producer/producer.schema.json"
     }
   },
-  "required": ["apiCode", "producer"]
+  "required": ["apiCode", "producer"],
+  "additionalProperties": false
 }
