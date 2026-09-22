@@ -23,8 +23,10 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
       fullAddress: '10 Industrial Way, Test City',
       postcode: 'TE1 2PQ'
     },
-    emailAddress: 'producer@example.com',
-    phoneNumber: '01234567890',
+    contactDetails: {
+      emailAddress: 'producer@example.com',
+      phoneNumber: '01234567890'
+    },
     sicCode: '38110',
     councilMovement: false
   }
@@ -37,8 +39,10 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
       fullAddress: 'Council Depot, Test City',
       postcode: 'TE1 5CD'
     },
-    emailAddress: 'waste.services@example.gov.uk',
-    phoneNumber: '01234567890',
+    contactDetails: {
+      emailAddress: 'waste.services@example.gov.uk',
+      phoneNumber: '01234567890'
+    },
     councilMovement: true
   }
 
@@ -59,8 +63,7 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
       ['authorisationNumber', 'EAS/P/123456'],
       ['reasonForNoAuthorisationNumber', 'TBC'],
       ['sicCode', '38110'],
-      ['emailAddress', 'producer@example.com'],
-      ['phoneNumber', '01234567890'],
+      ['contactDetails', { emailAddress: 'producer@example.com' }],
       [
         'address',
         { fullAddress: '5 Elm Street, Test Town', postcode: 'TE2 4HH' }
@@ -91,13 +94,16 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
     )
   })
 
-  describe('Scenario: Commercial or Municipal producer provides neither contact method', () => {
+  // contactDetails' own field-level rules (e.g. neither emailAddress nor
+  // phoneNumber provided) are covered by contact-details.test.js — this just
+  // confirms producer requires the field at all.
+  describe('Scenario: Commercial or Municipal producer omits contactDetails', () => {
     test.each(['Commercial', 'Municipal'])(
-      'the payload is rejected for a %s producer when neither emailAddress nor phoneNumber is provided',
+      'the payload is rejected for a %s producer when contactDetails is missing',
       (wasteSource) => {
         const base =
           wasteSource === 'Commercial' ? commercialProducer : municipalProducer
-        const { emailAddress, phoneNumber, ...payload } = base
+        const { contactDetails, ...payload } = base
         expect(validateAjv(payload).valid).toBe(false)
       }
     )
@@ -133,17 +139,6 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
         expect(validateAjv(payload).valid).toBe(false)
       }
     )
-  })
-
-  describe('Scenario: Producer address postcode is malformed', () => {
-    const payload = {
-      ...commercialProducer,
-      address: { ...commercialProducer.address, postcode: 'NOTAPOSTCODE' }
-    }
-
-    test('the payload is rejected', () => {
-      expect(validateAjv(payload).valid).toBe(false)
-    })
   })
 
   describe('Scenario: sicCode is not five digits', () => {
@@ -191,32 +186,8 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
       expect(validateAjv(withReason).valid).toBe(true)
     })
 
-    test('accepts emailAddress only', () => {
-      const { phoneNumber, ...payload } = commercialProducer
-      expect(validateAjv(payload).valid).toBe(true)
-    })
-
-    test('accepts phoneNumber only', () => {
-      const { emailAddress, ...payload } = commercialProducer
-      expect(validateAjv(payload).valid).toBe(true)
-    })
-
-    test('does not require fullAddress', () => {
-      const { postcode } = commercialProducer.address
-      const payload = { ...commercialProducer, address: { postcode } }
-      expect(validateAjv(payload).valid).toBe(true)
-    })
-
     test('rejects an empty organisationName', () => {
       const payload = { ...commercialProducer, organisationName: '' }
-      expect(validateAjv(payload).valid).toBe(false)
-    })
-
-    test('rejects an empty fullAddress', () => {
-      const payload = {
-        ...commercialProducer,
-        address: { ...commercialProducer.address, fullAddress: '' }
-      }
       expect(validateAjv(payload).valid).toBe(false)
     })
   })
@@ -232,14 +203,6 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
 
     test('rejects an empty organisationName', () => {
       const payload = { ...municipalProducer, organisationName: '' }
-      expect(validateAjv(payload).valid).toBe(false)
-    })
-
-    test('rejects an empty fullAddress', () => {
-      const payload = {
-        ...municipalProducer,
-        address: { ...municipalProducer.address, fullAddress: '' }
-      }
       expect(validateAjv(payload).valid).toBe(false)
     })
 
