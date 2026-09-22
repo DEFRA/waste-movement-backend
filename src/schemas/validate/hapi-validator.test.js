@@ -11,7 +11,7 @@ describe('jsonSchemaValidator', () => {
 
   test('throws a Boom badRequest when the value is invalid', () => {
     expect(() => jsonSchemaValidator(schemaId)({})).toThrow(
-      'Payload validation failed'
+      '"councilMovement" is required'
     )
   })
 })
