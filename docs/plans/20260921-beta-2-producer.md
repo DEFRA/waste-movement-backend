@@ -1,5 +1,7 @@
 # beta-2 slice: `producer` on `POST /beta-2/movements`
 
+**Status: shipped.** See Amendments (end of doc) for what changed from this plan on the way.
+
 ## Goal
 
 A `beta-2` API slice whose payload validation is driven by **JSON Schema as the source of
@@ -120,7 +122,7 @@ documentation later**, once the slice settles.
   `movements` tag, and their `plugins['hapi-swagger']` blocks.
 - Do not remove `hapi-swagger`, `@hapi/inert` or `@hapi/vision`.
 - Do not persist `producer`.
-- Do not implement the RFC9457 `errors` array — handled separately.
+- Do not implement the RFC9457 `errors` array — handled separately. **Superseded, see Amendments.**
 
 ---
 
@@ -319,7 +321,7 @@ their sole description. This does not depend on the rest of step 4 and can land 
 
 **Behaviour change:** beta-1 validation error _messages_ come from AJV rather than Joi. Status
 codes and the RFC9457 envelope are unaffected. Existing tests asserting on Joi message text
-need updating.
+need updating. **Ended up bigger than this — see Amendments.**
 
 ## Step 5 — OpenAPI specs
 
@@ -348,6 +350,26 @@ when the docs repo is wired up; it does not block this work.
 - `GET /swagger.json` contains **only** legacy routes
 - `POST /beta-2/movements` returns 201 for a valid producer of each `wasteSource`, and 400
   for each rejection scenario in the ported test
+
+## Amendments
+
+What changed from the plan above, discovered while building it:
+
+- **`jsonSchemaValidator` ended up producing `errors[]`, not just a message.** It maps each AJV
+  error to `{ message, path, type }` (Joi's detail shape) and attaches it as `.details` on the
+  thrown Boom error. `ProblemDetails.fromBoom` (`@defra/waste-movement-utils`) already reads
+  that shape and builds `errors[]` from it — nobody had wired anything into it before, which is
+  presumably why it read as "handled separately". `type` comes from a new `ERROR_TYPE` export
+  added to `@defra/waste-movement-utils` (`NotProvided`, `NotAllowed`, `InvalidType`,
+  `InvalidFormat`, `InvalidValue`, `OutOfRange`, `UnexpectedError`) — the same categories
+  `getErrorCategory` already mapped Joi's types onto, so AJV- and Joi-validated routes now speak
+  the same vocabulary. Both beta-1 and beta-2 get this for free, since they share the harness.
+- **`jsonSchemaValidatorFor(version)`** was added to the harness so routes do
+  `jsonSchemaValidatorFor('beta-1')('create-movement')` instead of hardcoding the full
+  `'beta-1/create-movement.schema.json'` string.
+- **A real regression was caught in review**: porting `reason` to JSON Schema dropped Joi's
+  implicit non-empty-string check. Fixed with `minLength: 1` on
+  `beta-1/record-receipt-without-delivery.schema.json`, plus a test.
 
 ## Risks
 
