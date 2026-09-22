@@ -2,6 +2,7 @@ import {
   jsonSchemaValidator,
   jsonSchemaValidatorFor
 } from './hapi-validator.js'
+import { apiCode1 } from '../../test/data/apiCodes.js'
 
 const schemaId = 'beta-2/common/producer/producer-base.schema.json'
 
@@ -16,6 +17,46 @@ describe('jsonSchemaValidator', () => {
     expect(() => jsonSchemaValidator(schemaId)({})).toThrow(
       '"councilMovement" is required'
     )
+  })
+
+  const getDetails = (id, value) => {
+    try {
+      jsonSchemaValidator(id)(value)
+      throw new Error('expected validation to fail')
+    } catch (error) {
+      return error.details
+    }
+  }
+
+  test('maps a missing property to NotProvided', () => {
+    expect(getDetails(schemaId, {})).toEqual([
+      {
+        message: '"councilMovement" is required',
+        path: ['councilMovement'],
+        type: 'NotProvided'
+      }
+    ])
+  })
+
+  test('maps an additional property to NotAllowed', () => {
+    const id = 'beta-1/create-movement.schema.json'
+    const [detail] = getDetails(id, { apiCode: apiCode1, extra: 'x' })
+
+    expect(detail).toMatchObject({ path: ['extra'], type: 'NotAllowed' })
+  })
+
+  test('maps a format mismatch to InvalidFormat', () => {
+    const id = 'beta-1/create-movement.schema.json'
+    const [detail] = getDetails(id, { apiCode: 'not-a-uuid' })
+
+    expect(detail).toMatchObject({ path: ['apiCode'], type: 'InvalidFormat' })
+  })
+
+  test('maps a minLength violation to OutOfRange', () => {
+    const id = 'beta-1/record-receipt-without-delivery.schema.json'
+    const [detail] = getDetails(id, { apiCode: apiCode1, reason: '' })
+
+    expect(detail).toMatchObject({ path: ['reason'], type: 'OutOfRange' })
   })
 })
 
