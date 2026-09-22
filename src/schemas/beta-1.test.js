@@ -1,86 +1,88 @@
-import { createMovementSchema, recordDeliverySchema } from './beta-1.js'
+import { getErrors, validate } from './validate/index.js'
 import { apiCode1 } from '../test/data/apiCodes.js'
 
-describe('createMovementSchema', () => {
-  it('accepts a valid payload', () => {
-    const { error } = createMovementSchema.validate({
-      apiCode: apiCode1
-    })
+const validateAjv = (id, payload) => {
+  const valid = validate(id, payload)
+  return { valid, errors: valid ? null : getErrors(id) }
+}
 
-    expect(error).toBeUndefined()
+describe('beta-1/create-movement.schema.json', () => {
+  const schemaId = 'beta-1/create-movement.schema.json'
+
+  it('accepts a valid payload', () => {
+    expect(validateAjv(schemaId, { apiCode: apiCode1 }).valid).toBe(true)
   })
 
   it('requires apiCode', () => {
-    const { error } = createMovementSchema.validate({})
-
-    expect(error.details[0].path).toEqual(['apiCode'])
-    expect(error.details[0].type).toBe('any.required')
+    expect(validateAjv(schemaId, {}).valid).toBe(false)
   })
 
   it('requires apiCode to be a uuid', () => {
-    const { error } = createMovementSchema.validate({
-      apiCode: 'not-a-uuid'
-    })
-
-    expect(error.details[0].path).toEqual(['apiCode'])
-    expect(error.details[0].type).toBe('string.guid')
+    expect(validateAjv(schemaId, { apiCode: 'not-a-uuid' }).valid).toBe(false)
   })
 })
 
-describe('recordDeliverySchema', () => {
-  it('accepts a valid payload', () => {
-    const { error } = recordDeliverySchema.validate({
-      apiCode: apiCode1,
-      movementIds: ['25HRA0B2']
-    })
+describe('beta-1/record-delivery.schema.json', () => {
+  const schemaId = 'beta-1/record-delivery.schema.json'
 
-    expect(error).toBeUndefined()
+  it('accepts a valid payload', () => {
+    expect(
+      validateAjv(schemaId, { apiCode: apiCode1, movementIds: ['25HRA0B2'] })
+        .valid
+    ).toBe(true)
   })
 
   it('accepts multiple movementIds', () => {
-    const { error } = recordDeliverySchema.validate({
-      apiCode: apiCode1,
-      movementIds: ['25HRA0B2', '25HRA0B3']
-    })
-
-    expect(error).toBeUndefined()
+    expect(
+      validateAjv(schemaId, {
+        apiCode: apiCode1,
+        movementIds: ['25HRA0B2', '25HRA0B3']
+      }).valid
+    ).toBe(true)
   })
 
   it('requires apiCode', () => {
-    const { error } = recordDeliverySchema.validate({
-      movementIds: ['25HRA0B2']
-    })
-
-    expect(error.details[0].path).toEqual(['apiCode'])
-    expect(error.details[0].type).toBe('any.required')
+    expect(validateAjv(schemaId, { movementIds: ['25HRA0B2'] }).valid).toBe(
+      false
+    )
   })
 
   it('requires apiCode to be a uuid', () => {
-    const { error } = recordDeliverySchema.validate({
-      apiCode: 'not-a-uuid',
-      movementIds: ['25HRA0B2']
-    })
-
-    expect(error.details[0].path).toEqual(['apiCode'])
-    expect(error.details[0].type).toBe('string.guid')
+    expect(
+      validateAjv(schemaId, {
+        apiCode: 'not-a-uuid',
+        movementIds: ['25HRA0B2']
+      }).valid
+    ).toBe(false)
   })
 
   it('requires movementIds', () => {
-    const { error } = recordDeliverySchema.validate({
-      apiCode: apiCode1
-    })
-
-    expect(error.details[0].path).toEqual(['movementIds'])
-    expect(error.details[0].type).toBe('any.required')
+    expect(validateAjv(schemaId, { apiCode: apiCode1 }).valid).toBe(false)
   })
 
   it('requires movementIds to be a non-empty array', () => {
-    const { error } = recordDeliverySchema.validate({
-      apiCode: apiCode1,
-      movementIds: []
-    })
+    expect(
+      validateAjv(schemaId, { apiCode: apiCode1, movementIds: [] }).valid
+    ).toBe(false)
+  })
+})
 
-    expect(error.details[0].path).toEqual(['movementIds'])
-    expect(error.details[0].type).toBe('array.min')
+describe('beta-1/record-receipt-without-delivery.schema.json', () => {
+  const schemaId = 'beta-1/record-receipt-without-delivery.schema.json'
+
+  it('accepts a valid payload', () => {
+    expect(
+      validateAjv(schemaId, { apiCode: apiCode1, reason: 'No delivery' }).valid
+    ).toBe(true)
+  })
+
+  it('requires reason', () => {
+    expect(validateAjv(schemaId, { apiCode: apiCode1 }).valid).toBe(false)
+  })
+
+  it('rejects an empty reason', () => {
+    expect(validateAjv(schemaId, { apiCode: apiCode1, reason: '' }).valid).toBe(
+      false
+    )
   })
 })

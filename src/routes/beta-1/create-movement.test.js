@@ -132,7 +132,7 @@ describe('movement Route Tests version: beta-1', () => {
       detail: '1 validation error occurred',
       errors: [
         {
-          errorType: 'any.required',
+          errorType: 'NotProvided',
           message: '"apiCode" is required',
           pointer: '/apiCode'
         }

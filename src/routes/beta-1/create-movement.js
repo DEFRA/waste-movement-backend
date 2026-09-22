@@ -9,20 +9,20 @@ import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
-import { createMovementSchema } from '../../schemas/beta-1.js'
+import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
+const validate = jsonSchemaValidatorFor(apiVersion)
 
 const createMovement = {
   method: 'POST',
   path: '/movements',
   options: {
-    tags: ['movements'],
     description: 'Create a new waste movement',
     validate: {
-      payload: createMovementSchema
+      payload: validate('create-movement')
     }
   },
   handler: async (request, h) => {

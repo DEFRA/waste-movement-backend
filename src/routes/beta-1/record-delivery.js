@@ -6,7 +6,7 @@ import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { WASTE_TYPE } from '../../common/constants/waste-type.js'
 import { config } from '../../config.js'
-import { recordDeliverySchema } from '../../schemas/beta-1.js'
+import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
 import {
   createDeliveryId,
   createDeliveryRecord
@@ -17,16 +17,16 @@ import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
+const validate = jsonSchemaValidatorFor(apiVersion)
 
 const recordDelivery = {
   method: 'POST',
   path: '/deliveries',
   options: {
-    tags: ['movements', 'deliveries'],
     description: 'Record a delivery',
     notes: 'Records a delivery event and returns a Delivery ID.',
     validate: {
-      payload: recordDeliverySchema
+      payload: validate('record-delivery')
     }
   },
   handler: async (request, h) => {
