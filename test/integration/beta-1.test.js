@@ -4,11 +4,13 @@ import { startTestService } from './helpers/test-service.js'
 import { createWasteTrackingStub } from './helpers/waste-tracking-stub.js'
 import { httpRequest } from './helpers/http.js'
 import { expectStandardHeaders } from './helpers/expect-standard-headers.js'
+import { describeBetaEndpointTests } from './helpers/beta-endpoint-tests.js'
 import { apiCode1 } from '../../src/test/data/apiCodes.js'
 
 describe('beta-1', () => {
   let testService
   let wasteTrackingStub
+  const version = 'beta-1'
 
   beforeAll(async () => {
     wasteTrackingStub = createWasteTrackingStub()
@@ -20,6 +22,18 @@ describe('beta-1', () => {
     await testService.stop()
     await wasteTrackingStub.stop()
   })
+
+  // Shared error formatting and RFC9457 compliance tests
+  describeBetaEndpointTests(
+    version,
+    () => testService,
+    () => wasteTrackingStub,
+    {
+      apiCode1,
+      minimalProducer: {}, // beta-1 doesn't require producer
+      requiresProducer: false
+    }
+  )
 
   it('POST /beta-1/movements creates a movement', async () => {
     const res = await httpRequest(testService.baseUrl, '/beta-1/movements', {
@@ -120,5 +134,52 @@ describe('beta-1', () => {
       validation: { warnings: [] }
     })
     expectStandardHeaders(res)
+  })
+
+  describe('beta-1 specific error cases', () => {
+    it('rejects collection creation for non-existent movement', async () => {
+      const res = await httpRequest(
+        testService.baseUrl,
+        '/beta-1/movements/NONEXISTENT/collection',
+        { method: 'POST', body: { apiCode: apiCode1 } }
+      )
+
+      expect(res.status).toEqual(HTTP_STATUS.NOT_FOUND)
+      expect(res.body).toHaveProperty('title')
+      expect(res.body.title).toContain('Not Found')
+    })
+
+    it('rejects delivery recording with missing movementIds', async () => {
+      const res = await httpRequest(testService.baseUrl, '/beta-1/deliveries', {
+        method: 'POST',
+        body: { apiCode: apiCode1 }
+      })
+
+      expect(res.status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(res.body).toHaveProperty('title')
+      expect(res.body.title).toContain('Bad Request')
+    })
+
+    it('rejects delivery recording with non-existent movement', async () => {
+      const res = await httpRequest(testService.baseUrl, '/beta-1/deliveries', {
+        method: 'POST',
+        body: { apiCode: apiCode1, movementIds: ['NONEXISTENT'] }
+      })
+
+      expect(res.status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(res.body).toHaveProperty('title')
+      expect(res.body.title).toContain('Bad Request')
+    })
+
+    it('rejects receipt recording with missing apiCode', async () => {
+      const res = await httpRequest(testService.baseUrl, '/beta-1/receipts', {
+        method: 'POST',
+        body: { reason: 'Some reason' }
+      })
+
+      expect(res.status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(res.body).toHaveProperty('title')
+      expect(res.body.title).toContain('Bad Request')
+    })
   })
 })

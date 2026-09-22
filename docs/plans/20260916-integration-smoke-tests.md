@@ -20,14 +20,14 @@ This tier sits between them: real sockets, single service, seconds not minutes.
 
 ## Isolation boundary
 
-| Concern | Real or stubbed |
-|---|---|
-| Inbound HTTP | **Real** — native `fetch()` to `127.0.0.1:<ephemeral>` |
-| Server assembly | **Real** — actual `createServer()` from `src/server.js`, plus `server.start()` |
-| Auth, Joi validation, RFC9457 plugin, error handler | **Real** |
-| MongoDB | **Real** — in-memory replica set; transactions work |
-| Audit logging | **Real** — `@defra/cdp-auditing` only writes pino to stdout, no network |
-| `waste-tracking-id-backend` `GET /next` | **Stubbed** — as a real local Hapi server, injected via `WASTE_TRACKING_SERVICE_URL` |
+| Concern                                             | Real or stubbed                                                                      |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Inbound HTTP                                        | **Real** — native `fetch()` to `127.0.0.1:<ephemeral>`                               |
+| Server assembly                                     | **Real** — actual `createServer()` from `src/server.js`, plus `server.start()`       |
+| Auth, Joi validation, RFC9457 plugin, error handler | **Real**                                                                             |
+| MongoDB                                             | **Real** — in-memory replica set; transactions work                                  |
+| Audit logging                                       | **Real** — `@defra/cdp-auditing` only writes pino to stdout, no network              |
+| `waste-tracking-id-backend` `GET /next`             | **Stubbed** — as a real local Hapi server, injected via `WASTE_TRACKING_SERVICE_URL` |
 
 No `jest.mock` anywhere in the suite. The single external dependency is replaced by a real HTTP server we control, which doubles as the lever for forcing 5xx without mocking the service under test.
 
@@ -41,36 +41,41 @@ No `jest.mock` anywhere in the suite. The single external dependency is replaced
 
 ### 1. Harness — `test/integration/helpers/`
 
-- [ ] **`setup-env.js`** (registered as Jest `setupFiles`, so it runs *before any test module is imported*)
+- [ ] **`setup-env.js`** (registered as Jest `setupFiles`, so it runs _before any test module is imported_)
+
   - Set `WASTE_TRACKING_SERVICE_URL` to the stub address (default `http://127.0.0.1:3999`, env-overridable).
     **Ordering is load-bearing:** `src/common/helpers/http-client.js:154` builds `httpClients` at module-load time from `config.get('services.wasteTracking')`. Setting this in a `beforeAll` is too late.
-    (Verified: the env var *does* win over the `overrideConfig` block at `src/config.js:189-193` — convict env precedence beats `.load()`.)
+    (Verified: the env var _does_ win over the `overrideConfig` block at `src/config.js:189-193` — convict env precedence beats `.load()`.)
   - Set `ACCESS_CRED_TEST1` from `src/test/data/basic-auth.js`
   - **Delete `HTTP_PROXY`** — otherwise `setupProxy()` (`src/common/helpers/proxy/setup-proxy.js:20`) installs a global undici dispatcher and the suite's own `fetch()` to localhost gets proxied into the void on any dev machine with a proxy in its shell
   - Set `LOG_ENABLED=false`, `CDP_AUDIT_ENABLED=false` to keep output readable
 
 - [ ] **`waste-tracking-stub.js`** — a real Hapi server on the fixed stub port
+
   - `GET /next` → `{ wasteTrackingId }`
   - `stub.respondWith({ statusCode })` to force failures
   - `start()` / `stop()`
 
 - [ ] **`test-service.js`** — `startTestService()`, in this order:
+
   1. `createTestMongoDb(true)` → in-memory replica set (transactions)
   2. `config.set('mongo.uri', mongoUri)` and `config.set('mongo.readPreference', 'primary')`
      Required: the factory does not write back to config, and a 1-node replica set cannot serve `secondary` reads (the schema default). Mirrors `src/routes/update-bulk-receipt-movement.test.js:97-104`.
   3. `config.set('orgApiCodes', base64EncodedOrgApiCodes)`, `config.set('host', '127.0.0.1')`, `config.set('port', 0)`
   4. `createServer()`, then `server.start()`
+
   - Returns `{ baseUrl: \`http://127.0.0.1:${server.info.port}\`, server, db, stop() }`
   - Ephemeral port avoids collisions; `127.0.0.1` avoids the unfetchable `0.0.0.0` in `server.info.uri`
 
 - [ ] **`http.js`** — a deliberately dumb `fetch` wrapper: adds the Basic auth header, returns `{ status, headers, body }`. No retries, no unwrapping — what is asserted is what crossed the socket.
 
 - [ ] **`expect-standard-headers.js`** — one shared `expectStandardHeaders(res)`, so exact header values live in exactly one place: `content-type`, plus the security headers configured at `src/server.js:41-51` (`strict-transport-security`, `x-content-type-options`, `x-frame-options`).
-  Capture the **actual** emitted values during implementation rather than assuming what Hapi 21 sends for `xss: 'enabled'`.
+      Capture the **actual** emitted values during implementation rather than assuming what Hapi 21 sends for `xss: 'enabled'`.
 
 ### 2. Jest config and scripts
 
 - [ ] **`jest.integration.config.js`**
+
   - `testMatch: ['<rootDir>/test/integration/**/*.test.js']`
   - `setupFiles: ['<rootDir>/test/integration/helpers/setup-env.js']`
   - `testTimeout: 30000` — replica set plus server start exceeds the 5 s default
@@ -79,9 +84,11 @@ No `jest.mock` anywhere in the suite. The single external dependency is replaced
   - **Do not use the `@shelf/jest-mongodb` preset.** `createTestMongoDb(true)` spins its own replica set and we overwrite `config.set('mongo.uri', ...)`, so the preset's instance would be a second, unused Mongo — pure startup cost.
 
 - [ ] **`package.json`** — add:
+
   ```
   "test:integration": "node --no-experimental-require-module ./node_modules/jest/bin/jest.js --config jest.integration.config.js --runInBand"
   ```
+
   The `--no-experimental-require-module` flag matches the existing `test` script. `--runInBand` is **mandatory**: both the replica set (port `17017`) and the stub bind fixed ports.
 
 - [ ] Confirm `jest.config.js` needs **no change** — its `testMatch` is `**/src/**/*.test.js` and `collectCoverageFrom` is `src/**/*.js`, so a top-level `test/` directory is already invisible to `npm test` and to coverage.
@@ -119,6 +126,7 @@ Style: **one explicit named `it()` per endpoint** (chosen over a table-driven sw
 Every endpoint test asserts status **and** calls `expectStandardHeaders(res)`.
 
 Reuse existing fixtures — do not add new ones:
+
 - `src/schemas/test-helpers/waste-test-helpers.js` (`createTestPayload`)
 - `src/test/utils/createMovementRequest.js`, `src/test/utils/createBulkMovementRequest.js`
 - `src/test/data/basic-auth.js`, `src/test/data/apiCodes.js`
@@ -135,7 +143,7 @@ This closes the one real risk of explicit per-endpoint tests (a new route landin
 ### 5. CI
 
 - [ ] Append `npm run test:integration` to the existing `pr-validator` job in `.github/workflows/check-pull-request.yml`, after `npm test`.
-  No secrets, no Docker, no new job — and well clear of the heavyweight `integration-tests` job.
+      No secrets, no Docker, no new job — and well clear of the heavyweight `integration-tests` job.
 - [ ] Do **not** add it to the husky pre-commit hook; that stays `format:check` + `lint`.
 - [ ] Confirm Sonar is unaffected — the integration config collects no coverage, so the existing report is unchanged.
 
