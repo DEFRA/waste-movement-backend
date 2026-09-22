@@ -15,16 +15,16 @@ moves here, and that repo references it from here.
 
 ## Decisions
 
-| Decision           | Detail                                                                                                                             |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Source of truth    | JSON Schema, **2020-12** dialect. No Joi anywhere in beta-1 or beta-2                                                              |
-| Runtime validation | AJV (`ajv/dist/2020.js`) behind a Hapi custom validation function                                                                  |
-| Format rules       | Converted to inline `pattern`. No custom formats, no import from `waste-movement-utils`; divergence from Phase-1 rules is accepted |
-| `$id`              | Namespaced (`beta-2/producer.schema.json`) — the AJV registry is global and throws on duplicates                                   |
-| Layout             | Schemas under `src/schemas/beta-2/`, specs under `docs/api/`                                                                       |
-| Slice scope        | `apiCode` + required `producer`. Persists `{movementId, orgId, createdAt}` — unchanged from beta-1                                 |
-| Docs               | hapi-swagger **stays** for legacy routes; beta routes are untagged so it never sees them. Beta specs are hand-authored OpenAPI 3.1 |
-| Out of scope       | RFC9457 `errors` array formatting (handled separately); persisting `producer`                                                      |
+| Decision           | Detail                                                                                                                                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Source of truth    | JSON Schema, **2020-12** dialect. No Joi anywhere in beta-1 or beta-2                                                                                                                                                    |
+| Runtime validation | AJV (`ajv/dist/2020.js`) behind a Hapi custom validation function                                                                                                                                                        |
+| Format rules       | Converted to inline `pattern`. No custom formats, no import from `waste-movement-utils`; divergence from Phase-1 rules is accepted                                                                                       |
+| `$id`              | **Equal to the file's path relative to `src/schemas/`** (e.g. `beta-2/common/producer/producer.schema.json`). Makes duplicates impossible by construction and leaves every POC `$ref` untouched                          |
+| Layout             | Schemas under `src/schemas/beta-2/`, **mirroring the docs repo's `common/` · `creation/` · `collection/` · `delivery/` · `receipt/` categories**. Shared AJV harness at `src/schemas/validate/`. Specs under `docs/api/` |
+| Slice scope        | `apiCode` + required `producer`. Persists `{movementId, orgId, createdAt}` — unchanged from beta-1                                                                                                                       |
+| Docs               | hapi-swagger **stays** for legacy routes; beta routes are untagged so it never sees them. Beta specs are hand-authored OpenAPI 3.1                                                                                       |
+| Out of scope       | RFC9457 `errors` array formatting (handled separately); persisting `producer`                                                                                                                                            |
 
 ### Verified findings behind these decisions
 
@@ -55,6 +55,17 @@ Each of these was confirmed by probing the real code, not inferred:
   (`\/D\d{4}` vs `\/D\d{4,5}`), and utils has **no** phone validation at all. Since beta-2
   owns its rules independently, the generated patterns are authoritative here.
 
+## Status
+
+| Step                 | State                                                                                                                                          |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Producer schemas   | not started                                                                                                                                    |
+| 2 AJV harness        | not started                                                                                                                                    |
+| 3 beta-2 route       | not started                                                                                                                                    |
+| 4 beta-1 conversion  | **partially done** — `plugins['hapi-swagger']` blocks removed (`5cb0fe2`, #170). Joi→JSON Schema, AJV switch and **untagging** still to do     |
+| 5 Producer test port | not started                                                                                                                                    |
+| 6 OpenAPI specs      | **partially done** — `docs/api/openapi-beta-1.yaml` copied but untracked and still 3.0.3. 3.1 conversion and `openapi-beta-2.yaml` still to do |
+
 ## Non-goals
 
 - Do **not** touch the legacy (non-`beta-`) endpoints. They keep Joi validation, their
@@ -67,24 +78,54 @@ Each of these was confirmed by probing the real code, not inferred:
 
 ## Step 1 — Producer schemas
 
-Create `src/schemas/beta-2/producer/`, porting from
-`digital-waste-tracking-api-docs/docs/event-model/schema/common/producer/`:
+**Mirror the docs repo's directory structure** so resources move across unchanged. Its
+schema tree currently holds only `common/producer/` (producer is the one resource ported to
+JSON Schema so far), but its test tree shows the full category set — `common/`,
+`collection/`, `creation/`, `delivery/`, `receipt/` — which is the shape to grow into.
 
-- `producer.schema.json` — `oneOf` the three variants
-- `producer-base.schema.json` — `councilMovement`
-- `producer-household.schema.json` — forbids the other seven fields via `propertyNames`
-- `producer-commercial.schema.json` — `organisationName`, `sicCode`, `address` required
-- `producer-municipal.schema.json` — `sicCode` optional
+```
+src/schemas/
+  validate/                          shared AJV harness (step 2)
+    index.js
+    hapi-validator.js
+  beta-2/
+    common/
+      producer.test.js               test sits beside the dir, as in the docs repo
+      producer/
+        producer.schema.json         oneOf the three variants
+        producer-base.schema.json    councilMovement
+        producer-household.schema.json   forbids the other seven via propertyNames
+        producer-commercial.schema.json  organisationName, sicCode, address required
+        producer-municipal.schema.json   sicCode optional
+    creation/
+      create-movement.schema.json    apiCode (uuid) + $ref producer
+      create-movement.test.js
+```
 
-Changes from the POC originals:
+Ported from `digital-waste-tracking-api-docs/docs/event-model/schema/common/producer/`.
+
+`create-movement.schema.json` lives under `creation/`, not at the beta-2 root — the docs
+repo treats create-movement as a creation concern (`creation/create-movement.test.js`).
+
+### Changes from the POC originals
 
 1. `"$schema"` → `https://json-schema.org/draft/2020-12/schema`
-2. `"$id"` and every `$ref` namespaced with `beta-2/`
-3. The three custom `format`s replaced by `pattern` (below). `format: "email"` stays —
-   it is standard and understood by every consumer.
+2. `"$id"` → the file's **path relative to `src/schemas/`**, e.g.
+   `beta-2/common/producer/producer.schema.json`
+3. **Every `$ref` stays byte-for-byte unchanged.** AJV resolves relative refs against the
+   `$id` base, so `$ref: "producer-base.schema.json"` inside
+   `beta-2/common/producer/producer.schema.json` resolves to
+   `beta-2/common/producer/producer-base.schema.json` on its own. Verified against
+   `ajv/dist/2020.js`, including the cross-directory ref
+   `../common/producer/producer.schema.json` from `creation/`.
+4. The three custom `format`s replaced by `pattern` (below). `format: "email"` stays — it is
+   standard and understood by every consumer.
 
-Also add `src/schemas/beta-2/create-movement.schema.json`:
-`apiCode` (uuid) + `$ref` producer, `required: [apiCode, producer]`.
+> **Why path-based `$id`s.** The AJV registry is global and throws on duplicate `$id`s. Tying
+> `$id` to the file path makes collisions impossible by construction, lets `beta-1/…` and
+> `beta-2/…` share one registry once step 4 lands, and keeps every POC `$ref` untouched. The
+> loader asserts `$id` equals the file's actual relative path, so a typo fails at import
+> time rather than silently registering under the wrong key.
 
 ### Generated patterns
 
@@ -116,14 +157,21 @@ only as a one-off; it is **not** shipped, since beta-2 owns these rules from her
 
 ## Step 2 — AJV harness
 
-`src/schemas/beta-2/validate/`:
+`src/schemas/validate/` — **version-neutral, one registry for all beta versions.** It sits
+above `beta-2/` rather than inside it because step 4 brings beta-1 onto the same mechanism;
+both then share a single AJV instance. Path-based `$id`s are what make that safe.
 
-- `index.js` — ports the POC's directory-walk loader. Keep its `__dirname` approach rather
-  than `import.meta.url`: `babel.config.cjs` enables `babel-plugin-transform-import-meta`
-  only in the `test` env, and the loader must work under both. Import **`ajv/dist/2020.js`**
-  (not the default draft-07 build). Keep `addFormats` for `email`; drop `registerFormats`
-  entirely. Config stays `{ allErrors: true, strict: true }` — `allErrors` matches the
-  server's existing `abortEarly: false` (`src/server.js:32`).
+- `index.js` — ports the POC's directory-walk loader, walking `src/schemas/**` for
+  `*.schema.json`. Keep its `__dirname` approach rather than `import.meta.url`:
+  `babel.config.cjs` enables `babel-plugin-transform-import-meta` only in the `test` env, and
+  the loader must work under both. Import **`ajv/dist/2020.js`** (not the default draft-07
+  build). Keep `addFormats` for `email`; drop `registerFormats` entirely. Config stays
+  `{ allErrors: true, strict: true }` — `allErrors` matches the server's existing
+  `abortEarly: false` (`src/server.js:32`).
+
+  On load, assert each schema's `$id` equals its path relative to `src/schemas/`, so a
+  mismatch fails at import time rather than registering under an unexpected key.
+
 - `hapi-validator.js` — the adapter:
 
   ```js
@@ -133,9 +181,15 @@ only as a one-off; it is **not** shipped, since beta-2 owns these rules from her
   }
   ```
 
-  Used as `validate: { payload: jsonSchemaValidator('beta-2/create-movement.schema.json') }`.
+  Used as:
 
-- `index.test.js` — registry loads, unknown `$id` throws, duplicate `$id` detection.
+  ```js
+  validate: {
+    payload: jsonSchemaValidator('beta-2/creation/create-movement.schema.json')
+  }
+  ```
+
+- `index.test.js` — registry loads, unknown `$id` throws, `$id`/path mismatch is caught.
 
 **New dependency:** `ajv` + `ajv-formats` (both runtime deps — validation happens at request
 time). Neither appears on the Defra radar, but neither do most libraries; the radar governs
@@ -149,7 +203,7 @@ platform technology, not npm packages.
 - **No `tags: ['movements']`** — keeps it out of `/swagger.json`
 - **No `plugins['hapi-swagger']` block** — it never validated anything; responses are
   described in the authored spec instead
-- `validate: { payload: jsonSchemaValidator(...) }`
+- `validate: { payload: jsonSchemaValidator('beta-2/creation/create-movement.schema.json') }`
 - Handler mirrors beta-1: `getOrgIdForApiCode` → `createMovementId()` → `backOff(() =>
 createMovementRecord(request.db, { movementId, orgId }))`. **`producer` is validated but
   not persisted.** `createMovementRecord` is unchanged.
@@ -168,10 +222,28 @@ For consistency, beta-1 moves off Joi:
 - Replace `src/schemas/beta-1.js` with `src/schemas/beta-1/` JSON Schemas covering the six
   existing shapes (`createMovement`, `createCollection`, `recordDelivery`, `recordReceipt`,
   `recordReceiptWithoutDelivery`, `deliveryIdParams`). All are trivial — `apiCode` uuid, a
-  `movementIds` array, a `reason` string — with no conditional or cross-field logic.
+  `movementIds` array, a `reason` string — with no conditional or cross-field logic. Same
+  `$id`-equals-path rule, so they register as `beta-1/…` alongside `beta-2/…`.
 - Switch all five routes in `src/routes/beta-1/` to `jsonSchemaValidator`.
-- Remove their `tags: ['movements']` and their `plugins['hapi-swagger']` blocks.
+- **Remove their `tags: ['movements']`** — see the open item below.
 - Update the five existing route tests.
+
+> ~~Remove their `plugins['hapi-swagger']` blocks~~ — **done**, committed as `5cb0fe2` > _"chore: remove hapi-swagger from beta-1 apis (#170)"_.
+
+**Open item — beta-1 is still tagged.** The blocks are gone but `tags: ['movements']`
+remains, so the five beta-1 routes are still in `/swagger.json` and now advertise a
+fabricated response:
+
+```json
+"responses": {
+  "default": { "schema": { "type": "string" }, "description": "Successful" }
+}
+```
+
+That is worse than before the blocks were removed — the generated spec now claims these
+endpoints return a string. Dropping the tag (one line per file) removes them from the
+generated spec entirely and leaves `openapi-beta-1.yaml` as their sole description. This
+does not depend on the rest of step 4 and can land on its own.
 
 **Behaviour change:** beta-1 validation error _messages_ will come from AJV rather than Joi.
 Status codes and the RFC9457 envelope are unaffected. Existing tests asserting on Joi
@@ -180,23 +252,25 @@ message text will need updating.
 ## Step 5 — Port the producer test
 
 `digital-waste-tracking-api-docs/test/event-model/schema/common/producer.test.js`
-→ `src/schemas/beta-2/producer/producer.test.js` (picked up by the existing
-`testMatch: ['**/src/**/*.test.js']`).
+→ `src/schemas/beta-2/common/producer.test.js` — the same `common/producer.test.js` path the
+docs repo uses, beside the `producer/` directory rather than inside it. Picked up by the
+existing `testMatch: ['**/src/**/*.test.js']`.
 
 - Delete `validateJoi` and the `producerSchema` import; keep `validateAjv`.
 - Delete each `expect(validateJoi(...))` line, keep the AJV line beside it.
 - Keep all 9 `Scenario:` blocks and both `Additional coverage:` blocks — 11 in total.
-- Point `validate`/`getErrors` at the local harness and use the namespaced
-  `beta-2/producer.schema.json` id.
+- Point `validate`/`getErrors` at `src/schemas/validate/` and use the full
+  `beta-2/common/producer/producer.schema.json` id.
 
 ## Step 6 — OpenAPI specs
 
 `docs/api/` (new directory in this repo):
 
-- `openapi-beta-1.yaml` — moved from
-  `digital-waste-tracking-api-docs/docs/api/openapi-beta-1.yaml` (497 lines, 5 paths) and
-  converted 3.0.3 → 3.1. Near-mechanical: the only 3.0-only construct is a single
-  `nullable: true` (line 216), which becomes `type: [x, 'null']`.
+- `openapi-beta-1.yaml` — **copied already** from
+  `digital-waste-tracking-api-docs/docs/api/openapi-beta-1.yaml` (497 lines, 5 paths), but
+  still **untracked and unmodified at 3.0.3**. Remaining work is the 3.0.3 → 3.1 conversion,
+  which is near-mechanical: the only 3.0-only construct is a single `nullable: true`
+  (line 216), which becomes `type: [x, 'null']`.
 - `openapi-beta-2.yaml` — new, 3.1, `$ref`ing the schema files. Roughly 100 lines: info,
   servers, security (Basic), the one path, and 201/400/401 responses.
 
