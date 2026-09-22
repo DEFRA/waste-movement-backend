@@ -23,30 +23,93 @@ and that repo references it from here.
 | Slice scope        | `apiCode` + required `producer`. Persists `{movementId, orgId, createdAt}` — unchanged from beta-1                                                                                                                       |
 | Docs               | hapi-swagger stays for legacy routes; beta routes carry no `movements` tag, so it never sees them. Beta specs are hand-authored OpenAPI 3.1                                                                              |
 
-## Constraints
+## Things to know
 
-Facts about the codebase and its dependencies that the design rests on.
+Reference detail behind the decisions above — the non-obvious facts, version constraints and
+traps. **Kept together here because this is the material that needs writing up as proper
+documentation later**, once the slice settles.
 
-- **Hapi accepts a JSON Schema validator directly.** `lib/validation.js:23` returns a
+### JSON Schema dialects and AJV
+
+- **`ajv`'s default export is a draft-07 validator. `ajv/dist/2020.js` is a 2020-12 one.**
+  They are separate builds of separate specifications.
+- **The two builds are mutually exclusive.** Each throws
+  `no schema with key or ref "<other dialect>"` when fed the other's `$schema`. Because the
+  loader compiles everything at import under `strict: true`, a mismatch fails at boot rather
+  than per request.
+- **Required version is `ajv@^8`.** `ajv@6` has no `dist/2020.js` at all.
+- **`node_modules/ajv` currently resolves to `6.15.0`**, pulled in transitively by `eslint`
+  (`eslint` → `@eslint/eslintrc` → `ajv@6.15.0`). Until `ajv@^8` is added as an explicit
+  direct dependency, `import Ajv2020 from 'ajv/dist/2020.js'` fails with
+  `ERR_MODULE_NOT_FOUND` — which reads as a wrong path rather than a wrong version. Adding
+  the direct dependency gives ajv 8 the root slot and demotes eslint's copy to
+  `node_modules/eslint/node_modules/ajv`. Confirm with
+  `node -e "console.log(require('ajv/package.json').version)"`.
+- **Dialect differences that exist:** array tuples (`items`/`additionalItems` →
+  `prefixItems`/`items`), `definitions` → `$defs`, and 2020-12 adds `unevaluatedProperties`
+  and `$dynamicRef`.
+- **Dialect differences that do not affect us:** none of the keywords these schemas use
+  differ in meaning, so the port is a pure `$schema` swap. beta-1's only array is
+  `movementIds: { items: { type: 'string' } }` — the single-schema form, identical in both.
+- **`$ref` sibling keywords are a non-issue.** The draft-07 spec says ignore them; 2020-12
+  says apply them. AJV applies them in _both_ builds, deviating from draft-07.
+- **AJV resolves relative `$ref`s against the `$id` base.** This is what lets path-based
+  `$id`s work while leaving every POC `$ref` untouched, including cross-directory refs like
+  `../common/producer/producer.schema.json`.
+
+### OpenAPI
+
+- **OpenAPI 3.1's default dialect is 2020-12.** This is the reason the schemas are authored
+  as 2020-12: matching dialects means the runtime validator and the published contract are
+  the same artefact, with no reliance on consumers honouring a `jsonSchemaDialect` override.
+- **OpenAPI 3.0.x cannot express `const`, `propertyNames`, or boolean-`false` subschemas** —
+  the three mechanisms encoding "Household forbids these seven fields" and "exactly one of
+  `authorisationNumber` / `reasonForNoAuthorisationNumber`". A 3.0 spec would describe a
+  looser contract than the one AJV enforces. This is why 3.1 is required, not preferred.
+- **3.1 renders in both consumers**: `mkdocs-swagger-ui-tag` 0.8.1 bundles Swagger UI 5.x,
+  and `waste-tracking-service`'s vendored dist is also 5.x.
+- **Nothing imports a spec into AWS API Gateway** (which would force 3.0.x) — no Terraform in
+  the workspace, and no CI workflow references `openapi`.
+- **3.0 → 3.1 conversion of `openapi-beta-1.yaml` is near-mechanical**: the only 3.0-only
+  construct is a single `nullable: true`, which becomes `type: [x, 'null']`.
+
+### Hapi and hapi-swagger
+
+- **Hapi accepts a plain function as a validator.** `lib/validation.js:23` returns a
   `function` rule as-is and calls it as the validator (`lib/validation.js:118`). Its return
-  value replaces `request.payload`. No `server.validator()` registration needed.
-- **hapi-swagger is documentation-only** — it validates nothing. A handler returning a shape
+  value replaces `request.payload`. No `server.validator()` registration needed — this is the
+  whole mechanism by which JSON Schema replaces Joi.
+- **hapi-swagger validates nothing.** It is documentation-only: a handler returning a shape
   that contradicts its declared response schema still returns that shape, unmodified.
   Request validation is Hapi core via `validate.payload`; response validation is Hapi core
   via `options.response.status` (used only by `health.js`).
-- **hapi-swagger cannot express these schemas.** `OAS: Joi.string().valid('v2','v3.0')`
-  (`lib/index.js:49`) caps it at 3.0.0; `lib/properties.js:67` discards anything that is not
-  `Joi.isSchema()`; and 3.0.0 has no `const`, `propertyNames`, or boolean-`false`
-  subschemas. Fed a non-Joi validator it emits a dangling
-  `$ref: "#/components/schemas/Hidden%20Model"`.
+- **`plugins['hapi-swagger'].responses` blocks are prose**, not enforcement. Removing them
+  costs nothing behaviourally.
+- **hapi-swagger cannot consume JSON Schema and cannot emit 3.1.**
+  `OAS: Joi.string().valid('v2','v3.0')` (`lib/index.js:49`) caps it at 3.0.0, and
+  `lib/properties.js:67` discards anything that is not `Joi.isSchema()`. Fed a non-Joi
+  validator it emits a dangling `$ref: "#/components/schemas/Hidden%20Model"`.
 - **`routeTag: 'movements'`** (`src/plugins/swagger.js`) filters the generated spec: a route
-  without that tag does not appear in `/swagger.json`.
+  without that tag does not appear in `/swagger.json`. This is how beta routes stay out.
 - **hapi-swagger is archived upstream** (`archived: true`, no npm release since 2024-12-10,
-  and `17.3.2` is latest). It is retained only for the legacy endpoints — no new use.
-- **OpenAPI 3.1 renders in both consumers**: `mkdocs-swagger-ui-tag` 0.8.1 bundles Swagger UI
-  5.x, and `waste-tracking-service`'s vendored dist is also 5.x. No Terraform in the
-  workspace and no CI workflow references `openapi`, so nothing imports a spec into API
-  Gateway (which would require 3.0.x).
+  `17.3.2` is latest). Retained only for the legacy endpoints — no new use.
+- **`/` and `/swagger.json` are served unauthenticated**, despite
+  `server.auth.default('basic')`. hapi-swagger sets `auth: settings.auth` on its own routes
+  (`lib/index.js:166`), and an explicit `auth: undefined` overrides the server default.
+- **The RFC9457 formatter keys off `request.path.startsWith('/beta-')`**, so `/beta-2` is
+  covered with no change to `waste-movement-utils`.
+
+### This repo
+
+- **Jest suites share one in-memory MongoDB.** Run with `--runInBand`, as `npm test` already
+  does. Ad-hoc parallel runs (`jest src/routes/beta-1`) produce spurious, inconsistent
+  failures that look like real regressions.
+- **`testMatch: ['**/src/**/\*.test.js']`** — tests are only discovered under `src/`.
+- **`babel.config.cjs` enables `babel-plugin-transform-import-meta` only in the `test` env**,
+  so a module using `import.meta.url` behaves differently under Jest. Use `__dirname` in the
+  loader.
+- **`createMovementRecord` spreads its `movement` argument** (`src/services/movement.js:57`),
+  so persisting extra fields later needs no service change.
 - **The POC's `validators.js` has drifted** from `waste-movement-utils` (`\/D\d{4}` vs
   `\/D\d{4,5}`), and utils has no phone validation at all. beta-2 owns its rules
   independently; the patterns in step 2 are authoritative.
@@ -101,42 +164,9 @@ both then share a single AJV instance. Path-based `$id`s are what make that safe
 `devDependencies`) — validation happens at request time. Neither appears on the Defra radar,
 but neither do most libraries; the radar governs platform technology, not npm packages.
 
-> ⚠️ **Hoisting trap — `ajv@6` is already present.** `node_modules/ajv` resolves to
-> **6.15.0**, pulled in transitively by `eslint`:
->
-> ```
-> └─┬ eslint@9.39.2
->   ├─┬ @eslint/eslintrc@3.3.7
->   │ └── ajv@6.15.0 deduped
->   └── ajv@6.15.0
-> ```
->
-> ajv 6 is **draft-07 only and has no `dist/2020.js`**, so
-> `import Ajv2020 from 'ajv/dist/2020.js'` fails with `ERR_MODULE_NOT_FOUND` — which reads as
-> "the path is wrong" rather than "the wrong ajv is installed". Add `ajv@^8` as an explicit
-> direct dependency; npm then gives it the root slot and demotes eslint's copy to
-> `node_modules/eslint/node_modules/ajv`. Confirm with
-> `node -e "console.log(require('ajv/package.json').version)"` — it must report 8.x.
-
-> **Why `ajv/dist/2020.js` and not the default build.** `ajv`'s default export is a
-> **draft-07** validator; `ajv/dist/2020.js` is a **2020-12** one. They are mutually
-> exclusive — each throws `no schema with key or ref "<other dialect>"` when fed the other's
-> `$schema`. Because the loader compiles everything at import under `strict: true`, a
-> mismatch fails at boot, not per request.
->
-> 2020-12 is required because **OpenAPI 3.1's default dialect is 2020-12**, which is why 3.1
-> was chosen (`const`, `propertyNames`, boolean subschemas). Matching dialects means the
-> runtime validator and the published contract are the same artefact, with no reliance on
-> consumers honouring a `jsonSchemaDialect` override. It also unlocks
-> `unevaluatedProperties`, the natural future replacement for the hand-maintained
-> `propertyNames: { enum: [...] }` lists.
->
-> None of the keywords these schemas use differ between the dialects — the port is a pure
-> `$schema` swap. The same holds for beta-1: its only array is
-> `movementIds: { items: { type: 'string' } }`, the single-schema form, identical in both
-> dialects (only the tuple form changed to `prefixItems`). `$ref` **sibling keywords** are
-> ignored per the draft-07 spec but applied in 2020-12; ajv applies them in _both_ builds, so
-> that difference does not bite here.
+> ⚠️ `node_modules/ajv` currently resolves to **6.15.0** via `eslint`, and ajv 6 has no
+> `dist/2020.js` — so this import fails until `ajv@^8` is added as a direct dependency. See
+> **Things to know → JSON Schema dialects and AJV** for the detail and the check to run.
 
 ## Step 2 — Producer resource: schemas and tests
 
