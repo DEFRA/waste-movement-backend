@@ -79,7 +79,12 @@ async function createServer() {
     pulse,
     mongoDb,
     basicAuth(getEnvVars('ACCESS_CRED_')),
-    formatErrorToRFC9457Response,
+    {
+      plugin: formatErrorToRFC9457Response,
+      options: {
+        shouldFormat: (request) => request.path.startsWith('/beta-')
+      }
+    },
     errorHandler
   ])
 

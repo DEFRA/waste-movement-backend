@@ -117,8 +117,6 @@ describe('POST /beta-1/deliveries', () => {
     expect(headers['x-request-id']).toBe('trace-id-123')
   })
 
-  // Error formatting for /beta-1 endpoints is a follow-up - for now errors fall
-  // through to the existing service-wide error handling.
   it('returns a 400 when required fields are missing', async () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -129,7 +127,19 @@ describe('POST /beta-1/deliveries', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      detail: '"apiCode" is required. "movementIds" is required',
+      detail: '2 validation errors occurred',
+      errors: [
+        {
+          errorType: 'any.required',
+          message: '"apiCode" is required',
+          pointer: '/apiCode'
+        },
+        {
+          errorType: 'any.required',
+          message: '"movementIds" is required',
+          pointer: '/movementIds'
+        }
+      ],
       instance: '/beta-1/deliveries',
       title: 'Bad Request',
       type: 'https://waste-tracking.service.gov.uk/problems/bad-request'

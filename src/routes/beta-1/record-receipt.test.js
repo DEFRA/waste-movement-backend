@@ -118,7 +118,14 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      detail: '"apiCode" is required',
+      detail: '1 validation error occurred',
+      errors: [
+        {
+          errorType: 'any.required',
+          message: '"apiCode" is required',
+          pointer: '/apiCode'
+        }
+      ],
       instance: '/beta-1/deliveries/25KMT4Z9/receipt',
       title: 'Bad Request',
       type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
