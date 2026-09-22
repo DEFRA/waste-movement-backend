@@ -59,7 +59,7 @@ Each of these was confirmed by probing the real code, not inferred:
 
 | Step                 | State                                                                                                                                          |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 Producer schemas   | not started                                                                                                                                    |
+| 1 Producer schemas   | **done** — `src/schemas/beta-2/common/producer/` (5 files) + `src/schemas/beta-2/creation/create-movement.schema.json`, verified to load and validate under `ajv/dist/2020.js` |
 | 2 AJV harness        | not started                                                                                                                                    |
 | 3 beta-2 route       | not started                                                                                                                                    |
 | 4 beta-1 conversion  | **partially done** — `plugins['hapi-swagger']` blocks removed (`5cb0fe2`, #170). Joi→JSON Schema, AJV switch and **untagging** still to do     |
@@ -165,7 +165,8 @@ both then share a single AJV instance. Path-based `$id`s are what make that safe
   `*.schema.json`. Keep its `__dirname` approach rather than `import.meta.url`:
   `babel.config.cjs` enables `babel-plugin-transform-import-meta` only in the `test` env, and
   the loader must work under both. Import **`ajv/dist/2020.js`** (not the default draft-07
-  build). Keep `addFormats` for `email`; drop `registerFormats` entirely. Config stays
+  build). Keep `addFormats` for `email` and `uuid` (`create-movement.schema.json`'s `apiCode`
+  uses `format: "uuid"`); drop `registerFormats` entirely. Config stays
   `{ allErrors: true, strict: true }` — `allErrors` matches the server's existing
   `abortEarly: false` (`src/server.js:32`).
 
