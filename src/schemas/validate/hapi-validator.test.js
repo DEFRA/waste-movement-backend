@@ -66,7 +66,7 @@ describe('jsonSchemaValidator', () => {
       councilMovement: false,
       organisationName: 'ACME',
       sicCode: '38110',
-      emailAddress: 'a@b.com',
+      contactDetails: { emailAddress: 'a@b.com' },
       authorisationNumber: 'EAS/P/123456',
       address: { fullAddress: '10 Way', postcode: 'NOTAPOSTCODE' }
     })
