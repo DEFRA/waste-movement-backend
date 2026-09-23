@@ -42,7 +42,9 @@ const recordReceiptWithoutDelivery = {
           createDeliveryRecord(request.db, {
             deliveryId,
             movementIds: [],
-            orgId
+            orgId,
+            status: 'awaiting_delivery',
+            receiptedAt: new Date().toISOString()
           }),
         backoffOptions(logger)
       )

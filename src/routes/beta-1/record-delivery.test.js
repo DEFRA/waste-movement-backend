@@ -61,6 +61,7 @@ describe('POST /beta-1/deliveries', () => {
     jest.clearAllMocks()
     await server.db.collection('movements').deleteMany({})
     await server.db.collection('deliveries').deleteMany({})
+    await server.db.collection('id-reservations').deleteMany({})
   })
 
   it('records a delivery and returns 201 with the envelope shape', async () => {
@@ -182,7 +183,7 @@ describe('POST /beta-1/deliveries', () => {
       .collection('movements')
       .insertOne({ movementId: movementId1 })
 
-    jest
+    const createDeliveryRecordSpy = jest
       .spyOn(delivery, 'createDeliveryRecord')
       .mockRejectedValue(new Error('Database connection failed'))
 
@@ -192,6 +193,11 @@ describe('POST /beta-1/deliveries', () => {
       payload: { apiCode: apiCode1, movementIds: [movementId1] },
       headers: authHeaders
     })
+
+    // Not restored by beforeEach's jest.clearAllMocks() (that only clears
+    // call history, not the mocked implementation) - without this, the
+    // reject leaks into every later test in this file.
+    createDeliveryRecordSpy.mockRestore()
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
@@ -214,6 +220,221 @@ describe('POST /beta-1/deliveries', () => {
       instance: '/beta-1/deliveries',
       title: 'Unauthorized',
       type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
+    })
+  })
+
+  describe('submitting against a pre-reserved deliveryId (Option A, D-028)', () => {
+    it('completes the reservation and returns 201', async () => {
+      await server.db
+        .collection('movements')
+        .insertOne({ movementId: movementId1 })
+      await server.db.collection('id-reservations').insertOne({
+        deliveryId: '25RESERVED1',
+        orgId: orgId1,
+        status: 'reserved',
+        expiresAt: new Date(Date.now() + 60_000).toISOString()
+      })
+
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url,
+        payload: {
+          apiCode: apiCode1,
+          movementIds: [movementId1],
+          deliveryId: '25RESERVED1'
+        },
+        headers: authHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+      expect(result.data.deliveries[0].deliveryId).toEqual('25RESERVED1')
+
+      const reservation = await server.db
+        .collection('id-reservations')
+        .findOne({ deliveryId: '25RESERVED1' })
+      expect(reservation.status).toEqual('used')
+
+      const deliveryRecord = await server.db
+        .collection('deliveries')
+        .findOne({ deliveryId: '25RESERVED1' })
+      expect(deliveryRecord).toMatchObject({ status: 'complete' })
+    })
+
+    it('completes an awaiting_delivery shell left by a receipt that arrived first', async () => {
+      await server.db
+        .collection('movements')
+        .insertOne({ movementId: movementId1 })
+      await server.db.collection('id-reservations').insertOne({
+        deliveryId: '25RESERVED2',
+        orgId: orgId1,
+        status: 'reserved',
+        expiresAt: new Date(Date.now() + 60_000).toISOString()
+      })
+      await server.db.collection('deliveries').insertOne({
+        deliveryId: '25RESERVED2',
+        orgId: orgId1,
+        movementIds: [],
+        status: 'awaiting_delivery'
+      })
+
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url,
+        payload: {
+          apiCode: apiCode1,
+          movementIds: [movementId1],
+          deliveryId: '25RESERVED2'
+        },
+        headers: authHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+
+      const deliveryRecord = await server.db
+        .collection('deliveries')
+        .findOne({ deliveryId: '25RESERVED2' })
+      expect(deliveryRecord).toMatchObject({
+        status: 'complete',
+        movementIds: [movementId1]
+      })
+    })
+
+    it('returns 200 on a byte-identical resubmission', async () => {
+      await server.db
+        .collection('movements')
+        .insertOne({ movementId: movementId1 })
+
+      const payload = {
+        apiCode: apiCode1,
+        movementIds: [movementId1],
+        deliveryId: '25RESERVED3'
+      }
+      await server.db.collection('id-reservations').insertOne({
+        deliveryId: '25RESERVED3',
+        orgId: orgId1,
+        status: 'reserved',
+        expiresAt: new Date(Date.now() + 60_000).toISOString()
+      })
+
+      await server.inject({
+        method: 'POST',
+        url,
+        payload,
+        headers: authHeaders
+      })
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url,
+        payload,
+        headers: authHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.OK)
+    })
+
+    it('returns 409 when a conflicting resubmission is made', async () => {
+      await server.db
+        .collection('movements')
+        .insertMany([{ movementId: movementId1 }, { movementId: movementId2 }])
+      await server.db.collection('id-reservations').insertOne({
+        deliveryId: '25RESERVED4',
+        orgId: orgId1,
+        status: 'reserved',
+        expiresAt: new Date(Date.now() + 60_000).toISOString()
+      })
+
+      await server.inject({
+        method: 'POST',
+        url,
+        payload: {
+          apiCode: apiCode1,
+          movementIds: [movementId1],
+          deliveryId: '25RESERVED4'
+        },
+        headers: authHeaders
+      })
+
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url,
+        payload: {
+          apiCode: apiCode1,
+          movementIds: [movementId2],
+          deliveryId: '25RESERVED4'
+        },
+        headers: authHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.CONFLICT)
+    })
+
+    it('returns 404 for a deliveryId with no reservation', async () => {
+      await server.db
+        .collection('movements')
+        .insertOne({ movementId: movementId1 })
+
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url,
+        payload: {
+          apiCode: apiCode1,
+          movementIds: [movementId1],
+          deliveryId: '25NEVER-RESERVED'
+        },
+        headers: authHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.NOT_FOUND)
+    })
+
+    it('returns 404 for a deliveryId reserved by another org', async () => {
+      await server.db
+        .collection('movements')
+        .insertOne({ movementId: movementId1 })
+      await server.db.collection('id-reservations').insertOne({
+        deliveryId: '25OTHER-ORG',
+        orgId: '11111111-1111-1111-1111-111111111111',
+        status: 'reserved',
+        expiresAt: new Date(Date.now() + 60_000).toISOString()
+      })
+
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url,
+        payload: {
+          apiCode: apiCode1,
+          movementIds: [movementId1],
+          deliveryId: '25OTHER-ORG'
+        },
+        headers: authHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.NOT_FOUND)
+    })
+
+    it('returns 404 for a voided reservation', async () => {
+      await server.db
+        .collection('movements')
+        .insertOne({ movementId: movementId1 })
+      await server.db.collection('id-reservations').insertOne({
+        deliveryId: '25VOIDED',
+        orgId: orgId1,
+        status: 'void',
+        expiresAt: new Date(Date.now() + 60_000).toISOString()
+      })
+
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url,
+        payload: {
+          apiCode: apiCode1,
+          movementIds: [movementId1],
+          deliveryId: '25VOIDED'
+        },
+        headers: authHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.NOT_FOUND)
     })
   })
 })

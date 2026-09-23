@@ -22,7 +22,27 @@ export const recordDeliverySchema = Joi.object({
     .required()
     .description(
       'One or more Movement IDs delivered together at this delivery.'
+    ),
+  deliveryId: Joi.string()
+    .optional()
+    .description(
+      'Optional pre-reserved Delivery ID from `POST /deliveries/reserve` (Option A, D-028). ' +
+        'Omit to mint a new Delivery ID as today.'
     )
+    .example('25KMT4Z9')
+})
+
+export const reserveDeliverySchema = Joi.object({
+  apiCode,
+  count: Joi.number()
+    .integer()
+    .min(1)
+    .max(100)
+    .required()
+    .description(
+      'Number of Delivery IDs to reserve in this batch (max 100 per request).'
+    )
+    .example(25)
 })
 
 export const recordReceiptSchema = Joi.object({

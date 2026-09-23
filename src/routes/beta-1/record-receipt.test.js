@@ -4,7 +4,8 @@ import { config } from '../../config.js'
 import {
   apiCode1,
   apiCode3,
-  base64EncodedOrgApiCodes
+  base64EncodedOrgApiCodes,
+  orgId1
 } from '../../test/data/apiCodes.js'
 import {
   requestBasicAuthTest1,
@@ -58,6 +59,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
   beforeEach(async () => {
     jest.clearAllMocks()
     await server.db.collection('deliveries').deleteMany({})
+    await server.db.collection('id-reservations').deleteMany({})
   })
 
   it('acknowledges receipt against an existing delivery and returns 201 with the envelope shape', async () => {
@@ -146,7 +148,9 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
 
   it('returns a 500 when the delivery lookup fails', async () => {
     const error = 'Database connection failed'
-    jest.spyOn(delivery, 'deliveryExists').mockRejectedValue(new Error(error))
+    const deliveryExistsSpy = jest
+      .spyOn(delivery, 'deliveryExists')
+      .mockRejectedValue(new Error(error))
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -154,6 +158,11 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       payload: { apiCode: apiCode1 },
       headers: authHeaders
     })
+
+    // Not restored by beforeEach's jest.clearAllMocks() (that only clears
+    // call history, not the mocked implementation) - without this, the
+    // reject leaks into every later test in this file.
+    deliveryExistsSpy.mockRestore()
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
@@ -176,6 +185,64 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       instance: url,
       title: 'Unauthorized',
       type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
+    })
+  })
+
+  describe('receipting a reserved deliveryId with no delivery yet (Option A, D-028)', () => {
+    it('creates the awaiting_delivery shell and returns 202', async () => {
+      await server.db.collection('id-reservations').insertOne({
+        deliveryId,
+        orgId: orgId1,
+        status: 'reserved',
+        expiresAt: new Date(Date.now() + 60_000).toISOString()
+      })
+
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url,
+        payload: { apiCode: apiCode1 },
+        headers: authHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.ACCEPTED)
+      expect(result).toEqual({
+        data: { deliveryId },
+        validation: { warnings: [] }
+      })
+
+      const deliveryRecord = await server.db
+        .collection('deliveries')
+        .findOne({ deliveryId })
+      expect(deliveryRecord).toMatchObject({
+        deliveryId,
+        movementIds: [],
+        orgId: orgId1,
+        status: 'awaiting_delivery'
+      })
+      expect(deliveryRecord.receiptedAt).toBeDefined()
+
+      const reservation = await server.db
+        .collection('id-reservations')
+        .findOne({ deliveryId })
+      expect(reservation.status).toEqual('reserved')
+    })
+
+    it('still returns 404 when the reservation is void', async () => {
+      await server.db.collection('id-reservations').insertOne({
+        deliveryId,
+        orgId: orgId1,
+        status: 'void',
+        expiresAt: new Date(Date.now() + 60_000).toISOString()
+      })
+
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url,
+        payload: { apiCode: apiCode1 },
+        headers: authHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.NOT_FOUND)
     })
   })
 })
