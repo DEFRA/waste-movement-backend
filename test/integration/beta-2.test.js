@@ -6,6 +6,7 @@ import { httpRequest } from './helpers/http.js'
 import { expectStandardHeaders } from './helpers/expect-standard-headers.js'
 import { describeBetaEndpointTests } from './helpers/beta-endpoint-tests.js'
 import { apiCode1 } from '../../src/test/data/apiCodes.js'
+import { ObjectId } from 'mongodb'
 
 describe('beta-2', () => {
   let testService
@@ -40,12 +41,10 @@ describe('beta-2', () => {
 
   describe('POST /beta-2/movements', () => {
     it('creates a movement with minimal payload', async () => {
+      const producer = { wasteSource: 'Household', councilMovement: false }
       const res = await httpRequest(testService.baseUrl, '/beta-2/movements', {
         method: 'POST',
-        body: {
-          apiCode: apiCode1,
-          producer: { wasteSource: 'Household', councilMovement: false }
-        }
+        body: { apiCode: apiCode1, producer }
       })
 
       expect(res.status).toEqual(HTTP_STATUS.CREATED)
@@ -54,50 +53,76 @@ describe('beta-2', () => {
         validation: { warnings: [] }
       })
       expectStandardHeaders(res)
+
+      const { movementId } = res.body.data
+      const movement = await testService.db
+        .collection('movements')
+        .findOne({ movementId })
+      expect(movement).toMatchObject({
+        _id: expect.any(ObjectId),
+        movementId,
+        orgId: expect.any(String),
+        createdAt: expect.any(String)
+      })
     })
 
     it('creates a movement with producer payload', async () => {
+      const producer = { wasteSource: 'Household', councilMovement: false }
       const res = await httpRequest(testService.baseUrl, '/beta-2/movements', {
         method: 'POST',
-        body: {
-          apiCode: apiCode1,
-          producer: {
-            wasteSource: 'Household',
-            councilMovement: false
-          }
-        }
+        body: { apiCode: apiCode1, producer }
       })
 
       expect(res.status).toEqual(HTTP_STATUS.CREATED)
       expect(res.body.data).toHaveProperty('movementId')
       expect(res.body.validation).toEqual({ warnings: [] })
       expectStandardHeaders(res)
+
+      const { movementId } = res.body.data
+      const movement = await testService.db
+        .collection('movements')
+        .findOne({ movementId })
+      expect(movement).toMatchObject({
+        _id: expect.any(ObjectId),
+        movementId,
+        orgId: expect.any(String),
+        createdAt: expect.any(String)
+      })
     })
 
     it('creates a movement with commercial producer', async () => {
+      const producer = {
+        wasteSource: 'Commercial',
+        organisationName: 'ACME Waste Ltd',
+        sicCode: '38110',
+        authorisationNumber: 'EAS/P/123456',
+        address: {
+          fullAddress: '10 Industrial Way, Test City',
+          postcode: 'TE1 2PQ'
+        },
+        emailAddress: 'contact@acme.com',
+        councilMovement: false
+      }
       const res = await httpRequest(testService.baseUrl, '/beta-2/movements', {
         method: 'POST',
-        body: {
-          apiCode: apiCode1,
-          producer: {
-            wasteSource: 'Commercial',
-            organisationName: 'ACME Waste Ltd',
-            sicCode: '38110',
-            authorisationNumber: 'EAS/P/123456',
-            address: {
-              fullAddress: '10 Industrial Way, Test City',
-              postcode: 'TE1 2PQ'
-            },
-            emailAddress: 'contact@acme.com',
-            councilMovement: false
-          }
-        }
+        body: { apiCode: apiCode1, producer }
       })
 
       expect(res.status).toEqual(HTTP_STATUS.CREATED)
       expect(res.body.data).toHaveProperty('movementId')
       expect(res.body.validation).toEqual({ warnings: [] })
       expectStandardHeaders(res)
+
+      const { movementId } = res.body.data
+      const movement = await testService.db
+        .collection('movements')
+        .findOne({ movementId })
+      expect(movement).toMatchObject({
+        _id: expect.any(ObjectId),
+        movementId,
+        orgId: expect.any(String),
+        createdAt: expect.any(String)
+      })
     })
   })
 

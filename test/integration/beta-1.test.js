@@ -6,6 +6,7 @@ import { httpRequest } from './helpers/http.js'
 import { expectStandardHeaders } from './helpers/expect-standard-headers.js'
 import { describeBetaEndpointTests } from './helpers/beta-endpoint-tests.js'
 import { apiCode1 } from '../../src/test/data/apiCodes.js'
+import { ObjectId } from 'mongodb'
 
 describe('beta-1', () => {
   let testService
@@ -47,6 +48,17 @@ describe('beta-1', () => {
       validation: { warnings: [] }
     })
     expectStandardHeaders(res)
+
+    const { movementId } = res.body.data
+    const movement = await testService.db
+      .collection('movements')
+      .findOne({ movementId })
+    expect(movement).toEqual({
+      _id: expect.any(ObjectId),
+      movementId,
+      orgId: expect.any(String),
+      createdAt: expect.any(String)
+    })
   })
 
   it('POST /beta-1/movements/{movementId}/collection creates a collection', async () => {
@@ -69,6 +81,15 @@ describe('beta-1', () => {
       validation: { warnings: [] }
     })
     expectStandardHeaders(res)
+
+    const movement = await testService.db
+      .collection('movements')
+      .findOne({ movementId })
+    expect(movement).toMatchObject({
+      movementId,
+      orgId: expect.any(String),
+      createdAt: expect.any(String)
+    })
   })
 
   it('POST /beta-1/deliveries records a delivery', async () => {
@@ -88,6 +109,18 @@ describe('beta-1', () => {
     expect(res.body.data.deliveries).toHaveLength(1)
     expect(res.body.data.deliveries[0].movementIds).toEqual([movementId])
     expectStandardHeaders(res)
+
+    const { deliveryId } = res.body.data.deliveries[0]
+    const delivery = await testService.db
+      .collection('deliveries')
+      .findOne({ deliveryId })
+    expect(delivery).toMatchObject({
+      _id: expect.any(ObjectId),
+      deliveryId,
+      orgId: expect.any(String),
+      movementIds: [movementId],
+      createdAt: expect.any(String)
+    })
   })
 
   it('POST /beta-1/deliveries/{deliveryId}/receipt records a receipt against a delivery', async () => {
@@ -120,12 +153,23 @@ describe('beta-1', () => {
       validation: { warnings: [] }
     })
     expectStandardHeaders(res)
+
+    const delivery = await testService.db
+      .collection('deliveries')
+      .findOne({ deliveryId })
+    expect(delivery).toMatchObject({
+      deliveryId,
+      orgId: expect.any(String),
+      movementIds: [movementId],
+      createdAt: expect.any(String)
+    })
   })
 
   it('POST /beta-1/receipts records a receipt without a delivery', async () => {
+    const reason = 'No prior movement trail'
     const res = await httpRequest(testService.baseUrl, '/beta-1/receipts', {
       method: 'POST',
-      body: { apiCode: apiCode1, reason: 'No prior movement trail' }
+      body: { apiCode: apiCode1, reason }
     })
 
     expect(res.status).toEqual(HTTP_STATUS.CREATED)
@@ -134,6 +178,17 @@ describe('beta-1', () => {
       validation: { warnings: [] }
     })
     expectStandardHeaders(res)
+
+    const { deliveryId } = res.body.data
+    const delivery = await testService.db
+      .collection('deliveries')
+      .findOne({ deliveryId })
+    expect(delivery).toMatchObject({
+      _id: expect.any(ObjectId),
+      deliveryId,
+      orgId: expect.any(String),
+      createdAt: expect.any(String)
+    })
   })
 
   describe('beta-1 specific error cases', () => {
