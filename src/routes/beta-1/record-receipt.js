@@ -4,27 +4,24 @@ import { getTraceId } from '@defra/hapi-tracing'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
 import { config } from '../../config.js'
-import {
-  recordReceiptSchema,
-  deliveryIdParamsSchema
-} from '../../schemas/beta-1.js'
+import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
 import { deliveryExists } from '../../services/delivery.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { notFound } from '@hapi/boom'
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
+const validate = jsonSchemaValidatorFor(apiVersion)
 
 const recordReceipt = {
   method: 'POST',
   path: '/deliveries/{deliveryId}/receipt',
   options: {
-    tags: ['movements', 'deliveries', 'receipts'],
     description: 'Record receipt of waste against a delivery',
     notes: 'Records receipt of the waste delivered under the given delivery.',
     validate: {
-      payload: recordReceiptSchema,
-      params: deliveryIdParamsSchema
+      payload: validate('record-receipt'),
+      params: validate('delivery-id-params')
     }
   },
   handler: async (request, h) => {

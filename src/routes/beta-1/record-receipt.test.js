@@ -121,7 +121,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       detail: '1 validation error occurred',
       errors: [
         {
-          errorType: 'any.required',
+          errorType: 'NotProvided',
           message: '"apiCode" is required',
           pointer: '/apiCode'
         }
