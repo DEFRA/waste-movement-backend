@@ -25,7 +25,7 @@ describe('errors', () => {
   it('returns 401 when no Authorization header is sent on a protected route', async () => {
     const wasteTrackingId = generateWasteTrackingId()
 
-    const res = await httpRequest(
+    const { status, body, headers } = await httpRequest(
       testService.baseUrl,
       `/movements/${wasteTrackingId}/receive`,
       {
@@ -36,15 +36,15 @@ describe('errors', () => {
       }
     )
 
-    expect(res.status).toEqual(HTTP_STATUS.UNAUTHORIZED)
-    expect(res.body.message).toEqual('Missing authentication')
-    expectStandardHeaders(res)
+    expect(status).toEqual(HTTP_STATUS.UNAUTHORIZED)
+    expect(body.message).toEqual('Missing authentication')
+    expectStandardHeaders(headers)
   })
 
   it('returns 400 with the validation.errors[] shape when the payload is invalid', async () => {
     const wasteTrackingId = generateWasteTrackingId()
 
-    const res = await httpRequest(
+    const { status, body, headers } = await httpRequest(
       testService.baseUrl,
       `/movements/${wasteTrackingId}/receive`,
       {
@@ -54,8 +54,8 @@ describe('errors', () => {
       }
     )
 
-    expect(res.status).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(res.body).toEqual({
+    expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(body).toEqual({
       validation: {
         errors: [
           {
@@ -66,13 +66,13 @@ describe('errors', () => {
         ]
       }
     })
-    expectStandardHeaders(res)
+    expectStandardHeaders(headers)
   })
 
   it('returns 400 for malformed JSON in the request body', async () => {
     const wasteTrackingId = generateWasteTrackingId()
 
-    const res = await httpRequest(
+    const { status, body, headers } = await httpRequest(
       testService.baseUrl,
       `/movements/${wasteTrackingId}/receive`,
       {
@@ -82,31 +82,31 @@ describe('errors', () => {
       }
     )
 
-    expect(res.status).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(res.body.validation.errors).toEqual([
+    expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(body.validation.errors).toEqual([
       {
         key: 'payload',
         errorType: 'InvalidFormat',
         message: expect.any(String)
       }
     ])
-    expectStandardHeaders(res)
+    expectStandardHeaders(headers)
   })
 
   it('returns 404 for an unknown path', async () => {
-    const res = await httpRequest(
+    const { status, headers } = await httpRequest(
       testService.baseUrl,
       '/this-route-does-not-exist'
     )
 
-    expect(res.status).toEqual(HTTP_STATUS.NOT_FOUND)
-    expectStandardHeaders(res)
+    expect(status).toEqual(HTTP_STATUS.NOT_FOUND)
+    expectStandardHeaders(headers)
   })
 
   it('returns a BusinessRuleViolation when the submitting organisation does not match the original record', async () => {
     const wasteTrackingId = generateWasteTrackingId()
 
-    const createRes = await httpRequest(
+    const { status: createStatus } = await httpRequest(
       testService.baseUrl,
       `/movements/${wasteTrackingId}/receive`,
       {
@@ -123,9 +123,9 @@ describe('errors', () => {
         }
       }
     )
-    expect(createRes.status).toEqual(HTTP_STATUS.NO_CONTENT)
+    expect(createStatus).toEqual(HTTP_STATUS.NO_CONTENT)
 
-    const res = await httpRequest(
+    const { status, body, headers } = await httpRequest(
       testService.baseUrl,
       `/movements/${wasteTrackingId}/receive`,
       {
@@ -143,8 +143,8 @@ describe('errors', () => {
       }
     )
 
-    expect(res.status).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(res.body).toEqual({
+    expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(body).toEqual({
       validation: {
         errors: [
           {
@@ -156,6 +156,6 @@ describe('errors', () => {
         ]
       }
     })
-    expectStandardHeaders(res)
+    expectStandardHeaders(headers)
   })
 })

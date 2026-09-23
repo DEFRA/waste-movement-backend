@@ -29,7 +29,7 @@ describe('POST /production-approval-tests', () => {
     const wasteItemsByIndex = [[testWasteItem], [testWasteItem, testWasteItem]]
 
     for (const [index, { wasteTrackingId }] of payload.entries()) {
-      const createRes = await httpRequest(
+      const { status } = await httpRequest(
         testService.baseUrl,
         `/movements/${wasteTrackingId}/receive`,
         {
@@ -42,7 +42,7 @@ describe('POST /production-approval-tests', () => {
           }
         }
       )
-      expect(createRes.status).toEqual(HTTP_STATUS.NO_CONTENT)
+      expect(status).toEqual(HTTP_STATUS.NO_CONTENT)
     }
   })
 
@@ -51,7 +51,7 @@ describe('POST /production-approval-tests', () => {
   })
 
   it('runs production approval tests for the given waste tracking ids', async () => {
-    const res = await httpRequest(
+    const { status, body, headers } = await httpRequest(
       testService.baseUrl,
       '/production-approval-tests',
       {
@@ -61,8 +61,8 @@ describe('POST /production-approval-tests', () => {
       }
     )
 
-    expect(res.status).toEqual(HTTP_STATUS.OK)
-    expect(res.body.results).toEqual(
+    expect(status).toEqual(HTTP_STATUS.OK)
+    expect(body.results).toEqual(
       payload.map(({ scenarioId, wasteTrackingId }) => ({
         scenarioId,
         wasteTrackingId,
@@ -70,12 +70,12 @@ describe('POST /production-approval-tests', () => {
         message: ''
       }))
     )
-    expectStandardHeaders(res)
+    expectStandardHeaders(headers)
 
     const persisted = await testService.db
       .collection('production-approval-tests')
       .findOne({ clientId })
 
-    expect(persisted._id.toString()).toEqual(res.body.submissionId)
+    expect(persisted._id.toString()).toEqual(body.submissionId)
   })
 })

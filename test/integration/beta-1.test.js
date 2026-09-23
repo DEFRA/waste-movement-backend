@@ -7,6 +7,7 @@ import { expectStandardHeaders } from './helpers/expect-standard-headers.js'
 import { describeBetaEndpointTests } from './helpers/beta-endpoint-tests.js'
 import { apiCode1 } from '../../src/test/data/apiCodes.js'
 import { ObjectId } from 'mongodb'
+import { PROBLEM_TYPE_BASE } from './helpers/problem-types.js'
 
 describe('beta-1', () => {
   let testService
@@ -37,22 +38,27 @@ describe('beta-1', () => {
   )
 
   it('POST /beta-1/movements creates a movement', async () => {
-    const res = await httpRequest(testService.baseUrl, '/beta-1/movements', {
-      method: 'POST',
-      body: { apiCode: apiCode1 }
-    })
+    const { status, body, headers } = await httpRequest(
+      testService.baseUrl,
+      '/beta-1/movements',
+      {
+        method: 'POST',
+        body: { apiCode: apiCode1 }
+      }
+    )
 
-    expect(res.status).toEqual(HTTP_STATUS.CREATED)
-    expect(res.body).toEqual({
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expect(body).toEqual({
       data: { movementId: expect.any(String) },
       validation: { warnings: [] }
     })
-    expectStandardHeaders(res)
+    expectStandardHeaders(headers)
 
-    const { movementId } = res.body.data
+    const { movementId } = body.data
     const movement = await testService.db
       .collection('movements')
       .findOne({ movementId })
+
     expect(movement).toEqual({
       _id: expect.any(ObjectId),
       movementId,
@@ -69,22 +75,23 @@ describe('beta-1', () => {
     )
     const { movementId } = createRes.body.data
 
-    const res = await httpRequest(
+    const { status, body, headers } = await httpRequest(
       testService.baseUrl,
       `/beta-1/movements/${movementId}/collection`,
       { method: 'POST', body: { apiCode: apiCode1 } }
     )
 
-    expect(res.status).toEqual(HTTP_STATUS.CREATED)
-    expect(res.body).toEqual({
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expect(body).toEqual({
       data: null,
       validation: { warnings: [] }
     })
-    expectStandardHeaders(res)
+    expectStandardHeaders(headers)
 
     const movement = await testService.db
       .collection('movements')
       .findOne({ movementId })
+
     expect(movement).toMatchObject({
       movementId,
       orgId: expect.any(String),
@@ -100,20 +107,25 @@ describe('beta-1', () => {
     )
     const { movementId } = createRes.body.data
 
-    const res = await httpRequest(testService.baseUrl, '/beta-1/deliveries', {
-      method: 'POST',
-      body: { apiCode: apiCode1, movementIds: [movementId] }
-    })
+    const { status, body, headers } = await httpRequest(
+      testService.baseUrl,
+      '/beta-1/deliveries',
+      {
+        method: 'POST',
+        body: { apiCode: apiCode1, movementIds: [movementId] }
+      }
+    )
 
-    expect(res.status).toEqual(HTTP_STATUS.CREATED)
-    expect(res.body.data.deliveries).toHaveLength(1)
-    expect(res.body.data.deliveries[0].movementIds).toEqual([movementId])
-    expectStandardHeaders(res)
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expect(body.data.deliveries).toHaveLength(1)
+    expect(body.data.deliveries[0].movementIds).toEqual([movementId])
+    expectStandardHeaders(headers)
 
-    const { deliveryId } = res.body.data.deliveries[0]
+    const { deliveryId } = body.data.deliveries[0]
     const delivery = await testService.db
       .collection('deliveries')
       .findOne({ deliveryId })
+
     expect(delivery).toMatchObject({
       _id: expect.any(ObjectId),
       deliveryId,
@@ -141,22 +153,23 @@ describe('beta-1', () => {
     )
     const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
 
-    const res = await httpRequest(
+    const { status, body, headers } = await httpRequest(
       testService.baseUrl,
       `/beta-1/deliveries/${deliveryId}/receipt`,
       { method: 'POST', body: { apiCode: apiCode1 } }
     )
 
-    expect(res.status).toEqual(HTTP_STATUS.CREATED)
-    expect(res.body).toEqual({
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expect(body).toEqual({
       data: { deliveryId },
       validation: { warnings: [] }
     })
-    expectStandardHeaders(res)
+    expectStandardHeaders(headers)
 
     const delivery = await testService.db
       .collection('deliveries')
       .findOne({ deliveryId })
+
     expect(delivery).toMatchObject({
       deliveryId,
       orgId: expect.any(String),
@@ -167,22 +180,27 @@ describe('beta-1', () => {
 
   it('POST /beta-1/receipts records a receipt without a delivery', async () => {
     const reason = 'No prior movement trail'
-    const res = await httpRequest(testService.baseUrl, '/beta-1/receipts', {
-      method: 'POST',
-      body: { apiCode: apiCode1, reason }
-    })
+    const { status, body, headers } = await httpRequest(
+      testService.baseUrl,
+      '/beta-1/receipts',
+      {
+        method: 'POST',
+        body: { apiCode: apiCode1, reason }
+      }
+    )
 
-    expect(res.status).toEqual(HTTP_STATUS.CREATED)
-    expect(res.body).toEqual({
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expect(body).toEqual({
       data: { deliveryId: expect.any(String) },
       validation: { warnings: [] }
     })
-    expectStandardHeaders(res)
+    expectStandardHeaders(headers)
 
-    const { deliveryId } = res.body.data
+    const { deliveryId } = body.data
     const delivery = await testService.db
       .collection('deliveries')
       .findOne({ deliveryId })
+
     expect(delivery).toMatchObject({
       _id: expect.any(ObjectId),
       deliveryId,
@@ -193,48 +211,80 @@ describe('beta-1', () => {
 
   describe('beta-1 specific error cases', () => {
     it('rejects collection creation for non-existent movement', async () => {
-      const res = await httpRequest(
+      const endpoint = '/beta-1/movements/NONEXISTENT/collection'
+      const { status, body } = await httpRequest(
         testService.baseUrl,
-        '/beta-1/movements/NONEXISTENT/collection',
+        endpoint,
         { method: 'POST', body: { apiCode: apiCode1 } }
       )
 
-      expect(res.status).toEqual(HTTP_STATUS.NOT_FOUND)
-      expect(res.body).toHaveProperty('title')
-      expect(res.body.title).toContain('Not Found')
+      expect(status).toEqual(HTTP_STATUS.NOT_FOUND)
+      expect(body).toMatchObject({
+        title: 'Not Found',
+        type: `${PROBLEM_TYPE_BASE}/not-found`,
+        instance: endpoint,
+        detail: expect.any(String)
+      })
     })
 
     it('rejects delivery recording with missing movementIds', async () => {
-      const res = await httpRequest(testService.baseUrl, '/beta-1/deliveries', {
-        method: 'POST',
-        body: { apiCode: apiCode1 }
-      })
+      const endpoint = '/beta-1/deliveries'
+      const { status, body } = await httpRequest(
+        testService.baseUrl,
+        endpoint,
+        {
+          method: 'POST',
+          body: { apiCode: apiCode1 }
+        }
+      )
 
-      expect(res.status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expect(res.body).toHaveProperty('title')
-      expect(res.body.title).toContain('Bad Request')
+      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(body).toMatchObject({
+        title: 'Bad Request',
+        type: `${PROBLEM_TYPE_BASE}/bad-request`,
+        instance: endpoint,
+        detail: expect.any(String)
+      })
     })
 
     it('rejects delivery recording with non-existent movement', async () => {
-      const res = await httpRequest(testService.baseUrl, '/beta-1/deliveries', {
-        method: 'POST',
-        body: { apiCode: apiCode1, movementIds: ['NONEXISTENT'] }
-      })
+      const endpoint = '/beta-1/deliveries'
+      const { status, body } = await httpRequest(
+        testService.baseUrl,
+        endpoint,
+        {
+          method: 'POST',
+          body: { apiCode: apiCode1, movementIds: ['NONEXISTENT'] }
+        }
+      )
 
-      expect(res.status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expect(res.body).toHaveProperty('title')
-      expect(res.body.title).toContain('Bad Request')
+      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(body).toMatchObject({
+        title: 'Bad Request',
+        type: `${PROBLEM_TYPE_BASE}/bad-request`,
+        instance: endpoint,
+        detail: expect.any(String)
+      })
     })
 
     it('rejects receipt recording with missing apiCode', async () => {
-      const res = await httpRequest(testService.baseUrl, '/beta-1/receipts', {
-        method: 'POST',
-        body: { reason: 'Some reason' }
-      })
+      const endpoint = '/beta-1/receipts'
+      const { status, body } = await httpRequest(
+        testService.baseUrl,
+        endpoint,
+        {
+          method: 'POST',
+          body: { reason: 'Some reason' }
+        }
+      )
 
-      expect(res.status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expect(res.body).toHaveProperty('title')
-      expect(res.body.title).toContain('Bad Request')
+      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(body).toMatchObject({
+        title: 'Bad Request',
+        type: `${PROBLEM_TYPE_BASE}/bad-request`,
+        instance: endpoint,
+        detail: expect.any(String)
+      })
     })
   })
 })

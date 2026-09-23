@@ -15,12 +15,16 @@ describe('GET /health', () => {
   })
 
   it('returns 200 without authentication', async () => {
-    const res = await httpRequest(testService.baseUrl, '/health', {
-      auth: false
-    })
+    const { status, body, headers } = await httpRequest(
+      testService.baseUrl,
+      '/health',
+      {
+        auth: false
+      }
+    )
 
-    expect(res.status).toEqual(200)
-    expect(res.body).toEqual({ message: 'success' })
-    expectStandardHeaders(res)
+    expect(status).toEqual(200)
+    expect(body).toEqual({ message: 'success' })
+    expectStandardHeaders(headers)
   })
 })

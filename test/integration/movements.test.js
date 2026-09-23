@@ -24,7 +24,7 @@ describe('movements', () => {
   it('POST /movements/{wasteTrackingId}/receive creates a waste input', async () => {
     const wasteTrackingId = generateWasteTrackingId()
 
-    const res = await httpRequest(
+    const { status, headers } = await httpRequest(
       testService.baseUrl,
       `/movements/${wasteTrackingId}/receive`,
       {
@@ -34,8 +34,8 @@ describe('movements', () => {
       }
     )
 
-    expect(res.status).toEqual(HTTP_STATUS.NO_CONTENT)
-    expectStandardHeaders(res)
+    expect(status).toEqual(HTTP_STATUS.NO_CONTENT)
+    expectStandardHeaders(headers)
 
     const persisted = await testService.db
       .collection('waste-inputs')
@@ -48,7 +48,7 @@ describe('movements', () => {
   it('PUT /movements/{wasteTrackingId}/receive updates an existing waste input', async () => {
     const wasteTrackingId = generateWasteTrackingId()
 
-    const createRes = await httpRequest(
+    const { status: createStatus } = await httpRequest(
       testService.baseUrl,
       `/movements/${wasteTrackingId}/receive`,
       {
@@ -57,9 +57,9 @@ describe('movements', () => {
         body: { movement: createTestPayload() }
       }
     )
-    expect(createRes.status).toEqual(HTTP_STATUS.NO_CONTENT)
+    expect(createStatus).toEqual(HTTP_STATUS.NO_CONTENT)
 
-    const updateRes = await httpRequest(
+    const { status, headers } = await httpRequest(
       testService.baseUrl,
       `/movements/${wasteTrackingId}/receive`,
       {
@@ -69,8 +69,8 @@ describe('movements', () => {
       }
     )
 
-    expect(updateRes.status).toEqual(HTTP_STATUS.OK)
-    expectStandardHeaders(updateRes)
+    expect(status).toEqual(HTTP_STATUS.OK)
+    expectStandardHeaders(headers)
 
     const persisted = await testService.db
       .collection('waste-inputs')
@@ -83,7 +83,7 @@ describe('movements', () => {
     const wasteTrackingId = generateWasteTrackingId()
     const traceId = 'retry-audit-log-trace-id'
 
-    const createRes = await httpRequest(
+    const { status: createStatus } = await httpRequest(
       testService.baseUrl,
       `/movements/${wasteTrackingId}/receive`,
       {
@@ -92,9 +92,9 @@ describe('movements', () => {
         body: { movement: createTestPayload() }
       }
     )
-    expect(createRes.status).toEqual(HTTP_STATUS.NO_CONTENT)
+    expect(createStatus).toEqual(HTTP_STATUS.NO_CONTENT)
 
-    const res = await httpRequest(
+    const { status, body, headers } = await httpRequest(
       testService.baseUrl,
       '/movements/retry-audit-log',
       {
@@ -103,15 +103,15 @@ describe('movements', () => {
       }
     )
 
-    expect(res.status).toEqual(HTTP_STATUS.OK)
-    expect(res.body).toEqual({})
-    expectStandardHeaders(res)
+    expect(status).toEqual(HTTP_STATUS.OK)
+    expect(body).toEqual({})
+    expectStandardHeaders(headers)
   })
 
   it('GET /qa-non-prod/movements returns the matching waste inputs', async () => {
     const wasteTrackingId = generateWasteTrackingId()
 
-    const createRes = await httpRequest(
+    const { status: createStatus } = await httpRequest(
       testService.baseUrl,
       `/movements/${wasteTrackingId}/receive`,
       {
@@ -120,16 +120,16 @@ describe('movements', () => {
         body: { movement: createTestPayload() }
       }
     )
-    expect(createRes.status).toEqual(HTTP_STATUS.NO_CONTENT)
+    expect(createStatus).toEqual(HTTP_STATUS.NO_CONTENT)
 
-    const res = await httpRequest(
+    const { status, body, headers } = await httpRequest(
       testService.baseUrl,
       `/qa-non-prod/movements?wasteTrackingId=${wasteTrackingId}`
     )
 
-    expect(res.status).toEqual(HTTP_STATUS.OK)
-    expect(res.body).toHaveLength(1)
-    expect(res.body[0].wasteTrackingId).toEqual(wasteTrackingId)
-    expectStandardHeaders(res)
+    expect(status).toEqual(HTTP_STATUS.OK)
+    expect(body).toHaveLength(1)
+    expect(body[0].wasteTrackingId).toEqual(wasteTrackingId)
+    expectStandardHeaders(headers)
   })
 })

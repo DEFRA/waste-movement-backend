@@ -35,7 +35,7 @@ describe('dependency failures', () => {
     // have minted, and that check is retried by the route's own backOff.
     wasteTrackingStub.respondWith({ statusCode: 500 })
 
-    const res = await httpRequest(
+    const { status, body } = await httpRequest(
       testService.baseUrl,
       `/bulk/${bulkId}/movements/receive`,
       {
@@ -46,8 +46,8 @@ describe('dependency failures', () => {
 
     wasteTrackingStub.respondWith()
 
-    expect(res.status).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-    expect(res.body).toEqual({
+    expect(status).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+    expect(body).toEqual({
       statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       error: 'Error',
       message: `Failed to create waste inputs: Not all waste inputs with bulk id (${bulkId}) have a waste tracking id`
@@ -61,15 +61,19 @@ describe('dependency failures', () => {
     // the route's backOff the way the persistence call is.
     await wasteTrackingStub.stop()
 
-    const res = await httpRequest(testService.baseUrl, '/beta-1/movements', {
-      method: 'POST',
-      body: { apiCode: apiCode1 }
-    })
+    const { status, body } = await httpRequest(
+      testService.baseUrl,
+      '/beta-1/movements',
+      {
+        method: 'POST',
+        body: { apiCode: apiCode1 }
+      }
+    )
 
     await wasteTrackingStub.start()
 
-    expect(res.status).toEqual(HTTP_STATUS.BAD_GATEWAY)
-    expect(res.body).toEqual({
+    expect(status).toEqual(HTTP_STATUS.BAD_GATEWAY)
+    expect(body).toEqual({
       type: 'https://waste-tracking.service.gov.uk/problems/bad-gateway',
       title: 'Bad Gateway',
       detail: expect.any(String),

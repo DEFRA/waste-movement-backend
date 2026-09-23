@@ -25,18 +25,18 @@ describe('bulk movements', () => {
     const bulkId = 'integration-create-bulk-id'
     const payload = [createBulkMovementRequest(), createBulkMovementRequest()]
 
-    const res = await httpRequest(
+    const { status, body, headers } = await httpRequest(
       testService.baseUrl,
       `/bulk/${bulkId}/movements/receive`,
       { method: 'POST', body: payload }
     )
 
-    expect(res.status).toEqual(HTTP_STATUS.CREATED)
-    expect(res.body.status).toEqual(BULK_RESPONSE_STATUS.MOVEMENTS_CREATED)
-    expect(res.body.movements).toHaveLength(2)
-    expectStandardHeaders(res)
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expect(body.status).toEqual(BULK_RESPONSE_STATUS.MOVEMENTS_CREATED)
+    expect(body.movements).toHaveLength(2)
+    expectStandardHeaders(headers)
 
-    for (const { wasteTrackingId } of res.body.movements) {
+    for (const { wasteTrackingId } of body.movements) {
       const persisted = await testService.db
         .collection('waste-inputs')
         .findOne({ _id: wasteTrackingId })
@@ -50,7 +50,7 @@ describe('bulk movements', () => {
     const createBulkId = 'integration-update-source-bulk-id'
     const updateBulkId = 'integration-update-bulk-id'
 
-    const createRes = await httpRequest(
+    const { status: createStatus, body: createBody } = await httpRequest(
       testService.baseUrl,
       `/bulk/${createBulkId}/movements/receive`,
       {
@@ -58,12 +58,12 @@ describe('bulk movements', () => {
         body: [createBulkMovementRequest(), createBulkMovementRequest()]
       }
     )
-    expect(createRes.status).toEqual(HTTP_STATUS.CREATED)
+    expect(createStatus).toEqual(HTTP_STATUS.CREATED)
 
     const [{ wasteTrackingId: id1 }, { wasteTrackingId: id2 }] =
-      createRes.body.movements
+      createBody.movements
 
-    const updateRes = await httpRequest(
+    const { status, body, headers } = await httpRequest(
       testService.baseUrl,
       `/bulk/${updateBulkId}/movements/receive`,
       {
@@ -75,11 +75,9 @@ describe('bulk movements', () => {
       }
     )
 
-    expect(updateRes.status).toEqual(HTTP_STATUS.OK)
-    expect(updateRes.body.status).toEqual(
-      BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED
-    )
-    expectStandardHeaders(updateRes)
+    expect(status).toEqual(HTTP_STATUS.OK)
+    expect(body.status).toEqual(BULK_RESPONSE_STATUS.MOVEMENTS_UPDATED)
+    expectStandardHeaders(headers)
 
     for (const wasteTrackingId of [id1, id2]) {
       const persisted = await testService.db
