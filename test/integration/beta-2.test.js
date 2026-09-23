@@ -113,7 +113,9 @@ describe('beta-2', () => {
           fullAddress: '10 Industrial Way, Test City',
           postcode: 'TE1 2PQ'
         },
-        emailAddress: 'contact@acme.com',
+        contactDetails: {
+          emailAddress: 'contact@acme.com'
+        },
         councilMovement: false
       }
       const { status, body, headers } = await httpRequest(
@@ -375,7 +377,7 @@ describe('beta-2', () => {
               wasteSource: 'Municipal',
               organisationName: 'Test Council',
               address: { fullAddress: 'Council Office', postcode: 'TE1 3ST' },
-              phoneNumber: '01234567890',
+              contactDetails: { phoneNumber: '01234567890' },
               authorisationNumber: 'EAS/P/123456',
               councilMovement: true
             }
@@ -400,9 +402,9 @@ describe('beta-2', () => {
               organisationName: 'Test Company',
               sicCode: '38110',
               address: { fullAddress: '123 Test St', postcode: 'TE1 2PQ' },
-              phoneNumber: '01234567890',
               reasonForNoAuthorisationNumber: 'Exempt operation',
-              councilMovement: false
+              councilMovement: false,
+              contactDetails: { emailAddress: 'nobody@gmail.com' }
             }
           }
         }
