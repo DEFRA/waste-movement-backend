@@ -22,7 +22,9 @@ const commercialProducer = {
     fullAddress: '10 Industrial Way, Test City',
     postcode: 'TE1 2PQ'
   },
-  emailAddress: 'producer@example.com',
+  contactDetails: {
+    emailAddress: 'producer@example.com'
+  },
   sicCode: '38110',
   councilMovement: false
 }
@@ -35,7 +37,9 @@ const municipalProducer = {
     fullAddress: 'Council Depot, Test City',
     postcode: 'TE1 5CD'
   },
-  emailAddress: 'waste.services@example.gov.uk',
+  contactDetails: {
+    emailAddress: 'waste.services@example.gov.uk'
+  },
   councilMovement: true
 }
 

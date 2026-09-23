@@ -49,6 +49,37 @@ describe('movement Route Tests version: beta-2', () => {
   }
   const goodPayload = { apiCode, producer }
 
+  const commercialProducer = {
+    wasteSource: 'Commercial',
+    organisationName: 'ACME Waste Producers Ltd',
+    authorisationNumber: 'EAS/P/123456',
+    address: {
+      fullAddress: '10 Industrial Way, Test City',
+      postcode: 'TE1 2PQ'
+    },
+    contactDetails: {
+      emailAddress: 'producer@example.com',
+      phoneNumber: '01234567890'
+    },
+    sicCode: '38110',
+    councilMovement: false
+  }
+
+  const municipalProducer = {
+    wasteSource: 'Municipal',
+    organisationName: 'Test Council',
+    reasonForNoAuthorisationNumber: 'TBC',
+    address: {
+      fullAddress: 'Council Depot, Test City',
+      postcode: 'TE1 5CD'
+    },
+    contactDetails: {
+      emailAddress: 'waste.services@example.gov.uk',
+      phoneNumber: '01234567890'
+    },
+    councilMovement: true
+  }
+
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
 
@@ -70,6 +101,34 @@ describe('movement Route Tests version: beta-2', () => {
       method: 'POST',
       url: `/${endpointVersion}/movements`,
       payload: goodPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+    expect(result).toEqual({
+      data: { movementId: expect.any(String) },
+      validation: { warnings: [] }
+    })
+    expect(headers['x-request-id']).toEqual(traceId)
+    expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['Commercial', commercialProducer],
+    ['Municipal', municipalProducer]
+  ])('creates a movement for a %s producer', async (_wasteSource, prod) => {
+    const payload = { apiCode, producer: prod }
+    const createMovementRecordSpy = jest
+      .spyOn(movementCreate, 'createMovementRecord')
+      .mockResolvedValue(payload)
+
+    const { statusCode, result, headers } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements`,
+      payload,
       headers: {
         'x-cdp-request-id': traceId,
         Authorization: `Basic ${requestBasicAuthTest1}`
