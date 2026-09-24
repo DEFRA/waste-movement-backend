@@ -8,6 +8,7 @@ import { describeBetaEndpointTests } from './helpers/beta-endpoint-tests.js'
 import { apiCode1 } from '../../src/test/data/apiCodes.js'
 import { ObjectId } from 'mongodb'
 import { PROBLEM_TYPE_BASE } from './helpers/problem-types.js'
+import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-body-has-shape.js'
 
 describe('beta-1', () => {
   let testService
@@ -48,6 +49,7 @@ describe('beta-1', () => {
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
       data: { movementId: expect.any(String) },
       validation: { warnings: [] }
@@ -82,6 +84,7 @@ describe('beta-1', () => {
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
       data: null,
       validation: { warnings: [] }
@@ -117,6 +120,7 @@ describe('beta-1', () => {
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body.data.deliveries).toHaveLength(1)
     expect(body.data.deliveries[0].movementIds).toEqual([movementId])
     expectStandardHeaders(headers)
@@ -160,6 +164,7 @@ describe('beta-1', () => {
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
       data: { deliveryId },
       validation: { warnings: [] }
@@ -190,6 +195,7 @@ describe('beta-1', () => {
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
       data: { deliveryId: expect.any(String) },
       validation: { warnings: [] }
@@ -219,6 +225,7 @@ describe('beta-1', () => {
       )
 
       expect(status).toEqual(HTTP_STATUS.NOT_FOUND)
+      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
       expect(body).toMatchObject({
         title: 'Not Found',
         type: `${PROBLEM_TYPE_BASE}/not-found`,
@@ -239,11 +246,11 @@ describe('beta-1', () => {
       )
 
       expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expectResponseBodyHasCorrectShape({ body, shape: 'VALIDATION-ERROR' })
       expect(body).toMatchObject({
         title: 'Bad Request',
         type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint,
-        detail: expect.any(String)
+        instance: endpoint
       })
     })
 
@@ -259,6 +266,7 @@ describe('beta-1', () => {
       )
 
       expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
       expect(body).toMatchObject({
         title: 'Bad Request',
         type: `${PROBLEM_TYPE_BASE}/bad-request`,
@@ -279,11 +287,11 @@ describe('beta-1', () => {
       )
 
       expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expectResponseBodyHasCorrectShape({ body, shape: 'VALIDATION-ERROR' })
       expect(body).toMatchObject({
         title: 'Bad Request',
         type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint,
-        detail: expect.any(String)
+        instance: endpoint
       })
     })
   })

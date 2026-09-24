@@ -1,6 +1,7 @@
 import { requestBasicAuthTest1 } from '../../../src/test/data/basic-auth.js'
+import { randomUUID } from 'node:crypto'
 
-// Deliberately dumb: adds the Basic auth header, sends what it's given and
+// Deliberately dumb: adds the Basic auth header and `x-cdp-request-id`, sends what it's given and
 // returns exactly what crossed the socket - no retries, no unwrapping.
 //
 // `body` may be an object (JSON-stringified) or a string (sent as-is, so
@@ -14,6 +15,7 @@ export async function httpRequest(
     method,
     headers: {
       'content-type': 'application/json',
+      'x-cdp-request-id': randomUUID(),
       ...(auth ? { authorization: `Basic ${requestBasicAuthTest1}` } : {}),
       ...headers
     },

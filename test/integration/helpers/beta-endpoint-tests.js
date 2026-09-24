@@ -2,6 +2,7 @@ import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { expectStandardHeaders } from './expect-standard-headers.js'
 import { httpRequest } from './http.js'
 import { PROBLEM_TYPE_BASE } from './problem-types.js'
+import { expectResponseBodyHasCorrectShape } from './expect-response-body-has-shape.js'
 
 /**
  * Shared test suite for beta endpoint versions.
@@ -36,12 +37,12 @@ export function describeBetaEndpointTests(
       )
 
       expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(headers.get('x-request-id')).toEqual(expect.any(String))
+      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
       expect(body).toMatchObject({
         title: 'Bad Request',
         type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint,
-        detail: expect.any(String),
-        errors: expect.any(Array)
+        instance: endpoint
       })
 
       expect(headers.get('content-type')).toContain('application/problem+json')
@@ -60,13 +61,14 @@ export function describeBetaEndpointTests(
       )
 
       expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
       expect(body).toMatchObject({
         title: 'Bad Request',
         type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint,
-        detail: expect.any(String)
+        instance: endpoint
       })
       expect(headers.get('content-type')).toContain('application/problem+json')
+      expect(headers.get('x-request-id')).toEqual(expect.any(String))
     })
 
     it('returns RFC9457 format for missing authentication', async () => {
@@ -83,13 +85,14 @@ export function describeBetaEndpointTests(
       )
 
       expect(status).toEqual(HTTP_STATUS.UNAUTHORIZED)
+      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
       expect(body).toMatchObject({
         title: 'Unauthorized',
         type: `${PROBLEM_TYPE_BASE}/unauthorized`,
-        instance: endpoint,
-        detail: expect.any(String)
+        instance: endpoint
       })
       expect(headers.get('content-type')).toContain('application/problem+json')
+      expect(headers.get('x-request-id')).toEqual(expect.any(String))
     })
 
     it('returns RFC9457 format for 404 Not Found', async () => {
@@ -106,15 +109,16 @@ export function describeBetaEndpointTests(
 
       // If endpoint exists and returns 404, verify format
       if (status === HTTP_STATUS.NOT_FOUND) {
+        expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
         expect(body).toMatchObject({
           title: 'Not Found',
           type: `${PROBLEM_TYPE_BASE}/not-found`,
-          instance: endpoint,
-          detail: expect.any(String)
+          instance: endpoint
         })
         expect(headers.get('content-type')).toContain(
           'application/problem+json'
         )
+        expect(headers.get('x-request-id')).toEqual(expect.any(String))
       }
     })
   })
@@ -152,7 +156,7 @@ export function describeBetaEndpointTests(
   })
 
   describe(`${version} - Request Tracing`, () => {
-    it('echoes x-cdp-request-id as x-request-id', async () => {
+    it('echoes x-cdp-request-id as x-request-id on success responses', async () => {
       const testService = getTestService()
       const traceId = `test-trace-beta${version}`
       const { status, headers } = await httpRequest(
@@ -169,9 +173,27 @@ export function describeBetaEndpointTests(
       expect(headers.get('x-request-id')).toBe(traceId)
     })
 
+    it('echoes x-cdp-request-id as x-request-id header and returns requestId in body on error responses', async () => {
+      const testService = getTestService()
+      const traceId = `test-trace-beta${version}`
+      const { status, body, headers } = await httpRequest(
+        testService.baseUrl,
+        `${basePath}/movements`,
+        {
+          method: 'POST',
+          body: {},
+          headers: { 'x-cdp-request-id': traceId, foo: 'bar' }
+        }
+      )
+
+      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(headers.get('x-request-id')).toBe(traceId)
+      expect(body).toEqual(expect.objectContaining({ requestId: traceId }))
+    })
+
     it('generates request ID when not provided', async () => {
       const testService = getTestService()
-      const { status, headers } = await httpRequest(
+      const { status, headers, body } = await httpRequest(
         testService.baseUrl,
         `${basePath}/movements`,
         {
@@ -182,6 +204,7 @@ export function describeBetaEndpointTests(
 
       expect(status).toEqual(HTTP_STATUS.CREATED)
       expect(headers.get('x-request-id')).toBeDefined()
+      expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     })
   })
 
@@ -213,7 +236,7 @@ export function describeBetaEndpointTests(
       )
 
       expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expect(headers).toBeDefined()
+      expectStandardHeaders(headers)
     })
   })
 
@@ -231,11 +254,11 @@ export function describeBetaEndpointTests(
       )
 
       expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
       expect(body).toMatchObject({
         title: 'Bad Request',
         type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint,
-        detail: expect.any(String)
+        instance: endpoint
       })
     })
 
@@ -255,11 +278,11 @@ export function describeBetaEndpointTests(
       )
 
       expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
       expect(body).toMatchObject({
         title: 'Bad Request',
         type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint,
-        detail: expect.any(String)
+        instance: endpoint
       })
     })
   })

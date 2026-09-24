@@ -77,7 +77,8 @@ describe('dependency failures', () => {
       type: 'https://waste-tracking.service.gov.uk/problems/bad-gateway',
       title: 'Bad Gateway',
       detail: expect.any(String),
-      instance: '/beta-1/movements'
+      instance: '/beta-1/movements',
+      requestId: expect.any(String)
     })
   }, 10000)
 })
