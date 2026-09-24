@@ -43,7 +43,10 @@ jest.mock('../../common/helpers/http-client.js', () => ({
 describe('POST /beta-1/receipts', () => {
   let server
   const url = '/beta-1/receipts'
+  const traceId = 'trace-id-123'
   const authHeaders = { Authorization: `Basic ${requestBasicAuthTest1}` }
+  const tracedHeaders = { 'x-cdp-request-id': traceId }
+  const tracedAuthHeaders = { ...authHeaders, ...tracedHeaders }
 
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
@@ -67,7 +70,7 @@ describe('POST /beta-1/receipts', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode1, reason },
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
@@ -93,10 +96,10 @@ describe('POST /beta-1/receipts', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode1, reason },
-      headers: { ...authHeaders, 'x-cdp-request-id': 'trace-id-123' }
+      headers: tracedAuthHeaders
     })
 
-    expect(headers['x-request-id']).toBe('trace-id-123')
+    expect(headers['x-request-id']).toEqual(traceId)
   })
 
   it('returns a 400 when required fields are missing', async () => {
@@ -104,7 +107,7 @@ describe('POST /beta-1/receipts', () => {
       method: 'POST',
       url,
       payload: {},
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
@@ -124,7 +127,8 @@ describe('POST /beta-1/receipts', () => {
       ],
       instance: '/beta-1/receipts',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      requestId: traceId
     })
   })
 
@@ -133,7 +137,7 @@ describe('POST /beta-1/receipts', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode3, reason },
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
@@ -141,7 +145,8 @@ describe('POST /beta-1/receipts', () => {
       detail: 'the API Code supplied is invalid',
       instance: '/beta-1/receipts',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      requestId: traceId
     })
   })
 
@@ -155,14 +160,15 @@ describe('POST /beta-1/receipts', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode1, reason },
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
       instance: '/beta-1/receipts',
       title: 'Internal Server Error',
-      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error'
+      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error',
+      requestId: traceId
     })
   })
 
@@ -170,7 +176,8 @@ describe('POST /beta-1/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, reason }
+      payload: { apiCode: apiCode1, reason },
+      headers: tracedHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
@@ -178,7 +185,8 @@ describe('POST /beta-1/receipts', () => {
       detail: 'Missing authentication',
       instance: '/beta-1/receipts',
       title: 'Unauthorized',
-      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
+      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized',
+      requestId: traceId
     })
   })
 })

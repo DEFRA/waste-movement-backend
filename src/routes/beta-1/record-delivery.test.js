@@ -42,8 +42,11 @@ describe('POST /beta-1/deliveries', () => {
   let server
   const movementId1 = '25HRA0B1'
   const movementId2 = '25HRA0B2'
+  const traceId = 'trace-id-123'
   const url = '/beta-1/deliveries'
   const authHeaders = { Authorization: `Basic ${requestBasicAuthTest1}` }
+  const tracedHeaders = { 'x-cdp-request-id': traceId }
+  const tracedAuthHeaders = { ...authHeaders, ...tracedHeaders }
 
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
@@ -72,7 +75,7 @@ describe('POST /beta-1/deliveries', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode1, movementIds: [movementId1, movementId2] },
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
@@ -111,7 +114,7 @@ describe('POST /beta-1/deliveries', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode1, movementIds: [movementId1] },
-      headers: { ...authHeaders, 'x-cdp-request-id': 'trace-id-123' }
+      headers: tracedAuthHeaders
     })
 
     expect(headers['x-request-id']).toBe('trace-id-123')
@@ -122,7 +125,7 @@ describe('POST /beta-1/deliveries', () => {
       method: 'POST',
       url,
       payload: {},
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
@@ -142,7 +145,8 @@ describe('POST /beta-1/deliveries', () => {
       ],
       instance: '/beta-1/deliveries',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      requestId: traceId
     })
   })
 
@@ -151,7 +155,7 @@ describe('POST /beta-1/deliveries', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode3, movementIds: [movementId1] },
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
@@ -159,7 +163,8 @@ describe('POST /beta-1/deliveries', () => {
       detail: 'the API Code supplied is invalid',
       instance: '/beta-1/deliveries',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      requestId: traceId
     })
   })
 
@@ -175,7 +180,7 @@ describe('POST /beta-1/deliveries', () => {
         apiCode: apiCode1,
         movementIds: [movementId1, movementId2]
       },
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
@@ -183,7 +188,8 @@ describe('POST /beta-1/deliveries', () => {
       detail: 'No movement exists for movement ID(s): 25HRA0B2',
       instance: '/beta-1/deliveries',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      requestId: traceId
     })
   })
 
@@ -200,14 +206,15 @@ describe('POST /beta-1/deliveries', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode1, movementIds: [movementId1] },
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
       instance: '/beta-1/deliveries',
       title: 'Internal Server Error',
-      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error'
+      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error',
+      requestId: traceId
     })
   })
 
@@ -215,7 +222,8 @@ describe('POST /beta-1/deliveries', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, movementIds: [movementId1] }
+      payload: { apiCode: apiCode1, movementIds: [movementId1] },
+      headers: tracedHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
@@ -223,7 +231,8 @@ describe('POST /beta-1/deliveries', () => {
       detail: 'Missing authentication',
       instance: '/beta-1/deliveries',
       title: 'Unauthorized',
-      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
+      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized',
+      requestId: traceId
     })
   })
 })

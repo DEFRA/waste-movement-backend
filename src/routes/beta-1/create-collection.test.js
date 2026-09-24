@@ -118,7 +118,8 @@ describe('collection Route Tests version: beta-1', () => {
       ],
       instance: '/beta-1/movements/movementId/collection',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      requestId: traceId
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
@@ -142,7 +143,8 @@ describe('collection Route Tests version: beta-1', () => {
     expect(result).toEqual({
       instance: '/beta-1/movements/movementId/collection',
       title: 'Internal Server Error',
-      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error'
+      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error',
+      requestId: traceId
     })
 
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
@@ -168,7 +170,8 @@ describe('collection Route Tests version: beta-1', () => {
       detail: 'Missing authentication',
       instance: '/beta-1/movements/movementId/collection',
       title: 'Unauthorized',
-      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
+      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized',
+      requestId: traceId
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
   })

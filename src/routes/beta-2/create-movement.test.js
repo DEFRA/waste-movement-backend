@@ -163,7 +163,8 @@ describe('movement Route Tests version: beta-2', () => {
     expect(result).toEqual({
       instance: '/beta-2/movements',
       title: 'Internal Server Error',
-      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error'
+      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error',
+      requestId: traceId
     })
     expect(headers['content-type']).toContain('application/problem+json')
 
@@ -201,7 +202,8 @@ describe('movement Route Tests version: beta-2', () => {
       ],
       instance: '/beta-2/movements',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      requestId: traceId
     })
 
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
@@ -236,7 +238,8 @@ describe('movement Route Tests version: beta-2', () => {
       ],
       instance: '/beta-2/movements',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      requestId: traceId
     })
 
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
@@ -263,7 +266,8 @@ describe('movement Route Tests version: beta-2', () => {
       detail: 'the API Code supplied is invalid',
       instance: '/beta-2/movements',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      requestId: traceId
     })
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
@@ -288,7 +292,8 @@ describe('movement Route Tests version: beta-2', () => {
       detail: 'Missing authentication',
       instance: `/${endpointVersion}/movements`,
       title: 'Unauthorized',
-      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
+      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized',
+      requestId: traceId
     })
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
