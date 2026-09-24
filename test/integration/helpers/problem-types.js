@@ -1,2 +1,2 @@
 export const PROBLEM_TYPE_BASE =
-  'https://waste-tracking.service.gov.uk/problems'
+  'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems'

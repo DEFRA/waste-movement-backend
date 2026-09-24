@@ -5,6 +5,7 @@ import { createWasteTrackingStub } from './helpers/waste-tracking-stub.js'
 import { httpRequest } from './helpers/http.js'
 import { createBulkMovementRequest } from '../../src/test/utils/createBulkMovementRequest.js'
 import { apiCode1 } from '../../src/test/data/apiCodes.js'
+import { PROBLEM_TYPE_BASE } from './helpers/problem-types.js'
 
 const bulkId = 'integration-dependency-failure-bulk-id'
 
@@ -74,7 +75,7 @@ describe('dependency failures', () => {
 
     expect(status).toEqual(HTTP_STATUS.BAD_GATEWAY)
     expect(body).toEqual({
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-gateway',
+      type: `${PROBLEM_TYPE_BASE}/bad-gateway`,
       title: 'Bad Gateway',
       detail: expect.any(String),
       instance: '/beta-1/movements',

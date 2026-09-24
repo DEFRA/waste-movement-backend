@@ -31,6 +31,9 @@ describe('collection Route Tests version: beta-1', () => {
   const goodPayload = { apiCode }
   const goodMovementId = 'movementId'
 
+  const expectedTypeBase =
+    'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
+
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
 
@@ -84,7 +87,7 @@ describe('collection Route Tests version: beta-1', () => {
       detail: 'movementId not found',
       instance: '/beta-1/movements/movementId/collection',
       title: 'Not Found',
-      type: 'https://waste-tracking.service.gov.uk/problems/not-found'
+      type: `${expectedTypeBase}not-found`
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
   })
@@ -118,7 +121,7 @@ describe('collection Route Tests version: beta-1', () => {
       ],
       instance: '/beta-1/movements/movementId/collection',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      type: `${expectedTypeBase}bad-request`,
       requestId: traceId
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
@@ -143,7 +146,7 @@ describe('collection Route Tests version: beta-1', () => {
     expect(result).toEqual({
       instance: '/beta-1/movements/movementId/collection',
       title: 'Internal Server Error',
-      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error',
+      type: `${expectedTypeBase}internal-server-error`,
       requestId: traceId
     })
 
@@ -170,7 +173,7 @@ describe('collection Route Tests version: beta-1', () => {
       detail: 'Missing authentication',
       instance: '/beta-1/movements/movementId/collection',
       title: 'Unauthorized',
-      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized',
+      type: `${expectedTypeBase}unauthorized`,
       requestId: traceId
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)

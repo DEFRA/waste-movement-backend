@@ -46,6 +46,9 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
   const tracedHeaders = { 'x-cdp-request-id': traceId }
   const tracedAuthHeaders = { ...authHeaders, ...tracedHeaders }
 
+  const expectedTypeBase =
+    'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
+
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
     process.env.ACCESS_CRED_TEST1 = userBasicAuthTest1
@@ -107,7 +110,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       detail: `No delivery exists with delivery ID: ${deliveryId}`,
       instance: '/beta-1/deliveries/25KMT4Z9/receipt',
       title: 'Not Found',
-      type: 'https://waste-tracking.service.gov.uk/problems/not-found',
+      type: `${expectedTypeBase}not-found`,
       requestId: traceId
     })
   })
@@ -132,7 +135,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       ],
       instance: '/beta-1/deliveries/25KMT4Z9/receipt',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      type: `${expectedTypeBase}bad-request`,
       requestId: traceId
     })
   })
@@ -152,7 +155,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       detail: 'the API Code supplied is invalid',
       instance: '/beta-1/deliveries/25KMT4Z9/receipt',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      type: `${expectedTypeBase}bad-request`,
       requestId: traceId
     })
   })
@@ -172,7 +175,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
     expect(result).toEqual({
       instance: '/beta-1/deliveries/25KMT4Z9/receipt',
       title: 'Internal Server Error',
-      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error',
+      type: `${expectedTypeBase}internal-server-error`,
       requestId: traceId
     })
   })
@@ -190,7 +193,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       detail: 'Missing authentication',
       instance: url,
       title: 'Unauthorized',
-      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized',
+      type: `${expectedTypeBase}unauthorized`,
       requestId: traceId
     })
   })

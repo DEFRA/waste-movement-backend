@@ -45,6 +45,9 @@ describe('movement Route Tests version: beta-1', () => {
   const apiCode = apiCode1
   const goodPayload = { apiCode }
 
+  const expectedTypeBase =
+    'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
+
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
 
@@ -100,7 +103,7 @@ describe('movement Route Tests version: beta-1', () => {
     expect(result).toEqual({
       instance: '/beta-1/movements',
       title: 'Internal Server Error',
-      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error',
+      type: `${expectedTypeBase}internal-server-error`,
       requestId: traceId
     })
     expect(headers['content-type']).toContain('application/problem+json')
@@ -140,7 +143,7 @@ describe('movement Route Tests version: beta-1', () => {
       ],
       instance: '/beta-1/movements',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      type: `${expectedTypeBase}bad-request`,
       requestId: traceId
     })
 
@@ -170,7 +173,7 @@ describe('movement Route Tests version: beta-1', () => {
       detail: 'the API Code supplied is invalid',
       instance: '/beta-1/movements',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request',
+      type: `${expectedTypeBase}bad-request`,
       requestId: traceId
     })
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
@@ -199,7 +202,7 @@ describe('movement Route Tests version: beta-1', () => {
       detail: 'Missing authentication',
       instance: `/${endpointVersion}/movements`,
       title: 'Unauthorized',
-      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized',
+      type: `${expectedTypeBase}unauthorized`,
       requestId: traceId
     })
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)

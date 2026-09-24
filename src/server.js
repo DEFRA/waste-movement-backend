@@ -82,7 +82,9 @@ async function createServer() {
     {
       plugin: formatErrorToRFC9457Response,
       options: {
-        shouldFormat: (request) => request.path.startsWith('/beta-')
+        shouldFormat: (request) => request.path.startsWith('/beta-'),
+        typeBase:
+          'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
       }
     },
     errorHandler
