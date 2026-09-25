@@ -1,7 +1,14 @@
 // Compiles every beta JSON Schema file under src/schemas/ with ajv, and
-// exposes a single validate(id, payload) entry point keyed by each schema
-// file's own $id, which is asserted to equal its path relative to
-// src/schemas/ (e.g. "beta-2/common/producer/producer.schema.json").
+// exposes a single validate(id, payload) entry point keyed by each file's
+// path relative to src/schemas/ (e.g.
+// "beta-2/common/producer/producer.schema.json").
+//
+// The schema files themselves carry no $id. The key passed to addSchema
+// becomes the schema's base URI, so relative $refs resolve against the
+// file's own location — siblings (producer-base.schema.json) and
+// cross-folder (../common/producer/producer.schema.json) alike. Leaving
+// $id out also means the files stay correct when served over HTTP
+// elsewhere, where the base URI falls back to the retrieval URL.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import Ajv2020 from 'ajv/dist/2020.js'
@@ -30,27 +37,20 @@ addFormats(ajv, ['email', 'uuid'])
 
 for (const file of collectSchemaFiles(schemaRoot)) {
   const schema = JSON.parse(readFileSync(file, 'utf-8'))
-  const relativePath = path.relative(schemaRoot, file)
 
-  if (schema.$id !== relativePath) {
-    throw new Error(
-      `Schema $id "${schema.$id}" does not match its path "${relativePath}" relative to src/schemas/.`
-    )
-  }
-
-  ajv.addSchema(schema)
+  ajv.addSchema(schema, path.relative(schemaRoot, file))
 }
 
 /**
- * Validates `payload` against the schema registered under `id` (its $id,
- * equal to its path relative to src/schemas/). Returns true/false, same as
- * calling an ajv-compiled validate function directly — use getErrors(id)
- * after a `false` result to see why.
+ * Validates `payload` against the schema registered under `id` — its path
+ * relative to src/schemas/. Returns true/false, same as calling an
+ * ajv-compiled validate function directly — use getErrors(id) after a
+ * `false` result to see why.
  */
 export function validate(id, payload) {
   const validateFn = ajv.getSchema(id)
   if (!validateFn) {
-    throw new Error(`No schema registered with $id "${id}".`)
+    throw new Error(`No schema registered under "${id}".`)
   }
   return validateFn(payload)
 }
