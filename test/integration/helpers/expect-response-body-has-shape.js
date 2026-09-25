@@ -2,12 +2,12 @@ import { expect } from '@jest/globals'
 
 export function expectResponseBodyHasCorrectShape({
   body = {},
-  shape = 'SUCCESS' | 'ERROR' | 'VALIDATION-ERROR'
+  shape = 'SUCCESS'
 }) {
   switch (shape) {
     case 'SUCCESS':
+      expect(body).toHaveProperty('data')
       expect(body).toMatchObject({
-        data: expect.any(Object),
         validation: expect.any(Object)
       })
       break
@@ -34,6 +34,6 @@ export function expectResponseBodyHasCorrectShape({
       break
 
     default:
-      expect(body).toBeDefined()
+      throw new Error(`Unknown response shape: ${shape}`)
   }
 }

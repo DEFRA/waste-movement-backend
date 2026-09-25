@@ -1,8 +1,9 @@
+import { randomUUID } from 'node:crypto'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { expectStandardHeaders } from './expect-standard-headers.js'
 import { httpRequest } from './http.js'
-import { PROBLEM_TYPE_BASE } from './problem-types.js'
 import { expectResponseBodyHasCorrectShape } from './expect-response-body-has-shape.js'
+import { expectProblemResponse } from './expect-problem-response.js'
 
 /**
  * Shared test suite for beta endpoint versions.
@@ -15,140 +16,93 @@ import { expectResponseBodyHasCorrectShape } from './expect-response-body-has-sh
  *     describeBetaEndpointTests(version, testService, testData)
  *   })
  */
-export function describeBetaEndpointTests(
-  version,
-  getTestService,
-  getWasteTrackingStub,
-  testData
-) {
+export function describeBetaEndpointTests(version, getTestService, testData) {
   const basePath = `/${version}`
+  const movementsEndpoint = `${basePath}/movements`
+
+  /**
+   * Makes a request against the versioned beta API.
+   * @param {string} path - path relative to the version base, e.g. '/movements'
+   * @param {object} [options] - options passed through to httpRequest
+   */
+  const requestBeta = (path, options) =>
+    httpRequest(getTestService().baseUrl, `${basePath}${path}`, options)
 
   describe(`${version} - Error Formatting & RFC9457 Compliance`, () => {
     it('returns RFC9457 format for validation errors', async () => {
-      const testService = getTestService()
-      const endpoint = `${basePath}/movements`
-      const { status, body, headers } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: {}
-        }
-      )
-
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expect(headers.get('x-request-id')).toEqual(expect.any(String))
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint
+      const response = await requestBeta('/movements', {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {}
       })
 
-      expect(headers.get('content-type')).toContain('application/problem+json')
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: movementsEndpoint
+      })
     })
 
     it('returns RFC9457 format for invalid API code', async () => {
-      const testService = getTestService()
-      const endpoint = `${basePath}/movements`
-      const { status, body, headers } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: { apiCode: 'INVALID_CODE', ...testData.minimalProducer }
-        }
-      )
-
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint
+      const response = await requestBeta('/movements', {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: 'INVALID_CODE', ...testData.minimalProducer }
       })
-      expect(headers.get('content-type')).toContain('application/problem+json')
-      expect(headers.get('x-request-id')).toEqual(expect.any(String))
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: movementsEndpoint
+      })
     })
 
     it('returns RFC9457 format for missing authentication', async () => {
-      const testService = getTestService()
-      const endpoint = `${basePath}/movements`
-      const { status, body, headers } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: { apiCode: testData.apiCode1, ...testData.minimalProducer },
-          auth: false
-        }
-      )
-
-      expect(status).toEqual(HTTP_STATUS.UNAUTHORIZED)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Unauthorized',
-        type: `${PROBLEM_TYPE_BASE}/unauthorized`,
-        instance: endpoint
+      const response = await requestBeta('/movements', {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: testData.apiCode1, ...testData.minimalProducer },
+        auth: false
       })
-      expect(headers.get('content-type')).toContain('application/problem+json')
-      expect(headers.get('x-request-id')).toEqual(expect.any(String))
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.UNAUTHORIZED,
+        type: 'unauthorized',
+        instance: movementsEndpoint
+      })
     })
 
     it('returns RFC9457 format for 404 Not Found', async () => {
-      const testService = getTestService()
       // Generic 404 test - verify format compliance, not endpoint-specific behavior
-      const endpoint = `${basePath}/NONEXISTENT`
-      const { status, body, headers } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'GET'
-        }
-      )
+      const response = await requestBeta('/NONEXISTENT', {
+        method: 'GET',
+        requestId: randomUUID()
+      })
 
-      // If endpoint exists and returns 404, verify format
-      if (status === HTTP_STATUS.NOT_FOUND) {
-        expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-        expect(body).toMatchObject({
-          title: 'Not Found',
-          type: `${PROBLEM_TYPE_BASE}/not-found`,
-          instance: endpoint
-        })
-        expect(headers.get('content-type')).toContain(
-          'application/problem+json'
-        )
-        expect(headers.get('x-request-id')).toEqual(expect.any(String))
-      }
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.NOT_FOUND,
+        type: 'not-found',
+        instance: `${basePath}/NONEXISTENT`
+      })
     })
   })
 
   describe(`${version} - Content Negotiation`, () => {
     it('returns problem+json for errors', async () => {
-      const testService = getTestService()
-      const { status, headers } = await httpRequest(
-        testService.baseUrl,
-        `${basePath}/movements`,
-        {
-          method: 'POST',
-          body: {}
-        }
-      )
+      const { status, headers } = await requestBeta('/movements', {
+        method: 'POST',
+        body: {}
+      })
 
       expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
       expect(headers.get('content-type')).toContain('application/problem+json')
     })
 
     it('returns json for successful responses', async () => {
-      const testService = getTestService()
-      const { status, headers } = await httpRequest(
-        testService.baseUrl,
-        `${basePath}/movements`,
-        {
-          method: 'POST',
-          body: { apiCode: testData.apiCode1, ...testData.minimalProducer }
-        }
-      )
+      const { status, headers } = await requestBeta('/movements', {
+        method: 'POST',
+        body: { apiCode: testData.apiCode1, ...testData.minimalProducer }
+      })
 
       expect(status).toEqual(HTTP_STATUS.CREATED)
       expect(headers.get('content-type')).toContain('application/json')
@@ -157,34 +111,25 @@ export function describeBetaEndpointTests(
 
   describe(`${version} - Request Tracing`, () => {
     it('echoes x-cdp-request-id as x-request-id on success responses', async () => {
-      const testService = getTestService()
       const traceId = `test-trace-beta${version}`
-      const { status, headers } = await httpRequest(
-        testService.baseUrl,
-        `${basePath}/movements`,
-        {
-          method: 'POST',
-          body: { apiCode: testData.apiCode1, ...testData.minimalProducer },
-          headers: { 'x-cdp-request-id': traceId }
-        }
-      )
+      const { status, headers } = await requestBeta('/movements', {
+        method: 'POST',
+        body: { apiCode: testData.apiCode1, ...testData.minimalProducer },
+        requestId: traceId
+      })
 
       expect(status).toEqual(HTTP_STATUS.CREATED)
       expect(headers.get('x-request-id')).toBe(traceId)
     })
 
     it('echoes x-cdp-request-id as x-request-id header and returns requestId in body on error responses', async () => {
-      const testService = getTestService()
       const traceId = `test-trace-beta${version}`
-      const { status, body, headers } = await httpRequest(
-        testService.baseUrl,
-        `${basePath}/movements`,
-        {
-          method: 'POST',
-          body: {},
-          headers: { 'x-cdp-request-id': traceId, foo: 'bar' }
-        }
-      )
+      const { status, body, headers } = await requestBeta('/movements', {
+        method: 'POST',
+        body: {},
+        requestId: traceId,
+        headers: { foo: 'bar' }
+      })
 
       expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
       expect(headers.get('x-request-id')).toBe(traceId)
@@ -192,97 +137,88 @@ export function describeBetaEndpointTests(
     })
 
     it('generates request ID when not provided', async () => {
-      const testService = getTestService()
-      const { status, headers, body } = await httpRequest(
-        testService.baseUrl,
-        `${basePath}/movements`,
-        {
-          method: 'POST',
-          body: { apiCode: testData.apiCode1, ...testData.minimalProducer }
-        }
-      )
+      const { status, headers, body } = await requestBeta('/movements', {
+        method: 'POST',
+        body: { apiCode: testData.apiCode1, ...testData.minimalProducer }
+      })
 
       expect(status).toEqual(HTTP_STATUS.CREATED)
-      expect(headers.get('x-request-id')).toBeDefined()
+      // No x-cdp-request-id sent, so the server must generate a UUID
+      expect(headers.get('x-request-id')).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+      )
       expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
+    })
+
+    // Unlike success responses, error responses don't fall back to a
+    // generated ID: the shared error formatter only includes one when
+    // x-cdp-request-id was sent. Accepted because CDP always sends that
+    // header in deployed environments, so every other error test supplies one.
+    it('omits request ID from error responses when not provided', async () => {
+      const { status, body, headers } = await requestBeta('/movements', {
+        method: 'POST',
+        body: {}
+      })
+
+      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(headers.get('x-request-id')).toBeNull()
+      expect(body).not.toHaveProperty('requestId')
     })
   })
 
   describe(`${version} - Standard Headers`, () => {
     it('includes standard security and content headers in success responses', async () => {
-      const testService = getTestService()
-      const { status, headers } = await httpRequest(
-        testService.baseUrl,
-        `${basePath}/movements`,
-        {
-          method: 'POST',
-          body: { apiCode: testData.apiCode1, ...testData.minimalProducer }
-        }
-      )
+      const { status, headers } = await requestBeta('/movements', {
+        method: 'POST',
+        body: { apiCode: testData.apiCode1, ...testData.minimalProducer }
+      })
 
       expect(status).toEqual(HTTP_STATUS.CREATED)
       expectStandardHeaders(headers)
     })
 
     it('includes standard security headers in error responses', async () => {
-      const testService = getTestService()
-      const { status, headers } = await httpRequest(
-        testService.baseUrl,
-        `${basePath}/movements`,
-        {
-          method: 'POST',
-          body: {}
-        }
-      )
+      const { status, headers } = await requestBeta('/movements', {
+        method: 'POST',
+        body: {}
+      })
 
       expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectStandardHeaders(headers)
+      expectStandardHeaders(headers, {
+        contentType: 'application/problem+json'
+      })
     })
   })
 
   describe(`${version} - Missing Required Fields`, () => {
     it('rejects missing apiCode', async () => {
-      const testService = getTestService()
-      const endpoint = `${basePath}/movements`
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: testData.minimalProducer
-        }
-      )
+      const response = await requestBeta('/movements', {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: testData.minimalProducer
+      })
 
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: movementsEndpoint
       })
     })
 
     it('rejects missing producer when required', async () => {
-      const testService = getTestService()
       // Only applicable to beta-2+
       if (!testData.requiresProducer) return
 
-      const endpoint = `${basePath}/movements`
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: { apiCode: testData.apiCode1 }
-        }
-      )
+      const response = await requestBeta('/movements', {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: testData.apiCode1 }
+      })
 
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: movementsEndpoint
       })
     })
   })

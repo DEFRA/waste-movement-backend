@@ -13,7 +13,9 @@ describe('bulk movements', () => {
   beforeAll(async () => {
     wasteTrackingStub = createWasteTrackingStub()
     await wasteTrackingStub.start()
-    testService = await startTestService()
+    testService = await startTestService({
+      wasteTrackingUrl: wasteTrackingStub.baseUrl
+    })
   })
 
   afterAll(async () => {

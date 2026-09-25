@@ -15,14 +15,14 @@ This tier sits between them: real sockets, single service, seconds not minutes.
 
 ## Isolation boundary
 
-| Concern                                             | Real or stubbed                                                                   |
-| --------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Inbound HTTP                                        | **Real** — native `fetch()` to `127.0.0.1:<ephemeral>`                            |
-| Server assembly                                     | **Real** — actual `createServer()` from `src/server.js`, plus `server.start()`    |
-| Auth, Joi validation, RFC9457 plugin, error handler | **Real**                                                                          |
-| MongoDB                                             | **Real** — in-memory replica set; transactions work                               |
-| Audit logging                                       | **Real** — `@defra/cdp-auditing` only writes pino to stdout, no network           |
-| `waste-tracking-id-backend` `GET /next`             | **Stubbed** — a real local Hapi server, injected via `WASTE_TRACKING_SERVICE_URL` |
+| Concern                                             | Real or stubbed                                                                                                              |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Inbound HTTP                                        | **Real** — native `fetch()` to `127.0.0.1:<ephemeral>`                                                                       |
+| Server assembly                                     | **Real** — actual `createServer()` from `src/server.js`, plus `server.start()`                                               |
+| Auth, Joi validation, RFC9457 plugin, error handler | **Real**                                                                                                                     |
+| MongoDB                                             | **Real** — in-memory replica set; transactions work                                                                          |
+| Audit logging                                       | **Real** — `@defra/cdp-auditing` only writes pino to stdout, no network                                                      |
+| `waste-tracking-id-backend` `GET /next`             | **Stubbed** — a real local Hapi server on an ephemeral port, injected per-suite via `startTestService({ wasteTrackingUrl })` |
 
 No `jest.mock` anywhere in the suite. The single external dependency is replaced by a real HTTP server we control, which doubles as the lever for forcing 5xx without mocking the service under test.
 
@@ -32,7 +32,7 @@ No `jest.mock` anywhere in the suite. The single external dependency is replaced
 npm run test:integration
 ```
 
-This runs `jest --config jest.integration.config.js --runInBand`. `--runInBand` is **mandatory**: the in-memory replica set and the waste-tracking stub both bind fixed ports, so test files cannot run concurrently.
+This runs `jest --config jest.integration.config.js --runInBand`. `--runInBand` is **mandatory**: the in-memory MongoDB replica set binds a fixed port (`17017`, set by `@defra/waste-movement-utils`'s test factory), so test files cannot run concurrently. The waste-tracking stub itself binds an ephemeral port and imposes no such constraint on its own.
 
 `jest.config.js` (the unit suite) only matches `src/**/*.test.js` and only collects coverage from `src/**/*.js`, so this `test/` directory is invisible to `npm test` and to the coverage report.
 
@@ -48,6 +48,8 @@ test/integration/
 │   ├── waste-tracking-stub.js    stand-in for waste-tracking-id-backend's GET /next
 │   ├── http.js                   deliberately dumb fetch wrapper (adds Basic auth, no retries/unwrapping)
 │   ├── expect-standard-headers.js  shared assertion for security/content-type headers
+│   ├── expect-problem-response.js  shared assertion for RFC9457 error responses
+│   ├── expect-response-body-has-shape.js  shared assertion for SUCCESS/ERROR/VALIDATION-ERROR body shapes
 │   ├── beta-endpoint-tests.js    shared describeBetaEndpointTests() suite, parameterised by beta version
 │   └── problem-types.js          RFC9457 `type` URI base
 ├── expected-routes.js            declared method+path list used by route-coverage.test.js
@@ -64,25 +66,33 @@ test/integration/
 
 ### `helpers/setup-env.js`
 
-Registered as a Jest `setupFiles` entry so it runs before any test module (and therefore before `src/config.js`) is imported. This ordering is load-bearing: `src/common/helpers/http-client.js` builds its `httpClients` singleton at module-load time from `config.get('services.wasteTracking')`, so setting `WASTE_TRACKING_SERVICE_URL` in a `beforeAll` would be too late.
+Registered as a Jest `setupFiles` entry so it runs before any test module is imported. It sets `WASTE_TRACKING_SERVICE_URL` to an unreachable default (`http://127.0.0.1:1`, a privileged port nothing listens on) — a safety net so suites that never call `startTestService({ wasteTrackingUrl })` can't accidentally hit a real service. Suites that do exercise waste-tracking-id-backend override this per-suite instead: `http-client.js` resolves `config.get('services.wasteTracking')` lazily on every request rather than at module load, so there's no import-ordering constraint to work around here.
 
 It also deletes `HTTP_PROXY`/`http_proxy` — otherwise `setupProxy()` installs a global undici dispatcher and the suite's own `fetch()` calls to localhost get proxied into the void on any dev machine with a proxy configured in its shell — and sets `LOG_ENABLED=false`, `CDP_AUDIT_ENABLED=false` to keep test output readable.
 
 ### `helpers/test-service.js`
 
-`startTestService()` boots the real service in this order: spins up an in-memory MongoDB replica set (via `createTestMongoDb(true)`, so transactions work), points `config` at it (`readPreference: 'primary'`, since a 1-node replica set can't serve `secondary` reads), sets `orgApiCodes`, `host: '127.0.0.1'` and `port: 0`, then calls the real `createServer()` and `server.start()`. Returns `{ baseUrl, server, db, stop() }` — `baseUrl` uses `127.0.0.1` rather than `server.info.uri`, which reports the unfetchable `0.0.0.0`.
+`startTestService({ wasteTrackingUrl })` boots the real service in this order: spins up an in-memory MongoDB replica set (via `createTestMongoDb(true)`, so transactions work), points `config` at it (`readPreference: 'primary'`, since a 1-node replica set can't serve `secondary` reads), sets `orgApiCodes`, `host: '127.0.0.1'`, `port: 0` and — when passed — `services.wasteTracking` to the stub's URL, then calls the real `createServer()` and `server.start()`. Returns `{ baseUrl, server, db, stop() }` — `baseUrl` uses `127.0.0.1` rather than `server.info.uri`, which reports the unfetchable `0.0.0.0`. Suites that never call the waste-tracking-id-backend client can omit `wasteTrackingUrl` and rely on `setup-env.js`'s unreachable default.
 
 ### `helpers/waste-tracking-stub.js`
 
-A real Hapi server standing in for `waste-tracking-id-backend`. Exposes `GET /next` (returns a freshly generated waste tracking ID) and `respondWith({ statusCode })` to force every subsequent call to fail — the mechanism `dependency-failures.test.js` uses to prove failures propagate as real HTTP errors.
+A real Hapi server standing in for `waste-tracking-id-backend`, bound to an ephemeral port. Exposes `GET /next` (returns a freshly generated waste tracking ID), a `baseUrl` getter (throws if read before `start()`), and `respondWith({ statusCode })` to force every subsequent call to fail — the mechanism `dependency-failures.test.js` uses to prove failures propagate as real HTTP errors. A `stop()` followed by `start()` rebinds the _same_ port rather than picking a new one, since the service under test was already configured with the original `baseUrl`.
 
 ### `helpers/http.js`
 
-A deliberately dumb `fetch` wrapper: adds the Basic auth header, sends what it's given, returns `{ status, headers, body }` — no retries, no unwrapping. `body` may be an object (JSON-stringified) or a raw string, so malformed JSON can be sent on purpose (see `errors.test.js`).
+A deliberately dumb `fetch` wrapper: adds the Basic auth header, sends what it's given, returns `{ status, headers, body }` — no retries, no unwrapping. `body` may be an object (JSON-stringified and sent as `application/json`) or a raw string sent as-is with no content-type, so malformed JSON can be sent on purpose with an explicit `content-type` header (see `errors.test.js`). Bodyless requests send no content-type. `x-cdp-request-id` is only sent when a `requestId` option is passed, so server-side request-ID generation can be tested. Error responses only carry a request ID when one was sent, so error-path tests pass `requestId`.
 
 ### `helpers/expect-standard-headers.js`
 
-One shared `expectStandardHeaders(headers)` so exact header values (`strict-transport-security`, `x-frame-options`, `x-xss-protection`, `x-content-type-options`, `x-download-options`, content-type) live in exactly one place, captured from a real running instance.
+One shared `expectStandardHeaders(headers)` so exact header values (`strict-transport-security`, `x-frame-options`, `x-xss-protection`, `x-content-type-options`, `x-download-options`, content-type) live in exactly one place, captured from a real running instance. `content-type` is matched exactly and defaults to `application/json; charset=utf-8`; pass `{ contentType: 'application/problem+json' }` for RFC9457 error responses or `{ contentType: null }` for responses without a body.
+
+### `helpers/expect-response-body-has-shape.js`
+
+`expectResponseBodyHasCorrectShape({ body, shape })` asserts a response body matches one of three shapes: `'SUCCESS'` (has `data`, plus a `validation` object — this API always returns a validation container, even on success), `'ERROR'` (RFC9457 fields plus `requestId`), or `'VALIDATION-ERROR'` (the same, plus an `errors` array). Used directly for success-path assertions and internally by `expectProblemResponse` for error paths.
+
+### `helpers/expect-problem-response.js`
+
+`expectProblemResponse(response, { status, type, instance, shape })` is the single assertion for RFC9457 error responses: checks status, `content-type: application/problem+json`, that `x-request-id` is present, delegates to `expectResponseBodyHasCorrectShape` for the body (defaulting to `shape: 'ERROR'`), and checks `title`/`type`/`instance` — deriving `title` from the `type` slug (e.g. `'bad-request'` → `'Bad Request'`) so callers only specify the slug once. It doesn't check the full security-header set; pair it with `expectStandardHeaders` where that also needs asserting.
 
 ## Test files
 
@@ -97,7 +107,7 @@ Style: one explicit named `it()` per endpoint (chosen over a table-driven sweep)
 - **`dependency-failures.test.js`** (isolated — it mutates shared stub state) — forces `GET /next` to fail (500, then unreachable) and asserts the failure surfaces as a real HTTP error rather than being silently swallowed. Known cost: `makeRequest`'s retries plus route-level `backOff` mean each case takes several seconds, which is why this stays to two cases.
 - **`route-coverage.test.js`** — reads `server.table()`, filters to the `router`/`router-beta-*` realms (excluding `hapi-swagger`'s own doc routes) and asserts it equals the declared list in `expected-routes.js`. A new route fails this test until someone consciously adds it to that list, closing the one real risk of the explicit per-endpoint style used above.
 
-Every endpoint test asserts status **and** calls `expectStandardHeaders(headers)`.
+Every endpoint test asserts status, then either calls `expectStandardHeaders` directly (success paths, and the dedicated header cases in `beta-endpoint-tests.js`) or goes through `expectProblemResponse` (error paths), which checks content-type and `x-request-id` but not the full security-header set.
 
 Tests reuse existing fixtures rather than adding new ones — notably `src/schemas/test-helpers/waste-test-helpers.js` (`createTestPayload`), `src/test/utils/createMovementRequest.js`, `src/test/utils/createBulkMovementRequest.js`, and `src/test/data/basic-auth.js` / `apiCodes.js`.
 

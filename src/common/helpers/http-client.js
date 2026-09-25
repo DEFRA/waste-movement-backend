@@ -81,11 +81,14 @@ async function makeRequest(options, httpClient) {
 
 /**
  * Creates a service-specific client
- * @param {string} baseUrl - Base URL for the service
+ * @param {string | (() => string)} baseUrl - Base URL for the service, or a
+ *   function returning it, resolved on every request
  * @param httpClient - used for mocking in tests
  * @returns {Object} Service client
  */
 function createServiceClient(baseUrl, httpClient) {
+  const resolveBaseUrl = typeof baseUrl === 'function' ? baseUrl : () => baseUrl
+
   return {
     /**
      * Make a GET request
@@ -96,7 +99,7 @@ function createServiceClient(baseUrl, httpClient) {
     async get(path, headers = {}) {
       return makeRequest(
         {
-          url: `${baseUrl}${path}`,
+          url: `${resolveBaseUrl()}${path}`,
           method: 'GET',
           headers: {
             ...headers,
@@ -117,7 +120,7 @@ function createServiceClient(baseUrl, httpClient) {
     async post(path, payload, headers = {}) {
       return makeRequest(
         {
-          url: `${baseUrl}${path}`,
+          url: `${resolveBaseUrl()}${path}`,
           method: 'POST',
           payload,
           headers: {
@@ -139,7 +142,7 @@ function createServiceClient(baseUrl, httpClient) {
     async put(path, payload, headers = {}) {
       return makeRequest(
         {
-          url: `${baseUrl}${path}`,
+          url: `${resolveBaseUrl()}${path}`,
           method: 'PUT',
           payload,
           headers: {
@@ -157,7 +160,8 @@ function createServiceClient(baseUrl, httpClient) {
  * HTTP clients for different services
  */
 const httpClients = {
-  wasteTracking: createServiceClient(config.get('services.wasteTracking'))
+  // Resolved per request so the URL can be set after this module is loaded
+  wasteTracking: createServiceClient(() => config.get('services.wasteTracking'))
 }
 
 export { httpClients, makeRequest, createServiceClient }

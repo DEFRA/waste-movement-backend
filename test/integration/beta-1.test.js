@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { expect, describe, beforeAll, afterAll, it } from '@jest/globals'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { startTestService } from './helpers/test-service.js'
@@ -7,7 +8,7 @@ import { expectStandardHeaders } from './helpers/expect-standard-headers.js'
 import { describeBetaEndpointTests } from './helpers/beta-endpoint-tests.js'
 import { apiCode1 } from '../../src/test/data/apiCodes.js'
 import { ObjectId } from 'mongodb'
-import { PROBLEM_TYPE_BASE } from './helpers/problem-types.js'
+import { expectProblemResponse } from './helpers/expect-problem-response.js'
 import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-body-has-shape.js'
 
 describe('beta-1', () => {
@@ -18,7 +19,9 @@ describe('beta-1', () => {
   beforeAll(async () => {
     wasteTrackingStub = createWasteTrackingStub()
     await wasteTrackingStub.start()
-    testService = await startTestService()
+    testService = await startTestService({
+      wasteTrackingUrl: wasteTrackingStub.baseUrl
+    })
   })
 
   afterAll(async () => {
@@ -27,16 +30,11 @@ describe('beta-1', () => {
   })
 
   // Shared error formatting and RFC9457 compliance tests
-  describeBetaEndpointTests(
-    version,
-    () => testService,
-    () => wasteTrackingStub,
-    {
-      apiCode1,
-      minimalProducer: {}, // beta-1 doesn't require producer
-      requiresProducer: false
-    }
-  )
+  describeBetaEndpointTests(version, () => testService, {
+    apiCode1,
+    minimalProducer: {}, // beta-1 doesn't require producer
+    requiresProducer: false
+  })
 
   it('POST /beta-1/movements creates a movement', async () => {
     const { status, body, headers } = await httpRequest(
@@ -218,80 +216,63 @@ describe('beta-1', () => {
   describe('beta-1 specific error cases', () => {
     it('rejects collection creation for non-existent movement', async () => {
       const endpoint = '/beta-1/movements/NONEXISTENT/collection'
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        { method: 'POST', body: { apiCode: apiCode1 } }
-      )
+      const response = await httpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: apiCode1 }
+      })
 
-      expect(status).toEqual(HTTP_STATUS.NOT_FOUND)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Not Found',
-        type: `${PROBLEM_TYPE_BASE}/not-found`,
-        instance: endpoint,
-        detail: expect.any(String)
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.NOT_FOUND,
+        type: 'not-found',
+        instance: endpoint
       })
     })
 
     it('rejects delivery recording with missing movementIds', async () => {
       const endpoint = '/beta-1/deliveries'
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: { apiCode: apiCode1 }
-        }
-      )
+      const response = await httpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: apiCode1 }
+      })
 
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'VALIDATION-ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
       })
     })
 
     it('rejects delivery recording with non-existent movement', async () => {
       const endpoint = '/beta-1/deliveries'
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: { apiCode: apiCode1, movementIds: ['NONEXISTENT'] }
-        }
-      )
+      const response = await httpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: apiCode1, movementIds: ['NONEXISTENT'] }
+      })
 
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint,
-        detail: expect.any(String)
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint
       })
     })
 
     it('rejects receipt recording with missing apiCode', async () => {
       const endpoint = '/beta-1/receipts'
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: { reason: 'Some reason' }
-        }
-      )
+      const response = await httpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { reason: 'Some reason' }
+      })
 
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'VALIDATION-ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
       })
     })
   })

@@ -77,7 +77,10 @@ describe('errors', () => {
       `/movements/${wasteTrackingId}/receive`,
       {
         method: 'POST',
-        headers: { 'x-dwt-client-id': clientId },
+        headers: {
+          'x-dwt-client-id': clientId,
+          'content-type': 'application/json'
+        },
         body: '{'
       }
     )

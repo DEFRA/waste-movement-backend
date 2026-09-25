@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { expect, describe, beforeAll, afterAll, it } from '@jest/globals'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { startTestService } from './helpers/test-service.js'
@@ -7,7 +8,7 @@ import { expectStandardHeaders } from './helpers/expect-standard-headers.js'
 import { describeBetaEndpointTests } from './helpers/beta-endpoint-tests.js'
 import { apiCode1 } from '../../src/test/data/apiCodes.js'
 import { ObjectId } from 'mongodb'
-import { PROBLEM_TYPE_BASE } from './helpers/problem-types.js'
+import { expectProblemResponse } from './helpers/expect-problem-response.js'
 import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-body-has-shape.js'
 
 describe('beta-2', () => {
@@ -21,7 +22,9 @@ describe('beta-2', () => {
   beforeAll(async () => {
     wasteTrackingStub = createWasteTrackingStub()
     await wasteTrackingStub.start()
-    testService = await startTestService()
+    testService = await startTestService({
+      wasteTrackingUrl: wasteTrackingStub.baseUrl
+    })
   })
 
   afterAll(async () => {
@@ -30,16 +33,11 @@ describe('beta-2', () => {
   })
 
   // Shared error formatting and RFC9457 compliance tests
-  describeBetaEndpointTests(
-    version,
-    () => testService,
-    () => wasteTrackingStub,
-    {
-      apiCode1,
-      minimalProducer: minimalHouseholdProducer,
-      requiresProducer: true
-    }
-  )
+  describeBetaEndpointTests(version, () => testService, {
+    apiCode1,
+    minimalProducer: minimalHouseholdProducer,
+    requiresProducer: true
+  })
 
   describe('POST /beta-2/movements', () => {
     it('creates a movement with minimal payload', async () => {
@@ -155,198 +153,162 @@ describe('beta-2', () => {
   describe('beta-2 specific error cases', () => {
     it('rejects missing required field apiCode', async () => {
       const endpoint = '/beta-2/movements'
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: {
-            producer: { wasteSource: 'Household', councilMovement: false }
-          }
+      const response = await httpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          producer: { wasteSource: 'Household', councilMovement: false }
         }
-      )
+      })
 
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
         instance: endpoint
       })
     })
 
     it('rejects invalid producer wasteSource', async () => {
       const endpoint = '/beta-2/movements'
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: {
-            apiCode: apiCode1,
-            producer: { wasteSource: 'Invalid', councilMovement: false }
-          }
+      const response = await httpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          apiCode: apiCode1,
+          producer: { wasteSource: 'Invalid', councilMovement: false }
         }
-      )
+      })
 
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
         instance: endpoint
       })
     })
 
     it('rejects commercial producer missing organisationName', async () => {
       const endpoint = '/beta-2/movements'
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: {
-            apiCode: apiCode1,
-            producer: {
-              wasteSource: 'Commercial',
-              sicCode: '38110',
-              authorisationNumber: 'EAS/P/123456',
-              address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
-              emailAddress: 'test@example.com',
-              councilMovement: false
-            }
+      const response = await httpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          apiCode: apiCode1,
+          producer: {
+            wasteSource: 'Commercial',
+            sicCode: '38110',
+            authorisationNumber: 'EAS/P/123456',
+            address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
+            emailAddress: 'test@example.com',
+            councilMovement: false
           }
         }
-      )
+      })
 
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
         instance: endpoint
       })
     })
 
     it('rejects commercial producer with invalid sicCode format', async () => {
       const endpoint = '/beta-2/movements'
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: {
-            apiCode: apiCode1,
-            producer: {
-              wasteSource: 'Commercial',
-              organisationName: 'Test Org',
-              sicCode: '123',
-              authorisationNumber: 'EAS/P/123456',
-              address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
-              emailAddress: 'test@example.com',
-              councilMovement: false
-            }
+      const response = await httpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          apiCode: apiCode1,
+          producer: {
+            wasteSource: 'Commercial',
+            organisationName: 'Test Org',
+            sicCode: '123',
+            authorisationNumber: 'EAS/P/123456',
+            address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
+            emailAddress: 'test@example.com',
+            councilMovement: false
           }
         }
-      )
+      })
 
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
         instance: endpoint
       })
     })
 
     it('rejects commercial producer missing both email and phone', async () => {
       const endpoint = '/beta-2/movements'
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: {
-            apiCode: apiCode1,
-            producer: {
-              wasteSource: 'Commercial',
-              organisationName: 'Test Org',
-              sicCode: '38110',
-              authorisationNumber: 'EAS/P/123456',
-              address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
-              councilMovement: false
-            }
+      const response = await httpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          apiCode: apiCode1,
+          producer: {
+            wasteSource: 'Commercial',
+            organisationName: 'Test Org',
+            sicCode: '38110',
+            authorisationNumber: 'EAS/P/123456',
+            address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
+            councilMovement: false
           }
         }
-      )
+      })
 
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
         instance: endpoint
       })
     })
 
     it('rejects commercial producer missing authorisation details', async () => {
       const endpoint = '/beta-2/movements'
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: {
-            apiCode: apiCode1,
-            producer: {
-              wasteSource: 'Commercial',
-              organisationName: 'Test Org',
-              sicCode: '38110',
-              address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
-              emailAddress: 'test@example.com',
-              councilMovement: false
-            }
+      const response = await httpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          apiCode: apiCode1,
+          producer: {
+            wasteSource: 'Commercial',
+            organisationName: 'Test Org',
+            sicCode: '38110',
+            address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
+            emailAddress: 'test@example.com',
+            councilMovement: false
           }
         }
-      )
+      })
 
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
-        instance: endpoint,
-        detail: expect.any(String)
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint
       })
     })
 
     it('rejects commercial producer with invalid postcode', async () => {
       const endpoint = '/beta-2/movements'
-      const { status, body } = await httpRequest(
-        testService.baseUrl,
-        endpoint,
-        {
-          method: 'POST',
-          body: {
-            apiCode: apiCode1,
-            producer: {
-              wasteSource: 'Commercial',
-              organisationName: 'Test Org',
-              sicCode: '38110',
-              authorisationNumber: 'EAS/P/123456',
-              address: { fullAddress: 'Test', postcode: 'INVALID' },
-              emailAddress: 'test@example.com',
-              councilMovement: false
-            }
+      const response = await httpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          apiCode: apiCode1,
+          producer: {
+            wasteSource: 'Commercial',
+            organisationName: 'Test Org',
+            sicCode: '38110',
+            authorisationNumber: 'EAS/P/123456',
+            address: { fullAddress: 'Test', postcode: 'INVALID' },
+            emailAddress: 'test@example.com',
+            councilMovement: false
           }
         }
-      )
+      })
 
-      expect(status).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expectResponseBodyHasCorrectShape({ body, shape: 'ERROR' })
-      expect(body).toMatchObject({
-        title: 'Bad Request',
-        type: `${PROBLEM_TYPE_BASE}/bad-request`,
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
         instance: endpoint
       })
     })

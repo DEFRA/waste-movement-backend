@@ -1,13 +1,12 @@
 // Runs as a Jest `setupFiles` entry, i.e. before any test module is imported.
 //
-// Ordering is load-bearing: `src/common/helpers/http-client.js` builds its
-// `httpClients` singleton at module-load time from `config.get('services.wasteTracking')`,
-// so `WASTE_TRACKING_SERVICE_URL` must be set before that module (or `src/config.js`)
-// is ever imported - a `beforeAll` in a test file would be too late.
+// Suites that need waste-tracking-id-backend pass the stub's ephemeral URL to
+// startTestService(). This default only stops suites that don't start the stub
+// from ever calling the real service configured in `src/config.js`.
 import { userBasicAuthTest1 } from '../../../src/test/data/basic-auth.js'
 
-process.env.WASTE_TRACKING_SERVICE_URL =
-  process.env.WASTE_TRACKING_SERVICE_URL || 'http://127.0.0.1:3999'
+// Port 1 (tcpmux) is privileged and effectively never listening.
+process.env.WASTE_TRACKING_SERVICE_URL = 'http://127.0.0.1:1'
 
 process.env.ACCESS_CRED_TEST1 = userBasicAuthTest1
 

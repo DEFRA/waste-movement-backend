@@ -20,7 +20,9 @@ describe('dependency failures', () => {
   beforeAll(async () => {
     wasteTrackingStub = createWasteTrackingStub()
     await wasteTrackingStub.start()
-    testService = await startTestService()
+    testService = await startTestService({
+      wasteTrackingUrl: wasteTrackingStub.baseUrl
+    })
   })
 
   afterAll(async () => {
@@ -67,7 +69,8 @@ describe('dependency failures', () => {
       '/beta-1/movements',
       {
         method: 'POST',
-        body: { apiCode: apiCode1 }
+        body: { apiCode: apiCode1 },
+        requestId: 'test-trace-dependency-failure'
       }
     )
 
@@ -79,7 +82,7 @@ describe('dependency failures', () => {
       title: 'Bad Gateway',
       detail: expect.any(String),
       instance: '/beta-1/movements',
-      requestId: expect.any(String)
+      requestId: 'test-trace-dependency-failure'
     })
   }, 10000)
 })

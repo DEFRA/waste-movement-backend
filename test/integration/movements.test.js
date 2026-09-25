@@ -35,7 +35,7 @@ describe('movements', () => {
     )
 
     expect(status).toEqual(HTTP_STATUS.NO_CONTENT)
-    expectStandardHeaders(headers)
+    expectStandardHeaders(headers, { contentType: null })
 
     const persisted = await testService.db
       .collection('waste-inputs')
@@ -70,7 +70,7 @@ describe('movements', () => {
     )
 
     expect(status).toEqual(HTTP_STATUS.OK)
-    expectStandardHeaders(headers)
+    expectStandardHeaders(headers, { contentType: null })
 
     const persisted = await testService.db
       .collection('waste-inputs')
@@ -88,7 +88,8 @@ describe('movements', () => {
       `/movements/${wasteTrackingId}/receive`,
       {
         method: 'POST',
-        headers: { 'x-cdp-request-id': traceId, 'x-dwt-client-id': clientId },
+        requestId: traceId,
+        headers: { 'x-dwt-client-id': clientId },
         body: { movement: createTestPayload() }
       }
     )
