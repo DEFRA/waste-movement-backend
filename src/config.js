@@ -141,6 +141,15 @@ const config = convict({
     default: '',
     env: 'EXCLUDED_SUBMITTING_ORGANISATION_IDS'
   },
+  problemDetails: {
+    typeBase: {
+      doc: 'Base URI used to build RFC 9457 problem type URIs, pointing at the API problem documentation',
+      format: String,
+      default:
+        'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/',
+      env: 'PROBLEM_DETAILS_TYPE_BASE'
+    }
+  },
   services: {
     wasteTracking: {
       doc: 'Waste Tracking Service URL',
