@@ -14,7 +14,7 @@ export default {
   coveragePathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/.server',
-    'index.js'
+    '<rootDir>/src/index.js'
   ],
   coverageDirectory: '<rootDir>/coverage',
   transform: {
