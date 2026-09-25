@@ -11,6 +11,10 @@ import {
   userBasicAuthTest1
 } from '../../test/data/basic-auth.js'
 import { createServer } from '../../server.js'
+import {
+  forwardedOrganisationId,
+  organisationHeaders
+} from '../../test/data/organisation-headers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -71,7 +75,8 @@ describe('movement Route Tests version: beta-1', () => {
       payload: goodPayload,
       headers: {
         'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 
@@ -82,6 +87,10 @@ describe('movement Route Tests version: beta-1', () => {
     })
     expect(headers['x-request-id']).toEqual(traceId) //expect.any(String))
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
+    expect(createMovementRecordSpy).toHaveBeenCalledWith(expect.anything(), {
+      movementId: expect.any(String),
+      orgId: forwardedOrganisationId
+    })
   })
 
   it('handles error when creating a movement fails', async () => {
@@ -95,7 +104,8 @@ describe('movement Route Tests version: beta-1', () => {
       payload: goodPayload,
       headers: {
         'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 
@@ -126,7 +136,8 @@ describe('movement Route Tests version: beta-1', () => {
       payload: invalidPayload,
       headers: {
         'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 
@@ -150,9 +161,11 @@ describe('movement Route Tests version: beta-1', () => {
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
-  it('returns an error when apiCode validation fails and does not create a movement', async () => {
+  // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only on
+  // the organisation forwarded by the external API.
+  it('rejects when no organisation was forwarded (unknown or disabled API code) and does not create a movement', async () => {
     const invalidPayload = {
-      apiCode: apiCode3
+      apiCode: apiCode1
     }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,

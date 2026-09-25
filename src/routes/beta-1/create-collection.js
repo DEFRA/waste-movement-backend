@@ -3,8 +3,7 @@ import { getMovementRecord } from '../../services/movement.js'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { createLogger } from '../../common/helpers/logging/logger.js'
-import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
-import { config } from '../../config.js'
+import { getOrganisationIdFromHeaders } from '../../common/helpers/get-organisation-id.js'
 import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
 import { notFound } from '@hapi/boom'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
@@ -23,12 +22,11 @@ const createCollection = {
     }
   },
   handler: async (request, h) => {
-    const { apiCode } = request.payload
     const { movementId } = request.params
 
     try {
       const traceId = getTraceId() || randomUUID()
-      getOrgIdForApiCode(apiCode, config.get('orgApiCodes'))
+      getOrganisationIdFromHeaders(request.headers)
       const movementRecord = await getMovementRecord(request.db, movementId)
 
       if (!movementRecord) {

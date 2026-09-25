@@ -3,10 +3,11 @@ import { expect, describe, beforeAll, afterAll, it } from '@jest/globals'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { startTestService } from './helpers/test-service.js'
 import { createWasteTrackingStub } from './helpers/waste-tracking-stub.js'
-import { httpRequest } from './helpers/http.js'
+import { betaHttpRequest } from './helpers/http.js'
 import { expectStandardHeaders } from './helpers/expect-standard-headers.js'
 import { describeBetaEndpointTests } from './helpers/beta-endpoint-tests.js'
 import { apiCode1 } from '../../src/test/data/apiCodes.js'
+import { forwardedOrganisationId } from '../../src/test/data/organisation-headers.js'
 import { ObjectId } from 'mongodb'
 import { expectProblemResponse } from './helpers/expect-problem-response.js'
 import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-body-has-shape.js'
@@ -37,7 +38,7 @@ describe('beta-1', () => {
   })
 
   it('POST /beta-1/movements creates a movement', async () => {
-    const { status, body, headers } = await httpRequest(
+    const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       '/beta-1/movements',
       {
@@ -62,20 +63,20 @@ describe('beta-1', () => {
     expect(movement).toEqual({
       _id: expect.any(ObjectId),
       movementId,
-      orgId: expect.any(String),
+      orgId: forwardedOrganisationId,
       createdAt: expect.any(String)
     })
   })
 
   it('POST /beta-1/movements/{movementId}/collection creates a collection', async () => {
-    const createRes = await httpRequest(
+    const createRes = await betaHttpRequest(
       testService.baseUrl,
       '/beta-1/movements',
       { method: 'POST', body: { apiCode: apiCode1 } }
     )
     const { movementId } = createRes.body.data
 
-    const { status, body, headers } = await httpRequest(
+    const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-1/movements/${movementId}/collection`,
       { method: 'POST', body: { apiCode: apiCode1 } }
@@ -95,20 +96,20 @@ describe('beta-1', () => {
 
     expect(movement).toMatchObject({
       movementId,
-      orgId: expect.any(String),
+      orgId: forwardedOrganisationId,
       createdAt: expect.any(String)
     })
   })
 
   it('POST /beta-1/deliveries records a delivery', async () => {
-    const createRes = await httpRequest(
+    const createRes = await betaHttpRequest(
       testService.baseUrl,
       '/beta-1/movements',
       { method: 'POST', body: { apiCode: apiCode1 } }
     )
     const { movementId } = createRes.body.data
 
-    const { status, body, headers } = await httpRequest(
+    const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       '/beta-1/deliveries',
       {
@@ -131,21 +132,21 @@ describe('beta-1', () => {
     expect(delivery).toMatchObject({
       _id: expect.any(ObjectId),
       deliveryId,
-      orgId: expect.any(String),
+      orgId: forwardedOrganisationId,
       movementIds: [movementId],
       createdAt: expect.any(String)
     })
   })
 
   it('POST /beta-1/deliveries/{deliveryId}/receipt records a receipt against a delivery', async () => {
-    const createMovementRes = await httpRequest(
+    const createMovementRes = await betaHttpRequest(
       testService.baseUrl,
       '/beta-1/movements',
       { method: 'POST', body: { apiCode: apiCode1 } }
     )
     const { movementId } = createMovementRes.body.data
 
-    const createDeliveryRes = await httpRequest(
+    const createDeliveryRes = await betaHttpRequest(
       testService.baseUrl,
       '/beta-1/deliveries',
       {
@@ -155,7 +156,7 @@ describe('beta-1', () => {
     )
     const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
 
-    const { status, body, headers } = await httpRequest(
+    const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-1/deliveries/${deliveryId}/receipt`,
       { method: 'POST', body: { apiCode: apiCode1 } }
@@ -175,7 +176,7 @@ describe('beta-1', () => {
 
     expect(delivery).toMatchObject({
       deliveryId,
-      orgId: expect.any(String),
+      orgId: forwardedOrganisationId,
       movementIds: [movementId],
       createdAt: expect.any(String)
     })
@@ -183,7 +184,7 @@ describe('beta-1', () => {
 
   it('POST /beta-1/receipts records a receipt without a delivery', async () => {
     const reason = 'No prior movement trail'
-    const { status, body, headers } = await httpRequest(
+    const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       '/beta-1/receipts',
       {
@@ -208,7 +209,7 @@ describe('beta-1', () => {
     expect(delivery).toMatchObject({
       _id: expect.any(ObjectId),
       deliveryId,
-      orgId: expect.any(String),
+      orgId: forwardedOrganisationId,
       createdAt: expect.any(String)
     })
   })
@@ -216,7 +217,7 @@ describe('beta-1', () => {
   describe('beta-1 specific error cases', () => {
     it('rejects collection creation for non-existent movement', async () => {
       const endpoint = '/beta-1/movements/NONEXISTENT/collection'
-      const response = await httpRequest(testService.baseUrl, endpoint, {
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: { apiCode: apiCode1 }
@@ -231,7 +232,7 @@ describe('beta-1', () => {
 
     it('rejects delivery recording with missing movementIds', async () => {
       const endpoint = '/beta-1/deliveries'
-      const response = await httpRequest(testService.baseUrl, endpoint, {
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: { apiCode: apiCode1 }
@@ -247,7 +248,7 @@ describe('beta-1', () => {
 
     it('rejects delivery recording with non-existent movement', async () => {
       const endpoint = '/beta-1/deliveries'
-      const response = await httpRequest(testService.baseUrl, endpoint, {
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: { apiCode: apiCode1, movementIds: ['NONEXISTENT'] }
@@ -262,7 +263,7 @@ describe('beta-1', () => {
 
     it('rejects receipt recording with missing apiCode', async () => {
       const endpoint = '/beta-1/receipts'
-      const response = await httpRequest(testService.baseUrl, endpoint, {
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: { reason: 'Some reason' }

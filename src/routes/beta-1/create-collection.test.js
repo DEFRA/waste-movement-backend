@@ -7,6 +7,7 @@ import {
   userBasicAuthTest1
 } from '../../test/data/basic-auth.js'
 import { createServer } from '../../server.js'
+import { organisationHeaders } from '../../test/data/organisation-headers.js'
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockReturnValue(true)
@@ -56,7 +57,8 @@ describe('collection Route Tests version: beta-1', () => {
       url: `/${endpointVersion}/movements/${goodMovementId}/collection`,
       payload: goodPayload,
       headers: {
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 
@@ -66,6 +68,35 @@ describe('collection Route Tests version: beta-1', () => {
       validation: { warnings: [] }
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
+  })
+
+  // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only on
+  // the organisation forwarded by the external API.
+  it('rejects when no organisation was forwarded (unknown or disabled API code)', async () => {
+    const getMovementRecordSpy = jest.spyOn(
+      movementService,
+      'getMovementRecord'
+    )
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements/${goodMovementId}/collection`,
+      payload: goodPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result).toEqual({
+      detail: 'the API Code supplied is invalid',
+      instance: '/beta-1/movements/movementId/collection',
+      title: 'Bad Request',
+      type: `${expectedTypeBase}bad-request`,
+      requestId: traceId
+    })
+    expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
   it('handles when given movementId is not in the system', async () => {
@@ -78,7 +109,8 @@ describe('collection Route Tests version: beta-1', () => {
       url: `/${endpointVersion}/movements/${goodMovementId}/collection`,
       payload: goodPayload,
       headers: {
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 
@@ -105,7 +137,8 @@ describe('collection Route Tests version: beta-1', () => {
       payload: invalidPayload,
       headers: {
         'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 
@@ -138,7 +171,8 @@ describe('collection Route Tests version: beta-1', () => {
       payload: goodPayload,
       headers: {
         'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 

@@ -1,16 +1,16 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import * as movementCreate from '../../services/movement.js'
 import { config } from '../../config.js'
-import {
-  apiCode1,
-  apiCode3,
-  base64EncodedOrgApiCodes
-} from '../../test/data/apiCodes.js'
+import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
   requestBasicAuthTest1,
   userBasicAuthTest1
 } from '../../test/data/basic-auth.js'
 import { createServer } from '../../server.js'
+import {
+  forwardedOrganisationId,
+  organisationHeaders
+} from '../../test/data/organisation-headers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -106,7 +106,8 @@ describe('movement Route Tests version: beta-2', () => {
       payload: goodPayload,
       headers: {
         'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 
@@ -117,6 +118,10 @@ describe('movement Route Tests version: beta-2', () => {
     })
     expect(headers['x-request-id']).toEqual(traceId)
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
+    expect(createMovementRecordSpy).toHaveBeenCalledWith(expect.anything(), {
+      movementId: expect.any(String),
+      orgId: forwardedOrganisationId
+    })
   })
 
   it.each([
@@ -134,7 +139,8 @@ describe('movement Route Tests version: beta-2', () => {
       payload,
       headers: {
         'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 
@@ -158,7 +164,8 @@ describe('movement Route Tests version: beta-2', () => {
       payload: goodPayload,
       headers: {
         'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 
@@ -189,7 +196,8 @@ describe('movement Route Tests version: beta-2', () => {
       payload: invalidPayload,
       headers: {
         'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 
@@ -225,7 +233,8 @@ describe('movement Route Tests version: beta-2', () => {
       payload: invalidPayload,
       headers: {
         'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 
@@ -248,8 +257,10 @@ describe('movement Route Tests version: beta-2', () => {
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
-  it('returns an error when apiCode validation fails and does not create a movement', async () => {
-    const invalidPayload = { apiCode: apiCode3, producer }
+  // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only on
+  // the organisation forwarded by the external API.
+  it('rejects when no organisation was forwarded (unknown or disabled API code) and does not create a movement', async () => {
+    const invalidPayload = { apiCode: apiCode1, producer }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'

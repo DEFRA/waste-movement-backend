@@ -1,16 +1,13 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import * as delivery from '../../services/delivery.js'
 import { config } from '../../config.js'
-import {
-  apiCode1,
-  apiCode3,
-  base64EncodedOrgApiCodes
-} from '../../test/data/apiCodes.js'
+import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
   requestBasicAuthTest1,
   userBasicAuthTest1
 } from '../../test/data/basic-auth.js'
 import { createServer } from '../../server.js'
+import { organisationHeaders } from '../../test/data/organisation-headers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -44,7 +41,11 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
   const traceId = 'trace-id-123'
   const authHeaders = { Authorization: `Basic ${requestBasicAuthTest1}` }
   const tracedHeaders = { 'x-cdp-request-id': traceId }
-  const tracedAuthHeaders = { ...authHeaders, ...tracedHeaders }
+  const tracedAuthHeaders = {
+    ...authHeaders,
+    ...tracedHeaders,
+    ...organisationHeaders
+  }
 
   const expectedTypeBase =
     'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
@@ -91,7 +92,11 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode1 },
-      headers: { ...authHeaders, 'x-cdp-request-id': 'trace-id-123' }
+      headers: {
+        ...authHeaders,
+        ...organisationHeaders,
+        'x-cdp-request-id': 'trace-id-123'
+      }
     })
 
     expect(headers['x-request-id']).toEqual(traceId)
@@ -140,14 +145,16 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
     })
   })
 
-  it('returns a 400 when the apiCode is invalid', async () => {
+  // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only on
+  // the organisation forwarded by the external API.
+  it('returns a 400 when no organisation was forwarded (unknown or disabled API code)', async () => {
     await server.db.collection('deliveries').insertOne({ deliveryId })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode3 },
-      headers: tracedAuthHeaders
+      payload: { apiCode: apiCode1 },
+      headers: { ...authHeaders, ...tracedHeaders }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
