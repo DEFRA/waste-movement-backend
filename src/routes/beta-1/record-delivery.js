@@ -3,9 +3,8 @@ import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
-import { getOrgIdForApiCode } from '../../common/helpers/validate-api-code.js'
+import { getOrganisationIdFromHeaders } from '../../common/helpers/get-organisation-id.js'
 import { WASTE_TYPE } from '../../common/constants/waste-type.js'
-import { config } from '../../config.js'
 import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
 import {
   createDeliveryId,
@@ -30,11 +29,11 @@ const recordDelivery = {
     }
   },
   handler: async (request, h) => {
-    const { apiCode, movementIds } = request.payload
+    const { movementIds } = request.payload
 
     try {
       const traceId = getTraceId() || randomUUID()
-      const orgId = getOrgIdForApiCode(apiCode, config.get('orgApiCodes'))
+      const orgId = getOrganisationIdFromHeaders(request.headers)
 
       const foundMovementIds = await findMovementIds(request.db, movementIds)
       const missingMovementIds = movementIds.filter(

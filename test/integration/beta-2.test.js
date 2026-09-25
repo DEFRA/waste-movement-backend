@@ -3,10 +3,11 @@ import { expect, describe, beforeAll, afterAll, it } from '@jest/globals'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { startTestService } from './helpers/test-service.js'
 import { createWasteTrackingStub } from './helpers/waste-tracking-stub.js'
-import { httpRequest } from './helpers/http.js'
+import { betaHttpRequest } from './helpers/http.js'
 import { expectStandardHeaders } from './helpers/expect-standard-headers.js'
 import { describeBetaEndpointTests } from './helpers/beta-endpoint-tests.js'
 import { apiCode1 } from '../../src/test/data/apiCodes.js'
+import { forwardedOrganisationId } from '../../src/test/data/organisation-headers.js'
 import { ObjectId } from 'mongodb'
 import { expectProblemResponse } from './helpers/expect-problem-response.js'
 import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-body-has-shape.js'
@@ -42,7 +43,7 @@ describe('beta-2', () => {
   describe('POST /beta-2/movements', () => {
     it('creates a movement with minimal payload', async () => {
       const producer = { wasteSource: 'Household', councilMovement: false }
-      const { status, body, headers } = await httpRequest(
+      const { status, body, headers } = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/movements',
         {
@@ -67,14 +68,14 @@ describe('beta-2', () => {
       expect(movement).toMatchObject({
         _id: expect.any(ObjectId),
         movementId,
-        orgId: expect.any(String),
+        orgId: forwardedOrganisationId,
         createdAt: expect.any(String)
       })
     })
 
     it('creates a movement with producer payload', async () => {
       const producer = { wasteSource: 'Household', councilMovement: false }
-      const { status, body, headers } = await httpRequest(
+      const { status, body, headers } = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/movements',
         {
@@ -99,7 +100,7 @@ describe('beta-2', () => {
       expect(movement).toMatchObject({
         _id: expect.any(ObjectId),
         movementId,
-        orgId: expect.any(String),
+        orgId: forwardedOrganisationId,
         createdAt: expect.any(String)
       })
     })
@@ -119,7 +120,7 @@ describe('beta-2', () => {
         },
         councilMovement: false
       }
-      const { status, body, headers } = await httpRequest(
+      const { status, body, headers } = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/movements',
         {
@@ -144,7 +145,7 @@ describe('beta-2', () => {
       expect(movement).toMatchObject({
         _id: expect.any(ObjectId),
         movementId,
-        orgId: expect.any(String),
+        orgId: forwardedOrganisationId,
         createdAt: expect.any(String)
       })
     })
@@ -153,7 +154,7 @@ describe('beta-2', () => {
   describe('beta-2 specific error cases', () => {
     it('rejects missing required field apiCode', async () => {
       const endpoint = '/beta-2/movements'
-      const response = await httpRequest(testService.baseUrl, endpoint, {
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: {
@@ -170,7 +171,7 @@ describe('beta-2', () => {
 
     it('rejects invalid producer wasteSource', async () => {
       const endpoint = '/beta-2/movements'
-      const response = await httpRequest(testService.baseUrl, endpoint, {
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: {
@@ -188,7 +189,7 @@ describe('beta-2', () => {
 
     it('rejects commercial producer missing organisationName', async () => {
       const endpoint = '/beta-2/movements'
-      const response = await httpRequest(testService.baseUrl, endpoint, {
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: {
@@ -213,7 +214,7 @@ describe('beta-2', () => {
 
     it('rejects commercial producer with invalid sicCode format', async () => {
       const endpoint = '/beta-2/movements'
-      const response = await httpRequest(testService.baseUrl, endpoint, {
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: {
@@ -239,7 +240,7 @@ describe('beta-2', () => {
 
     it('rejects commercial producer missing both email and phone', async () => {
       const endpoint = '/beta-2/movements'
-      const response = await httpRequest(testService.baseUrl, endpoint, {
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: {
@@ -264,7 +265,7 @@ describe('beta-2', () => {
 
     it('rejects commercial producer missing authorisation details', async () => {
       const endpoint = '/beta-2/movements'
-      const response = await httpRequest(testService.baseUrl, endpoint, {
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: {
@@ -289,7 +290,7 @@ describe('beta-2', () => {
 
     it('rejects commercial producer with invalid postcode', async () => {
       const endpoint = '/beta-2/movements'
-      const response = await httpRequest(testService.baseUrl, endpoint, {
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: {
@@ -316,7 +317,7 @@ describe('beta-2', () => {
 
   describe('producer payload variants', () => {
     it('household producer with minimal fields', async () => {
-      const { status, body } = await httpRequest(
+      const { status, body } = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/movements',
         {
@@ -333,7 +334,7 @@ describe('beta-2', () => {
     })
 
     it('municipal producer with full details', async () => {
-      const { status, body } = await httpRequest(
+      const { status, body } = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/movements',
         {
@@ -358,7 +359,7 @@ describe('beta-2', () => {
     })
 
     it('commercial producer with reasonForNoAuthorisationNumber', async () => {
-      const { status, body } = await httpRequest(
+      const { status, body } = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/movements',
         {

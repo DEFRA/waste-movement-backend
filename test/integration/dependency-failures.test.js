@@ -2,7 +2,7 @@ import { expect, describe, beforeAll, afterAll, it } from '@jest/globals'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { startTestService } from './helpers/test-service.js'
 import { createWasteTrackingStub } from './helpers/waste-tracking-stub.js'
-import { httpRequest } from './helpers/http.js'
+import { betaHttpRequest, httpRequest } from './helpers/http.js'
 import { createBulkMovementRequest } from '../../src/test/utils/createBulkMovementRequest.js'
 import { apiCode1 } from '../../src/test/data/apiCodes.js'
 import { PROBLEM_TYPE_BASE } from './helpers/problem-types.js'
@@ -64,7 +64,7 @@ describe('dependency failures', () => {
     // the route's backOff the way the persistence call is.
     await wasteTrackingStub.stop()
 
-    const { status, body } = await httpRequest(
+    const { status, body } = await betaHttpRequest(
       testService.baseUrl,
       '/beta-1/movements',
       {
