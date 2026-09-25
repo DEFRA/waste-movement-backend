@@ -305,6 +305,43 @@ describe('movement Route Tests', () => {
     )
   })
 
+  it('creates a waste input storing the submitting organisation name and isLocalAuthority flag', async () => {
+    const wasteTrackingId = generateWasteTrackingId()
+    const submittingOrganisation = {
+      defraCustomerOrganisationId: orgId1,
+      defraCustomerOrganisationName: 'Acme Waste Ltd',
+      defraCustomerOrganisationIsLocalAuthority: false
+    }
+    const payload = {
+      movement: {
+        ...createTestPayload(),
+        apiCode: undefined,
+        submittingOrganisation
+      }
+    }
+
+    const { statusCode } = await server.inject({
+      method: 'POST',
+      url: `/movements/${wasteTrackingId}/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        'x-dwt-client-id': 'test-client-id',
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(204)
+
+    const actualWasteInput = await testMongoDb
+      .collection('waste-inputs')
+      .findOne({ _id: wasteTrackingId })
+
+    expect(actualWasteInput.submittingOrganisation).toEqual(
+      submittingOrganisation
+    )
+  })
+
   it('creates a waste input with submittingOrganisation and ignores apiCode mismatch', async () => {
     const wasteTrackingId = generateWasteTrackingId()
     const payload = {

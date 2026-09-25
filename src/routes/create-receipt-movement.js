@@ -61,10 +61,7 @@ const createReceiptMovement = [
         wasteInput.clientId = request.headers['x-dwt-client-id']
 
         if (submittingOrganisation?.defraCustomerOrganisationId) {
-          wasteInput.submittingOrganisation = {
-            defraCustomerOrganisationId:
-              submittingOrganisation.defraCustomerOrganisationId
-          }
+          wasteInput.submittingOrganisation = submittingOrganisation
           wasteInput.receipt = { movement: movementData }
         } else {
           const orgApiCodes = config.get('orgApiCodes')
