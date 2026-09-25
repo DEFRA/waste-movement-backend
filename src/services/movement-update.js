@@ -32,10 +32,7 @@ function buildUpdateSet(
   }
 
   if (submittingOrganisation?.defraCustomerOrganisationId) {
-    updateSet.submittingOrganisation = {
-      defraCustomerOrganisationId:
-        submittingOrganisation.defraCustomerOrganisationId
-    }
+    updateSet.submittingOrganisation = submittingOrganisation
     const { apiCode, ...dataWithoutApiCode } = updateData
     if (fieldToUpdate) {
       updateSet[fieldToUpdate] = { ...dataWithoutApiCode }

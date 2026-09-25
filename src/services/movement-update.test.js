@@ -211,6 +211,40 @@ describe('updateWasteInput', () => {
     })
   })
 
+  it('should store the submitting organisation name and isLocalAuthority flag on the waste input', async () => {
+    const wasteTrackingId = 'test-id'
+    const submittingOrganisation = {
+      defraCustomerOrganisationId: orgId3,
+      defraCustomerOrganisationName: 'Acme Waste Ltd',
+      defraCustomerOrganisationIsLocalAuthority: true
+    }
+
+    await wasteInputsCollection.insertOne({
+      _id: wasteTrackingId,
+      submittingOrganisation: { defraCustomerOrganisationId: orgId3 },
+      createdAt: new Date(),
+      revision: 1
+    })
+
+    await updateWasteInput(
+      db,
+      wasteTrackingId,
+      { receipt: { test: 'data' }, submittingOrganisation },
+      client,
+      traceId,
+      undefined,
+      { submittingOrganisation }
+    )
+
+    const updatedWasteInput = await wasteInputsCollection.findOne({
+      _id: wasteTrackingId
+    })
+
+    expect(updatedWasteInput.submittingOrganisation).toEqual(
+      submittingOrganisation
+    )
+  })
+
   it('should update waste input and calls audit endpoint when it exists and when submittingOrganisation apiCode does not match the orgApiCodes secret value', async () => {
     const wasteTrackingId = 'test-id'
     const updateData = {
