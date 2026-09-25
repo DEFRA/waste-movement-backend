@@ -82,7 +82,8 @@ async function createServer() {
     {
       plugin: formatErrorToRFC9457Response,
       options: {
-        shouldFormat: (request) => request.path.startsWith('/beta-')
+        shouldFormat: (request) => request.path.startsWith('/beta-'),
+        typeBase: config.get('problemDetails.typeBase')
       }
     },
     errorHandler

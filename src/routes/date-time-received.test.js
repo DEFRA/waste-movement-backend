@@ -23,9 +23,8 @@ describe('Create Receipt Movement - Date and Time Received Validation', () => {
 
       const { error } = receiveMovementRequestSchema.validate(payload)
       expect(error).toBeDefined()
-      // Joi message for iso constraint typically contains 'must be in iso format'
       expect(error.details[0].message.toLowerCase()).toBe(
-        '"datetimereceived" must be in iso 8601 date format'
+        '"datetimereceived" must be a valid utc (2025-09-15t12:12:28z) or bst (2025-09-15t13:12:28+01:00) iso datetime'
       )
     })
 

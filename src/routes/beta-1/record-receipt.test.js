@@ -41,7 +41,13 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
   let server
   const deliveryId = '25KMT4Z9'
   const url = `/beta-1/deliveries/${deliveryId}/receipt`
+  const traceId = 'trace-id-123'
   const authHeaders = { Authorization: `Basic ${requestBasicAuthTest1}` }
+  const tracedHeaders = { 'x-cdp-request-id': traceId }
+  const tracedAuthHeaders = { ...authHeaders, ...tracedHeaders }
+
+  const expectedTypeBase =
+    'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
 
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
@@ -67,7 +73,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode1 },
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
@@ -88,7 +94,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       headers: { ...authHeaders, 'x-cdp-request-id': 'trace-id-123' }
     })
 
-    expect(headers['x-request-id']).toBe('trace-id-123')
+    expect(headers['x-request-id']).toEqual(traceId)
   })
 
   it('returns a 404 when the delivery does not exist', async () => {
@@ -96,7 +102,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode1 },
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.NOT_FOUND)
@@ -104,7 +110,8 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       detail: `No delivery exists with delivery ID: ${deliveryId}`,
       instance: '/beta-1/deliveries/25KMT4Z9/receipt',
       title: 'Not Found',
-      type: 'https://waste-tracking.service.gov.uk/problems/not-found'
+      type: `${expectedTypeBase}not-found`,
+      requestId: traceId
     })
   })
 
@@ -113,7 +120,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: {},
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
@@ -128,7 +135,8 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       ],
       instance: '/beta-1/deliveries/25KMT4Z9/receipt',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+      type: `${expectedTypeBase}bad-request`,
+      requestId: traceId
     })
   })
 
@@ -139,7 +147,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode3 },
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
@@ -147,7 +155,8 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       detail: 'the API Code supplied is invalid',
       instance: '/beta-1/deliveries/25KMT4Z9/receipt',
       title: 'Bad Request',
-      type: 'https://waste-tracking.service.gov.uk/problems/bad-request'
+      type: `${expectedTypeBase}bad-request`,
+      requestId: traceId
     })
   })
 
@@ -159,14 +168,15 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: { apiCode: apiCode1 },
-      headers: authHeaders
+      headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
       instance: '/beta-1/deliveries/25KMT4Z9/receipt',
       title: 'Internal Server Error',
-      type: 'https://waste-tracking.service.gov.uk/problems/internal-server-error'
+      type: `${expectedTypeBase}internal-server-error`,
+      requestId: traceId
     })
   })
 
@@ -174,7 +184,8 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1 }
+      payload: { apiCode: apiCode1 },
+      headers: tracedHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
@@ -182,7 +193,8 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
       detail: 'Missing authentication',
       instance: url,
       title: 'Unauthorized',
-      type: 'https://waste-tracking.service.gov.uk/problems/unauthorized'
+      type: `${expectedTypeBase}unauthorized`,
+      requestId: traceId
     })
   })
 })
