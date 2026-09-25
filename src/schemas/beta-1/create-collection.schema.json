@@ -1,6 +1,5 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "beta-1/create-collection.schema.json",
   "title": "Create collection",
   "description": "Payload for POST /beta-1/movements/{movementId}/collection.",
   "type": "object",

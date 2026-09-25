@@ -1,6 +1,5 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "beta-2/common/producer/producer-commercial.schema.json",
   "title": "Producer (Commercial)",
   "description": "Producer fields specific to commercial waste. organisationName, sicCode, address and contactDetails are required. Exactly one of authorisationNumber or reasonForNoAuthorisationNumber must be provided.",
   "type": "object",
