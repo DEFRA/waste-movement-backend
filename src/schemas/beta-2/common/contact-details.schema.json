@@ -1,6 +1,5 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "beta-2/common/contact-details.schema.json",
   "title": "Contact details",
   "description": "Contact details for a party. At least one of emailAddress or phoneNumber must be provided.",
   "type": "object",

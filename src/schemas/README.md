@@ -38,24 +38,23 @@ describe a looser contract than the one actually enforced. 3.1 is required, not 
 `hapi-swagger` is not part of this — it can't consume JSON Schema and can't emit 3.1. It serves
 the legacy routes only, and finds them by a route tag, so **beta routes carry no `tags`**.
 
-### `$id` equals the file's path relative to `src/schemas/`
+### The file's path is its identity
 
-```json
-"$id": "beta-2/common/producer/producer.schema.json"
+A schema file declares no `$id`. The loader registers each one under its path relative to
+`src/schemas/`, and ajv treats that key as the schema's base URI:
+
+```js
+ajv.addSchema(schema, 'beta-2/common/producer/producer.schema.json')
 ```
 
-Schemas are registered in one shared namespace, which rejects duplicate `$id`s. Deriving `$id`
-from the file path does three things at once:
+So the path is the identity, rather than being restated inside the file and checked against it:
 
-1. **Collisions become impossible** — two files can't share a path.
+1. **Collisions are impossible** — two files can't share a path.
 2. **Both versions share one registry**, so `validate/` sits above `beta-1/` and `beta-2/`
    rather than being duplicated per version.
-3. **Relative `$ref`s just work**, because they resolve against the `$id` base — within a folder
+3. **Relative `$ref`s just work**, because they resolve against that base — within a folder
    (`producer-base.schema.json`) and across one (`../common/producer/producer.schema.json`). A
    schema can be copied to another repo with its refs untouched.
-
-This is checked when schemas are loaded, so a mismatch fails at startup rather than surfacing as
-a confusing 404 later.
 
 ### Self-contained: rules inline, nothing imported
 
@@ -136,9 +135,10 @@ If the rule is about one field, it belongs in the schema. If it spans two resour
 endpoints, it doesn't — that stays in service code. A schema describes one resource.
 
 **Adding a resource** — create `beta-2/<category>/<name>.schema.json` with the 2020-12 `$schema`,
-an `$id` equal to its path relative to `src/schemas/`, a `title` and `description`, a
-`description` on every property, and `"additionalProperties": false` if it's a whole payload.
-Add `<name>.test.js` beside it. There's no registration step — the loader walks the directory.
+no `$id`, a `title` and `description`, a `description` on every property, and
+`"additionalProperties": false` if it's a whole payload. Add `<name>.test.js` beside it. There's
+no registration step — the loader walks the directory, and the file's path becomes the key routes
+validate against.
 
 **Adding a request shape** — schema under the right category, then point the route's
 `validate.payload` at it the way the existing beta routes do. No `tags`, no `hapi-swagger` block.

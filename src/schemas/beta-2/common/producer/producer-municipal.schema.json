@@ -1,6 +1,5 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "beta-2/common/producer/producer-municipal.schema.json",
   "title": "Producer (Municipal)",
   "description": "Producer fields specific to municipal waste. organisationName, address and contactDetails are required; sicCode is optional. Exactly one of authorisationNumber or reasonForNoAuthorisationNumber must be provided.",
   "type": "object",
