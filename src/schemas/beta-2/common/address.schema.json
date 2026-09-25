@@ -1,6 +1,5 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "beta-2/common/address.schema.json",
   "title": "Address",
   "description": "A UK or Irish postal address. fullAddress is optional; postcode is required.",
   "type": "object",

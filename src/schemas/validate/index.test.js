@@ -1,12 +1,20 @@
-import { writeFileSync, unlinkSync } from 'node:fs'
-import path from 'node:path'
 import { validate, getErrors, ajv } from './index.js'
 
 describe('schema registry', () => {
-  test('loads schemas keyed by their path-based $id', () => {
+  test('loads schemas keyed by their path relative to src/schemas/', () => {
     expect(
       ajv.getSchema('beta-2/common/producer/producer-base.schema.json')
     ).toBeDefined()
+  })
+
+  test('resolves relative $refs against the registering path', () => {
+    // producer.schema.json $refs bare siblings, which in turn $ref
+    // ../address.schema.json across folders. ajv compiles lazily, so this
+    // getSchema call is what resolves them, and it throws unless the path
+    // key became the schema's base URI.
+    expect(() =>
+      ajv.getSchema('beta-2/common/producer/producer.schema.json')
+    ).not.toThrow()
   })
 
   test('validates a payload against a registered schema', () => {
@@ -32,33 +40,9 @@ describe('schema registry', () => {
     ).not.toBeNull()
   })
 
-  test('throws for an unknown $id', () => {
+  test('throws for an unregistered path', () => {
     expect(() => validate('does/not/exist.schema.json', {})).toThrow(
-      'No schema registered with $id "does/not/exist.schema.json".'
+      'No schema registered under "does/not/exist.schema.json".'
     )
-  })
-
-  test('throws at import time when a schema $id does not match its path', async () => {
-    const badSchemaPath = path.join(
-      import.meta.dirname,
-      '../beta-2/common/producer/__id-mismatch.schema.json'
-    )
-
-    writeFileSync(
-      badSchemaPath,
-      JSON.stringify({
-        $schema: 'https://json-schema.org/draft/2020-12/schema',
-        $id: 'totally/wrong/path.schema.json',
-        type: 'object'
-      })
-    )
-
-    try {
-      await expect(import('./index.js')).rejects.toThrow(
-        /does not match its path/
-      )
-    } finally {
-      unlinkSync(badSchemaPath)
-    }
   })
 })
