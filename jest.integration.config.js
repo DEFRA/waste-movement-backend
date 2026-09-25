@@ -7,7 +7,7 @@ export default {
   testTimeout: 30000,
   collectCoverage: false,
   transform: {
-    '^.+\\.js$': 'babel-jest'
+    '^.+\\.(js|mjs)$': 'babel-jest'
   },
   // Deliberate duplication of jest.config.js's array (plus @defra/cdp-auditing,
   // ESM-only like the rest: unit tests never hit this because they always
@@ -18,7 +18,8 @@ export default {
       'node-fetch', // Supports ESM only
       'uuid',
       '@defra/waste-movement-utils',
-      '@defra/cdp-auditing'
+      '@defra/cdp-auditing',
+      '@joi/date' // Supports ESM only
     ].join('|')}/)`
   ]
 }
