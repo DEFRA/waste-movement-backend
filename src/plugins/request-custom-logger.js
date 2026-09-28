@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { config } from '../config.js'
+import { ORGANISATION_ID_HEADER } from '../common/helpers/get-organisation-id.js'
 
 const asyncLocalStorage = new AsyncLocalStorage()
 
@@ -41,6 +42,16 @@ const requestCustomLogger = {
           const clientIdHeader = options?.clientId
           const xDwtClientId = request.headers[clientIdHeader]
           store.set('clientId', xDwtClientId)
+
+          // Beta routes: the organisation the external API resolved for the
+          // apiCode. Set here, not onPreHandler, so lines logged before the
+          // handler (e.g. validation errors) carry it too.
+          const forwardedOrganisationId =
+            request.headers[ORGANISATION_ID_HEADER]
+          if (forwardedOrganisationId) {
+            store.set('organisationId', forwardedOrganisationId)
+          }
+
           wrapLifecycle(request, store)
           return h.continue
         })
