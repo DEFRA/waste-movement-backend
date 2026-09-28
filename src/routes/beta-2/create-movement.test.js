@@ -212,7 +212,8 @@ describe('movement Route Tests version: beta-2', () => {
       payload,
       headers: {
         'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
       }
     })
 
