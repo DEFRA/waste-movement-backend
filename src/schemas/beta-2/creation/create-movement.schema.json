@@ -12,6 +12,9 @@
     },
     "producer": {
       "$ref": "../common/producer/producer.schema.json"
+    },
+    "supportingReferences": {
+      "$ref": "../common/supporting-references.schema.json"
     }
   },
   "required": ["apiCode", "producer"],

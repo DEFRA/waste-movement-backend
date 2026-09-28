@@ -76,4 +76,37 @@ describe('create-movement schema', () => {
     }
     expect(validateAjv(payload).valid).toBe(false)
   })
+
+  // supportingReferences' own rules are covered by
+  // supporting-references.test.js — these confirm it's optional and that the
+  // $ref wiring is live.
+  describe('supportingReferences', () => {
+    const supportingReference = {
+      label: 'PO Number',
+      reference: 'PO-123456'
+    }
+
+    test('is optional', () => {
+      const payload = { apiCode, producer: householdProducer }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('accepts valid supportingReferences', () => {
+      const payload = {
+        apiCode,
+        producer: householdProducer,
+        supportingReferences: [supportingReference]
+      }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('rejects more than 6 supportingReferences', () => {
+      const payload = {
+        apiCode,
+        producer: householdProducer,
+        supportingReferences: Array(7).fill(supportingReference)
+      }
+      expect(validateAjv(payload).valid).toBe(false)
+    })
+  })
 })
