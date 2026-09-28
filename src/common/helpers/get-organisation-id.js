@@ -9,14 +9,14 @@ import { ValidationError } from './errors/validation-error.js'
 export const ORGANISATION_ID_HEADER = 'x-dwt-organisation-id'
 
 /**
- * Returns the organisation ID forwarded by the external API. Rejects a
- * request without one with the same error an invalid API code has always
- * produced.
- * @param {Object} headers - request headers (Hapi lower-cases their names)
+ * Returns the organisation ID the external API forwarded for this request.
+ * Rejects a request without one with the same error an invalid API code has
+ * always produced.
+ * @param {Object} request - Hapi request (header names are lower-cased)
  * @returns {string} the organisation ID
  */
-export function getOrganisationIdFromHeaders(headers) {
-  const organisationId = headers?.[ORGANISATION_ID_HEADER]
+export function getOrganisationId(request) {
+  const organisationId = request?.headers?.[ORGANISATION_ID_HEADER]
 
   if (typeof organisationId !== 'string' || organisationId.trim() === '') {
     throw new ValidationError(

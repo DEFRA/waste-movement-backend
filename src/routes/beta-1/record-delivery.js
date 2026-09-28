@@ -3,7 +3,7 @@ import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
-import { getOrganisationIdFromHeaders } from '../../common/helpers/get-organisation-id.js'
+import { getOrganisationId } from '../../common/helpers/get-organisation-id.js'
 import { WASTE_TYPE } from '../../common/constants/waste-type.js'
 import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
 import {
@@ -33,7 +33,7 @@ const recordDelivery = {
 
     try {
       const traceId = getTraceId() || randomUUID()
-      const orgId = getOrganisationIdFromHeaders(request.headers)
+      const orgId = getOrganisationId(request)
 
       const foundMovementIds = await findMovementIds(request.db, movementIds)
       const missingMovementIds = movementIds.filter(

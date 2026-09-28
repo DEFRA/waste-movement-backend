@@ -3,7 +3,7 @@ import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
-import { getOrganisationIdFromHeaders } from '../../common/helpers/get-organisation-id.js'
+import { getOrganisationId } from '../../common/helpers/get-organisation-id.js'
 import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
 import {
   createDeliveryId,
@@ -31,7 +31,7 @@ const recordReceiptWithoutDelivery = {
   handler: async (request, h) => {
     try {
       const traceId = getTraceId() || randomUUID()
-      const orgId = getOrganisationIdFromHeaders(request.headers)
+      const orgId = getOrganisationId(request)
       const deliveryId = await createDeliveryId()
 
       await backOff(

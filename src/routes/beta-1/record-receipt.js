@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { createLogger } from '../../common/helpers/logging/logger.js'
-import { getOrganisationIdFromHeaders } from '../../common/helpers/get-organisation-id.js'
+import { getOrganisationId } from '../../common/helpers/get-organisation-id.js'
 import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
 import { deliveryExists } from '../../services/delivery.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
@@ -28,7 +28,7 @@ const recordReceipt = {
 
     try {
       const traceId = getTraceId() || randomUUID()
-      getOrganisationIdFromHeaders(request.headers)
+      getOrganisationId(request)
 
       const found = await deliveryExists(request.db, deliveryId)
 

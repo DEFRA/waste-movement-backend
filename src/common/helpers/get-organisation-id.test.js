@@ -1,27 +1,36 @@
 import {
   ORGANISATION_ID_HEADER,
-  getOrganisationIdFromHeaders
+  getOrganisationId
 } from './get-organisation-id.js'
 import { ValidationError } from './errors/validation-error.js'
 
-describe('getOrganisationIdFromHeaders', () => {
+describe('getOrganisationId', () => {
   const organisationId = 'd829f66d-857f-401d-b5e9-5061b7dbb29d'
 
   it('returns the organisation forwarded by the external API', () => {
     expect(
-      getOrganisationIdFromHeaders({ [ORGANISATION_ID_HEADER]: organisationId })
+      getOrganisationId({
+        headers: { [ORGANISATION_ID_HEADER]: organisationId }
+      })
     ).toEqual(organisationId)
   })
 
   it.each([
-    ['no headers', undefined],
-    ['no organisation header', {}],
-    ['an empty organisation header', { [ORGANISATION_ID_HEADER]: '' }],
-    ['a blank organisation header', { [ORGANISATION_ID_HEADER]: '  ' }]
-  ])('rejects %s as an invalid API code', (_description, headers) => {
+    ['no request', undefined],
+    ['no headers', {}],
+    ['no organisation header', { headers: {} }],
+    [
+      'an empty organisation header',
+      { headers: { [ORGANISATION_ID_HEADER]: '' } }
+    ],
+    [
+      'a blank organisation header',
+      { headers: { [ORGANISATION_ID_HEADER]: '  ' } }
+    ]
+  ])('rejects %s as an invalid API code', (_description, request) => {
     let error
     try {
-      getOrganisationIdFromHeaders(headers)
+      getOrganisationId(request)
     } catch (e) {
       error = e
     }
