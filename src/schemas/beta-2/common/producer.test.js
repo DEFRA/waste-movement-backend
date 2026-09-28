@@ -7,13 +7,6 @@ const validateAjv = (payload) => {
   return { valid, errors: valid ? null : getErrors(producerSchemaId) }
 }
 
-// ---------------------------------------------------------------------------
-// Structured after the "Producer payload validation for the create endpoint"
-// Gherkin feature — one describe per Scenario, test names following the
-// When/Then wording. Coverage that isn't called out by that feature file is
-// kept below under "Additional coverage", so nothing from the previous
-// wasteSource-grouped version of this file is lost.
-// ---------------------------------------------------------------------------
 describe('Feature: Producer payload validation for the create endpoint', () => {
   const commercialProducer = {
     wasteSource: 'Commercial',
@@ -238,6 +231,18 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
       const payload = { ...commercialProducer, organisationName: '' }
       expect(validateAjv(payload).valid).toBe(false)
     })
+
+    // An empty string is "provided" as far as the exactly-one rule is
+    // concerned, so without minLength it would satisfy the oneOf while
+    // carrying no reason at all.
+    test('rejects an empty reasonForNoAuthorisationNumber', () => {
+      const { authorisationNumber, ...payload } = commercialProducer
+      const withEmptyReason = {
+        ...payload,
+        reasonForNoAuthorisationNumber: ''
+      }
+      expect(validateAjv(withEmptyReason).valid).toBe(false)
+    })
   })
 
   describe('Additional coverage: Municipal producer', () => {
@@ -251,6 +256,14 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
 
     test('rejects an empty organisationName', () => {
       const payload = { ...municipalProducer, organisationName: '' }
+      expect(validateAjv(payload).valid).toBe(false)
+    })
+
+    test('rejects an empty reasonForNoAuthorisationNumber', () => {
+      const payload = {
+        ...municipalProducer,
+        reasonForNoAuthorisationNumber: ''
+      }
       expect(validateAjv(payload).valid).toBe(false)
     })
 
