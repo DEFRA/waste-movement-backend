@@ -140,4 +140,34 @@ describe('create-movement schema', () => {
       expect(validateAjv(payload).valid).toBe(true)
     })
   })
+
+  // specialHandlingRequirements' own rules are covered by
+  // special-handling-requirements.test.js — these confirm it's optional and
+  // that the $ref wiring is live.
+  describe('specialHandlingRequirements', () => {
+    // Scenario: A Movement is successfully created without special handling
+    // requirements.
+    test('is optional', () => {
+      const payload = { apiCode, producer: householdProducer }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('accepts valid specialHandlingRequirements', () => {
+      const payload = {
+        apiCode,
+        producer: householdProducer,
+        specialHandlingRequirements: 'Handle with care and keep upright.'
+      }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('rejects a payload whose specialHandlingRequirements is invalid', () => {
+      const payload = {
+        apiCode,
+        producer: householdProducer,
+        specialHandlingRequirements: 'A'.repeat(501)
+      }
+      expect(validateAjv(payload).valid).toBe(false)
+    })
+  })
 })
