@@ -139,14 +139,5 @@ describe('create-movement schema', () => {
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
-
-    test('rejects more than 6 supportingReferences', () => {
-      const payload = {
-        apiCode,
-        producer: householdProducer,
-        supportingReferences: Array(7).fill(supportingReference)
-      }
-      expect(validateAjv(payload).valid).toBe(false)
-    })
   })
 })

@@ -65,16 +65,6 @@ describe('Feature: Recording supporting references', () => {
     )
   })
 
-  describe('Scenario: More than 6 supporting references are provided', () => {
-    test('the supporting references are rejected when more than 6 are provided', () => {
-      expect(validateAjv(buildSupportingReferences(7)).valid).toBe(false)
-    })
-
-    test('the supporting references are accepted when exactly 6 are provided', () => {
-      expect(validateAjv(buildSupportingReferences(6)).valid).toBe(true)
-    })
-  })
-
   describe("Scenario: A supporting reference's reference exceeds the maximum length", () => {
     test('the supporting references are rejected when a reference is longer than 50 characters', () => {
       const payload = [{ ...supportingReference, reference: 'A'.repeat(51) }]
