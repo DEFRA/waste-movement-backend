@@ -89,9 +89,14 @@ describe('Feature: Recording supporting references', () => {
 
   // -------------------------------------------------------------------------
   // Coverage below isn't called out by any scenario in the feature file, but
-  // follows from it requiring a "recognised label".
+  // follows from it requiring "one or more" supporting references, each with a
+  // "recognised label".
   // -------------------------------------------------------------------------
   describe('Additional coverage: Recording supporting references', () => {
+    test('rejects an empty array', () => {
+      expect(validateAjv([]).valid).toBe(false)
+    })
+
     test.each([
       ['an unrecognised label', 'Purchase order'],
       ['a recognised label in mismatched case', 'PO NUMBER'],
