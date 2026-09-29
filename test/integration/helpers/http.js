@@ -1,4 +1,5 @@
 import { requestBasicAuthTest1 } from '../../../src/test/data/basic-auth.js'
+import { organisationHeaders } from '../../../src/test/data/organisation-headers.js'
 
 // Deliberately dumb: adds the Basic auth header, sends what it's given and
 // returns exactly what crossed the socket - no retries, no unwrapping.
@@ -42,4 +43,24 @@ export async function httpRequest(
     headers: response.headers,
     body: parsedBody
   }
+}
+
+/**
+ * httpRequest() as the external API makes it for a beta route: with the
+ * organisation that waste-organisation-backend resolved for the apiCode in
+ * the x-dwt-organisation-id header. `forwardOrganisation: false` sends no
+ * header, as happens for an unknown or disabled API code.
+ */
+export function betaHttpRequest(
+  baseUrl,
+  path,
+  { forwardOrganisation = true, headers = {}, ...options } = {}
+) {
+  return httpRequest(baseUrl, path, {
+    ...options,
+    headers: {
+      ...(forwardOrganisation ? organisationHeaders : {}),
+      ...headers
+    }
+  })
 }

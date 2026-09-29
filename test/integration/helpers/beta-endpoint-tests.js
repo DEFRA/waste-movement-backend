@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { expectStandardHeaders } from './expect-standard-headers.js'
-import { httpRequest } from './http.js'
+import { betaHttpRequest } from './http.js'
 import { expectResponseBodyHasCorrectShape } from './expect-response-body-has-shape.js'
 import { expectProblemResponse } from './expect-problem-response.js'
 
@@ -26,7 +26,7 @@ export function describeBetaEndpointTests(version, getTestService, testData) {
    * @param {object} [options] - options passed through to httpRequest
    */
   const requestBeta = (path, options) =>
-    httpRequest(getTestService().baseUrl, `${basePath}${path}`, options)
+    betaHttpRequest(getTestService().baseUrl, `${basePath}${path}`, options)
 
   describe(`${version} - Error Formatting & RFC9457 Compliance`, () => {
     it('returns RFC9457 format for validation errors', async () => {
@@ -55,6 +55,24 @@ export function describeBetaEndpointTests(version, getTestService, testData) {
         type: 'bad-request',
         instance: movementsEndpoint
       })
+    })
+
+    // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only
+    // on the organisation forwarded by the external API.
+    it('rejects a request with no organisation forwarded (unknown or disabled API code)', async () => {
+      const response = await requestBeta('/movements', {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: testData.apiCode1, ...testData.minimalProducer },
+        forwardOrganisation: false
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: movementsEndpoint
+      })
+      expect(response.body.detail).toEqual('the API Code supplied is invalid')
     })
 
     it('returns RFC9457 format for missing authentication', async () => {

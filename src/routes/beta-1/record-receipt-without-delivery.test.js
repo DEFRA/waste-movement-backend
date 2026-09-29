@@ -1,17 +1,16 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import * as delivery from '../../services/delivery.js'
 import { config } from '../../config.js'
-import {
-  apiCode1,
-  apiCode3,
-  base64EncodedOrgApiCodes,
-  orgId1
-} from '../../test/data/apiCodes.js'
+import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
   requestBasicAuthTest1,
   userBasicAuthTest1
 } from '../../test/data/basic-auth.js'
 import { createServer } from '../../server.js'
+import {
+  forwardedOrganisationId,
+  organisationHeaders
+} from '../../test/data/organisation-headers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 const reason =
@@ -46,7 +45,11 @@ describe('POST /beta-1/receipts', () => {
   const traceId = 'trace-id-123'
   const authHeaders = { Authorization: `Basic ${requestBasicAuthTest1}` }
   const tracedHeaders = { 'x-cdp-request-id': traceId }
-  const tracedAuthHeaders = { ...authHeaders, ...tracedHeaders }
+  const tracedAuthHeaders = {
+    ...authHeaders,
+    ...tracedHeaders,
+    ...organisationHeaders
+  }
 
   const expectedTypeBase =
     'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
@@ -90,7 +93,7 @@ describe('POST /beta-1/receipts', () => {
     expect(deliveryInDb).toMatchObject({
       deliveryId: '25KMT4Z9',
       movementIds: [],
-      orgId: orgId1
+      orgId: forwardedOrganisationId
     })
   })
 
@@ -135,12 +138,14 @@ describe('POST /beta-1/receipts', () => {
     })
   })
 
-  it('returns a 400 when the apiCode is invalid', async () => {
+  // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only on
+  // the organisation forwarded by the external API.
+  it('returns a 400 when no organisation was forwarded (unknown or disabled API code)', async () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode3, reason },
-      headers: tracedAuthHeaders
+      payload: { apiCode: apiCode1, reason },
+      headers: { ...authHeaders, ...tracedHeaders }
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)

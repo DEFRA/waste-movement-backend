@@ -38,7 +38,10 @@ addFormats(ajv, ['email', 'uuid'])
 for (const file of collectSchemaFiles(schemaRoot)) {
   const schema = JSON.parse(readFileSync(file, 'utf-8'))
 
-  ajv.addSchema(schema, path.relative(schemaRoot, file))
+  // Keys are URI-style paths ("/"-separated), independent of the OS path separator.
+  const key = path.relative(schemaRoot, file).split(path.sep).join('/')
+
+  ajv.addSchema(schema, key)
 }
 
 /**
