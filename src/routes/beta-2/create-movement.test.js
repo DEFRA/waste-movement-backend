@@ -176,6 +176,117 @@ describe('movement Route Tests version: beta-2', () => {
     )
   })
 
+  it('creates a movement when a brokerOrDealer is declared', async () => {
+    const payload = {
+      apiCode,
+      producer,
+      brokerOrDealer: {
+        isPresent: true,
+        items: [
+          {
+            organisationName: 'Broker Demo Ltd',
+            registrationNumber: 'CBDU654321',
+            contactDetails: { emailAddress: 'broker@example.com' },
+            address: {
+              fullAddress: '2 Broker Yard, Test City',
+              postcode: 'TE1 1ST'
+            }
+          }
+        ]
+      }
+    }
+    const createMovementRecordSpy = jest
+      .spyOn(movementCreate, 'createMovementRecord')
+      .mockResolvedValue(payload)
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+    expect(result).toEqual({
+      data: { movementId: expect.any(String) },
+      validation: { warnings: [] }
+    })
+    expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns an error when a declared brokerOrDealer has no details', async () => {
+    const invalidPayload = {
+      apiCode,
+      producer,
+      brokerOrDealer: { isPresent: true }
+    }
+    const createMovementRecordSpy = jest.spyOn(
+      movementCreate,
+      'createMovementRecord'
+    )
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements`,
+      payload: invalidPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result.errors).toContainEqual({
+      errorType: 'NotProvided',
+      message: '"items" is required',
+      pointer: '/brokerOrDealer/items'
+    })
+    expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
+  })
+
+  it('returns an error when brokerOrDealer details are given without declaring involvement', async () => {
+    const invalidPayload = {
+      apiCode,
+      producer,
+      brokerOrDealer: {
+        isPresent: false,
+        items: [
+          {
+            organisationName: 'Broker Demo Ltd',
+            registrationNumber: 'CBDU654321',
+            contactDetails: { emailAddress: 'broker@example.com' }
+          }
+        ]
+      }
+    }
+    const createMovementRecordSpy = jest.spyOn(
+      movementCreate,
+      'createMovementRecord'
+    )
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements`,
+      payload: invalidPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        errorType: 'NotAllowed',
+        pointer: '/brokerOrDealer/items'
+      })
+    )
+    expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
+  })
+
   it('returns an error when apiCode is missing and does not create a movement', async () => {
     const invalidPayload = { producer }
     const createMovementRecordSpy = jest.spyOn(

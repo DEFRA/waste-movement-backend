@@ -68,13 +68,53 @@ describe('create-movement schema', () => {
     expect(validateAjv(payload).valid).toBe(false)
   })
 
-  test('rejects an additional property beyond apiCode and producer', () => {
+  test('rejects an additional property beyond the declared ones', () => {
     const payload = {
       apiCode,
       producer: householdProducer,
       extra: 'not allowed'
     }
     expect(validateAjv(payload).valid).toBe(false)
+  })
+
+  describe('brokerOrDealer', () => {
+    const brokerOrDealer = {
+      isPresent: true,
+      items: [
+        {
+          organisationName: 'Broker Demo Ltd',
+          registrationNumber: 'CBDU654321',
+          contactDetails: {
+            emailAddress: 'broker@example.com'
+          },
+          address: {
+            fullAddress: '2 Broker Yard, Test City',
+            postcode: 'TE1 1ST'
+          }
+        }
+      ]
+    }
+
+    test('is optional', () => {
+      const payload = { apiCode, producer: householdProducer }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('accepts a declared broker or dealer', () => {
+      const payload = { apiCode, producer: householdProducer, brokerOrDealer }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    // The rules themselves live in broker-or-dealer.test.js; this only proves
+    // the $ref is wired up, so a rejection propagates to the payload.
+    test('rejects a payload whose broker or dealer is invalid', () => {
+      const payload = {
+        apiCode,
+        producer: householdProducer,
+        brokerOrDealer: { isPresent: false, items: brokerOrDealer.items }
+      }
+      expect(validateAjv(payload).valid).toBe(false)
+    })
   })
 
   // supportingReferences' own rules are covered by

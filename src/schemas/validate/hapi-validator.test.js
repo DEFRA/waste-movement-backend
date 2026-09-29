@@ -59,6 +59,24 @@ describe('jsonSchemaValidator', () => {
     expect(detail).toMatchObject({ path: ['reason'], type: 'OutOfRange' })
   })
 
+  test('maps a forbidden property in a oneOf branch to NotAllowed', () => {
+    const id = 'beta-2/common/broker-or-dealer/broker-or-dealer.schema.json'
+    const details = getDetails(id, {
+      isPresent: false,
+      items: [
+        {
+          organisationName: 'Broker Demo Ltd',
+          registrationNumber: 'CBDU654321',
+          contactDetails: { emailAddress: 'broker@example.com' }
+        }
+      ]
+    })
+
+    expect(details).toContainEqual(
+      expect.objectContaining({ path: ['items'], type: 'NotAllowed' })
+    )
+  })
+
   test('nests the path for an error inside a sub-object', () => {
     const id = 'beta-2/common/producer/producer-commercial.schema.json'
     const [detail] = getDetails(id, {
