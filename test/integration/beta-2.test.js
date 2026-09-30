@@ -11,6 +11,10 @@ import { forwardedOrganisationId } from '../../src/test/data/organisation-header
 import { ObjectId } from 'mongodb'
 import { expectProblemResponse } from './helpers/expect-problem-response.js'
 import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-body-has-shape.js'
+import {
+  brokerOrDealerEntry,
+  supportingReference
+} from '../../src/schemas/beta-2/test-helpers.js'
 
 describe('beta-2', () => {
   let testService
@@ -32,6 +36,18 @@ describe('beta-2', () => {
     await testService.stop()
     await wasteTrackingStub.stop()
   })
+
+  const createMovement = async () => {
+    const { body } = await betaHttpRequest(
+      testService.baseUrl,
+      '/beta-2/movements',
+      {
+        method: 'POST',
+        body: { apiCode: apiCode1, ...minimalHouseholdProducer }
+      }
+    )
+    return body.data.movementId
+  }
 
   // Shared error formatting and RFC9457 compliance tests
   describeBetaEndpointTests(version, () => testService, {
@@ -187,6 +203,31 @@ describe('beta-2', () => {
     })
   })
 
+  it('POST /beta-2/movements/{movementId}/collection creates a collection with a brokerOrDealer and supportingReferences', async () => {
+    const movementId = await createMovement()
+
+    const { status, body, headers } = await betaHttpRequest(
+      testService.baseUrl,
+      `/beta-2/movements/${movementId}/collection`,
+      {
+        method: 'POST',
+        body: {
+          apiCode: apiCode1,
+          brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
+          supportingReferences: [supportingReference]
+        }
+      }
+    )
+
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
+    expect(body).toEqual({
+      data: null,
+      validation: { warnings: [] }
+    })
+    expectStandardHeaders(headers)
+  })
+
   it('POST /beta-2/deliveries records a delivery', async () => {
     const createRes = await betaHttpRequest(
       testService.baseUrl,
@@ -320,6 +361,100 @@ describe('beta-2', () => {
         type: 'not-found',
         instance: endpoint
       })
+    })
+
+    it('rejects collection creation with missing apiCode', async () => {
+      const movementId = await createMovement()
+      const endpoint = `/beta-2/movements/${movementId}/collection`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {}
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+    })
+
+    it('rejects collection creation when a brokerOrDealer is declared with no details', async () => {
+      const movementId = await createMovement()
+      const endpoint = `/beta-2/movements/${movementId}/collection`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: apiCode1, brokerOrDealer: { isPresent: true } }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotProvided',
+          pointer: '/brokerOrDealer/items'
+        })
+      )
+    })
+
+    it('rejects collection creation when brokerOrDealer details are given without declaring involvement', async () => {
+      const movementId = await createMovement()
+      const endpoint = `/beta-2/movements/${movementId}/collection`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          apiCode: apiCode1,
+          brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
+        }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotAllowed',
+          pointer: '/brokerOrDealer/items'
+        })
+      )
+    })
+
+    it('rejects collection creation when a supportingReference has an unrecognised label', async () => {
+      const movementId = await createMovement()
+      const endpoint = `/beta-2/movements/${movementId}/collection`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          apiCode: apiCode1,
+          supportingReferences: [
+            { ...supportingReference, label: 'Not A Label' }
+          ]
+        }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'InvalidValue',
+          pointer: '/supportingReferences/0/label'
+        })
+      )
     })
 
     it('rejects delivery recording with missing movementIds', async () => {
