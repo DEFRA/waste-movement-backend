@@ -1,15 +1,8 @@
-import { getErrors, validate } from '../../validate/index.js'
+import { validatorFor } from '../test-helpers.js'
 
-const specialHandlingRequirementsSchemaId =
+const validateAjv = validatorFor(
   'beta-2/common/special-handling-requirements.schema.json'
-
-const validateAjv = (payload) => {
-  const valid = validate(specialHandlingRequirementsSchemaId, payload)
-  return {
-    valid,
-    errors: valid ? null : getErrors(specialHandlingRequirementsSchemaId)
-  }
-}
+)
 
 describe('Feature: Recording special handling requirements on a Movement', () => {
   // The 500 character limit comes from the feature file and is deliberately

@@ -1,11 +1,8 @@
-import { getErrors, validate } from '../../validate/index.js'
+import { validatorFor } from '../test-helpers.js'
 
-const schemaId = 'beta-2/receipt/delivery-id-params.schema.json'
-
-const validateAjv = (payload) => {
-  const valid = validate(schemaId, payload)
-  return { valid, errors: valid ? null : getErrors(schemaId) }
-}
+const validateAjv = validatorFor(
+  'beta-2/receipt/delivery-id-params.schema.json'
+)
 
 describe('delivery-id-params schema', () => {
   test('accepts a deliveryId', () => {
