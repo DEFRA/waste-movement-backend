@@ -1,0 +1,58 @@
+import { randomUUID } from 'node:crypto'
+import { getMovementRecord } from '../../services/movement.js'
+import { HTTP_STATUS } from '@defra/waste-movement-utils'
+import { getTraceId } from '@defra/hapi-tracing'
+import { createLogger } from '../../common/helpers/logging/logger.js'
+import { getOrganisationId } from '../../common/helpers/get-organisation-id.js'
+import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
+import { notFound } from '@hapi/boom'
+import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
+
+const apiVersion = 'beta-2'
+const logger = createLogger({ apiVersion })
+const validate = jsonSchemaValidatorFor(apiVersion)
+
+const createCollection = {
+  method: 'POST',
+  path: '/movements/{movementId}/collection',
+  options: {
+    description: 'Create a new waste collection',
+    validate: {
+      payload: validate('collection/create-collection')
+    }
+  },
+  handler: async (request, h) => {
+    const { movementId } = request.params
+
+    try {
+      const traceId = getTraceId() || randomUUID()
+      getOrganisationId(request)
+      const movementRecord = await getMovementRecord(request.db, movementId)
+
+      if (!movementRecord) {
+        return notFound('movementId not found')
+      }
+
+      const response = {
+        data: null,
+        validation: { warnings: [] }
+      }
+
+      logger.info(
+        'Successfully created waste movement collection',
+        request,
+        response
+      )
+
+      return h
+        .response(response)
+        .code(HTTP_STATUS.CREATED)
+        .header('x-request-id', traceId)
+        .message('Successfully created a waste movement collection')
+    } catch (error) {
+      return handleBetaRouteError(error)
+    }
+  }
+}
+
+export { createCollection }

@@ -19,5 +19,9 @@ export const expectedRoutes = [
   { method: 'post', path: '/beta-1/deliveries' },
   { method: 'post', path: '/beta-1/deliveries/{deliveryId}/receipt' },
   { method: 'post', path: '/beta-1/receipts' },
-  { method: 'post', path: '/beta-2/movements' }
+  { method: 'post', path: '/beta-2/movements' },
+  { method: 'post', path: '/beta-2/movements/{movementId}/collection' },
+  { method: 'post', path: '/beta-2/deliveries' },
+  { method: 'post', path: '/beta-2/deliveries/{deliveryId}/receipt' },
+  { method: 'post', path: '/beta-2/receipts' }
 ]

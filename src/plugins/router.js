@@ -5,6 +5,10 @@ import { recordDelivery as recordDeliveryBeta1 } from '../routes/beta-1/record-d
 import { recordReceipt as recordReceiptBeta1 } from '../routes/beta-1/record-receipt.js'
 import { recordReceiptWithoutDelivery as recordReceiptWithoutDeliveryBeta1 } from '../routes/beta-1/record-receipt-without-delivery.js'
 import { createMovement as createMovementBeta2 } from '../routes/beta-2/create-movement.js'
+import { createCollection as createCollectionBeta2 } from '../routes/beta-2/create-collection.js'
+import { recordDelivery as recordDeliveryBeta2 } from '../routes/beta-2/record-delivery.js'
+import { recordReceipt as recordReceiptBeta2 } from '../routes/beta-2/record-receipt.js'
+import { recordReceiptWithoutDelivery as recordReceiptWithoutDeliveryBeta2 } from '../routes/beta-2/record-receipt-without-delivery.js'
 import { createReceiptMovement } from '../routes/create-receipt-movement.js'
 import { updateReceiptMovement } from '../routes/update-receipt-movement.js'
 import { retryAuditLogReceiptMovement } from '../routes/retry-audit-log-receipt-movement.js'
@@ -54,7 +58,13 @@ const router = {
         },
         {
           prefix: '/beta-2',
-          routes: [createMovementBeta2]
+          routes: [
+            createMovementBeta2,
+            createCollectionBeta2,
+            recordDeliveryBeta2,
+            recordReceiptBeta2,
+            recordReceiptWithoutDeliveryBeta2
+          ]
         }
       ]
 

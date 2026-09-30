@@ -430,17 +430,18 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
       server.inject(request)
     ])
 
-    results.forEach((result, index) =>
-      expect(JSON.parse(result.payload)).toEqual({
-        status:
-          index === 0
-            ? BULK_RESPONSE_STATUS.MOVEMENTS_CREATED
-            : BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED,
-        movements: [
-          { wasteTrackingId: '26S8EYDJ' },
-          { wasteTrackingId: '26NWSIXF' }
-        ]
-      })
+    // Exactly one request wins the race, but which one is not deterministic
+    const bodies = results.map((result) => JSON.parse(result.payload))
+
+    expect(bodies.map(({ status }) => status).sort()).toEqual([
+      BULK_RESPONSE_STATUS.MOVEMENTS_CREATED,
+      ...Array(4).fill(BULK_RESPONSE_STATUS.MOVEMENTS_NOT_CREATED)
+    ])
+    bodies.forEach((body) =>
+      expect(body.movements).toEqual([
+        { wasteTrackingId: '26S8EYDJ' },
+        { wasteTrackingId: '26NWSIXF' }
+      ])
     )
   })
 
