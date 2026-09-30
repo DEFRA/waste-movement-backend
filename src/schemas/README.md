@@ -117,9 +117,12 @@ src/schemas/
   beta-2/
     common/          shared resources — address, contact-details, producer/
     creation/        whole request payloads, $ref-ing the resources above
+    collection/      collection payloads
+    delivery/        delivery payloads
+    receipt/         receipt payloads (and the deliveryId path params)
 ```
 
-`beta-2`'s categories (`common/`, `creation/`, and later `collection/`, `delivery/`, `receipt/`)
+`beta-2`'s categories (`common/`, `creation/`, `collection/`, `delivery/`, `receipt/`)
 mirror `digital-waste-tracking-api-docs`, which is the sandbox these resources are prototyped in.
 Keeping the trees identical is what lets a resource move across unchanged.
 

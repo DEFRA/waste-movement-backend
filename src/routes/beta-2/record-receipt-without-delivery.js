@@ -1,0 +1,63 @@
+import { randomUUID } from 'node:crypto'
+import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
+import { getTraceId } from '@defra/hapi-tracing'
+import { backOff } from 'exponential-backoff'
+import { createLogger } from '../../common/helpers/logging/logger.js'
+import { getOrganisationId } from '../../common/helpers/get-organisation-id.js'
+import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
+import {
+  createDeliveryId,
+  createDeliveryRecord
+} from '../../services/delivery.js'
+import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
+
+const apiVersion = 'beta-2'
+const logger = createLogger({ apiVersion })
+const validate = jsonSchemaValidatorFor(apiVersion)
+
+const recordReceiptWithoutDelivery = {
+  method: 'POST',
+  path: '/receipts',
+  options: {
+    description: 'Record receipt of waste without a Delivery ID',
+    notes:
+      'Fallback for recording receipt with no prior Delivery, e.g. waste received with no movement ' +
+      'trail. Not linked to any Movement; `reason` must explain why. Creates an empty Delivery behind ' +
+      'the scenes and returns its Delivery ID, so the receipt stays addressable.',
+    validate: {
+      payload: validate('receipt/record-receipt-without-delivery')
+    }
+  },
+  handler: async (request, h) => {
+    try {
+      const traceId = getTraceId() || randomUUID()
+      const orgId = getOrganisationId(request)
+      const deliveryId = await createDeliveryId()
+
+      await backOff(
+        () =>
+          createDeliveryRecord(request.db, {
+            deliveryId,
+            movementIds: [],
+            orgId
+          }),
+        backoffOptions(logger)
+      )
+
+      logger.info(
+        `Successfully recorded receipt without a delivery, created delivery ${deliveryId}`,
+        { deliveryId }
+      )
+
+      return h
+        .response({ data: { deliveryId }, validation: { warnings: [] } })
+        .code(HTTP_STATUS.CREATED)
+        .header('x-request-id', traceId)
+        .message('Successfully recorded a receipt without a delivery')
+    } catch (error) {
+      return handleBetaRouteError(error)
+    }
+  }
+}
+
+export { recordReceiptWithoutDelivery }
