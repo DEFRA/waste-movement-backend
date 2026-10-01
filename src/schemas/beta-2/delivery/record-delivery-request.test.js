@@ -1,8 +1,10 @@
 import { apiCode, validatorFor } from '../test-helpers.js'
 
-const validateAjv = validatorFor('beta-2/delivery/record-delivery.schema.json')
+const validateAjv = validatorFor(
+  'beta-2/delivery/record-delivery-request.schema.json'
+)
 
-describe('record-delivery schema', () => {
+describe('record-delivery-request schema', () => {
   test('accepts a valid payload', () => {
     expect(validateAjv({ apiCode, movementIds: ['25HRA0B2'] }).valid).toBe(true)
   })

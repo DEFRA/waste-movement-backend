@@ -6,8 +6,8 @@ const validateAjv = (id, payload) => {
   return { valid, errors: valid ? null : getErrors(id) }
 }
 
-describe('beta-1/create-movement.schema.json', () => {
-  const schemaId = 'beta-1/create-movement.schema.json'
+describe('beta-1/create-movement-request.schema.json', () => {
+  const schemaId = 'beta-1/create-movement-request.schema.json'
 
   it('accepts a valid payload', () => {
     expect(validateAjv(schemaId, { apiCode: apiCode1 }).valid).toBe(true)
@@ -22,8 +22,8 @@ describe('beta-1/create-movement.schema.json', () => {
   })
 })
 
-describe('beta-1/record-delivery.schema.json', () => {
-  const schemaId = 'beta-1/record-delivery.schema.json'
+describe('beta-1/record-delivery-request.schema.json', () => {
+  const schemaId = 'beta-1/record-delivery-request.schema.json'
 
   it('accepts a valid payload', () => {
     expect(
@@ -67,8 +67,8 @@ describe('beta-1/record-delivery.schema.json', () => {
   })
 })
 
-describe('beta-1/record-receipt-without-delivery.schema.json', () => {
-  const schemaId = 'beta-1/record-receipt-without-delivery.schema.json'
+describe('beta-1/record-receipt-without-delivery-request.schema.json', () => {
+  const schemaId = 'beta-1/record-receipt-without-delivery-request.schema.json'
 
   it('accepts a valid payload', () => {
     expect(
@@ -84,5 +84,181 @@ describe('beta-1/record-receipt-without-delivery.schema.json', () => {
     expect(validateAjv(schemaId, { apiCode: apiCode1, reason: '' }).valid).toBe(
       false
     )
+  })
+})
+
+describe('beta-1/create-movement-response.schema.json', () => {
+  const schemaId = 'beta-1/create-movement-response.schema.json'
+  const body = {
+    data: { movementId: '25HRA0B2' }
+  }
+
+  it('accepts a valid body', () => {
+    expect(validateAjv(schemaId, body).valid).toBe(true)
+  })
+
+  it('requires data', () => {
+    expect(validateAjv(schemaId, {}).valid).toBe(false)
+  })
+
+  it('requires movementId', () => {
+    expect(validateAjv(schemaId, { ...body, data: {} }).valid).toBe(false)
+  })
+
+  // `validation` is not modelled (undecided, may be removed) but routes still
+  // return it, so it must pass as an unmodelled property.
+  it('accepts the validation envelope', () => {
+    expect(
+      validateAjv(schemaId, {
+        data: { movementId: '25HRA0B2' },
+        validation: { warnings: [] }
+      }).valid
+    ).toBe(true)
+  })
+
+  // Like the spec, sets no additionalProperties.
+  it('accepts extra properties', () => {
+    expect(validateAjv(schemaId, { ...body, extra: true }).valid).toBe(true)
+  })
+})
+
+describe('beta-1/create-collection-response.schema.json', () => {
+  const schemaId = 'beta-1/create-collection-response.schema.json'
+  const body = { data: null }
+
+  it('accepts null data', () => {
+    expect(validateAjv(schemaId, body).valid).toBe(true)
+  })
+
+  it('requires data', () => {
+    expect(validateAjv(schemaId, {}).valid).toBe(false)
+  })
+
+  it('rejects data that is neither an object nor null', () => {
+    expect(validateAjv(schemaId, { ...body, data: 'x' }).valid).toBe(false)
+  })
+
+  // `validation` is not modelled (undecided, may be removed) but routes still
+  // return it, so it must pass as an unmodelled property.
+  it('accepts the validation envelope', () => {
+    expect(
+      validateAjv(schemaId, { data: null, validation: { warnings: [] } }).valid
+    ).toBe(true)
+  })
+
+  // Like the spec, sets no additionalProperties.
+  it('accepts extra properties', () => {
+    expect(validateAjv(schemaId, { ...body, extra: true }).valid).toBe(true)
+  })
+})
+
+describe('beta-1/record-delivery-response.schema.json', () => {
+  const schemaId = 'beta-1/record-delivery-response.schema.json'
+  const delivery = {
+    deliveryId: '25KMT4Z9',
+    movementIds: ['25HRA0B2'],
+    wasteType: 'NON_HAZARDOUS'
+  }
+  const withDeliveries = (deliveries) => ({
+    data: { deliveries }
+  })
+
+  it('accepts a valid body', () => {
+    expect(validateAjv(schemaId, withDeliveries([delivery])).valid).toBe(true)
+  })
+
+  it('requires deliveries', () => {
+    expect(validateAjv(schemaId, { data: {} }).valid).toBe(false)
+  })
+
+  it('rejects a delivery with empty movementIds', () => {
+    expect(
+      validateAjv(schemaId, withDeliveries([{ ...delivery, movementIds: [] }]))
+        .valid
+    ).toBe(false)
+  })
+
+  it('rejects a delivery with an unknown wasteType', () => {
+    expect(
+      validateAjv(schemaId, withDeliveries([{ ...delivery, wasteType: 'X' }]))
+        .valid
+    ).toBe(false)
+  })
+
+  it('rejects a delivery without a deliveryId', () => {
+    const { deliveryId: _omitted, ...rest } = delivery
+    expect(validateAjv(schemaId, withDeliveries([rest])).valid).toBe(false)
+  })
+
+  // `validation` is not modelled (undecided, may be removed) but routes still
+  // return it, so it must pass as an unmodelled property.
+  it('accepts the validation envelope', () => {
+    expect(
+      validateAjv(schemaId, {
+        ...withDeliveries([delivery]),
+        validation: { warnings: [] }
+      }).valid
+    ).toBe(true)
+  })
+
+  // Like the spec, sets no additionalProperties.
+  it('accepts extra properties', () => {
+    expect(
+      validateAjv(schemaId, withDeliveries([{ ...delivery, extra: 1 }])).valid
+    ).toBe(true)
+  })
+})
+
+describe('beta-1/record-receipt-response.schema.json', () => {
+  const schemaId = 'beta-1/record-receipt-response.schema.json'
+  const body = {
+    data: { deliveryId: '25KMT4Z9' }
+  }
+
+  it('accepts a valid body', () => {
+    expect(validateAjv(schemaId, body).valid).toBe(true)
+  })
+
+  it('requires data', () => {
+    expect(validateAjv(schemaId, {}).valid).toBe(false)
+  })
+
+  it('requires deliveryId', () => {
+    expect(validateAjv(schemaId, { ...body, data: {} }).valid).toBe(false)
+  })
+
+  // `validation` is not modelled (undecided, may be removed) but routes still
+  // return it, so it must pass as an unmodelled property.
+  it('accepts the validation envelope', () => {
+    expect(
+      validateAjv(schemaId, {
+        data: { deliveryId: '25KMT4Z9' },
+        validation: { warnings: [] }
+      }).valid
+    ).toBe(true)
+  })
+
+  // Like the spec, sets no additionalProperties.
+  it('accepts extra properties', () => {
+    expect(validateAjv(schemaId, { ...body, extra: true }).valid).toBe(true)
+  })
+})
+
+describe('beta-1/record-receipt-without-delivery-response.schema.json', () => {
+  const schemaId = 'beta-1/record-receipt-without-delivery-response.schema.json'
+  const body = { data: { deliveryId: '25KMT4Z9' } }
+
+  it('accepts a valid body', () => {
+    expect(validateAjv(schemaId, body).valid).toBe(true)
+  })
+
+  it('requires deliveryId', () => {
+    expect(validateAjv(schemaId, { data: {} }).valid).toBe(false)
+  })
+
+  it('accepts the validation envelope', () => {
+    expect(
+      validateAjv(schemaId, { ...body, validation: { warnings: [] } }).valid
+    ).toBe(true)
   })
 })

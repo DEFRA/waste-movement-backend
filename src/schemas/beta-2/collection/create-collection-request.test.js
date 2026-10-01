@@ -6,10 +6,10 @@ import {
 } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
-  'beta-2/collection/create-collection.schema.json'
+  'beta-2/collection/create-collection-request.schema.json'
 )
 
-describe('create-collection schema: beta-2', () => {
+describe('create-collection-request schema: beta-2', () => {
   const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
 
   test('accepts a payload with only an apiCode', () => {

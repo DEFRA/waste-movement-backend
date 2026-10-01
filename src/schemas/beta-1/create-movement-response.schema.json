@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Create movement response",
+  "description": "Response returned when a movement is created.",
+  "type": "object",
+  "required": ["data"],
+  "properties": {
+    "data": {
+      "type": "object",
+      "description": "The created movement.",
+      "required": ["movementId"],
+      "properties": {
+        "movementId": {
+          "$ref": "#/$defs/movementId"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "movementId": {
+      "title": "Movement ID",
+      "description": "Unique identifier for a waste movement, minted by the server on `POST /movements`.",
+      "type": "string",
+      "examples": ["25HRA0B2"]
+    }
+  }
+}

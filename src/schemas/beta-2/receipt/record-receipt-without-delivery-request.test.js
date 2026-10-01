@@ -1,11 +1,11 @@
 import { apiCode, validatorFor } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
-  'beta-2/receipt/record-receipt-without-delivery.schema.json'
+  'beta-2/receipt/record-receipt-without-delivery-request.schema.json'
 )
 const reason = 'No delivery'
 
-describe('record-receipt-without-delivery schema', () => {
+describe('record-receipt-without-delivery-request schema', () => {
   test('accepts a valid payload', () => {
     expect(validateAjv({ apiCode, reason }).valid).toBe(true)
   })
