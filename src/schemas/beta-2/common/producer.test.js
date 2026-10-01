@@ -9,7 +9,7 @@ const validateAjv = validatorFor('beta-2/common/producer/producer.schema.json')
 
 describe('Feature: Producer payload validation for the create endpoint', () => {
   describe('Scenario: Household producer is submitted correctly', () => {
-    test('the Movement is created successfully when only wasteSource and councilMovement are provided', () => {
+    test('the Movement is created successfully when only wasteSource is provided', () => {
       expect(validateAjv(householdProducer).valid).toBe(true)
     })
   })

@@ -44,8 +44,7 @@ describe('movement Route Tests version: beta-2', () => {
   const traceId = 'created-trace-id-123'
   const apiCode = apiCode1
   const producer = {
-    wasteSource: 'Household',
-    councilMovement: true
+    wasteSource: 'Household'
   }
   const goodPayload = { apiCode, producer }
 
@@ -61,8 +60,7 @@ describe('movement Route Tests version: beta-2', () => {
       emailAddress: 'producer@example.com',
       phoneNumber: '01234567890'
     },
-    sicCode: '38110',
-    councilMovement: false
+    sicCode: '38110'
   }
 
   const municipalProducer = {
@@ -76,8 +74,7 @@ describe('movement Route Tests version: beta-2', () => {
     contactDetails: {
       emailAddress: 'waste.services@example.gov.uk',
       phoneNumber: '01234567890'
-    },
-    councilMovement: true
+    }
   }
 
   const expectedTypeBase =
