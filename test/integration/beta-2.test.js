@@ -21,7 +21,7 @@ describe('beta-2', () => {
   let wasteTrackingStub
   const version = 'beta-2'
   const minimalHouseholdProducer = {
-    producer: { wasteSource: 'Household', councilMovement: false }
+    producer: { wasteSource: 'Household' }
   }
 
   beforeAll(async () => {
@@ -58,7 +58,7 @@ describe('beta-2', () => {
 
   describe('POST /beta-2/movements', () => {
     it('creates a movement with minimal payload', async () => {
-      const producer = { wasteSource: 'Household', councilMovement: false }
+      const producer = { wasteSource: 'Household' }
       const { status, body, headers } = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/movements',
@@ -90,7 +90,7 @@ describe('beta-2', () => {
     })
 
     it('creates a movement with producer payload', async () => {
-      const producer = { wasteSource: 'Household', councilMovement: false }
+      const producer = { wasteSource: 'Household' }
       const { status, body, headers } = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/movements',
@@ -133,8 +133,7 @@ describe('beta-2', () => {
         },
         contactDetails: {
           emailAddress: 'contact@acme.com'
-        },
-        councilMovement: false
+        }
       }
       const { status, body, headers } = await betaHttpRequest(
         testService.baseUrl,
@@ -510,7 +509,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          producer: { wasteSource: 'Household', councilMovement: false }
+          producer: { wasteSource: 'Household' }
         }
       })
 
@@ -528,7 +527,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
-          producer: { wasteSource: 'Invalid', councilMovement: false }
+          producer: { wasteSource: 'Invalid' }
         }
       })
 
@@ -551,8 +550,7 @@ describe('beta-2', () => {
             sicCode: '38110',
             authorisationNumber: 'EAS/P/123456',
             address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
-            emailAddress: 'test@example.com',
-            councilMovement: false
+            emailAddress: 'test@example.com'
           }
         }
       })
@@ -577,8 +575,7 @@ describe('beta-2', () => {
             sicCode: '123',
             authorisationNumber: 'EAS/P/123456',
             address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
-            emailAddress: 'test@example.com',
-            councilMovement: false
+            emailAddress: 'test@example.com'
           }
         }
       })
@@ -602,8 +599,7 @@ describe('beta-2', () => {
             organisationName: 'Test Org',
             sicCode: '38110',
             authorisationNumber: 'EAS/P/123456',
-            address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
-            councilMovement: false
+            address: { fullAddress: 'Test', postcode: 'TE1 2PQ' }
           }
         }
       })
@@ -627,8 +623,7 @@ describe('beta-2', () => {
             organisationName: 'Test Org',
             sicCode: '38110',
             address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
-            emailAddress: 'test@example.com',
-            councilMovement: false
+            emailAddress: 'test@example.com'
           }
         }
       })
@@ -653,8 +648,7 @@ describe('beta-2', () => {
             sicCode: '38110',
             authorisationNumber: 'EAS/P/123456',
             address: { fullAddress: 'Test', postcode: 'INVALID' },
-            emailAddress: 'test@example.com',
-            councilMovement: false
+            emailAddress: 'test@example.com'
           }
         }
       })
@@ -676,7 +670,7 @@ describe('beta-2', () => {
           method: 'POST',
           body: {
             apiCode: apiCode1,
-            producer: { wasteSource: 'Household', councilMovement: true }
+            producer: { wasteSource: 'Household' }
           }
         }
       )
@@ -698,8 +692,7 @@ describe('beta-2', () => {
               organisationName: 'Test Council',
               address: { fullAddress: 'Council Office', postcode: 'TE1 3ST' },
               contactDetails: { phoneNumber: '01234567890' },
-              authorisationNumber: 'EAS/P/123456',
-              councilMovement: true
+              authorisationNumber: 'EAS/P/123456'
             }
           }
         }
@@ -724,7 +717,6 @@ describe('beta-2', () => {
               sicCode: '38110',
               address: { fullAddress: '123 Test St', postcode: 'TE1 2PQ' },
               reasonForNoAuthorisationNumber: 'Exempt operation',
-              councilMovement: false,
               contactDetails: { emailAddress: 'nobody@gmail.com' }
             }
           }

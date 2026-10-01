@@ -4,18 +4,18 @@ import {
 } from './hapi-validator.js'
 import { apiCode1 } from '../../test/data/apiCodes.js'
 
-const schemaId = 'beta-2/common/producer/producer-base.schema.json'
+const schemaId = 'beta-2/common/producer/producer-household.schema.json'
 
 describe('jsonSchemaValidator', () => {
   test('returns the value unchanged when it is valid', () => {
-    const value = { councilMovement: true }
+    const value = { wasteSource: 'Household' }
 
     expect(jsonSchemaValidator(schemaId)(value)).toBe(value)
   })
 
   test('throws a Boom badRequest when the value is invalid', () => {
     expect(() => jsonSchemaValidator(schemaId)({})).toThrow(
-      '"councilMovement" is required'
+      '"wasteSource" is required'
     )
   })
 
@@ -31,8 +31,8 @@ describe('jsonSchemaValidator', () => {
   test('maps a missing property to NotProvided', () => {
     expect(getDetails(schemaId, {})).toEqual([
       {
-        message: '"councilMovement" is required',
-        path: ['councilMovement'],
+        message: '"wasteSource" is required',
+        path: ['wasteSource'],
         type: 'NotProvided'
       }
     ])
@@ -81,7 +81,6 @@ describe('jsonSchemaValidator', () => {
     const id = 'beta-2/common/producer/producer-commercial.schema.json'
     const [detail] = getDetails(id, {
       wasteSource: 'Commercial',
-      councilMovement: false,
       organisationName: 'ACME',
       sicCode: '38110',
       contactDetails: { emailAddress: 'a@b.com' },
@@ -99,9 +98,9 @@ describe('jsonSchemaValidator', () => {
 describe('jsonSchemaValidatorFor', () => {
   test('resolves the schema id from a version and name', () => {
     const validate = jsonSchemaValidatorFor('beta-2')(
-      'common/producer/producer-base'
+      'common/producer/producer-household'
     )
-    const value = { councilMovement: true }
+    const value = { wasteSource: 'Household' }
 
     expect(validate(value)).toBe(value)
   })

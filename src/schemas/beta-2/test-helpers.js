@@ -19,8 +19,7 @@ export const contactDetails = {
 }
 
 export const householdProducer = {
-  wasteSource: 'Household',
-  councilMovement: true
+  wasteSource: 'Household'
 }
 
 export const commercialProducer = {
@@ -29,8 +28,7 @@ export const commercialProducer = {
   authorisationNumber: 'EAS/P/123456',
   address,
   contactDetails,
-  sicCode: '38110',
-  councilMovement: false
+  sicCode: '38110'
 }
 
 export const municipalProducer = {
@@ -44,8 +42,7 @@ export const municipalProducer = {
   contactDetails: {
     emailAddress: 'waste.services@example.gov.uk',
     phoneNumber: '01234567890'
-  },
-  councilMovement: true
+  }
 }
 
 export const brokerOrDealerEntry = {
