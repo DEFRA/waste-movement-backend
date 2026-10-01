@@ -1,26 +1,13 @@
-import { getErrors, validate } from '../../validate/index.js'
+import {
+  brokerOrDealerEntry as brokerOrDealer,
+  validatorFor
+} from '../test-helpers.js'
 
-const schemaId = 'beta-2/common/broker-or-dealer/broker-or-dealer.schema.json'
-
-const validateAjv = (payload) => {
-  const valid = validate(schemaId, payload)
-  return { valid, errors: valid ? null : getErrors(schemaId) }
-}
+const validateAjv = validatorFor(
+  'beta-2/common/broker-or-dealer/broker-or-dealer.schema.json'
+)
 
 describe('Feature: Declaring any brokers or dealers involved when creating a waste movement', () => {
-  const brokerOrDealer = {
-    organisationName: 'Broker Demo Ltd',
-    registrationNumber: 'CBDU654321',
-    contactDetails: {
-      emailAddress: 'broker@example.com',
-      phoneNumber: '01112223333'
-    },
-    address: {
-      fullAddress: '2 Broker Yard, Test City',
-      postcode: 'TE1 1ST'
-    }
-  }
-
   const involving = (...items) => ({ isPresent: true, items })
 
   const withoutField = (field) => {

@@ -1,13 +1,8 @@
-import { getErrors, validate } from '../../validate/index.js'
+import { apiCode, validatorFor } from '../test-helpers.js'
 
-const schemaId = 'beta-2/receipt/record-receipt-without-delivery.schema.json'
-
-const validateAjv = (payload) => {
-  const valid = validate(schemaId, payload)
-  return { valid, errors: valid ? null : getErrors(schemaId) }
-}
-
-const apiCode = '25b14080-5e77-4f91-9957-2482a0cb8775'
+const validateAjv = validatorFor(
+  'beta-2/receipt/record-receipt-without-delivery.schema.json'
+)
 const reason = 'No delivery'
 
 describe('record-receipt-without-delivery schema', () => {

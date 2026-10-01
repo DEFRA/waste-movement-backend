@@ -1,15 +1,8 @@
-import { getErrors, validate } from '../../validate/index.js'
+import { supportingReference, validatorFor } from '../test-helpers.js'
 
-const supportingReferencesSchemaId =
+const validateAjv = validatorFor(
   'beta-2/common/supporting-references.schema.json'
-
-const validateAjv = (payload) => {
-  const valid = validate(supportingReferencesSchemaId, payload)
-  return {
-    valid,
-    errors: valid ? null : getErrors(supportingReferencesSchemaId)
-  }
-}
+)
 
 describe('Feature: Recording supporting references', () => {
   const recognisedLabels = [
@@ -20,11 +13,6 @@ describe('Feature: Recording supporting references', () => {
     'Waste Ticket Number',
     'Other'
   ]
-
-  const supportingReference = {
-    label: 'PO Number',
-    reference: 'PO-123456'
-  }
 
   const supportingReferences = [supportingReference]
 

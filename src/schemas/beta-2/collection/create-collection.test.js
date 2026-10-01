@@ -1,28 +1,76 @@
-import { getErrors, validate } from '../../validate/index.js'
+import {
+  apiCode,
+  brokerOrDealerEntry,
+  supportingReference,
+  validatorFor
+} from '../test-helpers.js'
 
-const schemaId = 'beta-2/collection/create-collection.schema.json'
+const validateAjv = validatorFor(
+  'beta-2/collection/create-collection.schema.json'
+)
 
-const validateAjv = (payload) => {
-  const valid = validate(schemaId, payload)
-  return { valid, errors: valid ? null : getErrors(schemaId) }
-}
+describe('create-collection schema: beta-2', () => {
+  const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
 
-const apiCode = '25b14080-5e77-4f91-9957-2482a0cb8775'
-
-describe('create-collection schema', () => {
-  test('accepts a valid payload', () => {
+  test('accepts a payload with only an apiCode', () => {
     expect(validateAjv({ apiCode }).valid).toBe(true)
   })
 
   test('apiCode is required', () => {
-    expect(validateAjv({}).valid).toBe(false)
+    const payload = {}
+    expect(validateAjv(payload).valid).toBe(false)
   })
 
   test('rejects a malformed apiCode', () => {
-    expect(validateAjv({ apiCode: 'not-a-uuid' }).valid).toBe(false)
+    const payload = { apiCode: 'not-a-uuid' }
+    expect(validateAjv(payload).valid).toBe(false)
   })
 
   test('rejects an additional property beyond the declared ones', () => {
-    expect(validateAjv({ apiCode, extra: 'not allowed' }).valid).toBe(false)
+    const payload = {
+      apiCode,
+      extra: 'not allowed'
+    }
+    expect(validateAjv(payload).valid).toBe(false)
+  })
+
+  describe('brokerOrDealer', () => {
+    test('is optional', () => {
+      const payload = { apiCode, supportingReferences: [supportingReference] }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('accepts a declared broker or dealer', () => {
+      const payload = { apiCode, brokerOrDealer }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    // The rules themselves live in broker-or-dealer.test.js; this only proves
+    // the $ref is wired up, so a rejection propagates to the payload.
+    test('rejects a payload whose broker or dealer is invalid', () => {
+      const payload = {
+        apiCode,
+        brokerOrDealer: { isPresent: false, items: brokerOrDealer.items }
+      }
+      expect(validateAjv(payload).valid).toBe(false)
+    })
+  })
+
+  // supportingReferences' own rules are covered by
+  // supporting-references.test.js — these confirm it's optional and that the
+  // $ref wiring is live.
+  describe('supportingReferences', () => {
+    test('is optional', () => {
+      const payload = { apiCode, brokerOrDealer }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('accepts valid supportingReferences', () => {
+      const payload = {
+        apiCode,
+        supportingReferences: [supportingReference]
+      }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
   })
 })
