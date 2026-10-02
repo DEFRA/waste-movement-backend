@@ -18,7 +18,8 @@
       "description": "Address the waste will be received at. postcode is required; fullAddress is optional."
     },
     "contactDetails": {
-      "$ref": "../contact-details.schema.json"
+      "$ref": "../contact-details.schema.json",
+      "description": "How to contact the receiving site. At least one of emailAddress or phoneNumber is required."
     }
   },
   "required": [
