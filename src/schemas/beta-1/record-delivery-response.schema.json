@@ -13,105 +13,14 @@
         "deliveries": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/deliveryItem"
+            "$ref": "common/delivery-item.schema.json"
           },
           "description": "One Delivery per distinct waste type represented in the submitted Movement IDs. Most requests produce a single-item list."
         }
       }
     },
     "validation": {
-      "$ref": "#/$defs/validation"
-    }
-  },
-  "$defs": {
-    "deliveryItem": {
-      "title": "Delivery item",
-      "description": "A single Delivery minted from a `POST /deliveries` request, covering the Movements sharing one waste type.",
-      "type": "object",
-      "required": ["deliveryId", "movementIds", "wasteType"],
-      "properties": {
-        "deliveryId": {
-          "$ref": "#/$defs/deliveryId"
-        },
-        "movementIds": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/$defs/movementId"
-          },
-          "description": "The subset of the submitted Movement IDs covered by this Delivery."
-        },
-        "wasteType": {
-          "$ref": "#/$defs/wasteType"
-        }
-      }
-    },
-    "movementId": {
-      "title": "Movement ID",
-      "description": "Unique identifier for a waste movement, minted by the server on `POST /movements`.",
-      "type": "string",
-      "examples": ["25HRA0B2"]
-    },
-    "deliveryId": {
-      "title": "Delivery ID",
-      "description": "Unique identifier for a delivery, minted by the server on `POST /deliveries`.",
-      "type": "string",
-      "examples": ["25KMT4Z9"]
-    },
-    "wasteType": {
-      "title": "Waste type",
-      "description": "Whether the waste covered by this delivery is hazardous or non-hazardous.",
-      "type": "string",
-      "enum": ["HAZARDOUS", "NON_HAZARDOUS"],
-      "examples": ["NON_HAZARDOUS"]
-    },
-    "issue": {
-      "title": "Issue",
-      "description": "A single problem with a submitted field, located by JSON Pointer.",
-      "type": "object",
-      "required": ["pointer", "errorType", "message"],
-      "properties": {
-        "pointer": {
-          "type": "string",
-          "description": "RFC 6901 JSON Pointer to the field this issue relates to.",
-          "examples": ["/apiCode"]
-        },
-        "errorType": {
-          "type": "string",
-          "enum": [
-            "NotProvided",
-            "NotAllowed",
-            "InvalidType",
-            "InvalidFormat",
-            "InvalidValue",
-            "OutOfRange",
-            "BusinessRuleViolation",
-            "UnexpectedError"
-          ],
-          "description": "The type of issue.",
-          "examples": ["NotProvided"]
-        },
-        "message": {
-          "type": "string",
-          "description": "Human-readable description of the issue.",
-          "examples": ["apiCode is required."]
-        }
-      }
-    },
-    "validation": {
-      "title": "Validation",
-      "description": "Data-quality feedback returned alongside a successful response.",
-      "type": "object",
-      "required": ["warnings"],
-      "properties": {
-        "warnings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/issue"
-          },
-          "description": "Data-quality warnings. Empty when there are none."
-        }
-      }
+      "$ref": "common/validation.schema.json"
     }
   }
 }
