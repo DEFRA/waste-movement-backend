@@ -3,7 +3,7 @@
   "title": "Record receipt response",
   "description": "Response returned when a receipt is recorded.",
   "type": "object",
-  "required": ["data"],
+  "required": ["data", "validation"],
   "properties": {
     "data": {
       "type": "object",
@@ -14,6 +14,9 @@
           "$ref": "../common/delivery-id.schema.json"
         }
       }
+    },
+    "validation": {
+      "$ref": "../common/validation.schema.json"
     }
   }
 }
