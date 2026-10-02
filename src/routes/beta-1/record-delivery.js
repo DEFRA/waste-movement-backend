@@ -5,7 +5,10 @@ import { backOff } from 'exponential-backoff'
 import { createLogger } from '../../common/helpers/logging/logger.js'
 import { getOrganisationId } from '../../common/helpers/get-organisation-id.js'
 import { WASTE_TYPE } from '../../common/constants/waste-type.js'
-import { jsonSchemaValidatorFor } from '../../schemas/validate/hapi-validator.js'
+import {
+  jsonSchemaRequestValidatorFor,
+  jsonSchemaResponseValidatorFor
+} from '../../schemas/validate/hapi-validator.js'
 import {
   createDeliveryId,
   createDeliveryRecord
@@ -16,7 +19,8 @@ import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
-const validate = jsonSchemaValidatorFor(apiVersion)
+const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
+const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
 
 const recordDelivery = {
   method: 'POST',
@@ -25,7 +29,10 @@ const recordDelivery = {
     description: 'Record a delivery',
     notes: 'Records a delivery event and returns a Delivery ID.',
     validate: {
-      payload: validate('record-delivery')
+      payload: validateRequest('record-delivery-request')
+    },
+    response: {
+      status: { 201: validateResponse('record-delivery-response') }
     }
   },
   handler: async (request, h) => {
