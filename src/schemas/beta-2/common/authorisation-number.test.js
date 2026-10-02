@@ -1,12 +1,9 @@
 import { ALL_SITE_AUTHORISATION_NUMBER_REGEXES } from '@defra/waste-movement-utils'
-import { getErrors, validate } from '../../validate/index.js'
+import { validatorFor } from '../test-helpers.js'
 
-const schemaId = 'beta-2/common/authorisation-number.schema.json'
-
-const validateAjv = (payload) => {
-  const valid = validate(schemaId, payload)
-  return { valid, errors: valid ? null : getErrors(schemaId) }
-}
+const validateAjv = validatorFor(
+  'beta-2/common/authorisation-number.schema.json'
+)
 
 // Known good and bad values copied from waste-movement-utils'
 // TEST_DATA.AUTHORISATION_NUMBERS (src/schemas/test-constants.js), so this

@@ -10,15 +10,15 @@
       "description": "Name of the receiving site."
     },
     "authorisationNumber": {
-      "$ref": "authorisation-number.schema.json",
+      "$ref": "../authorisation-number.schema.json",
       "description": "Receiver environmental permit or exemption number, in a valid UK format."
     },
     "receiptAddress": {
-      "$ref": "address.schema.json",
+      "$ref": "../address.schema.json",
       "description": "Address the waste will be received at. postcode is required; fullAddress is optional."
     },
     "contactDetails": {
-      "$ref": "contact-details.schema.json"
+      "$ref": "../contact-details.schema.json"
     }
   },
   "required": [
