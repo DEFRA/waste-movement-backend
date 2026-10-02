@@ -12,6 +12,8 @@ import { backOff } from 'exponential-backoff'
 import { getOrganisationValidationError } from '../common/helpers/validate-organisation.js'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
+import { config } from '../config.js'
+import { getClient } from '../common/helpers/get-client.js'
 
 const logger = createLogger()
 
@@ -34,7 +36,12 @@ const updateReceiptMovement = {
   handler: async (request, h) => {
     try {
       const { wasteTrackingId } = request.params
-      const clientId = request.headers['x-dwt-client-id']
+
+      const { clientId, clientName } = await getClient(
+        config.get('serviceName'),
+        request.headers['x-dwt-client-id']
+      )
+
       const { submittingOrganisation, ...movementData } =
         request.payload.movement
 
@@ -72,7 +79,7 @@ const updateReceiptMovement = {
             request.mongoClient,
             request.getTraceId(),
             'receipt.movement',
-            { submittingOrganisation, clientId }
+            { submittingOrganisation, client: { clientId, clientName } }
           ),
         backoffOptions(logger)
       )

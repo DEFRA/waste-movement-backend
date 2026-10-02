@@ -22,13 +22,13 @@ function buildUpdateSet(
   fieldToUpdate,
   submittingOrganisation,
   traceId,
-  clientId
+  client
 ) {
   const updateSet = {
     ...(fieldToUpdate ? { [fieldToUpdate]: { ...updateData } } : updateData),
     lastUpdatedAt: new Date(),
     traceId,
-    clientId
+    client
   }
 
   if (submittingOrganisation?.defraCustomerOrganisationId) {
@@ -58,7 +58,7 @@ export async function updateWasteInput(
   mongoClient,
   traceId,
   fieldToUpdate = undefined,
-  { submittingOrganisation = null, clientId = null } = {}
+  { submittingOrganisation = null, client = null } = {}
 ) {
   const session = mongoClient.startSession()
 
@@ -98,7 +98,7 @@ export async function updateWasteInput(
         fieldToUpdate,
         submittingOrganisation,
         traceId,
-        clientId
+        client
       )
 
       result = await wasteInputsCollection.updateOne(

@@ -14,10 +14,20 @@ import {
   userBasicAuthTest1
 } from '../test/data/basic-auth.js'
 import { createServer } from '../server.js'
+import { httpClients } from '../common/helpers/http-client.js'
+import { client } from '../test/data/client.js'
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockImplementation(() => true)
 }))
+
+jest.mock('../common/helpers/http-client.js', () => ({
+  httpClients: {
+    clientSync: { get: jest.fn() }
+  }
+}))
+
+httpClients.clientSync.get.mockResolvedValue({ payload: client })
 
 describe('Retry Audit Log Receipt Movement Route Tests', () => {
   let server

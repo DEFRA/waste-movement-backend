@@ -4,7 +4,7 @@ export class WasteInput {
   collection
   receipt
   submittingOrganisation
-  clientId
+  client
   createdAt
   lastUpdatedAt
   orgId
