@@ -11,7 +11,8 @@ describe('Feature: Record delivery response', () => {
     wasteType: 'NON_HAZARDOUS'
   }
   const withDeliveries = (deliveries) => ({
-    data: { deliveries }
+    data: { deliveries },
+    validation: { warnings: [] }
   })
 
   test('a response with one delivery is accepted', () => {
@@ -28,11 +29,13 @@ describe('Feature: Record delivery response', () => {
   })
 
   test('a response is rejected when data is missing', () => {
-    expect(validateAjv({}).valid).toBe(false)
+    expect(validateAjv({ validation: { warnings: [] } }).valid).toBe(false)
   })
 
   test('a response is rejected when deliveries is missing', () => {
-    expect(validateAjv({ data: {} }).valid).toBe(false)
+    expect(validateAjv({ data: {}, validation: { warnings: [] } }).valid).toBe(
+      false
+    )
   })
 
   test.each(['deliveryId', 'movementIds', 'wasteType'])(
@@ -53,17 +56,6 @@ describe('Feature: Record delivery response', () => {
     expect(
       validateAjv(withDeliveries([{ ...delivery, wasteType: 'INERT' }])).valid
     ).toBe(false)
-  })
-
-  // `validation` is not modelled (undecided, may be removed) but routes still
-  // return it, so it must pass as an unmodelled property.
-  test('a response carrying the validation envelope is accepted', () => {
-    expect(
-      validateAjv({
-        ...withDeliveries([delivery]),
-        validation: { warnings: [] }
-      }).valid
-    ).toBe(true)
   })
 
   // Like the spec, sets no additionalProperties.

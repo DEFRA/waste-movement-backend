@@ -6,15 +6,16 @@ const validateAjv = validatorFor(
 
 describe('Feature: Create movement response', () => {
   const body = {
-    data: { movementId: '25HRA0B2' }
+    data: { movementId: '25HRA0B2' },
+    validation: { warnings: [] }
   }
 
-  test('a response with a movementId is accepted', () => {
+  test('a response with a movementId and no warnings is accepted', () => {
     expect(validateAjv(body).valid).toBe(true)
   })
 
   test('a response is rejected when data is missing', () => {
-    expect(validateAjv({}).valid).toBe(false)
+    expect(validateAjv({ validation: { warnings: [] } }).valid).toBe(false)
   })
 
   test('a response is rejected when movementId is missing', () => {
@@ -25,17 +26,6 @@ describe('Feature: Create movement response', () => {
     expect(validateAjv({ ...body, data: { movementId: 123 } }).valid).toBe(
       false
     )
-  })
-
-  // `validation` is not modelled (undecided, may be removed) but routes still
-  // return it, so it must pass as an unmodelled property.
-  test('a response carrying the validation envelope is accepted', () => {
-    expect(
-      validateAjv({
-        data: { movementId: '25HRA0B2' },
-        validation: { warnings: [] }
-      }).valid
-    ).toBe(true)
   })
 
   // Like the spec, sets no additionalProperties.

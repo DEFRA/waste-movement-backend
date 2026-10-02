@@ -5,7 +5,7 @@ const validateAjv = validatorFor(
 )
 
 describe('Feature: Create collection response', () => {
-  const body = { data: null }
+  const body = { data: null, validation: { warnings: [] } }
 
   test('a response with null data is accepted', () => {
     expect(validateAjv(body).valid).toBe(true)
@@ -16,19 +16,11 @@ describe('Feature: Create collection response', () => {
   })
 
   test('a response is rejected when data is missing', () => {
-    expect(validateAjv({}).valid).toBe(false)
+    expect(validateAjv({ validation: { warnings: [] } }).valid).toBe(false)
   })
 
   test('a response is rejected when data is neither an object nor null', () => {
     expect(validateAjv({ ...body, data: 'collection' }).valid).toBe(false)
-  })
-
-  // `validation` is not modelled (undecided, may be removed) but routes still
-  // return it, so it must pass as an unmodelled property.
-  test('a response carrying the validation envelope is accepted', () => {
-    expect(
-      validateAjv({ data: null, validation: { warnings: [] } }).valid
-    ).toBe(true)
   })
 
   // Like the spec, sets no additionalProperties.
