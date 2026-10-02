@@ -221,4 +221,30 @@ describe('movement Route Tests version: beta-1', () => {
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
+
+  it('returns a 500 when the response body does not match the response schema', async () => {
+    jest.spyOn(movementCreate, 'createMovementId').mockResolvedValueOnce(12345)
+    jest
+      .spyOn(movementCreate, 'createMovementRecord')
+      .mockResolvedValueOnce(goodPayload)
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements`,
+      payload: goodPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+    expect(result).toEqual({
+      instance: `/${endpointVersion}/movements`,
+      title: 'Internal Server Error',
+      type: `${expectedTypeBase}internal-server-error`,
+      requestId: traceId
+    })
+  })
 })

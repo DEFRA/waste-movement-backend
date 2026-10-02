@@ -1,51 +1,15 @@
-import { getErrors, validate } from '../../validate/index.js'
+import {
+  commercialProducer,
+  householdProducer,
+  municipalProducer,
+  validatorFor
+} from '../test-helpers.js'
 
-const producerSchemaId = 'beta-2/common/producer/producer.schema.json'
-
-const validateAjv = (payload) => {
-  const valid = validate(producerSchemaId, payload)
-  return { valid, errors: valid ? null : getErrors(producerSchemaId) }
-}
+const validateAjv = validatorFor('beta-2/common/producer/producer.schema.json')
 
 describe('Feature: Producer payload validation for the create endpoint', () => {
-  const commercialProducer = {
-    wasteSource: 'Commercial',
-    organisationName: 'ACME Waste Producers Ltd',
-    authorisationNumber: 'EAS/P/123456',
-    address: {
-      fullAddress: '10 Industrial Way, Test City',
-      postcode: 'TE1 2PQ'
-    },
-    contactDetails: {
-      emailAddress: 'producer@example.com',
-      phoneNumber: '01234567890'
-    },
-    sicCode: '38110',
-    councilMovement: false
-  }
-
-  const municipalProducer = {
-    wasteSource: 'Municipal',
-    organisationName: 'Test Council',
-    reasonForNoAuthorisationNumber: 'TBC',
-    address: {
-      fullAddress: 'Council Depot, Test City',
-      postcode: 'TE1 5CD'
-    },
-    contactDetails: {
-      emailAddress: 'waste.services@example.gov.uk',
-      phoneNumber: '01234567890'
-    },
-    councilMovement: true
-  }
-
-  const householdProducer = {
-    wasteSource: 'Household',
-    councilMovement: true
-  }
-
   describe('Scenario: Household producer is submitted correctly', () => {
-    test('the Movement is created successfully when only wasteSource and councilMovement are provided', () => {
+    test('the Movement is created successfully when only wasteSource is provided', () => {
       expect(validateAjv(householdProducer).valid).toBe(true)
     })
   })

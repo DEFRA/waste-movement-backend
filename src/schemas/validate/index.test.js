@@ -3,7 +3,7 @@ import { validate, getErrors, ajv } from './index.js'
 describe('schema registry', () => {
   test('loads schemas keyed by their path relative to src/schemas/', () => {
     expect(
-      ajv.getSchema('beta-2/common/producer/producer-base.schema.json')
+      ajv.getSchema('beta-2/common/producer/producer-household.schema.json')
     ).toBeDefined()
   })
 
@@ -18,25 +18,28 @@ describe('schema registry', () => {
   })
 
   test('validates a payload against a registered schema', () => {
-    const valid = validate('beta-2/common/producer/producer-base.schema.json', {
-      councilMovement: true
-    })
+    const valid = validate(
+      'beta-2/common/producer/producer-household.schema.json',
+      {
+        wasteSource: 'Household'
+      }
+    )
 
     expect(valid).toBe(true)
-    expect(getErrors('beta-2/common/producer/producer-base.schema.json')).toBe(
-      null
-    )
+    expect(
+      getErrors('beta-2/common/producer/producer-household.schema.json')
+    ).toBe(null)
   })
 
   test('exposes errors after a failed validation', () => {
     const valid = validate(
-      'beta-2/common/producer/producer-base.schema.json',
+      'beta-2/common/producer/producer-household.schema.json',
       {}
     )
 
     expect(valid).toBe(false)
     expect(
-      getErrors('beta-2/common/producer/producer-base.schema.json')
+      getErrors('beta-2/common/producer/producer-household.schema.json')
     ).not.toBeNull()
   })
 

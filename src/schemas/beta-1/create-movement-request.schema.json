@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Create collection",
-  "description": "Payload for POST /beta-1/movements/{movementId}/collection.",
+  "title": "Create movement request",
+  "description": "Payload for POST /beta-1/movements.",
   "type": "object",
   "properties": {
     "apiCode": {

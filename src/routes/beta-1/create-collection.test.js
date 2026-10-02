@@ -7,6 +7,7 @@ import {
   userBasicAuthTest1
 } from '../../test/data/basic-auth.js'
 import { createServer } from '../../server.js'
+import { breakNextResponse } from '../../test/break-next-response.js'
 import { organisationHeaders } from '../../test/data/organisation-headers.js'
 
 jest.mock('@defra/cdp-auditing', () => ({
@@ -211,5 +212,31 @@ describe('collection Route Tests version: beta-1', () => {
       requestId: traceId
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
+  })
+
+  it('returns a 500 when the response body does not match the response schema', async () => {
+    jest
+      .spyOn(movementService, 'getMovementRecord')
+      .mockResolvedValueOnce({ id: goodMovementId })
+    breakNextResponse(server, (body) => ({ ...body, data: 'not-an-object' }))
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements/${goodMovementId}/collection`,
+      payload: goodPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+    expect(result).toEqual({
+      instance: `/${endpointVersion}/movements/${goodMovementId}/collection`,
+      title: 'Internal Server Error',
+      type: `${expectedTypeBase}internal-server-error`,
+      requestId: traceId
+    })
   })
 })

@@ -1,15 +1,8 @@
-import { getErrors, validate } from '../../validate/index.js'
+import { validatorFor } from '../test-helpers.js'
 
-const specialHandlingRequirementsSchemaId =
+const validateAjv = validatorFor(
   'beta-2/common/special-handling-requirements.schema.json'
-
-const validateAjv = (payload) => {
-  const valid = validate(specialHandlingRequirementsSchemaId, payload)
-  return {
-    valid,
-    errors: valid ? null : getErrors(specialHandlingRequirementsSchemaId)
-  }
-}
+)
 
 describe('Feature: Recording special handling requirements on a Movement', () => {
   // The 500 character limit comes from the feature file and is deliberately
@@ -48,7 +41,7 @@ describe('Feature: Recording special handling requirements on a Movement', () =>
   // Coverage below isn't called out by any scenario in the feature file.
   // "A Movement is successfully created without special handling requirements"
   // is about the field being optional, so it is pinned on the payload instead,
-  // in creation/create-movement.test.js.
+  // in creation/create-movement-request.test.js.
   // -------------------------------------------------------------------------
   describe('Additional coverage: Recording special handling requirements', () => {
     test('rejects an empty string, because absent requirements are recorded by omitting the field', () => {

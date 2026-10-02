@@ -11,13 +11,17 @@ import { forwardedOrganisationId } from '../../src/test/data/organisation-header
 import { ObjectId } from 'mongodb'
 import { expectProblemResponse } from './helpers/expect-problem-response.js'
 import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-body-has-shape.js'
+import {
+  brokerOrDealerEntry,
+  supportingReference
+} from '../../src/schemas/beta-2/test-helpers.js'
 
 describe('beta-2', () => {
   let testService
   let wasteTrackingStub
   const version = 'beta-2'
   const minimalHouseholdProducer = {
-    producer: { wasteSource: 'Household', councilMovement: false }
+    producer: { wasteSource: 'Household' }
   }
 
   beforeAll(async () => {
@@ -33,6 +37,18 @@ describe('beta-2', () => {
     await wasteTrackingStub.stop()
   })
 
+  const createMovement = async () => {
+    const { body } = await betaHttpRequest(
+      testService.baseUrl,
+      '/beta-2/movements',
+      {
+        method: 'POST',
+        body: { apiCode: apiCode1, ...minimalHouseholdProducer }
+      }
+    )
+    return body.data.movementId
+  }
+
   // Shared error formatting and RFC9457 compliance tests
   describeBetaEndpointTests(version, () => testService, {
     apiCode1,
@@ -42,7 +58,7 @@ describe('beta-2', () => {
 
   describe('POST /beta-2/movements', () => {
     it('creates a movement with minimal payload', async () => {
-      const producer = { wasteSource: 'Household', councilMovement: false }
+      const producer = { wasteSource: 'Household' }
       const { status, body, headers } = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/movements',
@@ -74,7 +90,7 @@ describe('beta-2', () => {
     })
 
     it('creates a movement with producer payload', async () => {
-      const producer = { wasteSource: 'Household', councilMovement: false }
+      const producer = { wasteSource: 'Household' }
       const { status, body, headers } = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/movements',
@@ -117,8 +133,7 @@ describe('beta-2', () => {
         },
         contactDetails: {
           emailAddress: 'contact@acme.com'
-        },
-        councilMovement: false
+        }
       }
       const { status, body, headers } = await betaHttpRequest(
         testService.baseUrl,
@@ -185,6 +200,31 @@ describe('beta-2', () => {
       orgId: forwardedOrganisationId,
       createdAt: expect.any(String)
     })
+  })
+
+  it('POST /beta-2/movements/{movementId}/collection creates a collection with a brokerOrDealer and supportingReferences', async () => {
+    const movementId = await createMovement()
+
+    const { status, body, headers } = await betaHttpRequest(
+      testService.baseUrl,
+      `/beta-2/movements/${movementId}/collection`,
+      {
+        method: 'POST',
+        body: {
+          apiCode: apiCode1,
+          brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
+          supportingReferences: [supportingReference]
+        }
+      }
+    )
+
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
+    expect(body).toEqual({
+      data: null,
+      validation: { warnings: [] }
+    })
+    expectStandardHeaders(headers)
   })
 
   it('POST /beta-2/deliveries records a delivery', async () => {
@@ -322,6 +362,100 @@ describe('beta-2', () => {
       })
     })
 
+    it('rejects collection creation with missing apiCode', async () => {
+      const movementId = await createMovement()
+      const endpoint = `/beta-2/movements/${movementId}/collection`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {}
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+    })
+
+    it('rejects collection creation when a brokerOrDealer is declared with no details', async () => {
+      const movementId = await createMovement()
+      const endpoint = `/beta-2/movements/${movementId}/collection`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: apiCode1, brokerOrDealer: { isPresent: true } }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotProvided',
+          pointer: '/brokerOrDealer/items'
+        })
+      )
+    })
+
+    it('rejects collection creation when brokerOrDealer details are given without declaring involvement', async () => {
+      const movementId = await createMovement()
+      const endpoint = `/beta-2/movements/${movementId}/collection`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          apiCode: apiCode1,
+          brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
+        }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotAllowed',
+          pointer: '/brokerOrDealer/items'
+        })
+      )
+    })
+
+    it('rejects collection creation when a supportingReference has an unrecognised label', async () => {
+      const movementId = await createMovement()
+      const endpoint = `/beta-2/movements/${movementId}/collection`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          apiCode: apiCode1,
+          supportingReferences: [
+            { ...supportingReference, label: 'Not A Label' }
+          ]
+        }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'InvalidValue',
+          pointer: '/supportingReferences/0/label'
+        })
+      )
+    })
+
     it('rejects delivery recording with missing movementIds', async () => {
       const endpoint = '/beta-2/deliveries'
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
@@ -375,7 +509,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          producer: { wasteSource: 'Household', councilMovement: false }
+          producer: { wasteSource: 'Household' }
         }
       })
 
@@ -393,7 +527,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
-          producer: { wasteSource: 'Invalid', councilMovement: false }
+          producer: { wasteSource: 'Invalid' }
         }
       })
 
@@ -416,8 +550,7 @@ describe('beta-2', () => {
             sicCode: '38110',
             authorisationNumber: 'EAS/P/123456',
             address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
-            emailAddress: 'test@example.com',
-            councilMovement: false
+            emailAddress: 'test@example.com'
           }
         }
       })
@@ -442,8 +575,7 @@ describe('beta-2', () => {
             sicCode: '123',
             authorisationNumber: 'EAS/P/123456',
             address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
-            emailAddress: 'test@example.com',
-            councilMovement: false
+            emailAddress: 'test@example.com'
           }
         }
       })
@@ -467,8 +599,7 @@ describe('beta-2', () => {
             organisationName: 'Test Org',
             sicCode: '38110',
             authorisationNumber: 'EAS/P/123456',
-            address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
-            councilMovement: false
+            address: { fullAddress: 'Test', postcode: 'TE1 2PQ' }
           }
         }
       })
@@ -492,8 +623,7 @@ describe('beta-2', () => {
             organisationName: 'Test Org',
             sicCode: '38110',
             address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
-            emailAddress: 'test@example.com',
-            councilMovement: false
+            emailAddress: 'test@example.com'
           }
         }
       })
@@ -518,8 +648,7 @@ describe('beta-2', () => {
             sicCode: '38110',
             authorisationNumber: 'EAS/P/123456',
             address: { fullAddress: 'Test', postcode: 'INVALID' },
-            emailAddress: 'test@example.com',
-            councilMovement: false
+            emailAddress: 'test@example.com'
           }
         }
       })
@@ -541,7 +670,7 @@ describe('beta-2', () => {
           method: 'POST',
           body: {
             apiCode: apiCode1,
-            producer: { wasteSource: 'Household', councilMovement: true }
+            producer: { wasteSource: 'Household' }
           }
         }
       )
@@ -563,8 +692,7 @@ describe('beta-2', () => {
               organisationName: 'Test Council',
               address: { fullAddress: 'Council Office', postcode: 'TE1 3ST' },
               contactDetails: { phoneNumber: '01234567890' },
-              authorisationNumber: 'EAS/P/123456',
-              councilMovement: true
+              authorisationNumber: 'EAS/P/123456'
             }
           }
         }
@@ -589,7 +717,6 @@ describe('beta-2', () => {
               sicCode: '38110',
               address: { fullAddress: '123 Test St', postcode: 'TE1 2PQ' },
               reasonForNoAuthorisationNumber: 'Exempt operation',
-              councilMovement: false,
               contactDetails: { emailAddress: 'nobody@gmail.com' }
             }
           }

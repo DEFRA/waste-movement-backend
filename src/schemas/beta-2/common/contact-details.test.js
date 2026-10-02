@@ -1,18 +1,11 @@
-import { getErrors, validate } from '../../validate/index.js'
+import {
+  contactDetails as validContactDetails,
+  validatorFor
+} from '../test-helpers.js'
 
-const schemaId = 'beta-2/common/contact-details.schema.json'
-
-const validateAjv = (payload) => {
-  const valid = validate(schemaId, payload)
-  return { valid, errors: valid ? null : getErrors(schemaId) }
-}
+const validateAjv = validatorFor('beta-2/common/contact-details.schema.json')
 
 describe('contact-details schema', () => {
-  const validContactDetails = {
-    emailAddress: 'producer@example.com',
-    phoneNumber: '01234567890'
-  }
-
   test('accepts emailAddress and phoneNumber together', () => {
     expect(validateAjv(validContactDetails).valid).toBe(true)
   })

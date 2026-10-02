@@ -1,49 +1,18 @@
-import { getErrors, validate } from '../../validate/index.js'
+import {
+  apiCode,
+  brokerOrDealerEntry,
+  commercialProducer,
+  householdProducer,
+  municipalProducer,
+  supportingReference,
+  validatorFor
+} from '../test-helpers.js'
 
-const schemaId = 'beta-2/creation/create-movement.schema.json'
+const validateAjv = validatorFor(
+  'beta-2/creation/create-movement-request.schema.json'
+)
 
-const validateAjv = (payload) => {
-  const valid = validate(schemaId, payload)
-  return { valid, errors: valid ? null : getErrors(schemaId) }
-}
-
-const apiCode = '25b14080-5e77-4f91-9957-2482a0cb8775'
-
-const householdProducer = {
-  wasteSource: 'Household',
-  councilMovement: true
-}
-
-const commercialProducer = {
-  wasteSource: 'Commercial',
-  organisationName: 'ACME Waste Producers Ltd',
-  authorisationNumber: 'EAS/P/123456',
-  address: {
-    fullAddress: '10 Industrial Way, Test City',
-    postcode: 'TE1 2PQ'
-  },
-  contactDetails: {
-    emailAddress: 'producer@example.com'
-  },
-  sicCode: '38110',
-  councilMovement: false
-}
-
-const municipalProducer = {
-  wasteSource: 'Municipal',
-  organisationName: 'Test Council',
-  reasonForNoAuthorisationNumber: 'TBC',
-  address: {
-    fullAddress: 'Council Depot, Test City',
-    postcode: 'TE1 5CD'
-  },
-  contactDetails: {
-    emailAddress: 'waste.services@example.gov.uk'
-  },
-  councilMovement: true
-}
-
-describe('create-movement schema', () => {
+describe('create-movement-request schema', () => {
   test('apiCode is required', () => {
     const payload = { producer: householdProducer }
     expect(validateAjv(payload).valid).toBe(false)
@@ -78,22 +47,7 @@ describe('create-movement schema', () => {
   })
 
   describe('brokerOrDealer', () => {
-    const brokerOrDealer = {
-      isPresent: true,
-      items: [
-        {
-          organisationName: 'Broker Demo Ltd',
-          registrationNumber: 'CBDU654321',
-          contactDetails: {
-            emailAddress: 'broker@example.com'
-          },
-          address: {
-            fullAddress: '2 Broker Yard, Test City',
-            postcode: 'TE1 1ST'
-          }
-        }
-      ]
-    }
+    const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
 
     test('is optional', () => {
       const payload = { apiCode, producer: householdProducer }
@@ -121,11 +75,6 @@ describe('create-movement schema', () => {
   // supporting-references.test.js — these confirm it's optional and that the
   // $ref wiring is live.
   describe('supportingReferences', () => {
-    const supportingReference = {
-      label: 'PO Number',
-      reference: 'PO-123456'
-    }
-
     test('is optional', () => {
       const payload = { apiCode, producer: householdProducer }
       expect(validateAjv(payload).valid).toBe(true)
