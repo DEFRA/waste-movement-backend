@@ -8,9 +8,11 @@ import {
   validatorFor
 } from '../test-helpers.js'
 
-const validateAjv = validatorFor('beta-2/creation/create-movement.schema.json')
+const validateAjv = validatorFor(
+  'beta-2/creation/create-movement-request.schema.json'
+)
 
-describe('create-movement schema', () => {
+describe('create-movement-request schema', () => {
   test('apiCode is required', () => {
     const payload = { producer: householdProducer }
     expect(validateAjv(payload).valid).toBe(false)

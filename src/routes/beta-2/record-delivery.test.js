@@ -243,4 +243,28 @@ describe('POST /beta-2/deliveries', () => {
       requestId: traceId
     })
   })
+
+  it('returns a 500 when the response body does not match the response schema', async () => {
+    await server.db
+      .collection('movements')
+      .insertOne({ movementId: movementId1 })
+    jest.spyOn(delivery, 'createDeliveryId').mockResolvedValueOnce(42)
+    // Stubbed so the bad id isn't rejected by the deliveries collection first.
+    jest.spyOn(delivery, 'createDeliveryRecord').mockResolvedValueOnce({})
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: { apiCode: apiCode1, movementIds: [movementId1] },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+    expect(result).toEqual({
+      instance: url,
+      title: 'Internal Server Error',
+      type: `${expectedTypeBase}internal-server-error`,
+      requestId: traceId
+    })
+  })
 })

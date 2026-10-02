@@ -1,6 +1,9 @@
 import Boom from '@hapi/boom'
 import { ERROR_TYPE } from '@defra/waste-movement-utils'
 import { getErrors, validate } from './index.js'
+import { createLogger } from '../../common/helpers/logging/logger.js'
+
+const logger = createLogger()
 
 // Maps an AJV keyword to the shared ERROR_TYPE category for the response.
 function toErrorType(error) {
@@ -61,7 +64,7 @@ function toDetail(error) {
   }
 }
 
-export const jsonSchemaValidator = (schemaId) => (value) => {
+export const jsonSchemaRequestValidator = (schemaId) => (value) => {
   if (validate(schemaId, value)) {
     return value
   }
@@ -71,5 +74,21 @@ export const jsonSchemaValidator = (schemaId) => (value) => {
   throw boomError
 }
 
-export const jsonSchemaValidatorFor = (version) => (name) =>
-  jsonSchemaValidator(`${version}/${name}.schema.json`)
+export const jsonSchemaRequestValidatorFor = (version) => (name) =>
+  jsonSchemaRequestValidator(`${version}/${name}.schema.json`)
+
+// For `options.response.status[...]`. A mismatch is our bug, not the
+// caller's: Hapi turns the throw into a generic 500, so the ajv errors are
+// logged here (Hapi's own request log doesn't reliably reach pino) and never
+// sent to the client.
+export const jsonSchemaResponseValidator = (schemaId) => (value) => {
+  if (validate(schemaId, value)) {
+    return value
+  }
+  const errors = getErrors(schemaId)
+  logger.error({ schemaId, errors }, 'Response failed schema validation')
+  throw new Error(`Response does not match ${schemaId}`)
+}
+
+export const jsonSchemaResponseValidatorFor = (version) => (name) =>
+  jsonSchemaResponseValidator(`${version}/${name}.schema.json`)

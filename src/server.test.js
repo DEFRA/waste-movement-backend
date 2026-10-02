@@ -65,4 +65,30 @@ describe('Server', () => {
       }
     })
   })
+
+  describe('response contracts', () => {
+    const isBetaRoute = (route) => /^\/beta-\d+\//.test(route.path)
+
+    it('declares a 201 response schema on every beta route', () => {
+      const betaRoutes = server.table().filter(isBetaRoute)
+
+      expect(betaRoutes).toHaveLength(10)
+      for (const route of betaRoutes) {
+        expect({
+          route: `${route.method} ${route.path}`,
+          validator: typeof route.settings.response?.status?.[201]
+        }).toEqual({
+          route: `${route.method} ${route.path}`,
+          validator: 'function'
+        })
+      }
+    })
+
+    // Beta response validation is declared per route. Some legacy routes
+    // (health, bulk) carry their own Joi response schemas, so the guard is on
+    // the server-wide default rather than on every non-beta route.
+    it('sets no server-wide response schema default', () => {
+      expect(server.settings.routes?.response?.status).toBeUndefined()
+    })
+  })
 })
