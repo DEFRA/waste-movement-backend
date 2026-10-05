@@ -32,7 +32,14 @@ function collectSchemaFiles(dir) {
   })
 }
 
-const ajv = new Ajv2020({ allErrors: true, strict: true })
+// allowUnionTypes: strict mode's strictTypes otherwise rejects a
+// `type: [object, 'null']` union, which the response schemas port verbatim
+// from the OpenAPI spec (recordCollectionResponse's always-null `data`).
+const ajv = new Ajv2020({
+  allErrors: true,
+  strict: true,
+  allowUnionTypes: true
+})
 addFormats(ajv, ['email', 'uuid'])
 
 for (const file of collectSchemaFiles(schemaRoot)) {

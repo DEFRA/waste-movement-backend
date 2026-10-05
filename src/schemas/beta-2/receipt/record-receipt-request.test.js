@@ -6,32 +6,26 @@ import {
 } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
-  'beta-2/collection/create-collection.schema.json'
+  'beta-2/receipt/record-receipt-request.schema.json'
 )
 
-describe('create-collection schema: beta-2', () => {
+describe('record-receipt-request schema', () => {
   const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
 
-  test('accepts a payload with only an apiCode', () => {
+  test('accepts a valid payload', () => {
     expect(validateAjv({ apiCode }).valid).toBe(true)
   })
 
   test('apiCode is required', () => {
-    const payload = {}
-    expect(validateAjv(payload).valid).toBe(false)
+    expect(validateAjv({}).valid).toBe(false)
   })
 
   test('rejects a malformed apiCode', () => {
-    const payload = { apiCode: 'not-a-uuid' }
-    expect(validateAjv(payload).valid).toBe(false)
+    expect(validateAjv({ apiCode: 'not-a-uuid' }).valid).toBe(false)
   })
 
   test('rejects an additional property beyond the declared ones', () => {
-    const payload = {
-      apiCode,
-      extra: 'not allowed'
-    }
-    expect(validateAjv(payload).valid).toBe(false)
+    expect(validateAjv({ apiCode, extra: 'not allowed' }).valid).toBe(false)
   })
 
   describe('brokerOrDealer', () => {
@@ -71,6 +65,14 @@ describe('create-collection schema: beta-2', () => {
         supportingReferences: [supportingReference]
       }
       expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('rejects a payload whose supportingReferences is invalid', () => {
+      const payload = {
+        apiCode,
+        supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
+      }
+      expect(validateAjv(payload).valid).toBe(false)
     })
   })
 })

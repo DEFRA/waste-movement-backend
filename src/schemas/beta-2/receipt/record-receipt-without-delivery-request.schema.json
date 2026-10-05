@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Record receipt without delivery",
-  "description": "Payload for POST /beta-1/receipts.",
+  "title": "Record receipt without delivery request",
+  "description": "Payload for POST /beta-2/receipts.",
   "type": "object",
   "properties": {
     "apiCode": {
@@ -17,6 +17,12 @@
       "examples": [
         "No delivery was recorded prior to receipt; waste received directly from the producer."
       ]
+    },
+    "brokerOrDealer": {
+      "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json"
+    },
+    "supportingReferences": {
+      "$ref": "../common/supporting-references.schema.json"
     }
   },
   "required": ["apiCode", "reason"],

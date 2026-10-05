@@ -41,7 +41,7 @@ describe('Feature: Recording special handling requirements on a Movement', () =>
   // Coverage below isn't called out by any scenario in the feature file.
   // "A Movement is successfully created without special handling requirements"
   // is about the field being optional, so it is pinned on the payload instead,
-  // in creation/create-movement.test.js.
+  // in creation/create-movement-request.test.js.
   // -------------------------------------------------------------------------
   describe('Additional coverage: Recording special handling requirements', () => {
     test('rejects an empty string, because absent requirements are recorded by omitting the field', () => {

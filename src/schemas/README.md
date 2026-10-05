@@ -1,6 +1,6 @@
 # Schemas
 
-Every `beta-` request payload is defined **once**, as a [JSON Schema](https://json-schema.org/)
+Every `beta-` request payload, and every `beta-` 201 response body, is defined **once**, as a [JSON Schema](https://json-schema.org/)
 file. That file is the source of truth: the running service validates against it directly, and
 everything else about the payload — the OpenAPI spec, the developer documentation, eventually
 the business-rules list we share with regulators — is generated from it rather than written out
@@ -92,6 +92,19 @@ deliberately moving away from.
 Give every schema and every property a `description`. It's prose next to the rule it describes,
 and it's what generated documentation is built from.
 
+### Whole bodies are named after their route
+
+A schema for a whole request or response body is named after the route file it belongs to, with
+a `-request` or `-response` suffix — `routes/beta-2/create-collection.js` validates against
+`collection/create-collection-request.schema.json` and
+`collection/create-collection-response.schema.json`. Every route has exactly one pair, so a
+route's whole contract can be found from its file name. Two routes that return the same shape
+still get a file each; the second is a `title`, a `description` and a `$ref` to the first
+(`record-receipt-without-delivery-response` → `record-receipt-response`).
+
+Only whole bodies get a suffix. Resources they're built from keep resource names (`producer`,
+`delivery-item`, `movement-id`), and path params are `-params` (`delivery-id-params`).
+
 ### Schema + test is one unit
 
 A schema never ships alone. The test beside it pins _why_ the rules are what they are, one case
@@ -108,18 +121,50 @@ line, the schema is changed until the test passes. A rule that has been agreed s
 because removing it breaks a named test. **Don't add a schema without a test, and don't change a
 schema's rules without touching its test.**
 
+### Response schemas: 201 only, `data` only
+
+Each beta route also validates its **201** body, via Hapi's `options.response.status[201]`
+pointed at the route's `<route>-response.schema.json` (`jsonSchemaResponseValidatorFor` in `validate/`). As with
+requests, these files are the source of truth: `digital-waste-tracking-api-docs`'
+`openapi-beta-2.yaml` `$refs` them rather than defining responses itself, so the published
+contract and the runtime check are the same file.
+
+- **`data` only.** The spec's `validation` envelope (`warnings` of `issue`s) is **not
+  modelled** — whether responses keep it is undecided, and it may be removed. Routes still
+  return `validation: { warnings: [] }`; it passes as an unmodelled property. Don't add it to a
+  response schema until that's decided.
+- **201 only.** Error responses are Boom errors, which Hapi doesn't validate, and they are
+  problem details, not a modelled body.
+- **A mismatch is a 500**, with the generic internal-server-error problem details — no ajv
+  internals reach the client. The validator logs `{ schemaId, errors }` at error level first, so
+  the failure is alertable. The write has already happened by then: a mismatch is a contract
+  bug for tests to catch, not a normal path.
+- **No `additionalProperties`.** Response objects are left open: extra fields pass, missing /
+  wrongly-typed / out-of-enum fields fail. Unlike request payloads, don't add
+  `"additionalProperties": false` to a response schema — closing one means any field the service
+  adds becomes a 500 until the schema catches up.
+- **beta-1 is self-contained.** Its response files inline the ids, `wasteType` and
+  `deliveryItem` as `$defs` rather than `$ref`-ing `beta-2/common/`, so changing beta-2 can't
+  change beta-1's contract.
+- **Legacy routes are untouched.** Response validation is declared per beta route; there is no
+  server-wide default. `server.test.js` fails if a beta route ships without a 201 schema.
+
 ## Layout
 
 ```
 src/schemas/
   validate/          loads every *.schema.json and adapts it to a Hapi route validator
-  beta-1/            one flat file per request shape (tests in beta-1.test.js)
+  beta-1/            flat: a <route>-request / <route>-response pair per route, plus
+                     delivery-id-params (tests in beta-1.test.js)
   beta-2/
-    common/          shared resources — address, contact-details, producer/
-    creation/        whole request payloads, $ref-ing the resources above
-    collection/      collection payloads
-    delivery/        delivery payloads
-    receipt/         receipt payloads (and the deliveryId path params)
+    common/          shared resources — address, contact-details, producer/, broker-or-dealer/,
+                     and the ids and wasteType that responses are built from
+    creation/        create-movement-request / -response
+    collection/      create-collection-request / -response
+    delivery/        record-delivery-request / -response, and delivery-item
+    receipt/         record-receipt-request / -response,
+                     record-receipt-without-delivery-request / -response,
+                     and the deliveryId path params
 ```
 
 `beta-2`'s categories (`common/`, `creation/`, `collection/`, `delivery/`, `receipt/`)
@@ -127,7 +172,7 @@ mirror `digital-waste-tracking-api-docs`, which is the sandbox these resources a
 Keeping the trees identical is what lets a resource move across unchanged.
 
 **`beta-1` vs `beta-2`**: same mechanism, different shape. beta-1's payloads are trivial (an
-`apiCode`, a list of ids, a `reason`) so they stay flat, with one file per request shape; it was
+`apiCode`, a list of ids, a `reason`) so they stay flat, with one file per body; it was
 converted off Joi so both versions run one mechanism, not because it's where modelling happens.
 **New work goes in `beta-2`.**
 
@@ -143,8 +188,18 @@ no `$id`, a `title` and `description`, a `description` on every property, and
 no registration step — the loader walks the directory, and the file's path becomes the key routes
 validate against.
 
-**Adding a request shape** — schema under the right category, then point the route's
-`validate.payload` at it the way the existing beta routes do. No `tags`, no `hapi-swagger` block.
+**Adding a route** — add `<category>/<route>-request.schema.json` and
+`<category>/<route>-response.schema.json`, named after the new route file, each with its test.
+Point the route's `validate.payload` and `response.status[201]` at them the way the existing beta
+routes do. No `tags`, no `hapi-swagger` block.
+
+**Adding or changing a response** — the change starts here, exactly like a request: edit or
+create `<category>/<route>-response.schema.json` (use `examples: [...]`, not OpenAPI's `example`,
+which ajv's strict mode rejects), update its test, point the route's `response.status[201]` at
+it, and add a route test that makes the handler return a non-conforming body and expects a 500.
+`openapi-beta-2.yaml` then picks it up by `$ref` — sync the schemas into
+`digital-waste-tracking-api-docs` and point the spec at the file; don't redefine the response
+there.
 
 Run the full `npm test` rather than an ad-hoc Jest invocation — the suites share one in-memory
 MongoDB and need the flags `npm test` already passes.

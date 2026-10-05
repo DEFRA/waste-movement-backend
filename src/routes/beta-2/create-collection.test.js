@@ -7,6 +7,7 @@ import {
   userBasicAuthTest1
 } from '../../test/data/basic-auth.js'
 import { createServer } from '../../server.js'
+import { breakNextResponse } from '../../test/break-next-response.js'
 import { organisationHeaders } from '../../test/data/organisation-headers.js'
 import {
   brokerOrDealerEntry,
@@ -214,6 +215,63 @@ describe('collection Route Tests version: beta-2', () => {
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
+  it('creates a collection when specialHandlingRequirements are provided', async () => {
+    const payload = {
+      apiCode,
+      specialHandlingRequirements: 'Handle with care and keep upright.'
+    }
+    const getMovementRecordSpy = jest
+      .spyOn(movementService, 'getMovementRecord')
+      .mockResolvedValue({ id: goodMovementId })
+    const url = `/${endpointVersion}/movements/${goodMovementId}/collection`
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload,
+      headers: {
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+    expect(result).toEqual({
+      data: null,
+      validation: { warnings: [] }
+    })
+    expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns an error when specialHandlingRequirements is too long', async () => {
+    const invalidPayload = {
+      apiCode,
+      specialHandlingRequirements: 'A'.repeat(501)
+    }
+    const getMovementRecordSpy = jest.spyOn(
+      movementService,
+      'getMovementRecord'
+    )
+    const url = `/${endpointVersion}/movements/${goodMovementId}/collection`
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: invalidPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        pointer: '/specialHandlingRequirements'
+      })
+    )
+    expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
+  })
+
   // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only on
   // the organisation forwarded by the external API.
   it('rejects when no organisation was forwarded (unknown or disabled API code)', async () => {
@@ -355,5 +413,31 @@ describe('collection Route Tests version: beta-2', () => {
       requestId: traceId
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
+  })
+
+  it('returns a 500 when the response body does not match the response schema', async () => {
+    jest
+      .spyOn(movementService, 'getMovementRecord')
+      .mockResolvedValueOnce({ id: goodMovementId })
+    breakNextResponse(server, (body) => ({ ...body, data: 'not-an-object' }))
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements/${goodMovementId}/collection`,
+      payload: goodPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+    expect(result).toEqual({
+      instance: `/${endpointVersion}/movements/${goodMovementId}/collection`,
+      title: 'Internal Server Error',
+      type: `${expectedTypeBase}internal-server-error`,
+      requestId: traceId
+    })
   })
 })
