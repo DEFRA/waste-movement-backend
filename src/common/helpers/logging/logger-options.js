@@ -44,8 +44,6 @@ export const loggerOptions = {
       mixinValues.tenant = { id: xDwtClientId }
     }
     if (clientName) {
-      // Alongside tenant.id, as the external API logs it. Only set on beta
-      // routes.
       mixinValues.tenant = { ...mixinValues.tenant, message: clientName }
     }
     if (organisationId) {
