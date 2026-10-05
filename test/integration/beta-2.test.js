@@ -346,6 +346,110 @@ describe('beta-2', () => {
     })
   })
 
+  it('POST /beta-2/movements/{movementId}/collection creates a collection with specialHandlingRequirements', async () => {
+    const movementId = await createMovement()
+
+    const { status, body, headers } = await betaHttpRequest(
+      testService.baseUrl,
+      `/beta-2/movements/${movementId}/collection`,
+      {
+        method: 'POST',
+        body: {
+          apiCode: apiCode1,
+          specialHandlingRequirements: 'Handle with care and keep upright.'
+        }
+      }
+    )
+
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
+    expect(body).toEqual({
+      data: null,
+      validation: { warnings: [] }
+    })
+    expectStandardHeaders(headers)
+  })
+
+  it('POST /beta-2/deliveries records a delivery with supportingReferences', async () => {
+    const movementId = await createMovement()
+
+    const { status, body, headers } = await betaHttpRequest(
+      testService.baseUrl,
+      '/beta-2/deliveries',
+      {
+        method: 'POST',
+        body: {
+          apiCode: apiCode1,
+          movementIds: [movementId],
+          supportingReferences: [supportingReference]
+        }
+      }
+    )
+
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
+    expect(body.data.deliveries[0].movementIds).toEqual([movementId])
+    expectStandardHeaders(headers)
+  })
+
+  it('POST /beta-2/deliveries/{deliveryId}/receipt records a receipt with a brokerOrDealer and supportingReferences', async () => {
+    const movementId = await createMovement()
+    const createDeliveryRes = await betaHttpRequest(
+      testService.baseUrl,
+      '/beta-2/deliveries',
+      {
+        method: 'POST',
+        body: { apiCode: apiCode1, movementIds: [movementId] }
+      }
+    )
+    const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
+
+    const { status, body, headers } = await betaHttpRequest(
+      testService.baseUrl,
+      `/beta-2/deliveries/${deliveryId}/receipt`,
+      {
+        method: 'POST',
+        body: {
+          apiCode: apiCode1,
+          brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
+          supportingReferences: [supportingReference]
+        }
+      }
+    )
+
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
+    expect(body).toEqual({
+      data: { deliveryId },
+      validation: { warnings: [] }
+    })
+    expectStandardHeaders(headers)
+  })
+
+  it('POST /beta-2/receipts records a receipt without a delivery with a brokerOrDealer and supportingReferences', async () => {
+    const { status, body, headers } = await betaHttpRequest(
+      testService.baseUrl,
+      '/beta-2/receipts',
+      {
+        method: 'POST',
+        body: {
+          apiCode: apiCode1,
+          reason: 'No prior movement trail',
+          brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
+          supportingReferences: [supportingReference]
+        }
+      }
+    )
+
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
+    expect(body).toEqual({
+      data: { deliveryId: expect.any(String) },
+      validation: { warnings: [] }
+    })
+    expectStandardHeaders(headers)
+  })
+
   describe('beta-2 specific error cases', () => {
     it('rejects collection creation for non-existent movement', async () => {
       const endpoint = '/beta-2/movements/NONEXISTENT/collection'
