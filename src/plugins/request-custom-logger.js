@@ -5,10 +5,24 @@ import { ORGANISATION_ID_HEADER } from '../common/helpers/get-organisation-id.js
 const asyncLocalStorage = new AsyncLocalStorage()
 
 /**
+ * Header the external API uses to forward the caller's client name on beta
+ * routes, URI-encoded.
+ */
+const CLIENT_NAME_HEADER = 'x-dwt-client-name'
+
+const isBetaRoute = (request) => request.path.startsWith('/beta-')
+
+/**
  * Return's the request's client id, if set else null.
  * @return {string|null}
  */
 const getClientId = () => asyncLocalStorage.getStore()?.get('clientId')
+/**
+ * Return's the request's client name, if set else null. Only set on beta
+ * routes.
+ * @return {string|null}
+ */
+const getClientName = () => asyncLocalStorage.getStore()?.get('clientName')
 /**
  * Return's the request's organisation id, if set else null.
  * @return {string|null}
@@ -17,14 +31,23 @@ const getOrganisationId = () =>
   asyncLocalStorage.getStore()?.get('organisationId')
 
 /**
- * Wrap the request lifecycle in an asyncLocalStorage run call. This allows the
- * passed store to be available during the request lifecycle.
+ * Wrap a request cycle in an asyncLocalStorage run call. This allows the
+ * passed store to be available during that part of the request.
  * @param { Request } request
+ * @param { '_lifecycle'|'_postCycle'|'_finalize' } cycle
  * @param { Map<string, string> } store
  */
-function wrapLifecycle(request, store) {
-  const requestLifecycle = request._lifecycle.bind(request)
-  request._lifecycle = () => asyncLocalStorage.run(store, requestLifecycle)
+function wrapCycle(request, cycle, store) {
+  const requestCycle = request[cycle].bind(request)
+  request[cycle] = () => asyncLocalStorage.run(store, requestCycle)
+}
+
+const decodeClientName = (value) => {
+  try {
+    return value ? decodeURIComponent(value) : undefined
+  } catch {
+    return undefined
+  }
 }
 
 /**
@@ -52,7 +75,22 @@ const requestCustomLogger = {
             store.set('organisationId', forwardedOrganisationId)
           }
 
-          wrapLifecycle(request, store)
+          wrapCycle(request, '_lifecycle', store)
+
+          // Beta routes only, so RoW logging is unchanged:
+          // - the client name the external API forwards, logged with tenant.id
+          // - _postCycle (onPreResponse, e.g. "Request error") and _finalize
+          //   (hapi-pino's "request completed" line) also see the store
+          if (isBetaRoute(request)) {
+            const clientName = decodeClientName(
+              request.headers[CLIENT_NAME_HEADER]
+            )
+            if (clientName) {
+              store.set('clientName', clientName)
+            }
+            wrapCycle(request, '_postCycle', store)
+            wrapCycle(request, '_finalize', store)
+          }
           return h.continue
         })
 
@@ -91,4 +129,10 @@ const requestCustomLogger = {
   }
 }
 
-export { requestCustomLogger, getClientId, getOrganisationId }
+export {
+  requestCustomLogger,
+  getClientId,
+  getClientName,
+  getOrganisationId,
+  CLIENT_NAME_HEADER
+}

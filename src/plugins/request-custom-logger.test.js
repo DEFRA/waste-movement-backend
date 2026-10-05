@@ -1,7 +1,9 @@
 import Hapi from '@hapi/hapi'
 import { config } from '../config.js'
 import {
+  CLIENT_NAME_HEADER,
   getClientId,
+  getClientName,
   getOrganisationId,
   requestCustomLogger
 } from './request-custom-logger.js'
@@ -32,14 +34,13 @@ describe('requestCustomLogger', () => {
       return h.continue
     })
 
-    server.route({
-      method: 'POST',
-      path: '/test',
-      handler: () => ({
-        organisationId: getOrganisationId() ?? null,
-        clientId: getClientId() ?? null
-      })
+    const handler = () => ({
+      organisationId: getOrganisationId() ?? null,
+      clientId: getClientId() ?? null,
+      clientName: getClientName() ?? null
     })
+    server.route({ method: 'POST', path: '/test', handler })
+    server.route({ method: 'POST', path: '/beta-1/test', handler })
   })
 
   afterAll(async () => {
@@ -103,6 +104,35 @@ describe('requestCustomLogger', () => {
       const { result } = await inject({ movement: { apiCode: 'unknown' } })
 
       expect(result.organisationId).toBeNull()
+    })
+  })
+
+  describe('client name', () => {
+    const injectAt = (url, headers) =>
+      server.inject({ method: 'POST', url, payload: {}, headers })
+
+    it('stores the client name forwarded by the external API on beta routes, decoded', async () => {
+      const { result } = await injectAt('/beta-1/test', {
+        [CLIENT_NAME_HEADER]: encodeURIComponent('Débora & Co')
+      })
+
+      expect(result.clientName).toEqual('Débora & Co')
+    })
+
+    it('ignores a malformed client name header', async () => {
+      const { result } = await injectAt('/beta-1/test', {
+        [CLIENT_NAME_HEADER]: '%E0%A4%A'
+      })
+
+      expect(result.clientName).toBeNull()
+    })
+
+    it('ignores the client name header on receipt of waste routes (unchanged)', async () => {
+      const { result } = await injectAt('/test', {
+        [CLIENT_NAME_HEADER]: 'Acme%20Ltd'
+      })
+
+      expect(result.clientName).toBeNull()
     })
   })
 })
