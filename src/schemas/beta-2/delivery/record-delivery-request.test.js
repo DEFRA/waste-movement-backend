@@ -1,10 +1,12 @@
-import { apiCode, validatorFor } from '../test-helpers.js'
+import { apiCode, supportingReference, validatorFor } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
   'beta-2/delivery/record-delivery-request.schema.json'
 )
 
 describe('record-delivery-request schema', () => {
+  const movementIds = ['25HRA0B2']
+
   test('accepts a valid payload', () => {
     expect(validateAjv({ apiCode, movementIds: ['25HRA0B2'] }).valid).toBe(true)
   })
@@ -38,5 +40,33 @@ describe('record-delivery-request schema', () => {
       validateAjv({ apiCode, movementIds: ['25HRA0B2'], extra: 'not allowed' })
         .valid
     ).toBe(false)
+  })
+
+  // supportingReferences' own rules are covered by
+  // supporting-references.test.js — these confirm it's optional and that the
+  // $ref wiring is live.
+  describe('supportingReferences', () => {
+    test('is optional', () => {
+      const payload = { apiCode, movementIds }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('accepts valid supportingReferences', () => {
+      const payload = {
+        apiCode,
+        movementIds,
+        supportingReferences: [supportingReference]
+      }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('rejects a payload whose supportingReferences is invalid', () => {
+      const payload = {
+        apiCode,
+        movementIds,
+        supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
+      }
+      expect(validateAjv(payload).valid).toBe(false)
+    })
   })
 })
