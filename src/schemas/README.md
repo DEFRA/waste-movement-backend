@@ -30,9 +30,10 @@ Every schema declares `"$schema": "https://json-schema.org/draft/2020-12/schema"
 `$ref` these exact files, so the published contract is the same artefact the validator runs — no
 conversion step in between.
 
-**OpenAPI 3.0 can't express what these schemas need.** `const`, `propertyNames` and
-boolean-`false` subschemas are what encode rules like "Household forbids these fields" and
-"exactly one of `authorisationNumber` / `reasonForNoAuthorisationNumber`". A 3.0 spec would
+**OpenAPI 3.0 can't express what these schemas need.** `const` and `propertyNames` are what
+encode rules like "Household forbids these fields" and "exactly one of `authorisationNumber` /
+`reasonForNoAuthorisationNumber`" (with the `oneOf` branches described under
+[No boolean subschemas](#no-boolean-subschemas)). A 3.0 spec would
 describe a looser contract than the one actually enforced. 3.1 is required, not preferred.
 
 `hapi-swagger` is not part of this — it can't consume JSON Schema and can't emit 3.1. It serves
@@ -70,6 +71,30 @@ SIC code and authorisation number are all long inline `pattern`s.
 The consequence to know: **these patterns are owned here and have already diverged from
 `waste-movement-utils`' Phase-1 validators.** That divergence is accepted, not a bug to fix by
 reaching back into utils.
+
+### No boolean subschemas
+
+To forbid a field in one branch of a `oneOf` — "exactly one of `authorisationNumber` /
+`reasonForNoAuthorisationNumber`", "no `items` when `isPresent` is false" — write an explicit
+never-matching schema with a description saying why, not a bare `false`:
+
+```json
+"reasonForNoAuthorisationNumber": {
+  "not": {},
+  "description": "Not allowed when authorisationNumber is provided."
+}
+```
+
+`"field": false` means the same thing and is valid 2020-12 and OpenAPI 3.1, but tools built on
+[OpenAPIKit](https://github.com/mattpolzin/OpenAPIKit) — Apple's `swift-openapi-generator`,
+OpenAPI Viewer for macOS — can't decode a boolean where they expect a schema object, and reject
+the **whole** published spec, since it `$ref`s these files. `{ "not": {} }` validates
+identically, so no payload is accepted or rejected differently, and `validate/hapi-validator.js`
+maps its `not` error to `NotAllowed` with the field's pointer, as callers already get.
+
+`"additionalProperties": false` is the exception and stays: it's how a whole payload is closed,
+and those tools accept a boolean there. `conventions.test.js` fails on any other boolean
+subschema.
 
 ### Granular: one small file per resource
 
