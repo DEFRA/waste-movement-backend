@@ -59,7 +59,10 @@ export function auditLogger({
       return true
     }
 
-    audit({ metadata: { type, traceId, version }, data })
+    audit({
+      metadata: { type, traceId, version },
+      data: removeMissingDataAgreementData(data)
+    })
 
     logger.info(
       {
@@ -94,4 +97,32 @@ export function auditLogger({
   }
 
   return false
+}
+
+/**
+ * Removes software provider name from data.
+ *
+ * This is used while the data agreement requirements exclude the software provider name
+ * from audit records. The original data object is not mutated.
+ *
+ * @param {Object} data data to prepare for auditing
+ * @returns {Object} data with softwareProvider name removed from the softwareProvider object
+ */
+function removeMissingDataAgreementData(data) {
+  if (!data?.receipt?.movement?.softwareProvider) {
+    return data
+  }
+
+  const { name: _, ...clientNoName } = data.receipt.movement.softwareProvider
+
+  return {
+    ...data,
+    receipt: {
+      ...data.receipt,
+      movement: {
+        ...data.receipt.movement,
+        softwareProvider: clientNoName
+      }
+    }
+  }
 }

@@ -8,7 +8,9 @@ const asyncLocalStorage = new AsyncLocalStorage()
  * Return's the request's client id, if set else null.
  * @return {string|null}
  */
-const getClientId = () => asyncLocalStorage.getStore()?.get('clientId')
+const getClientId = () => asyncLocalStorage.getStore()?.get('clientId') ?? null
+const getClientName = () =>
+  asyncLocalStorage.getStore()?.get('clientName') ?? null
 /**
  * Return's the request's organisation id, if set else null.
  * @return {string|null}
@@ -36,59 +38,56 @@ const requestCustomLogger = {
     version: '0.1.0',
     once: true,
     register(server, options) {
-      if (options.clientId) {
-        server.ext('onRequest', (request, h) => {
-          const store = new Map()
-          const clientIdHeader = options?.clientId
-          const xDwtClientId = request.headers[clientIdHeader]
-          store.set('clientId', xDwtClientId)
+      server.ext('onRequest', (request, h) => {
+        const store = new Map()
+        // Beta routes: the organisation the external API resolved for the
+        // apiCode. Set here, not onPreHandler, so lines logged before the
+        // handler (e.g. validation errors) carry it too.
+        const forwardedOrganisationId = request.headers[ORGANISATION_ID_HEADER]
+        if (forwardedOrganisationId) {
+          store.set('organisationId', forwardedOrganisationId)
+        }
 
-          // Beta routes: the organisation the external API resolved for the
-          // apiCode. Set here, not onPreHandler, so lines logged before the
-          // handler (e.g. validation errors) carry it too.
-          const forwardedOrganisationId =
-            request.headers[ORGANISATION_ID_HEADER]
-          if (forwardedOrganisationId) {
-            store.set('organisationId', forwardedOrganisationId)
-          }
+        request.app.metaStore = store
+        wrapLifecycle(request, store)
+        return h.continue
+      })
 
-          wrapLifecycle(request, store)
+      server.ext('onPreHandler', (request, h) => {
+        const store = request.app.metaStore
+
+        if (!store) {
           return h.continue
-        })
+        }
 
-        server.ext('onPreHandler', (request, h) => {
-          const store = asyncLocalStorage.getStore()
+        const softwareProvider = request.payload?.movement?.softwareProvider
+        if (softwareProvider) {
+          store.set('clientId', softwareProvider.id)
+          store.set('clientName', softwareProvider.name)
+        }
 
-          if (!store) {
-            return h.continue
+        const organisationId =
+          request.payload?.movement?.submittingOrganisation
+            ?.defraCustomerOrganisationId
+
+        if (organisationId == null) {
+          const apiCode = request.payload?.movement?.apiCode
+          const orgApiCodes = config.get('orgApiCodes')
+
+          const orgId = (orgApiCodes || []).find(
+            (orgApiCode) => orgApiCode.apiCode === apiCode
+          )?.orgId
+
+          if (orgId) {
+            store.set('organisationId', orgId)
           }
-
-          const organisationId =
-            request.payload?.movement?.submittingOrganisation
-              ?.defraCustomerOrganisationId
-
-          if (organisationId == null) {
-            const apiCode = request.payload?.movement?.apiCode
-            const orgApiCodes = config.get('orgApiCodes')
-
-            const orgId = (orgApiCodes || []).find(
-              (orgApiCode) => orgApiCode.apiCode === apiCode
-            )?.orgId
-
-            if (orgId) {
-              store.set('organisationId', orgId)
-            }
-          } else {
-            store.set('organisationId', organisationId)
-          }
-          return h.continue
-        })
-      }
+        } else {
+          store.set('organisationId', organisationId)
+        }
+        return h.continue
+      })
     }
-  },
-  options: {
-    clientId: 'x-dwt-client-id'
   }
 }
 
-export { requestCustomLogger, getClientId, getOrganisationId }
+export { requestCustomLogger, getClientId, getClientName, getOrganisationId }

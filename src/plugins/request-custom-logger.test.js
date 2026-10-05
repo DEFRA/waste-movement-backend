@@ -2,6 +2,7 @@ import Hapi from '@hapi/hapi'
 import { config } from '../config.js'
 import {
   getClientId,
+  getClientName,
   getOrganisationId,
   requestCustomLogger
 } from './request-custom-logger.js'
@@ -37,7 +38,8 @@ describe('requestCustomLogger', () => {
       path: '/test',
       handler: () => ({
         organisationId: getOrganisationId() ?? null,
-        clientId: getClientId() ?? null
+        clientId: getClientId() ?? null,
+        clientName: getClientName()
       })
     })
   })
@@ -53,10 +55,13 @@ describe('requestCustomLogger', () => {
   const inject = (payload, headers = {}) =>
     server.inject({ method: 'POST', url: '/test', payload, headers })
 
-  it('stores the client id from x-dwt-client-id', async () => {
-    const { result } = await inject({}, { 'x-dwt-client-id': 'client-123' })
+  it('stores the client details from movement', async () => {
+    const { result } = await inject({
+      movement: { softwareProvider: { id: 'client-123', name: 'Client 123' } }
+    })
 
     expect(result.clientId).toEqual('client-123')
+    expect(result.clientName).toEqual('Client 123')
   })
 
   describe('beta requests', () => {

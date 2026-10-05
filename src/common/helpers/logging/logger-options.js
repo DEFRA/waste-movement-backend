@@ -3,6 +3,7 @@ import { config } from '../../../config.js'
 import { getTraceId } from '@defra/hapi-tracing'
 import {
   getClientId,
+  getClientName,
   getOrganisationId
 } from '../../../plugins/request-custom-logger.js'
 
@@ -31,20 +32,24 @@ export const loggerOptions = {
   ...formatters[logConfig.format],
   nesting: true,
   mixin() {
-    const mixinValues = {}
     const traceId = getTraceId()
-    const xDwtClientId = getClientId()
     const organisationId = getOrganisationId()
-    if (traceId) {
-      mixinValues.trace = { id: traceId }
-    }
-    if (xDwtClientId) {
-      mixinValues.tenant = { id: xDwtClientId }
-    }
-    if (organisationId) {
-      mixinValues.event = { reference: organisationId }
-    }
+    const clientId = getClientId()
+    const clientName = getClientName()
 
-    return mixinValues
+    return {
+      ...(traceId && {
+        trace: { id: traceId }
+      }),
+      ...(organisationId && {
+        event: { reference: organisationId }
+      }),
+      ...((clientId || clientName) && {
+        tenant: {
+          ...(clientId && { id: clientId }),
+          ...(clientName && { message: clientName })
+        }
+      })
+    }
   }
 }
