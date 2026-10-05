@@ -58,6 +58,21 @@ export const brokerOrDealerEntry = {
   }
 }
 
+export const carrier = {
+  organisationName: 'Carrier Demo Ltd',
+  registrationNumber: 'CBDU123456',
+  meansOfTransport: 'Road',
+  vehicleRegistration: 'AB12 CDE',
+  contactDetails: {
+    emailAddress: 'carrier@example.com',
+    phoneNumber: '01234567890'
+  },
+  address: {
+    fullAddress: '4 Carrier Lane, Test City',
+    postcode: 'TE1 4CR'
+  }
+}
+
 export const supportingReference = {
   label: 'PO Number',
   reference: 'PO-123456'
