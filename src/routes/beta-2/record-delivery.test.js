@@ -11,6 +11,7 @@ import {
   forwardedOrganisationId,
   organisationHeaders
 } from '../../test/data/organisation-headers.js'
+import { supportingReference } from '../../schemas/beta-2/test-helpers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -109,6 +110,47 @@ describe('POST /beta-2/deliveries', () => {
       wasteType: 'NON_HAZARDOUS',
       orgId: forwardedOrganisationId
     })
+  })
+
+  it('records a delivery when supportingReferences are provided', async () => {
+    await server.db
+      .collection('movements')
+      .insertOne({ movementId: movementId1 })
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: {
+        apiCode: apiCode1,
+        movementIds: [movementId1],
+        supportingReferences: [supportingReference]
+      },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+    expect(result.data.deliveries).toHaveLength(1)
+  })
+
+  it('returns a 400 when a supportingReference has an unrecognised label', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: {
+        apiCode: apiCode1,
+        movementIds: [movementId1],
+        supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
+      },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        errorType: 'InvalidValue',
+        pointer: '/supportingReferences/0/label'
+      })
+    )
   })
 
   it('echoes the inbound x-cdp-request-id as x-request-id', async () => {

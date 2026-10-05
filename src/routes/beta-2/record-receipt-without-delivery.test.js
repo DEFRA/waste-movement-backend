@@ -11,6 +11,10 @@ import {
   forwardedOrganisationId,
   organisationHeaders
 } from '../../test/data/organisation-headers.js'
+import {
+  brokerOrDealerEntry,
+  supportingReference
+} from '../../schemas/beta-2/test-helpers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 const reason =
@@ -95,6 +99,67 @@ describe('POST /beta-2/receipts', () => {
       movementIds: [],
       orgId: forwardedOrganisationId
     })
+  })
+
+  it('acknowledges receipt when a brokerOrDealer and supportingReferences are provided', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: {
+        apiCode: apiCode1,
+        reason,
+        brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
+        supportingReferences: [supportingReference]
+      },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+    expect(result).toEqual({
+      data: { deliveryId: '25KMT4Z9' },
+      validation: { warnings: [] }
+    })
+  })
+
+  it('returns a 400 when a declared brokerOrDealer has no details', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: {
+        apiCode: apiCode1,
+        reason,
+        brokerOrDealer: { isPresent: true }
+      },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        pointer: '/brokerOrDealer/items'
+      })
+    )
+  })
+
+  it('returns a 400 when a supportingReference has an unrecognised label', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: {
+        apiCode: apiCode1,
+        reason,
+        supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
+      },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        errorType: 'InvalidValue',
+        pointer: '/supportingReferences/0/label'
+      })
+    )
   })
 
   it('echoes the inbound x-cdp-request-id as x-request-id', async () => {

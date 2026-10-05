@@ -73,4 +73,30 @@ describe('create-collection-request schema: beta-2', () => {
       expect(validateAjv(payload).valid).toBe(true)
     })
   })
+
+  // specialHandlingRequirements' own rules are covered by
+  // special-handling-requirements.test.js — these confirm it's optional and
+  // that the $ref wiring is live.
+  describe('specialHandlingRequirements', () => {
+    test('is optional', () => {
+      const payload = { apiCode, brokerOrDealer }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('accepts valid specialHandlingRequirements', () => {
+      const payload = {
+        apiCode,
+        specialHandlingRequirements: 'Handle with care and keep upright.'
+      }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('rejects a payload whose specialHandlingRequirements is invalid', () => {
+      const payload = {
+        apiCode,
+        specialHandlingRequirements: 'A'.repeat(501)
+      }
+      expect(validateAjv(payload).valid).toBe(false)
+    })
+  })
 })
