@@ -2,42 +2,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Create collection request",
   "description": "Payload for POST /beta-2/movements/{movementId}/collection.",
-  "examples": [
-    {
-      "apiCode": "25b14080-5e77-4f91-9957-2482a0cb8775",
-      "brokerOrDealer": {
-        "isPresent": true,
-        "items": [
-          {
-            "organisationName": "Broker Demo Ltd",
-            "registrationNumber": "CBDU654321",
-            "contactDetails": {
-              "emailAddress": "broker@example.com",
-              "phoneNumber": "01112223333"
-            },
-            "address": {
-              "fullAddress": "2 Broker Yard, Test City",
-              "postcode": "TE1 1ST"
-            }
-          }
-        ]
-      },
-      "supportingReferences": [
-        {
-          "label": "PO Number",
-          "reference": "PO-123456"
-        },
-        {
-          "label": "Job Number",
-          "reference": "CARRIER-JOB-001"
-        }
-      ],
-      "specialHandlingRequirements": "Handle with care and keep upright."
-    },
-    {
-      "apiCode": "25b14080-5e77-4f91-9957-2482a0cb8775"
-    }
-  ],
   "type": "object",
   "properties": {
     "apiCode": {

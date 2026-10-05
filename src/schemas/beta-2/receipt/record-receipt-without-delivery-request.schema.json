@@ -2,18 +2,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Record receipt without delivery request",
   "description": "Payload for POST /beta-2/receipts.",
-  "examples": [
-    {
-      "apiCode": "25b14080-5e77-4f91-9957-2482a0cb8775",
-      "reason": "No delivery was recorded prior to receipt; waste received directly from the producer.",
-      "supportingReferences": [
-        {
-          "label": "Weighbridge Number",
-          "reference": "WB-0042"
-        }
-      ]
-    }
-  ],
   "type": "object",
   "properties": {
     "apiCode": {
