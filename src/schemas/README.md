@@ -117,11 +117,40 @@ deliberately moving away from.
 Give every schema and every property a `description`. It's prose next to the rule it describes,
 and it's what generated documentation is built from.
 
-Give every beta-2 whole body (`-request`, `-response`, `-params`) a root-level `examples` array
-too — it's the sample payload the published spec renders. Swagger UI shows only the first entry,
-so put the fullest example first and simpler variants after it. ajv never checks `examples`, so
-`conventions.test.js` validates every root-level example against its own schema; a rule change
-that breaks an example fails there.
+### Examples: named, beside the body they illustrate
+
+Every beta-2 request and response body has a `<route>-request.examples.json` /
+`<route>-response.examples.json` beside its schema — a map of named
+[OpenAPI Example Objects](https://spec.openapis.org/oas/v3.1.0#example-object):
+
+```json
+{
+  "commercial": {
+    "summary": "Commercial producer, with …",
+    "value": { "apiCode": "…" }
+  },
+  "household": {
+    "summary": "Household producer, minimal",
+    "value": { "apiCode": "…" }
+  }
+}
+```
+
+They're a separate file because JSON Schema's own `examples` keyword is an unnamed list, and
+tools only offer a choice between _named_ examples: `openapi-beta-2.yaml` puts these under the
+media type's `examples` (`$ref`-ing each one by name), which gives a picker in Swagger UI and one
+saved example per entry when the spec is imported into Bruno or Postman. Referring to them by
+name rather than by position also means reordering can't silently swap which payload a name shows.
+
+- **Payloads live here, once.** The spec only points at them; don't copy one into it.
+- **A response's names match its request's.** API clients pair the request and response examples
+  that share a name, and produce every combination of the two when they don't.
+- **Every `value` must be valid.** ajv never checks examples, so `conventions.test.js` validates
+  each one against the schema beside it; a rule change that breaks an example fails there.
+
+Path params (`-params`) and shared resources have no body of their own, so they keep a root-level
+`examples` array, which `conventions.test.js` also checks. Swagger UI renders only its first entry,
+so put the fullest example first.
 
 ### Whole bodies are named after their route
 
@@ -190,7 +219,7 @@ src/schemas/
   beta-2/
     common/          shared resources — address, contact-details, producer/, broker-or-dealer/,
                      and the ids and wasteType that responses are built from
-    creation/        create-movement-request / -response
+    creation/        create-movement-request / -response (each with its .examples.json)
     collection/      create-collection-request / -response
     delivery/        record-delivery-request / -response, and delivery-item
     receipt/         record-receipt-request / -response,
@@ -220,13 +249,14 @@ no registration step — the loader walks the directory, and the file's path bec
 validate against.
 
 **Adding a route** — add `<category>/<route>-request.schema.json` and
-`<category>/<route>-response.schema.json`, named after the new route file, each with its test.
-Point the route's `validate.payload` and `response.status[201]` at them the way the existing beta
+`<category>/<route>-response.schema.json`, named after the new route file, each with its test
+and a matching `.examples.json` (same example names in both). Point the route's `validate.payload` and `response.status[201]` at them the way the existing beta
 routes do. No `tags`, no `hapi-swagger` block.
 
 **Adding or changing a response** — the change starts here, exactly like a request: edit or
-create `<category>/<route>-response.schema.json` (use `examples: [...]`, not OpenAPI's `example`,
-which ajv's strict mode rejects), update its test, point the route's `response.status[201]` at
+create `<category>/<route>-response.schema.json` (property-level examples go in `examples: [...]`,
+not OpenAPI's `example`, which ajv's strict mode rejects; whole-body ones go in its
+`.examples.json`), update its test, point the route's `response.status[201]` at
 it, and add a route test that makes the handler return a non-conforming body and expects a 500.
 `openapi-beta-2.yaml` then picks it up by `$ref` — sync the schemas into
 `digital-waste-tracking-api-docs` and point the spec at the file; don't redefine the response

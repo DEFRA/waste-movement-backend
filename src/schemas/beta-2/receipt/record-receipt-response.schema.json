@@ -2,16 +2,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Record receipt response",
   "description": "Response returned when a receipt is recorded.",
-  "examples": [
-    {
-      "data": {
-        "deliveryId": "25KMT4Z9"
-      },
-      "validation": {
-        "warnings": []
-      }
-    }
-  ],
   "type": "object",
   "required": ["data", "validation"],
   "properties": {

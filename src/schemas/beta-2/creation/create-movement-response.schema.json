@@ -2,16 +2,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Create movement response",
   "description": "Response returned when a movement is created.",
-  "examples": [
-    {
-      "data": {
-        "movementId": "25HRA0B2"
-      },
-      "validation": {
-        "warnings": []
-      }
-    }
-  ],
   "type": "object",
   "required": ["data", "validation"],
   "properties": {

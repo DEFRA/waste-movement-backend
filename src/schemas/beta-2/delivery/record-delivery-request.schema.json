@@ -2,18 +2,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Record delivery request",
   "description": "Payload for POST /beta-2/deliveries.",
-  "examples": [
-    {
-      "apiCode": "25b14080-5e77-4f91-9957-2482a0cb8775",
-      "movementIds": ["25HRA0B2", "25HRA0B3"],
-      "supportingReferences": [
-        {
-          "label": "Waste Ticket Number",
-          "reference": "WT-7781"
-        }
-      ]
-    }
-  ],
   "type": "object",
   "properties": {
     "apiCode": {
