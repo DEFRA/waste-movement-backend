@@ -4,9 +4,6 @@
   "description": "The organisation or party the waste originates from. Required fields vary by wasteSource — see the variants below. For Commercial and Municipal, contactDetails is required (with at least one of emailAddress or phoneNumber within it), and exactly one of authorisationNumber or reasonForNoAuthorisationNumber must be provided; not applicable for Household, where contactDetails and the rest remain forbidden.",
   "examples": [
     {
-      "wasteSource": "Household"
-    },
-    {
       "wasteSource": "Commercial",
       "organisationName": "ACME Waste Producers Ltd",
       "authorisationNumber": "EAS/P/123456",
@@ -32,6 +29,9 @@
         "emailAddress": "waste.services@example.gov.uk",
         "phoneNumber": "01234567890"
       }
+    },
+    {
+      "wasteSource": "Household"
     }
   ],
   "oneOf": [

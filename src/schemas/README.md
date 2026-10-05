@@ -118,7 +118,8 @@ Give every schema and every property a `description`. It's prose next to the rul
 and it's what generated documentation is built from.
 
 Give every beta-2 whole body (`-request`, `-response`, `-params`) a root-level `examples` array
-too — it's the sample payload the published spec renders. ajv never checks `examples`, so
+too — it's the sample payload the published spec renders. Swagger UI shows only the first entry,
+so put the fullest example first and simpler variants after it. ajv never checks `examples`, so
 `conventions.test.js` validates every root-level example against its own schema; a rule change
 that breaks an example fails there.
 
