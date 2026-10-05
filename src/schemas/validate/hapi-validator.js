@@ -10,14 +10,15 @@ function toErrorType(error) {
   switch (error.keyword) {
     case 'required':
       return ERROR_TYPE.NOT_PROVIDED
-    // 'false schema' is a `false` subschema — how a oneOf branch forbids a
-    // property that the other branch requires (producer's
+    // 'not' comes from a `{ "not": {} }` subschema — how a oneOf branch
+    // forbids a property that the other branch requires (producer's
     // authorisationNumber/reason pair, brokerOrDealer's items when isPresent
     // is false). The property is present but not permitted, so it maps like
     // an extra property rather than falling through to UnexpectedError.
+    // (Not a boolean `false` subschema: see conventions.test.js.)
     case 'additionalProperties':
     case 'propertyNames':
-    case 'false schema':
+    case 'not':
       return ERROR_TYPE.NOT_ALLOWED
     case 'type':
       return ERROR_TYPE.INVALID_TYPE
