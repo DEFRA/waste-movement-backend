@@ -13,6 +13,7 @@ import { expectProblemResponse } from './helpers/expect-problem-response.js'
 import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-body-has-shape.js'
 import {
   brokerOrDealerEntry,
+  carrier,
   supportingReference
 } from '../../src/schemas/beta-2/test-helpers.js'
 
@@ -20,8 +21,10 @@ describe('beta-2', () => {
   let testService
   let wasteTrackingStub
   const version = 'beta-2'
-  const minimalHouseholdProducer = {
-    producer: { wasteSource: 'Household' }
+  const intendedCarriers = [carrier]
+  const minimalMovementBody = {
+    producer: { wasteSource: 'Household' },
+    intendedCarriers
   }
 
   beforeAll(async () => {
@@ -43,7 +46,7 @@ describe('beta-2', () => {
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, ...minimalHouseholdProducer }
+        body: { apiCode: apiCode1, ...minimalMovementBody }
       }
     )
     return body.data.movementId
@@ -52,7 +55,7 @@ describe('beta-2', () => {
   // Shared error formatting and RFC9457 compliance tests
   describeBetaEndpointTests(version, () => testService, {
     apiCode1,
-    minimalProducer: minimalHouseholdProducer,
+    minimalProducer: minimalMovementBody,
     requiresProducer: true
   })
 
@@ -64,7 +67,7 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { apiCode: apiCode1, producer }
+          body: { apiCode: apiCode1, producer, intendedCarriers }
         }
       )
 
@@ -96,7 +99,7 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { apiCode: apiCode1, producer }
+          body: { apiCode: apiCode1, producer, intendedCarriers }
         }
       )
 
@@ -140,7 +143,7 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { apiCode: apiCode1, producer }
+          body: { apiCode: apiCode1, producer, intendedCarriers }
         }
       )
 
@@ -172,7 +175,7 @@ describe('beta-2', () => {
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, ...minimalHouseholdProducer }
+        body: { apiCode: apiCode1, ...minimalMovementBody }
       }
     )
     const { movementId } = createRes.body.data
@@ -233,7 +236,7 @@ describe('beta-2', () => {
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, ...minimalHouseholdProducer }
+        body: { apiCode: apiCode1, ...minimalMovementBody }
       }
     )
     const { movementId } = createRes.body.data
@@ -273,7 +276,7 @@ describe('beta-2', () => {
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, ...minimalHouseholdProducer }
+        body: { apiCode: apiCode1, ...minimalMovementBody }
       }
     )
     const { movementId } = createMovementRes.body.data
@@ -613,7 +616,8 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          producer: { wasteSource: 'Household' }
+          producer: { wasteSource: 'Household' },
+          intendedCarriers
         }
       })
 
@@ -624,6 +628,29 @@ describe('beta-2', () => {
       })
     })
 
+    // Scenario: A Movement isn't created when no intended carrier is declared.
+    it('rejects a movement without intended carriers', async () => {
+      const endpoint = '/beta-2/movements'
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: apiCode1, producer: { wasteSource: 'Household' } }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotProvided',
+          pointer: '/intendedCarriers'
+        })
+      )
+    })
+
     it('rejects invalid producer wasteSource', async () => {
       const endpoint = '/beta-2/movements'
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
@@ -631,6 +658,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
+          intendedCarriers,
           producer: { wasteSource: 'Invalid' }
         }
       })
@@ -649,6 +677,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
+          intendedCarriers,
           producer: {
             wasteSource: 'Commercial',
             sicCode: '38110',
@@ -673,6 +702,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
+          intendedCarriers,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -698,6 +728,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
+          intendedCarriers,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -722,6 +753,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
+          intendedCarriers,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -746,6 +778,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
+          intendedCarriers,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -774,6 +807,7 @@ describe('beta-2', () => {
           method: 'POST',
           body: {
             apiCode: apiCode1,
+            intendedCarriers,
             producer: { wasteSource: 'Household' }
           }
         }
@@ -791,6 +825,7 @@ describe('beta-2', () => {
           method: 'POST',
           body: {
             apiCode: apiCode1,
+            intendedCarriers,
             producer: {
               wasteSource: 'Municipal',
               organisationName: 'Test Council',
@@ -815,6 +850,7 @@ describe('beta-2', () => {
           method: 'POST',
           body: {
             apiCode: apiCode1,
+            intendedCarriers,
             producer: {
               wasteSource: 'Commercial',
               organisationName: 'Test Company',

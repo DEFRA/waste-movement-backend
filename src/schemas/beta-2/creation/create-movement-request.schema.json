@@ -13,6 +13,9 @@
     "producer": {
       "$ref": "../common/producer/producer.schema.json"
     },
+    "intendedCarriers": {
+      "$ref": "../common/carrier/carriers.schema.json"
+    },
     "brokerOrDealer": {
       "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json"
     },
@@ -23,6 +26,6 @@
       "$ref": "../common/special-handling-requirements.schema.json"
     }
   },
-  "required": ["apiCode", "producer"],
+  "required": ["apiCode", "producer", "intendedCarriers"],
   "additionalProperties": false
 }
