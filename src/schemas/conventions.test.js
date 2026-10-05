@@ -2,6 +2,7 @@
 // all files at once rather than per schema. See README.md for the reasoning.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
+import { getErrors, validate } from './validate/index.js'
 
 // `import.meta.dirname`, matching validate/index.js — see the note there.
 const schemaRoot = import.meta.dirname
@@ -90,5 +91,33 @@ describe('schema conventions', () => {
   // NotAllowed exactly as it did for 'false schema'.
   test.each(schemaFiles)('%s uses no boolean subschemas', (_, schema) => {
     expect(findBooleanSubschemas(schema)).toEqual([])
+  })
+
+  // ajv treats `examples` as an annotation and never checks it, so an example
+  // that has drifted from its schema would be published in the spec unnoticed.
+  const filesWithExamples = schemaFiles
+    .filter(([, schema]) => schema.examples)
+    .flatMap(([file, schema]) =>
+      schema.examples.map((example, i) => [file, i, example])
+    )
+
+  test.each(filesWithExamples)(
+    '%s example %i is valid against its own schema',
+    (file, _, example) => {
+      const id = file.split(path.sep).join('/')
+      validate(id, example)
+      expect(getErrors(id)).toBeNull()
+    }
+  )
+
+  // Whole bodies are what the published spec renders a sample payload from.
+  const beta2Bodies = schemaFiles.filter(
+    ([file]) =>
+      file.startsWith(`beta-2${path.sep}`) &&
+      /-(request|response|params)\.schema\.json$/.test(file)
+  )
+
+  test.each(beta2Bodies)('%s has at least one example', (_, schema) => {
+    expect(schema.examples?.length).toBeGreaterThan(0)
   })
 })

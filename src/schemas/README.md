@@ -117,6 +117,11 @@ deliberately moving away from.
 Give every schema and every property a `description`. It's prose next to the rule it describes,
 and it's what generated documentation is built from.
 
+Give every beta-2 whole body (`-request`, `-response`, `-params`) a root-level `examples` array
+too — it's the sample payload the published spec renders. ajv never checks `examples`, so
+`conventions.test.js` validates every root-level example against its own schema; a rule change
+that breaks an example fails there.
+
 ### Whole bodies are named after their route
 
 A schema for a whole request or response body is named after the route file it belongs to, with
