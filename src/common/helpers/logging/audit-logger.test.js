@@ -24,6 +24,7 @@ describe('Audit Logger Tests', () => {
     let params
 
     beforeEach(() => {
+      jest.resetAllMocks()
       params = {
         type: AUDIT_LOGGER_TYPE.MOVEMENT_CREATED,
         traceId: 'abc-def-123',
@@ -216,6 +217,54 @@ describe('Audit Logger Tests', () => {
         },
         `Audit log NOT sent as the organisation id is in the exclude list: ${WASTE_TRACKING_ID} revision: 1`
       )
+    })
+    it('should remove software provider name from audit data', () => {
+      const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+
+      const data = {
+        wasteTrackingId: WASTE_TRACKING_ID,
+        receipt: {
+          apiCode: API_CODE,
+          movement: {
+            softwareProvider: {
+              id: 'software-provider-123',
+              name: 'Software Provider'
+            }
+          }
+        }
+      }
+
+      const result = auditLogger({
+        ...params,
+        data
+      })
+
+      expect(result).toBeTruthy()
+
+      expect(auditSpy).toHaveBeenCalledWith({
+        metadata: {
+          type: params.type,
+          traceId: params.traceId,
+          version: params.version
+        },
+        data: {
+          wasteTrackingId: WASTE_TRACKING_ID,
+          receipt: {
+            apiCode: API_CODE,
+            movement: {
+              softwareProvider: {
+                id: 'software-provider-123'
+              }
+            }
+          }
+        }
+      })
+
+      // Confirm the original data was not mutated
+      expect(data.receipt.movement.softwareProvider).toEqual({
+        id: 'software-provider-123',
+        name: 'Software Provider'
+      })
     })
   })
 })
