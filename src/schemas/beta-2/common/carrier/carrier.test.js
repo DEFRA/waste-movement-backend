@@ -79,7 +79,7 @@ describe('Feature: Schema - declaring a carrier of the waste', () => {
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
-        invalid('false schema', '/reasonForNoRegistrationNumber')
+        invalid('not', '/reasonForNoRegistrationNumber')
       )
     })
   })
@@ -222,7 +222,7 @@ describe('Feature: Schema - declaring a carrier of the waste', () => {
       const { valid, errors } = validateAjv(payload)
 
       expect(valid).toBe(false)
-      expect(errors).toContainEqual(invalid('false schema', instancePath))
+      expect(errors).toContainEqual(invalid('not', instancePath))
     })
 
     test('rejects a reason for no registration number that is not in the list', () => {

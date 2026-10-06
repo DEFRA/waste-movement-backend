@@ -8,13 +8,19 @@
       "required": ["registrationNumber"],
       "properties": {
         "registrationNumber": {},
-        "reasonForNoRegistrationNumber": false
+        "reasonForNoRegistrationNumber": {
+          "not": {},
+          "description": "Not allowed when registrationNumber is provided."
+        }
       }
     },
     {
       "required": ["reasonForNoRegistrationNumber"],
       "properties": {
-        "registrationNumber": false,
+        "registrationNumber": {
+          "not": {},
+          "description": "Not allowed when reasonForNoRegistrationNumber is provided."
+        },
         "reasonForNoRegistrationNumber": {}
       }
     }
@@ -37,7 +43,10 @@
       },
       "else": {
         "properties": {
-          "vehicleRegistration": false
+          "vehicleRegistration": {
+            "not": {},
+            "description": "Not allowed unless meansOfTransport is Road."
+          }
         }
       }
     },
@@ -58,7 +67,10 @@
       },
       "else": {
         "properties": {
-          "otherMeansOfTransport": false
+          "otherMeansOfTransport": {
+            "not": {},
+            "description": "Not allowed unless meansOfTransport is Other."
+          }
         }
       }
     }
