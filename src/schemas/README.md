@@ -30,9 +30,10 @@ Every schema declares `"$schema": "https://json-schema.org/draft/2020-12/schema"
 `$ref` these exact files, so the published contract is the same artefact the validator runs — no
 conversion step in between.
 
-**OpenAPI 3.0 can't express what these schemas need.** `const`, `propertyNames` and
-boolean-`false` subschemas are what encode rules like "Household forbids these fields" and
-"exactly one of `authorisationNumber` / `reasonForNoAuthorisationNumber`". A 3.0 spec would
+**OpenAPI 3.0 can't express what these schemas need.** `const` and `propertyNames` are what
+encode rules like "Household forbids these fields" and "exactly one of `authorisationNumber` /
+`reasonForNoAuthorisationNumber`" (with the `oneOf` branches described under
+[No boolean subschemas](#no-boolean-subschemas)). A 3.0 spec would
 describe a looser contract than the one actually enforced. 3.1 is required, not preferred.
 
 `hapi-swagger` is not part of this — it can't consume JSON Schema and can't emit 3.1. It serves
@@ -71,6 +72,30 @@ The consequence to know: **these patterns are owned here and have already diverg
 `waste-movement-utils`' Phase-1 validators.** That divergence is accepted, not a bug to fix by
 reaching back into utils.
 
+### No boolean subschemas
+
+To forbid a field in one branch of a `oneOf` — "exactly one of `authorisationNumber` /
+`reasonForNoAuthorisationNumber`", "no `items` when `isPresent` is false" — write an explicit
+never-matching schema with a description saying why, not a bare `false`:
+
+```json
+"reasonForNoAuthorisationNumber": {
+  "not": {},
+  "description": "Not allowed when authorisationNumber is provided."
+}
+```
+
+`"field": false` means the same thing and is valid 2020-12 and OpenAPI 3.1, but tools built on
+[OpenAPIKit](https://github.com/mattpolzin/OpenAPIKit) — Apple's `swift-openapi-generator`,
+OpenAPI Viewer for macOS — can't decode a boolean where they expect a schema object, and reject
+the **whole** published spec, since it `$ref`s these files. `{ "not": {} }` validates
+identically, so no payload is accepted or rejected differently, and `validate/hapi-validator.js`
+maps its `not` error to `NotAllowed` with the field's pointer, as callers already get.
+
+`"additionalProperties": false` is the exception and stays: it's how a whole payload is closed,
+and those tools accept a boolean there. `conventions.test.js` fails on any other boolean
+subschema.
+
 ### Granular: one small file per resource
 
 A resource is a thing the model talks about — a producer, an address, contact details. Each gets
@@ -91,6 +116,41 @@ deliberately moving away from.
 
 Give every schema and every property a `description`. It's prose next to the rule it describes,
 and it's what generated documentation is built from.
+
+### Examples: named, beside the body they illustrate
+
+Every beta-2 request and response body has a `<route>-request.examples.json` /
+`<route>-response.examples.json` beside its schema — a map of named
+[OpenAPI Example Objects](https://spec.openapis.org/oas/v3.1.0#example-object):
+
+```json
+{
+  "commercial": {
+    "summary": "Commercial producer, with …",
+    "value": { "apiCode": "…" }
+  },
+  "household": {
+    "summary": "Household producer, minimal",
+    "value": { "apiCode": "…" }
+  }
+}
+```
+
+They're a separate file because JSON Schema's own `examples` keyword is an unnamed list, and
+tools only offer a choice between _named_ examples: `openapi-beta-2.yaml` puts these under the
+media type's `examples` (`$ref`-ing each one by name), which gives a picker in Swagger UI and one
+saved example per entry when the spec is imported into Bruno or Postman. Referring to them by
+name rather than by position also means reordering can't silently swap which payload a name shows.
+
+- **Payloads live here, once.** The spec only points at them; don't copy one into it.
+- **A response's names match its request's.** API clients pair the request and response examples
+  that share a name, and produce every combination of the two when they don't.
+- **Every `value` must be valid.** ajv never checks examples, so `conventions.test.js` validates
+  each one against the schema beside it; a rule change that breaks an example fails there.
+
+Path params (`-params`) and shared resources have no body of their own, so they keep a root-level
+`examples` array, which `conventions.test.js` also checks. Swagger UI renders only its first entry,
+so put the fullest example first.
 
 ### Whole bodies are named after their route
 
@@ -159,7 +219,7 @@ src/schemas/
   beta-2/
     common/          shared resources — address, contact-details, producer/, broker-or-dealer/,
                      and the ids and wasteType that responses are built from
-    creation/        create-movement-request / -response
+    creation/        create-movement-request / -response (each with its .examples.json)
     collection/      create-collection-request / -response
     delivery/        record-delivery-request / -response, and delivery-item
     receipt/         record-receipt-request / -response,
@@ -189,13 +249,14 @@ no registration step — the loader walks the directory, and the file's path bec
 validate against.
 
 **Adding a route** — add `<category>/<route>-request.schema.json` and
-`<category>/<route>-response.schema.json`, named after the new route file, each with its test.
-Point the route's `validate.payload` and `response.status[201]` at them the way the existing beta
+`<category>/<route>-response.schema.json`, named after the new route file, each with its test
+and a matching `.examples.json` (same example names in both). Point the route's `validate.payload` and `response.status[201]` at them the way the existing beta
 routes do. No `tags`, no `hapi-swagger` block.
 
 **Adding or changing a response** — the change starts here, exactly like a request: edit or
-create `<category>/<route>-response.schema.json` (use `examples: [...]`, not OpenAPI's `example`,
-which ajv's strict mode rejects), update its test, point the route's `response.status[201]` at
+create `<category>/<route>-response.schema.json` (property-level examples go in `examples: [...]`,
+not OpenAPI's `example`, which ajv's strict mode rejects; whole-body ones go in its
+`.examples.json`), update its test, point the route's `response.status[201]` at
 it, and add a route test that makes the handler return a non-conforming body and expects a 500.
 `openapi-beta-2.yaml` then picks it up by `$ref` — sync the schemas into
 `digital-waste-tracking-api-docs` and point the spec at the file; don't redefine the response

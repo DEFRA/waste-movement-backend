@@ -19,6 +19,7 @@ import {
   getEnvVars
 } from '@defra/waste-movement-utils'
 import { requestCustomLogger } from './plugins/request-custom-logger.js'
+import { isBetaRoute } from './common/helpers/beta-route.js'
 
 async function createServer() {
   setupProxy()
@@ -82,7 +83,7 @@ async function createServer() {
     {
       plugin: formatErrorToRFC9457Response,
       options: {
-        shouldFormat: (request) => request.path.startsWith('/beta-'),
+        shouldFormat: isBetaRoute,
         typeBase: config.get('problemDetails.typeBase')
       }
     },
