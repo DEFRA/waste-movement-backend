@@ -19,6 +19,8 @@ import {
 } from '../test/data/basic-auth.js'
 import { createServer } from '../server.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
+import { httpClients } from '../common/helpers/http-client.js'
+import { client } from '../test/data/client.js'
 
 jest.mock('../services/movement-update.js', () => {
   const { updateWasteInput: actualFunction } = jest.requireActual(
@@ -42,6 +44,14 @@ jest.mock('@defra/waste-movement-utils', () => {
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockReturnValue(true)
 }))
+
+jest.mock('../common/helpers/http-client.js', () => ({
+  httpClients: {
+    clientSync: { get: jest.fn() }
+  }
+}))
+
+httpClients.clientSync.get.mockResolvedValue({ payload: client })
 
 describe('movementUpdate Route Tests', () => {
   let server
@@ -207,9 +217,8 @@ describe('movementUpdate Route Tests', () => {
     )
   })
 
-  it('persists clientId at the top level on update', async () => {
+  it('persists client at the top level on update', async () => {
     const wasteTrackingId = generateWasteTrackingId()
-    const clientId = 'test-client-id'
     const infoLoggerSpy = jest.spyOn(createLogger(), 'info')
 
     const createResult = await server.inject({
@@ -231,9 +240,12 @@ describe('movementUpdate Route Tests', () => {
     )
 
     const actualWasteInput = await getCurrentWasteInput(wasteTrackingId)
-    expect(actualWasteInput.clientId).toEqual(clientId)
-    // clientId is stored top-level, not nested inside the receipt movement
-    expect(actualWasteInput.receipt.movement.clientId).toBeUndefined()
+    expect(actualWasteInput.client).toEqual({
+      clientId: client.clientId,
+      clientName: client.clientName
+    })
+    // client is stored top-level, not nested inside the receipt movement
+    expect(actualWasteInput.receipt.movement.client).toBeUndefined()
 
     expect(infoLoggerSpy).toHaveBeenCalledWith(
       `${METRIC_NAMES.RECEIPTS_RECEIVED} - put`

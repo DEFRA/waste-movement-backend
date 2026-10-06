@@ -161,7 +161,10 @@ function createServiceClient(baseUrl, httpClient) {
  */
 const httpClients = {
   // Resolved per request so the URL can be set after this module is loaded
-  wasteTracking: createServiceClient(() => config.get('services.wasteTracking'))
+  wasteTracking: createServiceClient(() =>
+    config.get('services.wasteTracking')
+  ),
+  clientSync: createServiceClient(config.get('services.clientSync'))
 }
 
 export { httpClients, makeRequest, createServiceClient }

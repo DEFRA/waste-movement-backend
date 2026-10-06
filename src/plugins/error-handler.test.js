@@ -8,6 +8,8 @@ import {
 import { createBulkMovementRequest } from '../test/utils/createBulkMovementRequest.js'
 import { formatBulkUploadValidationErrors } from './error-handler.js'
 import { createTestPayload } from '../schemas/test-helpers/waste-test-helpers.js'
+import { httpClients } from '../common/helpers/http-client.js'
+import { client } from '../test/data/client.js'
 
 jest.mock('../config.js', () => {
   process.env.MAX_BULK_RECORDS = '3'
@@ -17,6 +19,14 @@ jest.mock('../config.js', () => {
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockImplementation(() => true)
 }))
+
+jest.mock('../common/helpers/http-client.js', () => ({
+  httpClients: {
+    clientSync: { get: jest.fn() }
+  }
+}))
+
+httpClients.clientSync.get.mockResolvedValue({ payload: client })
 
 describe('Error Handler', () => {
   let server
