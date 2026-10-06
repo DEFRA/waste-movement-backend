@@ -19,6 +19,12 @@ import { expectProblemResponse } from './expect-problem-response.js'
 export function describeBetaEndpointTests(version, getTestService, testData) {
   const basePath = `/${version}`
   const movementsEndpoint = `${basePath}/movements`
+  // beta-1 carries apiCode in the body; beta-2 onwards sends it in the
+  // x-api-code header (D-046), which the external API resolves, so the
+  // backend body has none.
+  const apiCodeBody = testData.apiCodeInBody
+    ? { apiCode: testData.apiCode1 }
+    : {}
 
   /**
    * Makes a request against the versioned beta API.
@@ -44,6 +50,9 @@ export function describeBetaEndpointTests(version, getTestService, testData) {
     })
 
     it('returns RFC9457 format for invalid API code', async () => {
+      // Only applicable while apiCode is in the body (beta-1)
+      if (!testData.apiCodeInBody) return
+
       const response = await requestBeta('/movements', {
         method: 'POST',
         requestId: randomUUID(),
@@ -57,13 +66,13 @@ export function describeBetaEndpointTests(version, getTestService, testData) {
       })
     })
 
-    // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only
-    // on the organisation forwarded by the external API.
+    // On beta-1 the body's apiCode1 is in ORG_API_CODES: beta routes must
+    // ignore it and rely only on the organisation forwarded by the external API.
     it('rejects a request with no organisation forwarded (unknown or disabled API code)', async () => {
       const response = await requestBeta('/movements', {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: testData.apiCode1, ...testData.minimalProducer },
+        body: { ...apiCodeBody, ...testData.minimalProducer },
         forwardOrganisation: false
       })
 
@@ -79,7 +88,7 @@ export function describeBetaEndpointTests(version, getTestService, testData) {
       const response = await requestBeta('/movements', {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: testData.apiCode1, ...testData.minimalProducer },
+        body: { ...apiCodeBody, ...testData.minimalProducer },
         auth: false
       })
 
@@ -119,7 +128,7 @@ export function describeBetaEndpointTests(version, getTestService, testData) {
     it('returns json for successful responses', async () => {
       const { status, headers } = await requestBeta('/movements', {
         method: 'POST',
-        body: { apiCode: testData.apiCode1, ...testData.minimalProducer }
+        body: { ...apiCodeBody, ...testData.minimalProducer }
       })
 
       expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -132,7 +141,7 @@ export function describeBetaEndpointTests(version, getTestService, testData) {
       const traceId = `test-trace-beta${version}`
       const { status, headers } = await requestBeta('/movements', {
         method: 'POST',
-        body: { apiCode: testData.apiCode1, ...testData.minimalProducer },
+        body: { ...apiCodeBody, ...testData.minimalProducer },
         requestId: traceId
       })
 
@@ -157,7 +166,7 @@ export function describeBetaEndpointTests(version, getTestService, testData) {
     it('generates request ID when not provided', async () => {
       const { status, headers, body } = await requestBeta('/movements', {
         method: 'POST',
-        body: { apiCode: testData.apiCode1, ...testData.minimalProducer }
+        body: { ...apiCodeBody, ...testData.minimalProducer }
       })
 
       expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -188,7 +197,7 @@ export function describeBetaEndpointTests(version, getTestService, testData) {
     it('includes standard security and content headers in success responses', async () => {
       const { status, headers } = await requestBeta('/movements', {
         method: 'POST',
-        body: { apiCode: testData.apiCode1, ...testData.minimalProducer }
+        body: { ...apiCodeBody, ...testData.minimalProducer }
       })
 
       expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -210,10 +219,30 @@ export function describeBetaEndpointTests(version, getTestService, testData) {
 
   describe(`${version} - Missing Required Fields`, () => {
     it('rejects missing apiCode', async () => {
+      // Only applicable while apiCode is in the body (beta-1)
+      if (!testData.apiCodeInBody) return
+
       const response = await requestBeta('/movements', {
         method: 'POST',
         requestId: randomUUID(),
         body: testData.minimalProducer
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: movementsEndpoint
+      })
+    })
+
+    it('rejects apiCode in the body', async () => {
+      // Only applicable once apiCode moved to the x-api-code header (beta-2+)
+      if (testData.apiCodeInBody) return
+
+      const response = await requestBeta('/movements', {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: testData.apiCode1, ...testData.minimalProducer }
       })
 
       expectProblemResponse(response, {
@@ -230,7 +259,7 @@ export function describeBetaEndpointTests(version, getTestService, testData) {
       const response = await requestBeta('/movements', {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: testData.apiCode1 }
+        body: apiCodeBody
       })
 
       expectProblemResponse(response, {

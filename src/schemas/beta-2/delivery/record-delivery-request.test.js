@@ -8,37 +8,31 @@ describe('record-delivery-request schema', () => {
   const movementIds = ['25HRA0B2']
 
   test('accepts a valid payload', () => {
-    expect(validateAjv({ apiCode, movementIds: ['25HRA0B2'] }).valid).toBe(true)
+    expect(validateAjv({ movementIds: ['25HRA0B2'] }).valid).toBe(true)
   })
 
   test('accepts multiple movementIds', () => {
-    expect(
-      validateAjv({ apiCode, movementIds: ['25HRA0B2', '25HRA0B3'] }).valid
-    ).toBe(true)
+    expect(validateAjv({ movementIds: ['25HRA0B2', '25HRA0B3'] }).valid).toBe(
+      true
+    )
   })
 
-  test('apiCode is required', () => {
-    expect(validateAjv({ movementIds: ['25HRA0B2'] }).valid).toBe(false)
-  })
-
-  test('rejects a malformed apiCode', () => {
-    expect(
-      validateAjv({ apiCode: 'not-a-uuid', movementIds: ['25HRA0B2'] }).valid
-    ).toBe(false)
+  // apiCode is sent in the x-api-code header (D-046), not the body.
+  test('rejects apiCode in the body', () => {
+    expect(validateAjv({ apiCode, movementIds }).valid).toBe(false)
   })
 
   test('movementIds is required', () => {
-    expect(validateAjv({ apiCode }).valid).toBe(false)
+    expect(validateAjv({}).valid).toBe(false)
   })
 
   test('rejects an empty movementIds list', () => {
-    expect(validateAjv({ apiCode, movementIds: [] }).valid).toBe(false)
+    expect(validateAjv({ movementIds: [] }).valid).toBe(false)
   })
 
   test('rejects an additional property beyond the declared ones', () => {
     expect(
-      validateAjv({ apiCode, movementIds: ['25HRA0B2'], extra: 'not allowed' })
-        .valid
+      validateAjv({ movementIds: ['25HRA0B2'], extra: 'not allowed' }).valid
     ).toBe(false)
   })
 
@@ -47,13 +41,12 @@ describe('record-delivery-request schema', () => {
   // $ref wiring is live.
   describe('supportingReferences', () => {
     test('is optional', () => {
-      const payload = { apiCode, movementIds }
+      const payload = { movementIds }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts valid supportingReferences', () => {
       const payload = {
-        apiCode,
         movementIds,
         supportingReferences: [supportingReference]
       }
@@ -62,7 +55,6 @@ describe('record-delivery-request schema', () => {
 
     test('rejects a payload whose supportingReferences is invalid', () => {
       const payload = {
-        apiCode,
         movementIds,
         supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
       }

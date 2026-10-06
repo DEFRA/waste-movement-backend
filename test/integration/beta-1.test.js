@@ -33,6 +33,7 @@ describe('beta-1', () => {
   // Shared error formatting and RFC9457 compliance tests
   describeBetaEndpointTests(version, () => testService, {
     apiCode1,
+    apiCodeInBody: true,
     minimalProducer: {}, // beta-1 doesn't require producer
     requiresProducer: false
   })
