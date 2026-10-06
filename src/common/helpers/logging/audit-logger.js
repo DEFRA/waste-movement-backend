@@ -109,11 +109,14 @@ export function auditLogger({
  * @returns {Object} data with softwareProvider name removed from the softwareProvider object
  */
 function removeMissingDataAgreementData(data) {
-  if (!data?.receipt?.movement?.softwareProvider) {
+  const softwareProvider = data?.receipt?.movement?.softwareProvider
+
+  if (!softwareProvider) {
     return data
   }
 
-  const { name: _, ...clientNoName } = data.receipt.movement.softwareProvider
+  const softwareProviderWithoutName = { ...softwareProvider }
+  delete softwareProviderWithoutName.name
 
   return {
     ...data,
@@ -121,7 +124,7 @@ function removeMissingDataAgreementData(data) {
       ...data.receipt,
       movement: {
         ...data.receipt.movement,
-        softwareProvider: clientNoName
+        softwareProvider: softwareProviderWithoutName
       }
     }
   }
