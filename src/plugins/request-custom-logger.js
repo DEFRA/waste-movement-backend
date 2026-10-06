@@ -96,8 +96,11 @@ const requestCustomLogger = {
         }
 
         const softwareProvider = request.payload?.movement?.softwareProvider
-        if (softwareProvider) {
+
+        if (softwareProvider?.id) {
           store.set('clientId', softwareProvider.id)
+        }
+        if (softwareProvider?.name) {
           store.set('clientName', softwareProvider.name)
         }
 
