@@ -12,14 +12,19 @@
     },
     "movementIds": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "minItems": 1,
       "description": "One or more Movement IDs delivered together at this delivery."
+    },
+    "carrier": {
+      "$ref": "../common/carrier/carrier.schema.json"
     },
     "supportingReferences": {
       "$ref": "../common/supporting-references.schema.json"
     }
   },
-  "required": ["apiCode", "movementIds"],
+  "required": ["apiCode", "movementIds", "carrier"],
   "additionalProperties": false
 }

@@ -3,6 +3,20 @@
     "summary": "With broker or dealer and a weighbridge reference",
     "value": {
       "apiCode": "25b14080-5e77-4f91-9957-2482a0cb8775",
+      "carrier": {
+        "organisationName": "Carrier Demo Ltd",
+        "registrationNumber": "CBDU123456",
+        "meansOfTransport": "Road",
+        "vehicleRegistration": "AB12 CDE",
+        "contactDetails": {
+          "emailAddress": "carrier@example.com",
+          "phoneNumber": "01234567890"
+        },
+        "address": {
+          "fullAddress": "4 Carrier Lane, Test City",
+          "postcode": "TE1 4CR"
+        }
+      },
       "brokerOrDealer": {
         "isPresent": true,
         "items": [

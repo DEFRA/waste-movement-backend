@@ -11,7 +11,10 @@ import {
   forwardedOrganisationId,
   organisationHeaders
 } from '../../test/data/organisation-headers.js'
-import { supportingReference } from '../../schemas/beta-2/test-helpers.js'
+import {
+  supportingReference,
+  carrier
+} from '../../schemas/beta-2/test-helpers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -81,7 +84,11 @@ describe('POST /beta-2/deliveries', () => {
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, movementIds: [movementId1, movementId2] },
+      payload: {
+        apiCode: apiCode1,
+        movementIds: [movementId1, movementId2],
+        carrier
+      },
       headers: tracedAuthHeaders
     })
 
@@ -123,6 +130,7 @@ describe('POST /beta-2/deliveries', () => {
       payload: {
         apiCode: apiCode1,
         movementIds: [movementId1],
+        carrier,
         supportingReferences: [supportingReference]
       },
       headers: tracedAuthHeaders
@@ -161,7 +169,7 @@ describe('POST /beta-2/deliveries', () => {
     const { headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, movementIds: [movementId1] },
+      payload: { apiCode: apiCode1, movementIds: [movementId1], carrier },
       headers: tracedAuthHeaders
     })
 
@@ -178,7 +186,7 @@ describe('POST /beta-2/deliveries', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      detail: '2 validation errors occurred',
+      detail: '3 validation errors occurred',
       errors: [
         {
           errorType: 'NotProvided',
@@ -189,6 +197,36 @@ describe('POST /beta-2/deliveries', () => {
           errorType: 'NotProvided',
           message: '"movementIds" is required',
           pointer: '/movementIds'
+        },
+        {
+          errorType: 'NotProvided',
+          message: '"carrier" is required',
+          pointer: '/carrier'
+        }
+      ],
+      instance: '/beta-2/deliveries',
+      title: 'Bad Request',
+      type: `${expectedTypeBase}bad-request`,
+      requestId: traceId
+    })
+  })
+
+  it('returns a 400 when carrier is missing', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: { apiCode: apiCode1, movementIds: [movementId1] },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result).toEqual({
+      detail: '1 validation error occurred',
+      errors: [
+        {
+          errorType: 'NotProvided',
+          message: '"carrier" is required',
+          pointer: '/carrier'
         }
       ],
       instance: '/beta-2/deliveries',
@@ -204,7 +242,7 @@ describe('POST /beta-2/deliveries', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, movementIds: [movementId1] },
+      payload: { apiCode: apiCode1, movementIds: [movementId1], carrier },
       headers: { ...authHeaders, ...tracedHeaders }
     })
 
@@ -228,7 +266,8 @@ describe('POST /beta-2/deliveries', () => {
       url,
       payload: {
         apiCode: apiCode1,
-        movementIds: [movementId1, movementId2]
+        movementIds: [movementId1, movementId2],
+        carrier
       },
       headers: tracedAuthHeaders
     })
@@ -255,7 +294,7 @@ describe('POST /beta-2/deliveries', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, movementIds: [movementId1] },
+      payload: { apiCode: apiCode1, movementIds: [movementId1], carrier },
       headers: tracedAuthHeaders
     })
 
@@ -272,7 +311,7 @@ describe('POST /beta-2/deliveries', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, movementIds: [movementId1] },
+      payload: { apiCode: apiCode1, movementIds: [movementId1], carrier },
       headers: tracedHeaders
     })
 
@@ -297,7 +336,7 @@ describe('POST /beta-2/deliveries', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, movementIds: [movementId1] },
+      payload: { apiCode: apiCode1, movementIds: [movementId1], carrier },
       headers: tracedAuthHeaders
     })
 

@@ -183,7 +183,7 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/movements/${movementId}/collection`,
-      { method: 'POST', body: { apiCode: apiCode1 } }
+      { method: 'POST', body: { apiCode: apiCode1, carrier } }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -215,6 +215,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           apiCode: apiCode1,
+          carrier,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -246,7 +247,7 @@ describe('beta-2', () => {
       '/beta-2/deliveries',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, movementIds: [movementId] }
+        body: { apiCode: apiCode1, movementIds: [movementId], carrier }
       }
     )
 
@@ -286,7 +287,7 @@ describe('beta-2', () => {
       '/beta-2/deliveries',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, movementIds: [movementId] }
+        body: { apiCode: apiCode1, movementIds: [movementId], carrier }
       }
     )
     const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
@@ -294,7 +295,7 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/deliveries/${deliveryId}/receipt`,
-      { method: 'POST', body: { apiCode: apiCode1 } }
+      { method: 'POST', body: { apiCode: apiCode1, carrier } }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -324,7 +325,7 @@ describe('beta-2', () => {
       '/beta-2/receipts',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, reason }
+        body: { apiCode: apiCode1, reason, carrier }
       }
     )
 
@@ -359,6 +360,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           apiCode: apiCode1,
+          carrier,
           specialHandlingRequirements: 'Handle with care and keep upright.'
         }
       }
@@ -384,6 +386,7 @@ describe('beta-2', () => {
         body: {
           apiCode: apiCode1,
           movementIds: [movementId],
+          carrier,
           supportingReferences: [supportingReference]
         }
       }
@@ -402,7 +405,7 @@ describe('beta-2', () => {
       '/beta-2/deliveries',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, movementIds: [movementId] }
+        body: { apiCode: apiCode1, movementIds: [movementId], carrier }
       }
     )
     const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
@@ -414,6 +417,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           apiCode: apiCode1,
+          carrier,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -438,6 +442,7 @@ describe('beta-2', () => {
         body: {
           apiCode: apiCode1,
           reason: 'No prior movement trail',
+          carrier,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -459,7 +464,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1 }
+        body: { apiCode: apiCode1, carrier }
       })
 
       expectProblemResponse(response, {
@@ -475,7 +480,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: {}
+        body: { carrier }
       })
 
       expectProblemResponse(response, {
@@ -486,13 +491,40 @@ describe('beta-2', () => {
       })
     })
 
+    it('rejects collection creation without a carrier', async () => {
+      const movementId = await createMovement()
+      const endpoint = `/beta-2/movements/${movementId}/collection`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: apiCode1 }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotProvided',
+          pointer: '/carrier'
+        })
+      )
+    })
+
     it('rejects collection creation when a brokerOrDealer is declared with no details', async () => {
       const movementId = await createMovement()
       const endpoint = `/beta-2/movements/${movementId}/collection`
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1, brokerOrDealer: { isPresent: true } }
+        body: {
+          apiCode: apiCode1,
+          carrier,
+          brokerOrDealer: { isPresent: true }
+        }
       })
 
       expectProblemResponse(response, {
@@ -517,6 +549,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
+          carrier,
           brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
         }
       })
@@ -543,6 +576,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
+          carrier,
           supportingReferences: [
             { ...supportingReference, label: 'Not A Label' }
           ]
@@ -563,12 +597,35 @@ describe('beta-2', () => {
       )
     })
 
+    it('rejects delivery recording without a carrier', async () => {
+      const movementId = await createMovement()
+      const endpoint = '/beta-2/deliveries'
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: apiCode1, movementIds: [movementId] }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotProvided',
+          pointer: '/carrier'
+        })
+      )
+    })
+
     it('rejects delivery recording with missing movementIds', async () => {
       const endpoint = '/beta-2/deliveries'
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1 }
+        body: { apiCode: apiCode1, carrier }
       })
 
       expectProblemResponse(response, {
@@ -584,7 +641,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1, movementIds: ['NONEXISTENT'] }
+        body: { apiCode: apiCode1, movementIds: ['NONEXISTENT'], carrier }
       })
 
       expectProblemResponse(response, {
@@ -594,12 +651,34 @@ describe('beta-2', () => {
       })
     })
 
+    it('rejects receipt recording without a carrier', async () => {
+      const endpoint = '/beta-2/receipts'
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { apiCode: apiCode1, reason: 'Some reason' }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotProvided',
+          pointer: '/carrier'
+        })
+      )
+    })
+
     it('rejects receipt recording with missing apiCode', async () => {
       const endpoint = '/beta-2/receipts'
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason' }
+        body: { reason: 'Some reason', carrier }
       })
 
       expectProblemResponse(response, {
