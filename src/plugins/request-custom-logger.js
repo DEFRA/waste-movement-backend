@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { config } from '../config.js'
 import { ORGANISATION_ID_HEADER } from '../common/helpers/get-organisation-id.js'
+import { isBetaRoute } from '../common/helpers/beta-route.js'
 
 const asyncLocalStorage = new AsyncLocalStorage()
 
@@ -9,8 +10,6 @@ const asyncLocalStorage = new AsyncLocalStorage()
  * routes, URI-encoded.
  */
 const CLIENT_NAME_HEADER = 'x-dwt-client-name'
-
-const isBetaRoute = (request) => request.path.startsWith('/beta-')
 
 /**
  * Return's the request's client id, if set else null.
