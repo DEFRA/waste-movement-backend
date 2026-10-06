@@ -57,6 +57,11 @@ const requestCustomLogger = {
     register(server, options) {
       server.ext('onRequest', (request, h) => {
         const store = new Map()
+        const clientId = request.headers[options?.clientId]
+
+        if (clientId) {
+          store.set('clientId', clientId)
+        }
         // Beta routes: the organisation the external API resolved for the
         // apiCode. Set here, not onPreHandler, so lines logged before the
         // handler (e.g. validation errors) carry it too.
@@ -65,27 +70,24 @@ const requestCustomLogger = {
           store.set('organisationId', forwardedOrganisationId)
         }
 
-
-          wrapCycle(request, '_lifecycle', store)
-
-          // Beta routes only, so RoW logging is unchanged:
-          // - the client name the external API forwards, logged with tenant.id
-          // - _postCycle (onPreResponse, e.g. "Request error") and _finalize
-          //   (hapi-pino's "request completed" line) also see the store
-          if (isBetaRoute(request)) {
-            const clientName = decodeClientName(
-              request.headers[CLIENT_NAME_HEADER]
-            )
-            if (clientName) {
-              store.set('clientName', clientName)
-            }
-            wrapCycle(request, '_postCycle', store)
-            wrapCycle(request, '_finalize', store)
+        // Beta routes only, so RoW logging is unchanged:
+        // - the client name the external API forwards, logged with tenant.id
+        // - _postCycle (onPreResponse, e.g. "Request error") and _finalize
+        //   (hapi-pino's "request completed" line) also see the store
+        if (isBetaRoute(request)) {
+          const clientName = decodeClientName(
+            request.headers[CLIENT_NAME_HEADER]
+          )
+          if (clientName) {
+            store.set('clientName', clientName)
           }
+          wrapCycle(request, '_postCycle', store)
+          wrapCycle(request, '_finalize', store)
+        }
         request.app.metaStore = store
-        wrapLifecycle(request, store)
-          return h.continue
-        })
+        wrapCycle(request, '_lifecycle', store)
+        return h.continue
+      })
 
       server.ext('onPreHandler', (request, h) => {
         const store = request.app.metaStore
@@ -121,11 +123,16 @@ const requestCustomLogger = {
         return h.continue
       })
     }
-
   },
   options: {
     clientId: 'x-dwt-client-id'
   }
 }
 
-export { requestCustomLogger, getClientId, getClientName, getOrganisationId }
+export {
+  requestCustomLogger,
+  getClientId,
+  getClientName,
+  getOrganisationId,
+  CLIENT_NAME_HEADER
+}

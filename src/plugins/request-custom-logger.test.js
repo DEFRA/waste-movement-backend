@@ -38,7 +38,7 @@ describe('requestCustomLogger', () => {
       organisationId: getOrganisationId() ?? null,
       clientId: getClientId() ?? null,
       clientName: getClientName() ?? null
-      })
+    })
 
     server.route({ method: 'POST', path: '/test', handler })
     server.route({ method: 'POST', path: '/beta-1/test', handler })
@@ -136,6 +136,27 @@ describe('requestCustomLogger', () => {
         [CLIENT_NAME_HEADER]: 'Acme%20Ltd'
       })
 
+      expect(result.clientName).toBeNull()
+    })
+    it('stores the client id and name from softwareProvider in the movement', async () => {
+      const { result } = await inject({
+        movement: {
+          softwareProvider: {
+            id: 'client-123',
+            name: 'Client 123'
+          }
+        }
+      })
+
+      expect(result.clientId).toEqual('client-123')
+      expect(result.clientName).toEqual('Client 123')
+    })
+    it('does not set client details when softwareProvider is not present', async () => {
+      const { result } = await inject({
+        movement: {}
+      })
+
+      expect(result.clientId).toBeNull()
       expect(result.clientName).toBeNull()
     })
   })
