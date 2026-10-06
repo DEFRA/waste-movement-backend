@@ -137,7 +137,7 @@ Every beta-2 request and response body has a `<route>-request.examples.json` /
 ```
 
 They're a separate file because JSON Schema's own `examples` keyword is an unnamed list, and
-tools only offer a choice between _named_ examples: `openapi-beta-2.yaml` puts these under the
+tools only offer a choice between _named_ examples: `beta-2/openapi.json` puts these under the
 media type's `examples` (`$ref`-ing each one by name), which gives a picker in Swagger UI and one
 saved example per entry when the spec is imported into Bruno or Postman. Referring to them by
 name rather than by position also means reordering can't silently swap which payload a name shows.
@@ -185,9 +185,8 @@ schema's rules without touching its test.**
 
 Each beta route also validates its **201** body, via Hapi's `options.response.status[201]`
 pointed at the route's `<route>-response.schema.json` (`jsonSchemaResponseValidatorFor` in `validate/`). As with
-requests, these files are the source of truth: `digital-waste-tracking-api-docs`'
-`openapi-beta-2.yaml` `$refs` them rather than defining responses itself, so the published
-contract and the runtime check are the same file.
+requests, these files are the source of truth: `beta-2/openapi.json` `$refs` them rather than
+defining responses itself, so the published contract and the runtime check are the same file.
 
 - **`data` only.** The spec's `validation` envelope (`warnings` of `issue`s) is **not
   modelled** — whether responses keep it is undecided, and it may be removed. Routes still
@@ -209,14 +208,28 @@ contract and the runtime check are the same file.
 - **Legacy routes are untouched.** Response validation is declared per beta route; there is no
   server-wide default. `server.test.js` fails if a beta route ships without a 201 schema.
 
+### The OpenAPI spec lives here too
+
+Each version's spec is `beta-N/openapi.json`, at the root of its version folder, `$ref`-ing the
+schemas and named examples beside it by relative path. It's owned here, not in
+`digital-waste-tracking-api-docs`: that repo copies `beta-*/` (spec, schemas and examples) and
+renders it on GitHub Pages, nothing more. So a schema change and the spec change it needs land in
+the same PR.
+
+`openapi.test.js` resolves every `$ref` in each spec — schema files, refs between schemas,
+example names — and checks the result is a valid OpenAPI 3.1 document. A renamed schema file or a
+mistyped example name fails there rather than on the published page.
+
 ## Layout
 
 ```
 src/schemas/
   validate/          loads every *.schema.json and adapts it to a Hapi route validator
+  openapi.test.js    resolves every beta-*/openapi.json and validates it as OpenAPI 3.1
   beta-1/            flat: a <route>-request / <route>-response pair per route, plus
-                     delivery-id-params (tests in beta-1.test.js)
+                     delivery-id-params (tests in beta-1.test.js), and openapi.json
   beta-2/
+    openapi.json     the published spec — $refs everything below
     common/          shared resources — address, contact-details, producer/, broker-or-dealer/,
                      and the ids and wasteType that responses are built from
     creation/        create-movement-request / -response (each with its .examples.json)
@@ -227,9 +240,8 @@ src/schemas/
                      and the deliveryId path params
 ```
 
-`beta-2`'s categories (`common/`, `creation/`, `collection/`, `delivery/`, `receipt/`)
-mirror `digital-waste-tracking-api-docs`, which is the sandbox these resources are prototyped in.
-Keeping the trees identical is what lets a resource move across unchanged.
+`digital-waste-tracking-api-docs` copies each `beta-*/` folder as-is, so a file's path from
+`src/schemas/` is its path there too, and the specs' relative `$ref`s resolve unchanged.
 
 **`beta-1` vs `beta-2`**: same mechanism, different shape. beta-1's payloads are trivial (an
 `apiCode`, a list of ids, a `reason`) so they stay flat, with one file per body; it was
@@ -251,16 +263,16 @@ validate against.
 **Adding a route** — add `<category>/<route>-request.schema.json` and
 `<category>/<route>-response.schema.json`, named after the new route file, each with its test
 and a matching `.examples.json` (same example names in both). Point the route's `validate.payload` and `response.status[201]` at them the way the existing beta
-routes do. No `tags`, no `hapi-swagger` block.
+routes do. No `tags`, no `hapi-swagger` block. Add the path to `beta-2/openapi.json`, `$ref`-ing
+both schemas and their named examples.
 
 **Adding or changing a response** — the change starts here, exactly like a request: edit or
 create `<category>/<route>-response.schema.json` (property-level examples go in `examples: [...]`,
 not OpenAPI's `example`, which ajv's strict mode rejects; whole-body ones go in its
 `.examples.json`), update its test, point the route's `response.status[201]` at
 it, and add a route test that makes the handler return a non-conforming body and expects a 500.
-`openapi-beta-2.yaml` then picks it up by `$ref` — sync the schemas into
-`digital-waste-tracking-api-docs` and point the spec at the file; don't redefine the response
-there.
+`beta-2/openapi.json` picks it up by `$ref` — point the operation's 201 at the file (and its
+named examples) if it doesn't already; don't redefine the response in the spec.
 
 Run the full `npm test` rather than an ad-hoc Jest invocation — the suites share one in-memory
 MongoDB and need the flags `npm test` already passes.
