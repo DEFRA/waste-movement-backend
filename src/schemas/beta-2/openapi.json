@@ -58,7 +58,8 @@
         "description": "Movement ID minted by `POST /movements`.",
         "schema": {
           "$ref": "#/components/schemas/movementId"
-        }
+        },
+        "example": "25HRA0B2"
       },
       "deliveryIdPath": {
         "name": "deliveryId",
@@ -67,7 +68,8 @@
         "description": "Delivery ID minted by `POST /deliveries`.",
         "schema": {
           "$ref": "#/components/schemas/deliveryId"
-        }
+        },
+        "example": "25KMT4Z9"
       }
     },
     "headers": {
