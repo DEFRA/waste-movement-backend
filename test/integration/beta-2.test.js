@@ -642,6 +642,28 @@ describe('beta-2', () => {
       })
     })
 
+    it('reports a producer of the wrong type once', async () => {
+      const endpoint = '/beta-2/movements'
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { producer: 'fail' }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint
+      })
+      expect(response.body.errors).toEqual([
+        {
+          errorType: 'InvalidType',
+          message: 'must be object',
+          pointer: '/producer'
+        }
+      ])
+    })
+
     it('rejects commercial producer missing organisationName', async () => {
       const endpoint = '/beta-2/movements'
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {

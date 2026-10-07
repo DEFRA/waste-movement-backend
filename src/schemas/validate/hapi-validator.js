@@ -65,11 +65,32 @@ function toDetail(error) {
   }
 }
 
+const isAtOrBelow = (path, ancestor) =>
+  ancestor.every((segment, i) => path[i] === segment)
+
+// With allErrors, ajv reports a value of the wrong type once for every oneOf
+// branch (and nested schema) that checks it, plus each oneOf's own failure.
+// Report it once, with nothing else at or below it — the caller has to fix
+// the type before anything inside it can be checked.
+function withoutRedundantDetails(details) {
+  const wrongTypes = details.filter((d) => d.type === ERROR_TYPE.INVALID_TYPE)
+  const kept = details.filter((d) =>
+    wrongTypes.every(
+      (wrongType) =>
+        !isAtOrBelow(d.path, wrongType.path) ||
+        (d.type === ERROR_TYPE.INVALID_TYPE &&
+          d.path.length === wrongType.path.length)
+    )
+  )
+  const unique = new Map(kept.map((d) => [JSON.stringify(d), d]))
+  return [...unique.values()]
+}
+
 export const jsonSchemaRequestValidator = (schemaId) => (value) => {
   if (validate(schemaId, value)) {
     return value
   }
-  const details = getErrors(schemaId).map(toDetail)
+  const details = withoutRedundantDetails(getErrors(schemaId).map(toDetail))
   const boomError = Boom.badRequest(details.map((d) => d.message).join('. '))
   boomError.details = details
   throw boomError
