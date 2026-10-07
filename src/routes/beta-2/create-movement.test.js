@@ -530,10 +530,17 @@ describe('movement Route Tests version: beta-2', () => {
   // producer). It must be reported once, at its own pointer.
   describe('reports a value of the wrong type once', () => {
     it.each([
-      { description: 'producer', payload: { producer: 'fail' } },
+      {
+        description: 'producer',
+        payload: { producer: 'fail', intendedCarriers: [carrier] }
+      },
       {
         description: 'brokerOrDealer',
-        payload: { producer, brokerOrDealer: 'fail' }
+        payload: {
+          producer,
+          brokerOrDealer: 'fail',
+          intendedCarriers: [carrier]
+        }
       }
     ])(
       'when $description is not an object',
@@ -580,7 +587,8 @@ describe('movement Route Tests version: beta-2', () => {
       brokerOrDealer: {
         isPresent: true,
         items: [{ ...brokerOrDealerEntry, ...entry }]
-      }
+      },
+      intendedCarriers: [carrier]
     })
 
     it.each([

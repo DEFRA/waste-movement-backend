@@ -775,7 +775,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { producer: 'fail' }
+        body: { producer: 'fail', intendedCarriers: [carrier] }
       })
 
       expectProblemResponse(response, {
