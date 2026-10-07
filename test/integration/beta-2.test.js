@@ -43,7 +43,7 @@ describe('beta-2', () => {
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, ...minimalHouseholdProducer }
+        body: { ...minimalHouseholdProducer }
       }
     )
     return body.data.movementId
@@ -52,6 +52,7 @@ describe('beta-2', () => {
   // Shared error formatting and RFC9457 compliance tests
   describeBetaEndpointTests(version, () => testService, {
     apiCode1,
+    apiCodeInBody: false,
     minimalProducer: minimalHouseholdProducer,
     requiresProducer: true
   })
@@ -64,7 +65,7 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { apiCode: apiCode1, producer }
+          body: { producer }
         }
       )
 
@@ -96,7 +97,7 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { apiCode: apiCode1, producer }
+          body: { producer }
         }
       )
 
@@ -140,7 +141,7 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { apiCode: apiCode1, producer }
+          body: { producer }
         }
       )
 
@@ -172,7 +173,7 @@ describe('beta-2', () => {
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, ...minimalHouseholdProducer }
+        body: { ...minimalHouseholdProducer }
       }
     )
     const { movementId } = createRes.body.data
@@ -180,7 +181,7 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/movements/${movementId}/collection`,
-      { method: 'POST', body: { apiCode: apiCode1 } }
+      { method: 'POST', body: {} }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -211,7 +212,6 @@ describe('beta-2', () => {
       {
         method: 'POST',
         body: {
-          apiCode: apiCode1,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -233,7 +233,7 @@ describe('beta-2', () => {
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, ...minimalHouseholdProducer }
+        body: { ...minimalHouseholdProducer }
       }
     )
     const { movementId } = createRes.body.data
@@ -243,7 +243,7 @@ describe('beta-2', () => {
       '/beta-2/deliveries',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, movementIds: [movementId] }
+        body: { movementIds: [movementId] }
       }
     )
 
@@ -273,7 +273,7 @@ describe('beta-2', () => {
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, ...minimalHouseholdProducer }
+        body: { ...minimalHouseholdProducer }
       }
     )
     const { movementId } = createMovementRes.body.data
@@ -283,7 +283,7 @@ describe('beta-2', () => {
       '/beta-2/deliveries',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, movementIds: [movementId] }
+        body: { movementIds: [movementId] }
       }
     )
     const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
@@ -291,7 +291,7 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/deliveries/${deliveryId}/receipt`,
-      { method: 'POST', body: { apiCode: apiCode1 } }
+      { method: 'POST', body: {} }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -321,7 +321,7 @@ describe('beta-2', () => {
       '/beta-2/receipts',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, reason }
+        body: { reason }
       }
     )
 
@@ -355,7 +355,6 @@ describe('beta-2', () => {
       {
         method: 'POST',
         body: {
-          apiCode: apiCode1,
           specialHandlingRequirements: 'Handle with care and keep upright.'
         }
       }
@@ -379,7 +378,6 @@ describe('beta-2', () => {
       {
         method: 'POST',
         body: {
-          apiCode: apiCode1,
           movementIds: [movementId],
           supportingReferences: [supportingReference]
         }
@@ -399,7 +397,7 @@ describe('beta-2', () => {
       '/beta-2/deliveries',
       {
         method: 'POST',
-        body: { apiCode: apiCode1, movementIds: [movementId] }
+        body: { movementIds: [movementId] }
       }
     )
     const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
@@ -410,7 +408,6 @@ describe('beta-2', () => {
       {
         method: 'POST',
         body: {
-          apiCode: apiCode1,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -433,7 +430,6 @@ describe('beta-2', () => {
       {
         method: 'POST',
         body: {
-          apiCode: apiCode1,
           reason: 'No prior movement trail',
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
@@ -456,7 +452,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1 }
+        body: {}
       })
 
       expectProblemResponse(response, {
@@ -466,13 +462,15 @@ describe('beta-2', () => {
       })
     })
 
-    it('rejects collection creation with missing apiCode', async () => {
+    // apiCode is sent in the x-api-code header and resolved by the
+    // external API, so the backend rejects it in the body.
+    it('rejects collection creation with apiCode in the body', async () => {
       const movementId = await createMovement()
       const endpoint = `/beta-2/movements/${movementId}/collection`
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: {}
+        body: { apiCode: apiCode1 }
       })
 
       expectProblemResponse(response, {
@@ -489,7 +487,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1, brokerOrDealer: { isPresent: true } }
+        body: { brokerOrDealer: { isPresent: true } }
       })
 
       expectProblemResponse(response, {
@@ -513,7 +511,6 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          apiCode: apiCode1,
           brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
         }
       })
@@ -539,7 +536,6 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          apiCode: apiCode1,
           supportingReferences: [
             { ...supportingReference, label: 'Not A Label' }
           ]
@@ -565,7 +561,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1 }
+        body: {}
       })
 
       expectProblemResponse(response, {
@@ -581,7 +577,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1, movementIds: ['NONEXISTENT'] }
+        body: { movementIds: ['NONEXISTENT'] }
       })
 
       expectProblemResponse(response, {
@@ -591,12 +587,14 @@ describe('beta-2', () => {
       })
     })
 
-    it('rejects receipt recording with missing apiCode', async () => {
+    // apiCode is sent in the x-api-code header and resolved by the
+    // external API, so the backend rejects it in the body.
+    it('rejects receipt recording with apiCode in the body', async () => {
       const endpoint = '/beta-2/receipts'
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason' }
+        body: { apiCode: apiCode1, reason: 'Some reason' }
       })
 
       expectProblemResponse(response, {
@@ -607,12 +605,15 @@ describe('beta-2', () => {
       })
     })
 
-    it('rejects missing required field apiCode', async () => {
+    // apiCode is sent in the x-api-code header and resolved by the
+    // external API, so the backend rejects it in the body.
+    it('rejects apiCode in the movement body', async () => {
       const endpoint = '/beta-2/movements'
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          apiCode: apiCode1,
           producer: { wasteSource: 'Household' }
         }
       })
@@ -630,7 +631,6 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          apiCode: apiCode1,
           producer: { wasteSource: 'Invalid' }
         }
       })
@@ -648,7 +648,6 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          apiCode: apiCode1,
           producer: {
             wasteSource: 'Commercial',
             sicCode: '38110',
@@ -672,7 +671,6 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          apiCode: apiCode1,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -697,7 +695,6 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          apiCode: apiCode1,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -721,7 +718,6 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          apiCode: apiCode1,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -745,7 +741,6 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          apiCode: apiCode1,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -773,7 +768,6 @@ describe('beta-2', () => {
         {
           method: 'POST',
           body: {
-            apiCode: apiCode1,
             producer: { wasteSource: 'Household' }
           }
         }
@@ -790,7 +784,6 @@ describe('beta-2', () => {
         {
           method: 'POST',
           body: {
-            apiCode: apiCode1,
             producer: {
               wasteSource: 'Municipal',
               organisationName: 'Test Council',
@@ -814,7 +807,6 @@ describe('beta-2', () => {
         {
           method: 'POST',
           body: {
-            apiCode: apiCode1,
             producer: {
               wasteSource: 'Commercial',
               organisationName: 'Test Company',

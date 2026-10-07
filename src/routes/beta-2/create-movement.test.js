@@ -42,11 +42,10 @@ describe('movement Route Tests version: beta-2', () => {
   const endpointVersion = 'beta-2'
   const errorMessage = 'Database connection failed'
   const traceId = 'created-trace-id-123'
-  const apiCode = apiCode1
   const producer = {
     wasteSource: 'Household'
   }
-  const goodPayload = { apiCode, producer }
+  const goodPayload = { producer }
 
   const commercialProducer = {
     wasteSource: 'Commercial',
@@ -125,7 +124,7 @@ describe('movement Route Tests version: beta-2', () => {
     ['Commercial', commercialProducer],
     ['Municipal', municipalProducer]
   ])('creates a movement for a %s producer', async (_wasteSource, prod) => {
-    const payload = { apiCode, producer: prod }
+    const payload = { producer: prod }
     const createMovementRecordSpy = jest
       .spyOn(movementCreate, 'createMovementRecord')
       .mockResolvedValue(payload)
@@ -182,7 +181,6 @@ describe('movement Route Tests version: beta-2', () => {
 
   it('creates a movement when a brokerOrDealer is declared', async () => {
     const payload = {
-      apiCode,
       producer,
       brokerOrDealer: {
         isPresent: true,
@@ -224,7 +222,6 @@ describe('movement Route Tests version: beta-2', () => {
 
   it('returns an error when a declared brokerOrDealer has no details', async () => {
     const invalidPayload = {
-      apiCode,
       producer,
       brokerOrDealer: { isPresent: true }
     }
@@ -254,7 +251,6 @@ describe('movement Route Tests version: beta-2', () => {
 
   it('returns an error when brokerOrDealer details are given without declaring involvement', async () => {
     const invalidPayload = {
-      apiCode,
       producer,
       brokerOrDealer: {
         isPresent: false,
@@ -292,8 +288,10 @@ describe('movement Route Tests version: beta-2', () => {
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
-  it('returns an error when apiCode is missing and does not create a movement', async () => {
-    const invalidPayload = { producer }
+  // apiCode is sent in the x-api-code header and resolved by the
+  // external API, so the backend rejects it in the body.
+  it('returns an error when apiCode is sent in the body and does not create a movement', async () => {
+    const invalidPayload = { apiCode: apiCode1, producer }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -315,8 +313,8 @@ describe('movement Route Tests version: beta-2', () => {
       detail: '1 validation error occurred',
       errors: [
         {
-          errorType: 'NotProvided',
-          message: '"apiCode" is required',
+          errorType: 'NotAllowed',
+          message: 'must NOT have additional properties',
           pointer: '/apiCode'
         }
       ],
@@ -330,7 +328,7 @@ describe('movement Route Tests version: beta-2', () => {
   })
 
   it('returns an error when producer is missing and does not create a movement', async () => {
-    const invalidPayload = { apiCode }
+    const invalidPayload = {}
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -366,10 +364,8 @@ describe('movement Route Tests version: beta-2', () => {
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
-  // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only on
-  // the organisation forwarded by the external API.
   it('rejects when no organisation was forwarded (unknown or disabled API code) and does not create a movement', async () => {
-    const invalidPayload = { apiCode: apiCode1, producer }
+    const invalidPayload = { producer }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'

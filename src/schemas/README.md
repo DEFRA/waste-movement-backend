@@ -127,11 +127,11 @@ Every beta-2 request and response body has a `<route>-request.examples.json` /
 {
   "commercial": {
     "summary": "Commercial producer, with …",
-    "value": { "apiCode": "…" }
+    "value": { "producer": { … } }
   },
   "household": {
     "summary": "Household producer, minimal",
-    "value": { "apiCode": "…" }
+    "value": { "producer": { … } }
   }
 }
 ```
