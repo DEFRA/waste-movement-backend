@@ -54,9 +54,9 @@ describe('create-movement-request schema', () => {
     expect(validateAjv(payload).valid).toBe(false)
   })
 
-  // A single carrier's rules are covered by carrier/carrier.test.js and the
-  // list's by carrier/carriers.test.js — these confirm intendedCarriers is
-  // required and that the $ref wiring is live.
+  // A single carrier's rules are covered by carrier/carrier.test.js — these
+  // cover the list itself and confirm each entry is checked against
+  // carrier.schema.json.
   describe('intendedCarriers', () => {
     // Scenario: A Movement isn't created when no intended carrier is declared.
     test('is required', () => {
@@ -86,6 +86,22 @@ describe('create-movement-request schema', () => {
       expect(errors).toContainEqual(
         expect.objectContaining({
           keyword: 'minItems',
+          instancePath: '/intendedCarriers'
+        })
+      )
+    })
+
+    test('rejects a single carrier rather than a list', () => {
+      const { valid, errors } = validateAjv({
+        apiCode,
+        producer: householdProducer,
+        intendedCarriers: carrier
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'type',
           instancePath: '/intendedCarriers'
         })
       )
@@ -124,6 +140,29 @@ describe('create-movement-request schema', () => {
           params: { missingProperty: 'organisationName' }
         })
       )
+    })
+
+    test('rejects the list when any one carrier is invalid, reporting the error against that carrier', () => {
+      const { organisationName, ...invalidSecond } = carrier
+      const { valid, errors } = validateAjv({
+        apiCode,
+        producer: householdProducer,
+        intendedCarriers: [carrier, invalidSecond]
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '/intendedCarriers/1',
+          params: { missingProperty: 'organisationName' }
+        })
+      )
+      expect(
+        errors.filter(({ instancePath }) =>
+          instancePath.startsWith('/intendedCarriers/0')
+        )
+      ).toEqual([])
     })
   })
 
