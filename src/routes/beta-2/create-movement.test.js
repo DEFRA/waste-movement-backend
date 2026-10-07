@@ -443,4 +443,111 @@ describe('movement Route Tests version: beta-2', () => {
       requestId: traceId
     })
   })
+
+  // ajv checks a oneOf value against every branch, so a value of the wrong
+  // type used to be reported once per branch (12 errors for a string
+  // producer). It must be reported once, at its own pointer.
+  describe('reports a value of the wrong type once', () => {
+    it.each([
+      { description: 'producer', payload: { producer: 'fail' } },
+      {
+        description: 'brokerOrDealer',
+        payload: { producer, brokerOrDealer: 'fail' }
+      }
+    ])(
+      'when $description is not an object',
+      async ({ description, payload }) => {
+        const createMovementRecordSpy = jest.spyOn(
+          movementCreate,
+          'createMovementRecord'
+        )
+
+        const { statusCode, result } = await server.inject({
+          method: 'POST',
+          url: `/${endpointVersion}/movements`,
+          payload,
+          headers: {
+            'x-cdp-request-id': traceId,
+            Authorization: `Basic ${requestBasicAuthTest1}`,
+            ...organisationHeaders
+          }
+        })
+
+        expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+        expect(result.errors).toEqual([
+          {
+            errorType: 'InvalidType',
+            message: 'must be object',
+            pointer: `/${description}`
+          }
+        ])
+        expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
+      }
+    )
+  })
+
+  // Collapsing a wrong-type value only drops errors at or below *that*
+  // value: an error deeper in the payload keeps its full pointer.
+  describe('points a deeply nested error at the field itself', () => {
+    const brokerOrDealerEntry = {
+      organisationName: 'Broker Demo Ltd',
+      registrationNumber: 'CBDU654321',
+      contactDetails: { emailAddress: 'broker@example.com' }
+    }
+    const withBrokerOrDealerEntry = (entry) => ({
+      producer,
+      brokerOrDealer: {
+        isPresent: true,
+        items: [{ ...brokerOrDealerEntry, ...entry }]
+      }
+    })
+
+    it.each([
+      {
+        description: 'a nested field has an invalid format',
+        payload: withBrokerOrDealerEntry({
+          contactDetails: { emailAddress: 'not-an-email' }
+        }),
+        expectedError: {
+          errorType: 'InvalidFormat',
+          message: 'must match format "email"',
+          pointer: '/brokerOrDealer/items/0/contactDetails/emailAddress'
+        }
+      },
+      {
+        description: 'a nested field has the wrong type',
+        payload: withBrokerOrDealerEntry({
+          address: { fullAddress: '2 Broker Yard', postcode: 5 }
+        }),
+        expectedError: {
+          errorType: 'InvalidType',
+          message: 'must be string',
+          pointer: '/brokerOrDealer/items/0/address/postcode'
+        }
+      },
+      {
+        description: 'a nested object has the wrong type',
+        payload: withBrokerOrDealerEntry({ contactDetails: 'not-an-object' }),
+        expectedError: {
+          errorType: 'InvalidType',
+          message: 'must be object',
+          pointer: '/brokerOrDealer/items/0/contactDetails'
+        }
+      }
+    ])('when $description', async ({ payload, expectedError }) => {
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url: `/${endpointVersion}/movements`,
+        payload,
+        headers: {
+          'x-cdp-request-id': traceId,
+          Authorization: `Basic ${requestBasicAuthTest1}`,
+          ...organisationHeaders
+        }
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(result.errors).toEqual([expectedError])
+    })
+  })
 })
