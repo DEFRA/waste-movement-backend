@@ -19,7 +19,7 @@
       ]
     },
     "carrier": {
-      "$ref": "../common/carrier/carrier.schema.json"
+      "$ref": "../common/carrier.schema.json"
     },
     "brokerOrDealer": {
       "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json"

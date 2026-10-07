@@ -36,7 +36,7 @@ describe('create-collection-request schema: beta-2', () => {
     expect(validateAjv(payload).valid).toBe(false)
   })
 
-  // carrier's own rules are covered by carrier/carrier.test.js — these confirm
+  // carrier's own rules are covered by carrier.test.js — these confirm
   // it's required, that it's a single carrier rather than a list, and that the
   // $ref wiring is live.
   describe('carrier', () => {

@@ -54,7 +54,7 @@ describe('create-movement-request schema', () => {
     expect(validateAjv(payload).valid).toBe(false)
   })
 
-  // A single carrier's rules are covered by carrier/carrier.test.js — these
+  // A single carrier's rules are covered by carrier.test.js — these
   // cover the list itself and confirm each entry is checked against
   // carrier.schema.json.
   describe('intendedCarriers', () => {

@@ -16,7 +16,7 @@
     "intendedCarriers": {
       "type": "array",
       "items": {
-        "$ref": "../common/carrier/carrier.schema.json"
+        "$ref": "../common/carrier.schema.json"
       },
       "minItems": 1,
       "description": "The carriers intended to transport the waste. At least one is required."

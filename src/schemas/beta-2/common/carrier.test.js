@@ -1,6 +1,6 @@
-import { carrier, validatorFor } from '../../test-helpers.js'
+import { carrier, validatorFor } from '../test-helpers.js'
 
-const validateAjv = validatorFor('beta-2/common/carrier/carrier.schema.json')
+const validateAjv = validatorFor('beta-2/common/carrier.schema.json')
 
 describe('Feature: Schema - declaring a carrier of the waste', () => {
   const withoutField = (field, from = carrier) => {
