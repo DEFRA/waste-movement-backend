@@ -1,7 +1,19 @@
+import { randomInt } from 'node:crypto'
 import Hapi from '@hapi/hapi'
-import { generateWasteTrackingId } from '@defra/waste-movement-utils'
 
 const host = '127.0.0.1'
+const idAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+
+// A fake ID in the format waste-tracking-id-backend mints: a two-digit year
+// followed by six characters from A–Z and 0–9 (e.g. 26HRA0B2). The beta-2
+// response schemas check that format, so a looser fake would turn every 201
+// into a 500.
+const nextWasteTrackingId = () =>
+  String(new Date().getFullYear()).slice(-2) +
+  Array.from(
+    { length: 6 },
+    () => idAlphabet[randomInt(idAlphabet.length)]
+  ).join('')
 
 // A real Hapi server standing in for waste-tracking-id-backend's GET /next -
 // the one external dependency this suite doesn't run against the real service.
@@ -25,7 +37,7 @@ export function createWasteTrackingStub() {
           return h.response().code(forcedStatusCode)
         }
 
-        return h.response({ wasteTrackingId: generateWasteTrackingId() })
+        return h.response({ wasteTrackingId: nextWasteTrackingId() })
       }
     })
 

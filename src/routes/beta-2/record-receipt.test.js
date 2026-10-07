@@ -182,6 +182,24 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     })
   })
 
+  it('returns a 400 when the deliveryId is not in the ID format', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: '/beta-2/deliveries/NONEXISTENT/receipt',
+      payload: {},
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result.errors).toEqual([
+      {
+        errorType: 'InvalidFormat',
+        message: 'must match pattern "^[0-9]{2}[A-Z0-9]{6}$"',
+        pointer: '/deliveryId'
+      }
+    ])
+  })
+
   // apiCode is sent in the x-api-code header and resolved by the
   // external API, so the backend rejects it in the body.
   it('returns a 400 when apiCode is sent in the body', async () => {
