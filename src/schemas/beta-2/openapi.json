@@ -75,6 +75,7 @@
     "headers": {
       "RequestId": {
         "description": "Trace id for this request. Quote it to support if something goes wrong.",
+        "required": true,
         "schema": {
           "type": "string",
           "example": "4c6f9e1a-8f2b-4e3d-9a1c-2b7d5e6f0a3c"
