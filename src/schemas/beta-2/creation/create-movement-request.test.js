@@ -13,13 +13,14 @@ const validateAjv = validatorFor(
 )
 
 describe('create-movement-request schema', () => {
-  test('apiCode is required', () => {
-    const payload = { producer: householdProducer }
+  // apiCode is sent in the x-api-code header, not the body.
+  test('rejects apiCode in the body', () => {
+    const payload = { apiCode, producer: householdProducer }
     expect(validateAjv(payload).valid).toBe(false)
   })
 
   test('producer is required', () => {
-    const payload = { apiCode }
+    const payload = {}
     expect(validateAjv(payload).valid).toBe(false)
   })
 
@@ -28,18 +29,12 @@ describe('create-movement-request schema', () => {
     ['Commercial', commercialProducer],
     ['Municipal', municipalProducer]
   ])('accepts a valid %s producer', (_wasteSource, producer) => {
-    const payload = { apiCode, producer }
+    const payload = { producer }
     expect(validateAjv(payload).valid).toBe(true)
-  })
-
-  test('rejects a malformed apiCode', () => {
-    const payload = { apiCode: 'not-a-uuid', producer: householdProducer }
-    expect(validateAjv(payload).valid).toBe(false)
   })
 
   test('rejects an additional property beyond the declared ones', () => {
     const payload = {
-      apiCode,
       producer: householdProducer,
       extra: 'not allowed'
     }
@@ -50,12 +45,12 @@ describe('create-movement-request schema', () => {
     const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
 
     test('is optional', () => {
-      const payload = { apiCode, producer: householdProducer }
+      const payload = { producer: householdProducer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts a declared broker or dealer', () => {
-      const payload = { apiCode, producer: householdProducer, brokerOrDealer }
+      const payload = { producer: householdProducer, brokerOrDealer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
@@ -63,7 +58,6 @@ describe('create-movement-request schema', () => {
     // the $ref is wired up, so a rejection propagates to the payload.
     test('rejects a payload whose broker or dealer is invalid', () => {
       const payload = {
-        apiCode,
         producer: householdProducer,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items }
       }
@@ -76,13 +70,12 @@ describe('create-movement-request schema', () => {
   // $ref wiring is live.
   describe('supportingReferences', () => {
     test('is optional', () => {
-      const payload = { apiCode, producer: householdProducer }
+      const payload = { producer: householdProducer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts valid supportingReferences', () => {
       const payload = {
-        apiCode,
         producer: householdProducer,
         supportingReferences: [supportingReference]
       }
@@ -97,13 +90,12 @@ describe('create-movement-request schema', () => {
     // Scenario: A Movement is successfully created without special handling
     // requirements.
     test('is optional', () => {
-      const payload = { apiCode, producer: householdProducer }
+      const payload = { producer: householdProducer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts valid specialHandlingRequirements', () => {
       const payload = {
-        apiCode,
         producer: householdProducer,
         specialHandlingRequirements: 'Handle with care and keep upright.'
       }
@@ -112,7 +104,6 @@ describe('create-movement-request schema', () => {
 
     test('rejects a payload whose specialHandlingRequirements is invalid', () => {
       const payload = {
-        apiCode,
         producer: householdProducer,
         specialHandlingRequirements: 'A'.repeat(501)
       }
