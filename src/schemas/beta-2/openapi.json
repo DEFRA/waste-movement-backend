@@ -254,6 +254,22 @@
                   }
                 }
               }
+            },
+            "links": {
+              "RecordCollection": {
+                "operationId": "recordCollection",
+                "description": "The returned `movementId` identifies the movement whose collection is recorded.",
+                "parameters": {
+                  "movementId": "$response.body#/data/movementId"
+                }
+              },
+              "RecordDelivery": {
+                "operationId": "recordDelivery",
+                "description": "The returned `movementId` can be included in the `movementIds` of a delivery.",
+                "requestBody": {
+                  "movementIds": ["$response.body#/data/movementId"]
+                }
+              }
             }
           },
           "400": {
@@ -393,6 +409,15 @@
                   "twoMovements": {
                     "$ref": "./delivery/record-delivery-response.examples.json#/twoMovements"
                   }
+                }
+              }
+            },
+            "links": {
+              "RecordReceipt": {
+                "operationId": "recordReceipt",
+                "description": "Each returned `deliveryId` identifies a delivery whose receipt is recorded.",
+                "parameters": {
+                  "deliveryId": "$response.body#/data/deliveries/0/deliveryId"
                 }
               }
             }
