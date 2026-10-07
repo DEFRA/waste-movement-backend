@@ -17,7 +17,7 @@ describe('record-delivery-request schema', () => {
     )
   })
 
-  // apiCode is sent in the x-api-code header (D-046), not the body.
+  // apiCode is sent in the x-api-code header, not the body.
   test('rejects apiCode in the body', () => {
     expect(validateAjv({ apiCode, movementIds }).valid).toBe(false)
   })

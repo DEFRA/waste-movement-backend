@@ -20,7 +20,7 @@ export function describeBetaEndpointTests(version, getTestService, testData) {
   const basePath = `/${version}`
   const movementsEndpoint = `${basePath}/movements`
   // beta-1 carries apiCode in the body; beta-2 onwards sends it in the
-  // x-api-code header (D-046), which the external API resolves, so the
+  // x-api-code header, which the external API resolves, so the
   // backend body has none.
   const apiCodeBody = testData.apiCodeInBody
     ? { apiCode: testData.apiCode1 }

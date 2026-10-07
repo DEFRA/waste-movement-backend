@@ -318,7 +318,7 @@ describe('collection Route Tests version: beta-2', () => {
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
   })
 
-  // apiCode is sent in the x-api-code header (D-046) and resolved by the
+  // apiCode is sent in the x-api-code header and resolved by the
   // external API, so the backend rejects it in the body.
   it('returns an error when apiCode is sent in the body', async () => {
     const invalidPayload = { apiCode: apiCode1 }

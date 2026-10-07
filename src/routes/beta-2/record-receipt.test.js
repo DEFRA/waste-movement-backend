@@ -180,7 +180,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     })
   })
 
-  // apiCode is sent in the x-api-code header (D-046) and resolved by the
+  // apiCode is sent in the x-api-code header and resolved by the
   // external API, so the backend rejects it in the body.
   it('returns a 400 when apiCode is sent in the body', async () => {
     const { statusCode, result } = await server.inject({

@@ -288,7 +288,7 @@ describe('movement Route Tests version: beta-2', () => {
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
-  // apiCode is sent in the x-api-code header (D-046) and resolved by the
+  // apiCode is sent in the x-api-code header and resolved by the
   // external API, so the backend rejects it in the body.
   it('returns an error when apiCode is sent in the body and does not create a movement', async () => {
     const invalidPayload = { apiCode: apiCode1, producer }

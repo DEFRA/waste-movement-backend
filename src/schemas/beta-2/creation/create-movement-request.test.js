@@ -13,7 +13,7 @@ const validateAjv = validatorFor(
 )
 
 describe('create-movement-request schema', () => {
-  // apiCode is sent in the x-api-code header (D-046), not the body.
+  // apiCode is sent in the x-api-code header, not the body.
   test('rejects apiCode in the body', () => {
     const payload = { apiCode, producer: householdProducer }
     expect(validateAjv(payload).valid).toBe(false)

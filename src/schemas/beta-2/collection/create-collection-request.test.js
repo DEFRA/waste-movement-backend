@@ -16,7 +16,7 @@ describe('create-collection-request schema: beta-2', () => {
     expect(validateAjv({}).valid).toBe(true)
   })
 
-  // apiCode is sent in the x-api-code header (D-046), not the body.
+  // apiCode is sent in the x-api-code header, not the body.
   test('rejects apiCode in the body', () => {
     expect(validateAjv({ apiCode }).valid).toBe(false)
   })

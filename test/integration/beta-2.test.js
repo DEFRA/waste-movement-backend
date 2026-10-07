@@ -462,7 +462,7 @@ describe('beta-2', () => {
       })
     })
 
-    // apiCode is sent in the x-api-code header (D-046) and resolved by the
+    // apiCode is sent in the x-api-code header and resolved by the
     // external API, so the backend rejects it in the body.
     it('rejects collection creation with apiCode in the body', async () => {
       const movementId = await createMovement()
@@ -587,7 +587,7 @@ describe('beta-2', () => {
       })
     })
 
-    // apiCode is sent in the x-api-code header (D-046) and resolved by the
+    // apiCode is sent in the x-api-code header and resolved by the
     // external API, so the backend rejects it in the body.
     it('rejects receipt recording with apiCode in the body', async () => {
       const endpoint = '/beta-2/receipts'
@@ -605,7 +605,7 @@ describe('beta-2', () => {
       })
     })
 
-    // apiCode is sent in the x-api-code header (D-046) and resolved by the
+    // apiCode is sent in the x-api-code header and resolved by the
     // external API, so the backend rejects it in the body.
     it('rejects apiCode in the movement body', async () => {
       const endpoint = '/beta-2/movements'

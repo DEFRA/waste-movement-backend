@@ -47,7 +47,7 @@
         "type": "apiKey",
         "in": "header",
         "name": "x-api-code",
-        "description": "The `apiCode` issued to your organisation, identifying who the submission is made on behalf of. Sent as a header rather than in the request body (D-046)."
+        "description": "The `apiCode` issued to your organisation, identifying who the submission is made on behalf of. Sent as a header rather than in the request body."
       }
     },
     "parameters": {
