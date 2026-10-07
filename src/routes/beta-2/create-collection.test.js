@@ -34,8 +34,7 @@ describe('collection Route Tests version: beta-2', () => {
   const endpointVersion = 'beta-2'
   const errorMessage = 'Database connection failed'
   const traceId = 'created-trace-id-123'
-  const apiCode = apiCode1
-  const goodPayload = { apiCode, carrier }
+  const goodPayload = { carrier }
   const goodMovementId = 'movementId'
 
   const expectedTypeBase =
@@ -53,7 +52,7 @@ describe('collection Route Tests version: beta-2', () => {
     await server.stop()
   })
 
-  it('creates a collection when a valid apiCode and movementId are provided', async () => {
+  it('creates a collection when a valid movementId is provided', async () => {
     const getMovementRecordSpy = jest
       .spyOn(movementService, 'getMovementRecord')
       .mockResolvedValue({ id: goodMovementId })
@@ -78,7 +77,6 @@ describe('collection Route Tests version: beta-2', () => {
 
   it('creates a collection when a brokerOrDealer is declared', async () => {
     const payload = {
-      apiCode,
       carrier,
       brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] }
     }
@@ -106,7 +104,6 @@ describe('collection Route Tests version: beta-2', () => {
 
   it('returns an error when a declared brokerOrDealer has no details', async () => {
     const invalidPayload = {
-      apiCode,
       carrier,
       brokerOrDealer: { isPresent: true }
     }
@@ -137,7 +134,6 @@ describe('collection Route Tests version: beta-2', () => {
 
   it('returns an error when brokerOrDealer details are given without declaring involvement', async () => {
     const invalidPayload = {
-      apiCode,
       carrier,
       brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
     }
@@ -169,7 +165,6 @@ describe('collection Route Tests version: beta-2', () => {
 
   it('creates a collection when supportingReferences are provided', async () => {
     const payload = {
-      apiCode,
       carrier,
       supportingReferences: [supportingReference]
     }
@@ -197,7 +192,6 @@ describe('collection Route Tests version: beta-2', () => {
 
   it('returns an error when a supportingReference has an unrecognised label', async () => {
     const invalidPayload = {
-      apiCode,
       carrier,
       supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
     }
@@ -229,7 +223,6 @@ describe('collection Route Tests version: beta-2', () => {
 
   it('creates a collection when specialHandlingRequirements are provided', async () => {
     const payload = {
-      apiCode,
       carrier,
       specialHandlingRequirements: 'Handle with care and keep upright.'
     }
@@ -257,7 +250,6 @@ describe('collection Route Tests version: beta-2', () => {
 
   it('returns an error when specialHandlingRequirements is too long', async () => {
     const invalidPayload = {
-      apiCode,
       specialHandlingRequirements: 'A'.repeat(501)
     }
     const getMovementRecordSpy = jest.spyOn(
@@ -285,8 +277,6 @@ describe('collection Route Tests version: beta-2', () => {
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
-  // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only on
-  // the organisation forwarded by the external API.
   it('rejects when no organisation was forwarded (unknown or disabled API code)', async () => {
     const getMovementRecordSpy = jest.spyOn(
       movementService,
@@ -340,7 +330,7 @@ describe('collection Route Tests version: beta-2', () => {
   })
 
   it('returns an error when carrier is missing', async () => {
-    const invalidPayload = { apiCode }
+    const invalidPayload = {}
     const getMovementRecordSpy = jest.spyOn(
       movementService,
       'getMovementRecord'
@@ -375,8 +365,10 @@ describe('collection Route Tests version: beta-2', () => {
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
-  it('returns an error when apiCode validation fails', async () => {
-    const invalidPayload = { carrier }
+  // apiCode is sent in the x-api-code header and resolved by the
+  // external API, so the backend rejects it in the body.
+  it('returns an error when apiCode is sent in the body', async () => {
+    const invalidPayload = { apiCode: apiCode1, carrier }
     const getMovementRecordSpy = jest.spyOn(
       movementService,
       'getMovementRecord'
@@ -398,8 +390,8 @@ describe('collection Route Tests version: beta-2', () => {
       detail: '1 validation error occurred',
       errors: [
         {
-          errorType: 'NotProvided',
-          message: '"apiCode" is required',
+          errorType: 'NotAllowed',
+          message: 'must NOT have additional properties',
           pointer: '/apiCode'
         }
       ],

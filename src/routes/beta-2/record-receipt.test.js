@@ -79,7 +79,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, carrier },
+      payload: { carrier },
       headers: tracedAuthHeaders
     })
 
@@ -98,7 +98,6 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: {
-        apiCode: apiCode1,
         carrier,
         brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
         supportingReferences: [supportingReference]
@@ -117,7 +116,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, brokerOrDealer: { isPresent: true } },
+      payload: { brokerOrDealer: { isPresent: true } },
       headers: tracedAuthHeaders
     })
 
@@ -134,7 +133,6 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: {
-        apiCode: apiCode1,
         supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
       },
       headers: tracedAuthHeaders
@@ -155,7 +153,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, carrier },
+      payload: { carrier },
       headers: {
         ...authHeaders,
         ...organisationHeaders,
@@ -170,7 +168,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, carrier },
+      payload: { carrier },
       headers: tracedAuthHeaders
     })
 
@@ -184,27 +182,24 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     })
   })
 
-  it('returns a 400 when required fields are missing', async () => {
+  // apiCode is sent in the x-api-code header and resolved by the
+  // external API, so the backend rejects it in the body.
+  it('returns a 400 when apiCode is sent in the body', async () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: {},
+      payload: { apiCode: apiCode1, carrier },
       headers: tracedAuthHeaders
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      detail: '2 validation errors occurred',
+      detail: '1 validation error occurred',
       errors: [
         {
-          errorType: 'NotProvided',
-          message: '"apiCode" is required',
+          errorType: 'NotAllowed',
+          message: 'must NOT have additional properties',
           pointer: '/apiCode'
-        },
-        {
-          errorType: 'NotProvided',
-          message: '"carrier" is required',
-          pointer: '/carrier'
         }
       ],
       instance: '/beta-2/deliveries/25KMT4Z9/receipt',
@@ -218,7 +213,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1 },
+      payload: {},
       headers: tracedAuthHeaders
     })
 
@@ -239,15 +234,13 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     })
   })
 
-  // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only on
-  // the organisation forwarded by the external API.
   it('returns a 400 when no organisation was forwarded (unknown or disabled API code)', async () => {
     await server.db.collection('deliveries').insertOne({ deliveryId })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, carrier },
+      payload: { carrier },
       headers: { ...authHeaders, ...tracedHeaders }
     })
 
@@ -268,7 +261,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, carrier },
+      payload: { carrier },
       headers: tracedAuthHeaders
     })
 
@@ -285,7 +278,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, carrier },
+      payload: { carrier },
       headers: tracedHeaders
     })
 
@@ -306,7 +299,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, carrier },
+      payload: { carrier },
       headers: tracedAuthHeaders
     })
 

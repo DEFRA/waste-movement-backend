@@ -13,23 +13,17 @@ const validateAjv = validatorFor(
 describe('create-collection-request schema: beta-2', () => {
   const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
 
-  test('accepts a payload with only an apiCode and a carrier', () => {
-    expect(validateAjv({ apiCode, carrier }).valid).toBe(true)
+  test('accepts a payload with only a carrier', () => {
+    expect(validateAjv({ carrier }).valid).toBe(true)
   })
 
-  test('apiCode is required', () => {
-    const payload = { carrier }
-    expect(validateAjv(payload).valid).toBe(false)
-  })
-
-  test('rejects a malformed apiCode', () => {
-    const payload = { apiCode: 'not-a-uuid', carrier }
-    expect(validateAjv(payload).valid).toBe(false)
+  // apiCode is sent in the x-api-code header, not the body.
+  test('rejects apiCode in the body', () => {
+    expect(validateAjv({ apiCode, carrier }).valid).toBe(false)
   })
 
   test('rejects an additional property beyond the declared ones', () => {
     const payload = {
-      apiCode,
       carrier,
       extra: 'not allowed'
     }
@@ -41,7 +35,7 @@ describe('create-collection-request schema: beta-2', () => {
   // $ref wiring is live.
   describe('carrier', () => {
     test('is required', () => {
-      const { valid, errors } = validateAjv({ apiCode })
+      const { valid, errors } = validateAjv({})
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -54,11 +48,11 @@ describe('create-collection-request schema: beta-2', () => {
     })
 
     test('accepts a valid carrier', () => {
-      expect(validateAjv({ apiCode, carrier }).valid).toBe(true)
+      expect(validateAjv({ carrier }).valid).toBe(true)
     })
 
     test('rejects a list of carriers', () => {
-      const { valid, errors } = validateAjv({ apiCode, carrier: [carrier] })
+      const { valid, errors } = validateAjv({ carrier: [carrier] })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -69,7 +63,6 @@ describe('create-collection-request schema: beta-2', () => {
     test('rejects a payload whose carrier is invalid', () => {
       const { organisationName, ...invalidCarrier } = carrier
       const { valid, errors } = validateAjv({
-        apiCode,
         carrier: invalidCarrier
       })
 
@@ -87,7 +80,6 @@ describe('create-collection-request schema: beta-2', () => {
   describe('brokerOrDealer', () => {
     test('is optional', () => {
       const payload = {
-        apiCode,
         carrier,
         supportingReferences: [supportingReference]
       }
@@ -95,7 +87,7 @@ describe('create-collection-request schema: beta-2', () => {
     })
 
     test('accepts a declared broker or dealer', () => {
-      const payload = { apiCode, carrier, brokerOrDealer }
+      const payload = { carrier, brokerOrDealer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
@@ -103,7 +95,6 @@ describe('create-collection-request schema: beta-2', () => {
     // the $ref is wired up, so a rejection propagates to the payload.
     test('rejects a payload whose broker or dealer is invalid', () => {
       const payload = {
-        apiCode,
         carrier,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items }
       }
@@ -116,13 +107,12 @@ describe('create-collection-request schema: beta-2', () => {
   // $ref wiring is live.
   describe('supportingReferences', () => {
     test('is optional', () => {
-      const payload = { apiCode, carrier, brokerOrDealer }
+      const payload = { carrier, brokerOrDealer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts valid supportingReferences', () => {
       const payload = {
-        apiCode,
         carrier,
         supportingReferences: [supportingReference]
       }
@@ -135,13 +125,12 @@ describe('create-collection-request schema: beta-2', () => {
   // that the $ref wiring is live.
   describe('specialHandlingRequirements', () => {
     test('is optional', () => {
-      const payload = { apiCode, carrier, brokerOrDealer }
+      const payload = { carrier, brokerOrDealer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts valid specialHandlingRequirements', () => {
       const payload = {
-        apiCode,
         carrier,
         specialHandlingRequirements: 'Handle with care and keep upright.'
       }
@@ -150,7 +139,6 @@ describe('create-collection-request schema: beta-2', () => {
 
     test('rejects a payload whose specialHandlingRequirements is invalid', () => {
       const payload = {
-        apiCode,
         carrier,
         specialHandlingRequirements: 'A'.repeat(501)
       }

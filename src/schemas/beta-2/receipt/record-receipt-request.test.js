@@ -14,21 +14,16 @@ describe('record-receipt-request schema', () => {
   const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
 
   test('accepts a valid payload', () => {
-    expect(validateAjv({ apiCode, carrier }).valid).toBe(true)
+    expect(validateAjv({ carrier }).valid).toBe(true)
   })
 
-  test('apiCode is required', () => {
-    expect(validateAjv({ carrier }).valid).toBe(false)
-  })
-
-  test('rejects a malformed apiCode', () => {
-    expect(validateAjv({ apiCode: 'not-a-uuid', carrier }).valid).toBe(false)
+  // apiCode is sent in the x-api-code header, not the body.
+  test('rejects apiCode in the body', () => {
+    expect(validateAjv({ apiCode, carrier }).valid).toBe(false)
   })
 
   test('rejects an additional property beyond the declared ones', () => {
-    expect(validateAjv({ apiCode, carrier, extra: 'not allowed' }).valid).toBe(
-      false
-    )
+    expect(validateAjv({ carrier, extra: 'not allowed' }).valid).toBe(false)
   })
 
   // carrier's own rules are covered by carrier.test.js — these confirm
@@ -36,7 +31,7 @@ describe('record-receipt-request schema', () => {
   // $ref wiring is live.
   describe('carrier', () => {
     test('is required', () => {
-      const { valid, errors } = validateAjv({ apiCode })
+      const { valid, errors } = validateAjv({})
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -49,7 +44,7 @@ describe('record-receipt-request schema', () => {
     })
 
     test('rejects a list of carriers', () => {
-      const { valid, errors } = validateAjv({ apiCode, carrier: [carrier] })
+      const { valid, errors } = validateAjv({ carrier: [carrier] })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -60,7 +55,6 @@ describe('record-receipt-request schema', () => {
     test('rejects a payload whose carrier is invalid', () => {
       const { organisationName, ...invalidCarrier } = carrier
       const { valid, errors } = validateAjv({
-        apiCode,
         carrier: invalidCarrier
       })
 
@@ -78,7 +72,6 @@ describe('record-receipt-request schema', () => {
   describe('brokerOrDealer', () => {
     test('is optional', () => {
       const payload = {
-        apiCode,
         carrier,
         supportingReferences: [supportingReference]
       }
@@ -86,7 +79,7 @@ describe('record-receipt-request schema', () => {
     })
 
     test('accepts a declared broker or dealer', () => {
-      const payload = { apiCode, carrier, brokerOrDealer }
+      const payload = { carrier, brokerOrDealer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
@@ -94,7 +87,6 @@ describe('record-receipt-request schema', () => {
     // the $ref is wired up, so a rejection propagates to the payload.
     test('rejects a payload whose broker or dealer is invalid', () => {
       const payload = {
-        apiCode,
         carrier,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items }
       }
@@ -107,13 +99,12 @@ describe('record-receipt-request schema', () => {
   // $ref wiring is live.
   describe('supportingReferences', () => {
     test('is optional', () => {
-      const payload = { apiCode, carrier, brokerOrDealer }
+      const payload = { carrier, brokerOrDealer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts valid supportingReferences', () => {
       const payload = {
-        apiCode,
         carrier,
         supportingReferences: [supportingReference]
       }
@@ -122,7 +113,6 @@ describe('record-receipt-request schema', () => {
 
     test('rejects a payload whose supportingReferences is invalid', () => {
       const payload = {
-        apiCode,
         carrier,
         supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
       }

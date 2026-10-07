@@ -16,13 +16,14 @@ const validateAjv = validatorFor(
 const intendedCarriers = [carrier]
 
 describe('create-movement-request schema', () => {
-  test('apiCode is required', () => {
-    const payload = { producer: householdProducer, intendedCarriers }
+  // apiCode is sent in the x-api-code header, not the body.
+  test('rejects apiCode in the body', () => {
+    const payload = { apiCode, producer: householdProducer, intendedCarriers }
     expect(validateAjv(payload).valid).toBe(false)
   })
 
   test('producer is required', () => {
-    const payload = { apiCode, intendedCarriers }
+    const payload = { intendedCarriers }
     expect(validateAjv(payload).valid).toBe(false)
   })
 
@@ -31,22 +32,12 @@ describe('create-movement-request schema', () => {
     ['Commercial', commercialProducer],
     ['Municipal', municipalProducer]
   ])('accepts a valid %s producer', (_wasteSource, producer) => {
-    const payload = { apiCode, producer, intendedCarriers }
+    const payload = { producer, intendedCarriers }
     expect(validateAjv(payload).valid).toBe(true)
-  })
-
-  test('rejects a malformed apiCode', () => {
-    const payload = {
-      apiCode: 'not-a-uuid',
-      producer: householdProducer,
-      intendedCarriers
-    }
-    expect(validateAjv(payload).valid).toBe(false)
   })
 
   test('rejects an additional property beyond the declared ones', () => {
     const payload = {
-      apiCode,
       producer: householdProducer,
       intendedCarriers,
       extra: 'not allowed'
@@ -61,7 +52,6 @@ describe('create-movement-request schema', () => {
     // Scenario: A Movement isn't created when no intended carrier is declared.
     test('is required', () => {
       const { valid, errors } = validateAjv({
-        apiCode,
         producer: householdProducer
       })
 
@@ -77,7 +67,6 @@ describe('create-movement-request schema', () => {
 
     test('rejects an empty list of carriers', () => {
       const { valid, errors } = validateAjv({
-        apiCode,
         producer: householdProducer,
         intendedCarriers: []
       })
@@ -93,7 +82,6 @@ describe('create-movement-request schema', () => {
 
     test('rejects a single carrier rather than a list', () => {
       const { valid, errors } = validateAjv({
-        apiCode,
         producer: householdProducer,
         intendedCarriers: carrier
       })
@@ -108,13 +96,12 @@ describe('create-movement-request schema', () => {
     })
 
     test('accepts one carrier', () => {
-      const payload = { apiCode, producer: householdProducer, intendedCarriers }
+      const payload = { producer: householdProducer, intendedCarriers }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts more than one carrier', () => {
       const payload = {
-        apiCode,
         producer: householdProducer,
         intendedCarriers: [
           carrier,
@@ -127,7 +114,6 @@ describe('create-movement-request schema', () => {
     test('rejects a payload whose carrier is invalid', () => {
       const { organisationName, ...invalidCarrier } = carrier
       const { valid, errors } = validateAjv({
-        apiCode,
         producer: householdProducer,
         intendedCarriers: [invalidCarrier]
       })
@@ -145,7 +131,6 @@ describe('create-movement-request schema', () => {
     test('rejects the list when any one carrier is invalid, reporting the error against that carrier', () => {
       const { organisationName, ...invalidSecond } = carrier
       const { valid, errors } = validateAjv({
-        apiCode,
         producer: householdProducer,
         intendedCarriers: [carrier, invalidSecond]
       })
@@ -170,13 +155,12 @@ describe('create-movement-request schema', () => {
     const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
 
     test('is optional', () => {
-      const payload = { apiCode, producer: householdProducer, intendedCarriers }
+      const payload = { producer: householdProducer, intendedCarriers }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts a declared broker or dealer', () => {
       const payload = {
-        apiCode,
         producer: householdProducer,
         intendedCarriers,
         brokerOrDealer
@@ -188,7 +172,6 @@ describe('create-movement-request schema', () => {
     // the $ref is wired up, so a rejection propagates to the payload.
     test('rejects a payload whose broker or dealer is invalid', () => {
       const payload = {
-        apiCode,
         producer: householdProducer,
         intendedCarriers,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items }
@@ -202,13 +185,12 @@ describe('create-movement-request schema', () => {
   // $ref wiring is live.
   describe('supportingReferences', () => {
     test('is optional', () => {
-      const payload = { apiCode, producer: householdProducer, intendedCarriers }
+      const payload = { producer: householdProducer, intendedCarriers }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts valid supportingReferences', () => {
       const payload = {
-        apiCode,
         producer: householdProducer,
         intendedCarriers,
         supportingReferences: [supportingReference]
@@ -224,13 +206,12 @@ describe('create-movement-request schema', () => {
     // Scenario: A Movement is successfully created without special handling
     // requirements.
     test('is optional', () => {
-      const payload = { apiCode, producer: householdProducer, intendedCarriers }
+      const payload = { producer: householdProducer, intendedCarriers }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts valid specialHandlingRequirements', () => {
       const payload = {
-        apiCode,
         producer: householdProducer,
         intendedCarriers,
         specialHandlingRequirements: 'Handle with care and keep upright.'
@@ -240,7 +221,6 @@ describe('create-movement-request schema', () => {
 
     test('rejects a payload whose specialHandlingRequirements is invalid', () => {
       const payload = {
-        apiCode,
         producer: householdProducer,
         intendedCarriers,
         specialHandlingRequirements: 'A'.repeat(501)

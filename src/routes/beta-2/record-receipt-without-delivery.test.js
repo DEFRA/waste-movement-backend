@@ -80,7 +80,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, reason, carrier },
+      payload: { reason, carrier },
       headers: tracedAuthHeaders
     })
 
@@ -107,7 +107,6 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
-        apiCode: apiCode1,
         reason,
         carrier,
         brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
@@ -128,7 +127,6 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
-        apiCode: apiCode1,
         reason,
         brokerOrDealer: { isPresent: true }
       },
@@ -148,7 +146,6 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
-        apiCode: apiCode1,
         reason,
         supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
       },
@@ -168,7 +165,7 @@ describe('POST /beta-2/receipts', () => {
     const { headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, reason, carrier },
+      payload: { reason, carrier },
       headers: tracedAuthHeaders
     })
 
@@ -185,13 +182,8 @@ describe('POST /beta-2/receipts', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      detail: '3 validation errors occurred',
+      detail: '2 validation errors occurred',
       errors: [
-        {
-          errorType: 'NotProvided',
-          message: '"apiCode" is required',
-          pointer: '/apiCode'
-        },
         {
           errorType: 'NotProvided',
           message: '"reason" is required',
@@ -214,7 +206,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, reason },
+      payload: { reason },
       headers: tracedAuthHeaders
     })
 
@@ -235,13 +227,38 @@ describe('POST /beta-2/receipts', () => {
     })
   })
 
-  // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only on
-  // the organisation forwarded by the external API.
+  // apiCode is sent in the x-api-code header and resolved by the
+  // external API, so the backend rejects it in the body.
+  it('returns a 400 when apiCode is sent in the body', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: { apiCode: apiCode1, carrier, reason },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result).toEqual({
+      detail: '1 validation error occurred',
+      errors: [
+        {
+          errorType: 'NotAllowed',
+          message: 'must NOT have additional properties',
+          pointer: '/apiCode'
+        }
+      ],
+      instance: '/beta-2/receipts',
+      title: 'Bad Request',
+      type: `${expectedTypeBase}bad-request`,
+      requestId: traceId
+    })
+  })
+
   it('returns a 400 when no organisation was forwarded (unknown or disabled API code)', async () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, reason, carrier },
+      payload: { reason, carrier },
       headers: { ...authHeaders, ...tracedHeaders }
     })
 
@@ -264,7 +281,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, reason, carrier },
+      payload: { reason, carrier },
       headers: tracedAuthHeaders
     })
 
@@ -281,7 +298,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, reason, carrier },
+      payload: { reason, carrier },
       headers: tracedHeaders
     })
 
@@ -304,7 +321,6 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
-        apiCode: apiCode1,
         reason: 'No delivery was recorded',
         carrier
       },
