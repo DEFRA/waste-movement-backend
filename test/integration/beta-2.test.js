@@ -299,7 +299,7 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/deliveries/${deliveryId}/receipt`,
-      { method: 'POST', body: { carrier } }
+      { method: 'POST', body: { carrier, receiver } }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -329,7 +329,7 @@ describe('beta-2', () => {
       '/beta-2/receipts',
       {
         method: 'POST',
-        body: { reason, carrier }
+        body: { reason, carrier, receiver }
       }
     )
 
@@ -420,6 +420,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           carrier,
+          receiver,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -444,6 +445,7 @@ describe('beta-2', () => {
         body: {
           reason: 'No prior movement trail',
           carrier,
+          receiver,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -685,7 +687,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason' }
+        body: { reason: 'Some reason', receiver }
       })
 
       expectProblemResponse(response, {
@@ -702,12 +704,12 @@ describe('beta-2', () => {
       )
     })
 
-    it('rejects receipt recording without a carrier', async () => {
+    it('rejects receipt recording without a receiver', async () => {
       const endpoint = '/beta-2/receipts'
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason' }
+        body: { reason: 'Some reason', carrier }
       })
 
       expectProblemResponse(response, {
@@ -716,12 +718,44 @@ describe('beta-2', () => {
         instance: endpoint,
         shape: 'VALIDATION-ERROR'
       })
-      expect(response.body.errors).toContainEqual(
-        expect.objectContaining({
+      expect(response.body.errors).toEqual([
+        {
           errorType: 'NotProvided',
-          pointer: '/carrier'
-        })
+          message: '"receiver" is required',
+          pointer: '/receiver'
+        }
+      ])
+    })
+
+    it('rejects receipt recording against a delivery without a receiver', async () => {
+      const movementId = await createMovement()
+      const createDeliveryRes = await betaHttpRequest(
+        testService.baseUrl,
+        '/beta-2/deliveries',
+        { method: 'POST', body: { movementIds: [movementId], carrier } }
       )
+      const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
+
+      const endpoint = `/beta-2/deliveries/${deliveryId}/receipt`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { carrier }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toEqual([
+        {
+          errorType: 'NotProvided',
+          message: '"receiver" is required',
+          pointer: '/receiver'
+        }
+      ])
     })
 
     // apiCode is sent in the x-api-code header and resolved by the
@@ -731,7 +765,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1, reason: 'Some reason', carrier }
+        body: { apiCode: apiCode1, reason: 'Some reason', carrier, receiver }
       })
 
       expectProblemResponse(response, {
