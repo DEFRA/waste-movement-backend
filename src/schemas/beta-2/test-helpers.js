@@ -90,3 +90,20 @@ export const supportingReference = {
   label: 'PO Number',
   reference: 'PO-123456'
 }
+
+export const weight = {
+  amount: 250.5,
+  unit: 'KILOGRAMS',
+  isEstimate: false
+}
+
+export const physicalDetails = {
+  form: 'SOLID',
+  containerType: 'DRU',
+  containerCount: 4,
+  totalWeight: weight
+}
+
+export const wasteItem = {
+  physicalDetails
+}

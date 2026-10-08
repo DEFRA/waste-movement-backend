@@ -4,7 +4,8 @@ import {
   supportingReference,
   carrier,
   receiver,
-  validatorFor
+  validatorFor,
+  wasteItem
 } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
@@ -13,20 +14,23 @@ const validateAjv = validatorFor(
 
 describe('record-receipt-request schema', () => {
   const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
+  const wasteItems = [wasteItem]
 
   test('accepts a valid payload', () => {
-    expect(validateAjv({ carrier, receiver }).valid).toBe(true)
+    expect(validateAjv({ carrier, receiver, wasteItems }).valid).toBe(true)
   })
 
   // apiCode is sent in the x-api-code header, not the body.
   test('rejects apiCode in the body', () => {
-    expect(validateAjv({ apiCode, carrier, receiver }).valid).toBe(false)
+    expect(validateAjv({ apiCode, carrier, receiver, wasteItems }).valid).toBe(
+      false
+    )
   })
 
   test('rejects an additional property beyond the declared ones', () => {
-    expect(validateAjv({ carrier, receiver, extra: 'not allowed' }).valid).toBe(
-      false
-    )
+    expect(
+      validateAjv({ carrier, receiver, wasteItems, extra: 'not allowed' }).valid
+    ).toBe(false)
   })
 
   // carrier's own rules are covered by carrier.test.js — these confirm
@@ -34,7 +38,7 @@ describe('record-receipt-request schema', () => {
   // $ref wiring is live.
   describe('carrier', () => {
     test('is required', () => {
-      const { valid, errors } = validateAjv({ receiver })
+      const { valid, errors } = validateAjv({ receiver, wasteItems })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -47,7 +51,11 @@ describe('record-receipt-request schema', () => {
     })
 
     test('rejects a list of carriers', () => {
-      const { valid, errors } = validateAjv({ carrier: [carrier], receiver })
+      const { valid, errors } = validateAjv({
+        carrier: [carrier],
+        receiver,
+        wasteItems
+      })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -59,7 +67,8 @@ describe('record-receipt-request schema', () => {
       const { organisationName, ...invalidCarrier } = carrier
       const { valid, errors } = validateAjv({
         carrier: invalidCarrier,
-        receiver
+        receiver,
+        wasteItems
       })
 
       expect(valid).toBe(false)
@@ -78,7 +87,7 @@ describe('record-receipt-request schema', () => {
   // that the $ref wiring is live.
   describe('receiver', () => {
     test('is required', () => {
-      const { valid, errors } = validateAjv({ carrier })
+      const { valid, errors } = validateAjv({ carrier, wasteItems })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -93,7 +102,8 @@ describe('record-receipt-request schema', () => {
     test('rejects a list of receivers', () => {
       const { valid, errors } = validateAjv({
         carrier,
-        receiver: [receiver]
+        receiver: [receiver],
+        wasteItems
       })
 
       expect(valid).toBe(false)
@@ -106,7 +116,8 @@ describe('record-receipt-request schema', () => {
       const { siteName, ...invalidReceiver } = receiver
       const { valid, errors } = validateAjv({
         carrier,
-        receiver: invalidReceiver
+        receiver: invalidReceiver,
+        wasteItems
       })
 
       expect(valid).toBe(false)
@@ -120,18 +131,76 @@ describe('record-receipt-request schema', () => {
     })
   })
 
+  // A waste item's rules are covered by waste-item/*.test.js — these confirm
+  // wasteItems is required and that the $ref wiring is live.
+  describe('wasteItems', () => {
+    // Scenario: A Receipt is created when a valid physical form, containers
+    // and weight are declared.
+    test('accepts a valid waste item', () => {
+      expect(validateAjv({ carrier, receiver, wasteItems }).valid).toBe(true)
+    })
+
+    test('is required', () => {
+      const { valid, errors } = validateAjv({ carrier, receiver })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '',
+          params: { missingProperty: 'wasteItems' }
+        })
+      )
+    })
+
+    test('rejects an empty list of waste items', () => {
+      const { valid, errors } = validateAjv({
+        carrier,
+        receiver,
+        wasteItems: []
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'minItems',
+          instancePath: '/wasteItems'
+        })
+      )
+    })
+
+    test('rejects a payload whose waste item is invalid, reporting the error against that item', () => {
+      const { valid, errors } = validateAjv({
+        carrier,
+        receiver,
+        wasteItems: [
+          { physicalDetails: { ...wasteItem.physicalDetails, form: 'solid' } }
+        ]
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'enum',
+          instancePath: '/wasteItems/0/physicalDetails/form'
+        })
+      )
+    })
+  })
+
   describe('brokerOrDealer', () => {
     test('is optional', () => {
       const payload = {
         carrier,
         receiver,
+        wasteItems,
         supportingReferences: [supportingReference]
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts a declared broker or dealer', () => {
-      const payload = { carrier, receiver, brokerOrDealer }
+      const payload = { carrier, receiver, wasteItems, brokerOrDealer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
@@ -141,6 +210,7 @@ describe('record-receipt-request schema', () => {
       const payload = {
         carrier,
         receiver,
+        wasteItems,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items }
       }
       expect(validateAjv(payload).valid).toBe(false)
@@ -152,7 +222,7 @@ describe('record-receipt-request schema', () => {
   // $ref wiring is live.
   describe('supportingReferences', () => {
     test('is optional', () => {
-      const payload = { carrier, receiver, brokerOrDealer }
+      const payload = { carrier, receiver, wasteItems, brokerOrDealer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
@@ -160,6 +230,7 @@ describe('record-receipt-request schema', () => {
       const payload = {
         carrier,
         receiver,
+        wasteItems,
         supportingReferences: [supportingReference]
       }
       expect(validateAjv(payload).valid).toBe(true)
@@ -169,6 +240,7 @@ describe('record-receipt-request schema', () => {
       const payload = {
         carrier,
         receiver,
+        wasteItems,
         supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
       }
       expect(validateAjv(payload).valid).toBe(false)
