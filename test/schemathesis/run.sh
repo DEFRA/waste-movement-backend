@@ -21,12 +21,16 @@ mkdir -p "$out/reports"
 
 "${compose[@]}" up --build --detach --wait waste-movement-backend
 
+# Bundle the spec into one file first: the coverage report doesn't follow
+# $refs into other files. Same user mapping as below, for the same reason.
+"${compose[@]}" run --rm --build --user "$(id -u):$(id -g)" bundle
+
 # Run as the calling user so the container can write reports and caches into
 # the bind-mounted output dir. On Linux (e.g. CI runners, uid 1001) the image's
 # own user (uid 1000) doesn't own the checkout.
 "${compose[@]}" run --rm --user "$(id -u):$(id -g)" schemathesis \
   --config-file /config/schemathesis.toml \
-  run /spec/openapi.json \
+  run spec/openapi.json \
   --coverage-format html,markdown \
   --coverage-report-html-path reports/schema-coverage.html \
   --coverage-report-markdown-path reports/schema-coverage.md \

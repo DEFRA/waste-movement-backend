@@ -41,6 +41,13 @@ docker compose -f compose.schemathesis.yml run --rm schemathesis
 
 ## How it's wired
 
+- **The spec is bundled first.** The one-shot `bundle` service runs
+  `scripts/bundle-openapi.js`, which dereferences `openapi.json` and every file
+  it `$ref`s into `test/schemathesis/out/spec/openapi.json`. This is the same
+  approach as `digital-waste-tracking-api-docs`' `bundle-specs.js`. Schemathesis
+  tests that bundled file, because the coverage report (TraceCov) doesn't
+  follow `$ref`s into other files: against the split spec it only saw the two
+  path parameters.
 - **Auth.** The spec describes the external API's auth: a Cognito bearer token
   plus `x-api-code`. This service sits behind the external API, so
   `schemathesis.toml` instead sends Basic Auth and the `x-dwt-organisation-id`
@@ -95,6 +102,15 @@ for example create a movement, record a delivery for it, then record the
 receipt. Every step uses IDs the server just created.
 
 ## Known gaps
+
+The coverage report under-counts `POST /movements`. TraceCov prints
+"Matched value does not exist in `enum`" errors and drops some batches of
+results for that operation, so the recorded traffic (`--report har`) shows
+more 201s than the report does.
+
+The report's "Examples" column only counts an `example` inside a
+parameter's `schema`. Named body examples and our parameter examples are sent
+(you can see them in the HAR), but they aren't counted.
 
 `POST /deliveries` takes its movement IDs in the request body, so the
 parameter examples don't help it. Outside the stateful phase, generated
