@@ -35,6 +35,16 @@ describe('record-delivery-request schema', () => {
     expect(validateAjv({ movementIds: [], carrier }).valid).toBe(false)
   })
 
+  // Each movementId's own rules are covered by movement-id.test.js — these
+  // confirm the $ref wiring is live.
+  test('rejects an empty movementId', () => {
+    expect(validateAjv({ movementIds: [''] }).valid).toBe(false)
+  })
+
+  test('rejects a movementId not in the ID format', () => {
+    expect(validateAjv({ movementIds: ['NONEXISTENT'] }).valid).toBe(false)
+  })
+
   test('rejects an additional property beyond the declared ones', () => {
     expect(
       validateAjv({ movementIds, carrier, extra: 'not allowed' }).valid

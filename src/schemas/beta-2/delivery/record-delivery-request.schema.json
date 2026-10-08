@@ -7,7 +7,7 @@
     "movementIds": {
       "type": "array",
       "items": {
-        "type": "string"
+        "$ref": "../common/movement-id.schema.json"
       },
       "minItems": 1,
       "description": "One or more Movement IDs delivered together at this delivery."

@@ -233,7 +233,7 @@ src/schemas/
     common/          shared resources — address, contact-details, producer/, broker-or-dealer/,
                      and the ids and wasteType that responses are built from
     creation/        create-movement-request / -response (each with its .examples.json)
-    collection/      create-collection-request / -response
+    collection/      create-collection-request / -response, and the movementId path params
     delivery/        record-delivery-request / -response, and delivery-item
     receipt/         record-receipt-request / -response,
                      record-receipt-without-delivery-request / -response,
