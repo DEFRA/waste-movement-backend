@@ -387,7 +387,7 @@ describe('collection Route Tests version: beta-2', () => {
     expect(result.errors).toEqual([
       {
         errorType: 'InvalidFormat',
-        message: 'must match pattern "^[0-9]{2}[A-Z0-9]{6}$"',
+        message: 'must match pattern "^[0-9]{2}[A-Z0-9]{6,7}$"',
         pointer: '/movementId'
       }
     ])
