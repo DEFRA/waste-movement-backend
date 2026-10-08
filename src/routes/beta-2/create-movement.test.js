@@ -11,7 +11,7 @@ import {
   forwardedOrganisationId,
   organisationHeaders
 } from '../../test/data/organisation-headers.js'
-import { carrier } from '../../schemas/beta-2/test-helpers.js'
+import { carrier, receiver } from '../../schemas/beta-2/test-helpers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -47,7 +47,8 @@ describe('movement Route Tests version: beta-2', () => {
     wasteSource: 'Household'
   }
   const intendedCarriers = [carrier]
-  const goodPayload = { producer, intendedCarriers }
+  const intendedReceivers = [receiver]
+  const goodPayload = { producer, intendedCarriers, intendedReceivers }
 
   const commercialProducer = {
     wasteSource: 'Commercial',
@@ -126,7 +127,7 @@ describe('movement Route Tests version: beta-2', () => {
     ['Commercial', commercialProducer],
     ['Municipal', municipalProducer]
   ])('creates a movement for a %s producer', async (_wasteSource, prod) => {
-    const payload = { producer: prod, intendedCarriers }
+    const payload = { producer: prod, intendedCarriers, intendedReceivers }
     const createMovementRecordSpy = jest
       .spyOn(movementCreate, 'createMovementRecord')
       .mockResolvedValue(payload)
@@ -185,6 +186,7 @@ describe('movement Route Tests version: beta-2', () => {
     const payload = {
       producer,
       intendedCarriers,
+      intendedReceivers,
       brokerOrDealer: {
         isPresent: true,
         items: [
@@ -227,6 +229,7 @@ describe('movement Route Tests version: beta-2', () => {
     const invalidPayload = {
       producer,
       intendedCarriers,
+      intendedReceivers,
       brokerOrDealer: { isPresent: true }
     }
     const createMovementRecordSpy = jest.spyOn(
@@ -257,6 +260,7 @@ describe('movement Route Tests version: beta-2', () => {
     const invalidPayload = {
       producer,
       intendedCarriers,
+      intendedReceivers,
       brokerOrDealer: {
         isPresent: false,
         items: [
@@ -296,7 +300,12 @@ describe('movement Route Tests version: beta-2', () => {
   // apiCode is sent in the x-api-code header and resolved by the
   // external API, so the backend rejects it in the body.
   it('returns an error when apiCode is sent in the body and does not create a movement', async () => {
-    const invalidPayload = { apiCode: apiCode1, producer, intendedCarriers }
+    const invalidPayload = {
+      apiCode: apiCode1,
+      producer,
+      intendedCarriers,
+      intendedReceivers
+    }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -333,7 +342,7 @@ describe('movement Route Tests version: beta-2', () => {
   })
 
   it('returns an error when producer is missing and does not create a movement', async () => {
-    const invalidPayload = { intendedCarriers }
+    const invalidPayload = { intendedCarriers, intendedReceivers }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -371,7 +380,7 @@ describe('movement Route Tests version: beta-2', () => {
 
   // Scenario: A Movement isn't created when no intended carrier is declared.
   it('returns an error when intendedCarriers is missing and does not create a movement', async () => {
-    const invalidPayload = { producer }
+    const invalidPayload = { producer, intendedReceivers }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -407,9 +416,8 @@ describe('movement Route Tests version: beta-2', () => {
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
-  // Scenario: A Movement isn't created when no intended carrier is declared.
-  it('returns an error when intendedCarriers is missing and does not create a movement', async () => {
-    const invalidPayload = { producer }
+  it('returns an error when intendedReceivers is missing and does not create a movement', async () => {
+    const invalidPayload = { producer, intendedCarriers }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -432,8 +440,8 @@ describe('movement Route Tests version: beta-2', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"intendedCarriers" is required',
-          pointer: '/intendedCarriers'
+          message: '"intendedReceivers" is required',
+          pointer: '/intendedReceivers'
         }
       ],
       instance: '/beta-2/movements',
@@ -446,7 +454,7 @@ describe('movement Route Tests version: beta-2', () => {
   })
 
   it('rejects when no organisation was forwarded (unknown or disabled API code) and does not create a movement', async () => {
-    const invalidPayload = { producer, intendedCarriers }
+    const invalidPayload = { producer, intendedCarriers, intendedReceivers }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -532,14 +540,19 @@ describe('movement Route Tests version: beta-2', () => {
     it.each([
       {
         description: 'producer',
-        payload: { producer: 'fail', intendedCarriers: [carrier] }
+        payload: {
+          producer: 'fail',
+          intendedCarriers: [carrier],
+          intendedReceivers
+        }
       },
       {
         description: 'brokerOrDealer',
         payload: {
           producer,
           brokerOrDealer: 'fail',
-          intendedCarriers: [carrier]
+          intendedCarriers: [carrier],
+          intendedReceivers
         }
       }
     ])(
@@ -588,7 +601,8 @@ describe('movement Route Tests version: beta-2', () => {
         isPresent: true,
         items: [{ ...brokerOrDealerEntry, ...entry }]
       },
-      intendedCarriers: [carrier]
+      intendedCarriers: [carrier],
+      intendedReceivers
     })
 
     it.each([
