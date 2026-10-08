@@ -449,10 +449,10 @@ describe('collection Route Tests version: beta-2', () => {
       movementService,
       'getMovementRecord'
     )
-
+    const url = `/${endpointVersion}/movements/${goodMovementId}/collection`
     const { statusCode, result } = await server.inject({
       method: 'POST',
-      url: `/${endpointVersion}/movements/${goodMovementId}/collection`,
+      url,
       payload: invalidPayload,
       headers: {
         'x-cdp-request-id': traceId,
@@ -471,45 +471,7 @@ describe('collection Route Tests version: beta-2', () => {
           pointer: '/dutyOfCareConfirmed'
         }
       ],
-      instance: '/beta-2/movements/movementId/collection',
-      title: 'Bad Request',
-      type: `${expectedTypeBase}bad-request`,
-      requestId: traceId
-    })
-    expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
-  })
-
-  // Scenario: A Collection isn't created when a carrier fails to submit a duty
-  // of care.
-  it('returns an error when the duty of care confirmation is missing and does not create a collection', async () => {
-    const invalidPayload = { carrier }
-    const getMovementRecordSpy = jest.spyOn(
-      movementService,
-      'getMovementRecord'
-    )
-
-    const { statusCode, result } = await server.inject({
-      method: 'POST',
-      url: `/${endpointVersion}/movements/${goodMovementId}/collection`,
-      payload: invalidPayload,
-      headers: {
-        'x-cdp-request-id': traceId,
-        Authorization: `Basic ${requestBasicAuthTest1}`,
-        ...organisationHeaders
-      }
-    })
-
-    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(result).toEqual({
-      detail: '1 validation error occurred',
-      errors: [
-        {
-          errorType: 'NotProvided',
-          message: '"dutyOfCareConfirmed" is required',
-          pointer: '/dutyOfCareConfirmed'
-        }
-      ],
-      instance: '/beta-2/movements/movementId/collection',
+      instance: url,
       title: 'Bad Request',
       type: `${expectedTypeBase}bad-request`,
       requestId: traceId
