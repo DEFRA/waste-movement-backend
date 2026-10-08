@@ -459,7 +459,7 @@ describe('beta-2', () => {
 
   describe('beta-2 specific error cases', () => {
     it('rejects collection creation for non-existent movement', async () => {
-      const endpoint = '/beta-2/movements/NONEXISTENT/collection'
+      const endpoint = '/beta-2/movements/25ZZZZZ0/collection'
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
@@ -668,7 +668,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { movementIds: ['NONEXISTENT'], carrier }
+        body: { movementIds: ['25ZZZZZ0'], carrier }
       })
 
       expectProblemResponse(response, {

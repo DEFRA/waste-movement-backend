@@ -36,7 +36,7 @@ describe('collection Route Tests version: beta-2', () => {
   const traceId = 'created-trace-id-123'
   const dutyOfCareConfirmed = true
   const goodPayload = { carrier, dutyOfCareConfirmed }
-  const goodMovementId = 'movementId'
+  const goodMovementId = '25HRA0B2'
 
   const expectedTypeBase =
     'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
@@ -305,7 +305,7 @@ describe('collection Route Tests version: beta-2', () => {
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
       detail: 'the API Code supplied is invalid',
-      instance: '/beta-2/movements/movementId/collection',
+      instance: '/beta-2/movements/25HRA0B2/collection',
       title: 'Bad Request',
       type: `${expectedTypeBase}bad-request`,
       requestId: traceId
@@ -331,7 +331,7 @@ describe('collection Route Tests version: beta-2', () => {
     expect(statusCode).toEqual(HTTP_STATUS.NOT_FOUND)
     expect(result).toEqual({
       detail: 'movementId not found',
-      instance: '/beta-2/movements/movementId/collection',
+      instance: '/beta-2/movements/25HRA0B2/collection',
       title: 'Not Found',
       type: `${expectedTypeBase}not-found`
     })
@@ -366,11 +366,40 @@ describe('collection Route Tests version: beta-2', () => {
           pointer: '/carrier'
         }
       ],
-      instance: '/beta-2/movements/movementId/collection',
+      instance: `/beta-2/movements/${goodMovementId}/collection`,
       title: 'Bad Request',
       type: `${expectedTypeBase}bad-request`,
       requestId: traceId
     })
+    expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
+  })
+
+  it('returns a 400 when the movementId is not in the ID format', async () => {
+    const getMovementRecordSpy = jest.spyOn(
+      movementService,
+      'getMovementRecord'
+    )
+    const badMovementId = 'NONEXISTENT'
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements/${badMovementId}/collection`,
+      payload: goodPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result.errors).toEqual([
+      {
+        errorType: 'InvalidFormat',
+        message: 'must match pattern "^[0-9]{2}[A-Z0-9]{6,7}$"',
+        pointer: '/movementId'
+      }
+    ])
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
@@ -402,6 +431,44 @@ describe('collection Route Tests version: beta-2', () => {
           errorType: 'NotAllowed',
           message: 'must NOT have additional properties',
           pointer: '/apiCode'
+        }
+      ],
+      instance: '/beta-2/movements/25HRA0B2/collection',
+      title: 'Bad Request',
+      type: `${expectedTypeBase}bad-request`,
+      requestId: traceId
+    })
+    expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
+  })
+
+  // Scenario: A Collection isn't created when a carrier fails to submit a duty
+  // of care.
+  it('returns an error when the duty of care confirmation is missing and does not create a collection', async () => {
+    const invalidPayload = { carrier }
+    const getMovementRecordSpy = jest.spyOn(
+      movementService,
+      'getMovementRecord'
+    )
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements/${goodMovementId}/collection`,
+      payload: invalidPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result).toEqual({
+      detail: '1 validation error occurred',
+      errors: [
+        {
+          errorType: 'NotProvided',
+          message: '"dutyOfCareConfirmed" is required',
+          pointer: '/dutyOfCareConfirmed'
         }
       ],
       instance: '/beta-2/movements/movementId/collection',
@@ -468,7 +535,7 @@ describe('collection Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(result).toEqual({
-      instance: '/beta-2/movements/movementId/collection',
+      instance: '/beta-2/movements/25HRA0B2/collection',
       title: 'Internal Server Error',
       type: `${expectedTypeBase}internal-server-error`,
       requestId: traceId
@@ -495,7 +562,7 @@ describe('collection Route Tests version: beta-2', () => {
     expect(statusCode).toEqual(HTTP_STATUS.UNAUTHORIZED)
     expect(result).toEqual({
       detail: 'Missing authentication',
-      instance: '/beta-2/movements/movementId/collection',
+      instance: '/beta-2/movements/25HRA0B2/collection',
       title: 'Unauthorized',
       type: `${expectedTypeBase}unauthorized`,
       requestId: traceId
