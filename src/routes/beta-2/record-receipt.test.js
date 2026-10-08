@@ -11,7 +11,8 @@ import { breakNextResponse } from '../../test/break-next-response.js'
 import { organisationHeaders } from '../../test/data/organisation-headers.js'
 import {
   brokerOrDealerEntry,
-  supportingReference
+  supportingReference,
+  carrier
 } from '../../schemas/beta-2/test-helpers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
@@ -78,7 +79,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url,
-      payload: {},
+      payload: { carrier },
       headers: tracedAuthHeaders
     })
 
@@ -97,6 +98,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: {
+        carrier,
         brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
         supportingReferences: [supportingReference]
       },
@@ -151,7 +153,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { headers } = await server.inject({
       method: 'POST',
       url,
-      payload: {},
+      payload: { carrier },
       headers: {
         ...authHeaders,
         ...organisationHeaders,
@@ -166,7 +168,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: {},
+      payload: { carrier },
       headers: tracedAuthHeaders
     })
 
@@ -186,7 +188,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1 },
+      payload: { apiCode: apiCode1, carrier },
       headers: tracedAuthHeaders
     })
 
@@ -207,13 +209,38 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     })
   })
 
+  it('returns a 400 when carrier is missing', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: {},
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result).toEqual({
+      detail: '1 validation error occurred',
+      errors: [
+        {
+          errorType: 'NotProvided',
+          message: '"carrier" is required',
+          pointer: '/carrier'
+        }
+      ],
+      instance: '/beta-2/deliveries/25KMT4Z9/receipt',
+      title: 'Bad Request',
+      type: `${expectedTypeBase}bad-request`,
+      requestId: traceId
+    })
+  })
+
   it('returns a 400 when no organisation was forwarded (unknown or disabled API code)', async () => {
     await server.db.collection('deliveries').insertOne({ deliveryId })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: {},
+      payload: { carrier },
       headers: { ...authHeaders, ...tracedHeaders }
     })
 
@@ -234,7 +261,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: {},
+      payload: { carrier },
       headers: tracedAuthHeaders
     })
 
@@ -251,7 +278,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: {},
+      payload: { carrier },
       headers: tracedHeaders
     })
 
@@ -272,7 +299,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: {},
+      payload: { carrier },
       headers: tracedAuthHeaders
     })
 

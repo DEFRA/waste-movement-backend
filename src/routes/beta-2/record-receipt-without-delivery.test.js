@@ -13,7 +13,8 @@ import {
 } from '../../test/data/organisation-headers.js'
 import {
   brokerOrDealerEntry,
-  supportingReference
+  supportingReference,
+  carrier
 } from '../../schemas/beta-2/test-helpers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
@@ -79,7 +80,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason },
+      payload: { reason, carrier },
       headers: tracedAuthHeaders
     })
 
@@ -107,6 +108,7 @@ describe('POST /beta-2/receipts', () => {
       url,
       payload: {
         reason,
+        carrier,
         brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
         supportingReferences: [supportingReference]
       },
@@ -163,7 +165,7 @@ describe('POST /beta-2/receipts', () => {
     const { headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason },
+      payload: { reason, carrier },
       headers: tracedAuthHeaders
     })
 
@@ -180,12 +182,42 @@ describe('POST /beta-2/receipts', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      detail: '1 validation error occurred',
+      detail: '2 validation errors occurred',
       errors: [
         {
           errorType: 'NotProvided',
           message: '"reason" is required',
           pointer: '/reason'
+        },
+        {
+          errorType: 'NotProvided',
+          message: '"carrier" is required',
+          pointer: '/carrier'
+        }
+      ],
+      instance: '/beta-2/receipts',
+      title: 'Bad Request',
+      type: `${expectedTypeBase}bad-request`,
+      requestId: traceId
+    })
+  })
+
+  it('returns a 400 when carrier is missing', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: { reason },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result).toEqual({
+      detail: '1 validation error occurred',
+      errors: [
+        {
+          errorType: 'NotProvided',
+          message: '"carrier" is required',
+          pointer: '/carrier'
         }
       ],
       instance: '/beta-2/receipts',
@@ -201,7 +233,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, reason },
+      payload: { apiCode: apiCode1, carrier, reason },
       headers: tracedAuthHeaders
     })
 
@@ -226,7 +258,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason },
+      payload: { reason, carrier },
       headers: { ...authHeaders, ...tracedHeaders }
     })
 
@@ -249,7 +281,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason },
+      payload: { reason, carrier },
       headers: tracedAuthHeaders
     })
 
@@ -266,7 +298,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason },
+      payload: { reason, carrier },
       headers: tracedHeaders
     })
 
@@ -288,7 +320,10 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason: 'No delivery was recorded' },
+      payload: {
+        reason: 'No delivery was recorded',
+        carrier
+      },
       headers: tracedAuthHeaders
     })
 

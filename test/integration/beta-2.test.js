@@ -13,6 +13,7 @@ import { expectProblemResponse } from './helpers/expect-problem-response.js'
 import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-body-has-shape.js'
 import {
   brokerOrDealerEntry,
+  carrier,
   supportingReference
 } from '../../src/schemas/beta-2/test-helpers.js'
 
@@ -20,8 +21,10 @@ describe('beta-2', () => {
   let testService
   let wasteTrackingStub
   const version = 'beta-2'
-  const minimalHouseholdProducer = {
-    producer: { wasteSource: 'Household' }
+  const intendedCarriers = [carrier]
+  const minimalMovementBody = {
+    producer: { wasteSource: 'Household' },
+    intendedCarriers
   }
 
   beforeAll(async () => {
@@ -43,7 +46,7 @@ describe('beta-2', () => {
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { ...minimalHouseholdProducer }
+        body: { ...minimalMovementBody }
       }
     )
     return body.data.movementId
@@ -53,7 +56,7 @@ describe('beta-2', () => {
   describeBetaEndpointTests(version, () => testService, {
     apiCode1,
     apiCodeInBody: false,
-    minimalProducer: minimalHouseholdProducer,
+    minimalProducer: minimalMovementBody,
     requiresProducer: true
   })
 
@@ -65,7 +68,7 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { producer }
+          body: { producer, intendedCarriers }
         }
       )
 
@@ -97,7 +100,7 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { producer }
+          body: { producer, intendedCarriers }
         }
       )
 
@@ -141,7 +144,7 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { producer }
+          body: { producer, intendedCarriers }
         }
       )
 
@@ -173,7 +176,7 @@ describe('beta-2', () => {
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { ...minimalHouseholdProducer }
+        body: { ...minimalMovementBody }
       }
     )
     const { movementId } = createRes.body.data
@@ -181,7 +184,7 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/movements/${movementId}/collection`,
-      { method: 'POST', body: {} }
+      { method: 'POST', body: { carrier } }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -212,6 +215,7 @@ describe('beta-2', () => {
       {
         method: 'POST',
         body: {
+          carrier,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -233,7 +237,7 @@ describe('beta-2', () => {
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { ...minimalHouseholdProducer }
+        body: { ...minimalMovementBody }
       }
     )
     const { movementId } = createRes.body.data
@@ -243,7 +247,7 @@ describe('beta-2', () => {
       '/beta-2/deliveries',
       {
         method: 'POST',
-        body: { movementIds: [movementId] }
+        body: { movementIds: [movementId], carrier }
       }
     )
 
@@ -273,7 +277,7 @@ describe('beta-2', () => {
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { ...minimalHouseholdProducer }
+        body: { ...minimalMovementBody }
       }
     )
     const { movementId } = createMovementRes.body.data
@@ -283,7 +287,7 @@ describe('beta-2', () => {
       '/beta-2/deliveries',
       {
         method: 'POST',
-        body: { movementIds: [movementId] }
+        body: { movementIds: [movementId], carrier }
       }
     )
     const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
@@ -291,7 +295,7 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/deliveries/${deliveryId}/receipt`,
-      { method: 'POST', body: {} }
+      { method: 'POST', body: { carrier } }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -321,7 +325,7 @@ describe('beta-2', () => {
       '/beta-2/receipts',
       {
         method: 'POST',
-        body: { reason }
+        body: { reason, carrier }
       }
     )
 
@@ -355,6 +359,7 @@ describe('beta-2', () => {
       {
         method: 'POST',
         body: {
+          carrier,
           specialHandlingRequirements: 'Handle with care and keep upright.'
         }
       }
@@ -379,6 +384,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           movementIds: [movementId],
+          carrier,
           supportingReferences: [supportingReference]
         }
       }
@@ -397,7 +403,7 @@ describe('beta-2', () => {
       '/beta-2/deliveries',
       {
         method: 'POST',
-        body: { movementIds: [movementId] }
+        body: { movementIds: [movementId], carrier }
       }
     )
     const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
@@ -408,6 +414,7 @@ describe('beta-2', () => {
       {
         method: 'POST',
         body: {
+          carrier,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -431,6 +438,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           reason: 'No prior movement trail',
+          carrier,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -452,7 +460,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: {}
+        body: { carrier }
       })
 
       expectProblemResponse(response, {
@@ -470,7 +478,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1 }
+        body: { apiCode: apiCode1, carrier }
       })
 
       expectProblemResponse(response, {
@@ -481,13 +489,39 @@ describe('beta-2', () => {
       })
     })
 
+    it('rejects collection creation without a carrier', async () => {
+      const movementId = await createMovement()
+      const endpoint = `/beta-2/movements/${movementId}/collection`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {}
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotProvided',
+          pointer: '/carrier'
+        })
+      )
+    })
+
     it('rejects collection creation when a brokerOrDealer is declared with no details', async () => {
       const movementId = await createMovement()
       const endpoint = `/beta-2/movements/${movementId}/collection`
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { brokerOrDealer: { isPresent: true } }
+        body: {
+          carrier,
+          brokerOrDealer: { isPresent: true }
+        }
       })
 
       expectProblemResponse(response, {
@@ -511,6 +545,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          carrier,
           brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
         }
       })
@@ -536,6 +571,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          carrier,
           supportingReferences: [
             { ...supportingReference, label: 'Not A Label' }
           ]
@@ -556,12 +592,35 @@ describe('beta-2', () => {
       )
     })
 
+    it('rejects delivery recording without a carrier', async () => {
+      const movementId = await createMovement()
+      const endpoint = '/beta-2/deliveries'
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { movementIds: [movementId] }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotProvided',
+          pointer: '/carrier'
+        })
+      )
+    })
+
     it('rejects delivery recording with missing movementIds', async () => {
       const endpoint = '/beta-2/deliveries'
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: {}
+        body: { carrier }
       })
 
       expectProblemResponse(response, {
@@ -577,7 +636,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { movementIds: ['NONEXISTENT'] }
+        body: { movementIds: ['NONEXISTENT'], carrier }
       })
 
       expectProblemResponse(response, {
@@ -587,6 +646,50 @@ describe('beta-2', () => {
       })
     })
 
+    it('rejects receipt recording without a carrier', async () => {
+      const endpoint = '/beta-2/receipts'
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { reason: 'Some reason' }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotProvided',
+          pointer: '/carrier'
+        })
+      )
+    })
+
+    it('rejects receipt recording without a carrier', async () => {
+      const endpoint = '/beta-2/receipts'
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { reason: 'Some reason' }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotProvided',
+          pointer: '/carrier'
+        })
+      )
+    })
+
     // apiCode is sent in the x-api-code header and resolved by the
     // external API, so the backend rejects it in the body.
     it('rejects receipt recording with apiCode in the body', async () => {
@@ -594,7 +697,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1, reason: 'Some reason' }
+        body: { apiCode: apiCode1, reason: 'Some reason', carrier }
       })
 
       expectProblemResponse(response, {
@@ -614,7 +717,8 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
-          producer: { wasteSource: 'Household' }
+          producer: { wasteSource: 'Household' },
+          intendedCarriers
         }
       })
 
@@ -625,12 +729,36 @@ describe('beta-2', () => {
       })
     })
 
+    // Scenario: A Movement isn't created when no intended carrier is declared.
+    it('rejects a movement without intended carriers', async () => {
+      const endpoint = '/beta-2/movements'
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { producer: { wasteSource: 'Household' } }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'NotProvided',
+          pointer: '/intendedCarriers'
+        })
+      )
+    })
+
     it('rejects invalid producer wasteSource', async () => {
       const endpoint = '/beta-2/movements'
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          intendedCarriers,
           producer: { wasteSource: 'Invalid' }
         }
       })
@@ -647,7 +775,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { producer: 'fail' }
+        body: { producer: 'fail', intendedCarriers: [carrier] }
       })
 
       expectProblemResponse(response, {
@@ -670,6 +798,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          intendedCarriers,
           producer: {
             wasteSource: 'Commercial',
             sicCode: '38110',
@@ -693,6 +822,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          intendedCarriers,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -717,6 +847,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          intendedCarriers,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -740,6 +871,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          intendedCarriers,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -763,6 +895,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          intendedCarriers,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -790,6 +923,7 @@ describe('beta-2', () => {
         {
           method: 'POST',
           body: {
+            intendedCarriers,
             producer: { wasteSource: 'Household' }
           }
         }
@@ -806,6 +940,7 @@ describe('beta-2', () => {
         {
           method: 'POST',
           body: {
+            intendedCarriers,
             producer: {
               wasteSource: 'Municipal',
               organisationName: 'Test Council',
@@ -829,6 +964,7 @@ describe('beta-2', () => {
         {
           method: 'POST',
           body: {
+            intendedCarriers,
             producer: {
               wasteSource: 'Commercial',
               organisationName: 'Test Company',
