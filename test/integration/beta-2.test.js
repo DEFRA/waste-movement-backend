@@ -26,6 +26,7 @@ describe('beta-2', () => {
     producer: { wasteSource: 'Household' },
     intendedCarriers
   }
+  const dutyOfCareConfirmed = true
 
   beforeAll(async () => {
     wasteTrackingStub = createWasteTrackingStub()
@@ -184,7 +185,7 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/movements/${movementId}/collection`,
-      { method: 'POST', body: { carrier } }
+      { method: 'POST', body: { carrier, dutyOfCareConfirmed } }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -216,6 +217,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           carrier,
+          dutyOfCareConfirmed,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -360,6 +362,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           carrier,
+          dutyOfCareConfirmed,
           specialHandlingRequirements: 'Handle with care and keep upright.'
         }
       }
@@ -460,7 +463,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier }
+        body: { carrier, dutyOfCareConfirmed }
       })
 
       expectProblemResponse(response, {
@@ -478,7 +481,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1, carrier }
+        body: { apiCode: apiCode1, carrier, dutyOfCareConfirmed }
       })
 
       expectProblemResponse(response, {
@@ -512,6 +515,32 @@ describe('beta-2', () => {
       )
     })
 
+    // Scenario: A Collection isn't created when a carrier fails to submit a
+    // duty of care.
+    it('rejects collection creation without a duty of care confirmation', async () => {
+      const movementId = await createMovement()
+      const endpoint = `/beta-2/movements/${movementId}/collection`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { carrier }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toEqual([
+        {
+          errorType: 'NotProvided',
+          message: '"dutyOfCareConfirmed" is required',
+          pointer: '/dutyOfCareConfirmed'
+        }
+      ])
+    })
+
     it('rejects collection creation when a brokerOrDealer is declared with no details', async () => {
       const movementId = await createMovement()
       const endpoint = `/beta-2/movements/${movementId}/collection`
@@ -520,6 +549,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           carrier,
+          dutyOfCareConfirmed,
           brokerOrDealer: { isPresent: true }
         }
       })
@@ -546,6 +576,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           carrier,
+          dutyOfCareConfirmed,
           brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
         }
       })
@@ -572,6 +603,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           carrier,
+          dutyOfCareConfirmed,
           supportingReferences: [
             { ...supportingReference, label: 'Not A Label' }
           ]
