@@ -88,6 +88,27 @@ services:
       timeout: 3s
       retries: 20
 
+  # One-shot: dereferences the spec into a single file (scripts/bundle-openapi.js)
+  # so the coverage report sees every schema, not just the path parameters.
+  # Built from the development stage, which has devDependencies installed.
+  bundle:
+    build:
+      context: .
+      target: development
+    profiles: ['schemathesis']
+    working_dir: /home/node
+    volumes:
+      - ./scripts:/home/node/scripts:ro
+      - ./src/schemas/beta-2:/home/node/spec:ro
+      - ./test/schemathesis/out:/out
+    command:
+      [
+        'node',
+        'scripts/bundle-openapi.js',
+        'spec/openapi.json',
+        '/out/spec/openapi.json'
+      ]
+
   schemathesis:
     # Pinned to a release at least 7 days old (workspace min-release-age policy)
     image: schemathesis/schemathesis:v4.28.0@sha256:0a71757c60ccdba270c154a859d9dd3d019625f782f23ab36ad604771e15f78b
@@ -95,17 +116,11 @@ services:
     depends_on:
       waste-movement-backend:
         condition: service_healthy
-    # /work is the only writable mount: reports plus Hypothesis/Schemathesis
-    # caches land in test/schemathesis/out (gitignored)
+    # /work is the only writable mount: the bundled spec, reports and
+    # Hypothesis/Schemathesis caches land in test/schemathesis/out (gitignored)
     working_dir: /work
     volumes:
-      - ./src/schemas/beta-2:/spec:ro
       - ./test/schemathesis/schemathesis.toml:/config/schemathesis.toml:ro
       - ./test/schemathesis/out:/work
     command:
-      [
-        '--config-file',
-        '/config/schemathesis.toml',
-        'run',
-        '/spec/openapi.json'
-      ]
+      ['--config-file', '/config/schemathesis.toml', 'run', 'spec/openapi.json']
