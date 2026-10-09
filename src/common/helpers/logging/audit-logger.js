@@ -100,32 +100,43 @@ export function auditLogger({
 }
 
 /**
- * Removes software provider name from data.
+ * Removes the software provider name and submitting organisation name from data.
  *
- * This is used while the data agreement requirements exclude the software provider name
- * from audit records. The original data object is not mutated.
+ * This is used while the data agreement requirements exclude these names from
+ * audit records. The original data object is not mutated.
  *
  * @param {Object} data data to prepare for auditing
- * @returns {Object} data with softwareProvider name removed from the softwareProvider object
+ * @returns {Object} data with the software provider and submitting organisation names removed
  */
 function removeMissingDataAgreementData(data) {
+  let result = data
   const softwareProvider = data?.receipt?.movement?.softwareProvider
 
-  if (!softwareProvider) {
-    return data
-  }
+  if (softwareProvider) {
+    const softwareProviderWithoutName = { ...softwareProvider }
+    delete softwareProviderWithoutName.name
 
-  const softwareProviderWithoutName = { ...softwareProvider }
-  delete softwareProviderWithoutName.name
-
-  return {
-    ...data,
-    receipt: {
-      ...data.receipt,
-      movement: {
-        ...data.receipt.movement,
-        softwareProvider: softwareProviderWithoutName
+    result = {
+      ...result,
+      receipt: {
+        ...result.receipt,
+        movement: {
+          ...result.receipt.movement,
+          softwareProvider: softwareProviderWithoutName
+        }
       }
     }
   }
+
+  if (data?.submittingOrganisation) {
+    const submittingOrganisationWithoutName = { ...data.submittingOrganisation }
+    delete submittingOrganisationWithoutName.defraCustomerOrganisationName
+
+    result = {
+      ...result,
+      submittingOrganisation: submittingOrganisationWithoutName
+    }
+  }
+
+  return result
 }

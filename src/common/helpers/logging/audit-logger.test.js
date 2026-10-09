@@ -266,5 +266,62 @@ describe('Audit Logger Tests', () => {
         name: 'Software Provider'
       })
     })
+
+    it('should remove submitting organisation name from audit data', () => {
+      const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+
+      const data = {
+        wasteTrackingId: WASTE_TRACKING_ID,
+        submittingOrganisation: {
+          defraCustomerOrganisationId: 'org-123',
+          defraCustomerOrganisationName: 'Acme Waste Ltd',
+          defraCustomerOrganisationIsLocalAuthority: false
+        },
+        receipt: {
+          movement: {
+            softwareProvider: {
+              id: 'software-provider-123',
+              name: 'Software Provider'
+            }
+          }
+        }
+      }
+
+      const result = auditLogger({
+        ...params,
+        data
+      })
+
+      expect(result).toBeTruthy()
+
+      expect(auditSpy).toHaveBeenCalledWith({
+        metadata: {
+          type: params.type,
+          traceId: params.traceId,
+          version: params.version
+        },
+        data: {
+          wasteTrackingId: WASTE_TRACKING_ID,
+          submittingOrganisation: {
+            defraCustomerOrganisationId: 'org-123',
+            defraCustomerOrganisationIsLocalAuthority: false
+          },
+          receipt: {
+            movement: {
+              softwareProvider: {
+                id: 'software-provider-123'
+              }
+            }
+          }
+        }
+      })
+
+      // Confirm the original data was not mutated
+      expect(data.submittingOrganisation).toEqual({
+        defraCustomerOrganisationId: 'org-123',
+        defraCustomerOrganisationName: 'Acme Waste Ltd',
+        defraCustomerOrganisationIsLocalAuthority: false
+      })
+    })
   })
 })
