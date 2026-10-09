@@ -267,7 +267,7 @@ describe('Audit Logger Tests', () => {
       })
     })
 
-    it('should remove submitting organisation name from audit data', () => {
+    it('should remove both the software provider name and submitting organisation name from audit data', () => {
       const auditSpy = jest.spyOn(cdpAuditing, 'audit')
 
       const data = {
@@ -321,6 +321,47 @@ describe('Audit Logger Tests', () => {
         defraCustomerOrganisationId: 'org-123',
         defraCustomerOrganisationName: 'Acme Waste Ltd',
         defraCustomerOrganisationIsLocalAuthority: false
+      })
+    })
+
+    it('should remove submitting organisation name from audit data when there is no software provider', () => {
+      const auditSpy = jest.spyOn(cdpAuditing, 'audit')
+
+      const data = {
+        wasteTrackingId: WASTE_TRACKING_ID,
+        submittingOrganisation: {
+          defraCustomerOrganisationId: 'org-123',
+          defraCustomerOrganisationName: 'Acme Waste Ltd',
+          defraCustomerOrganisationIsLocalAuthority: true
+        },
+        receipt: {
+          movement: {}
+        }
+      }
+
+      const result = auditLogger({
+        ...params,
+        data
+      })
+
+      expect(result).toBeTruthy()
+
+      expect(auditSpy).toHaveBeenCalledWith({
+        metadata: {
+          type: params.type,
+          traceId: params.traceId,
+          version: params.version
+        },
+        data: {
+          wasteTrackingId: WASTE_TRACKING_ID,
+          submittingOrganisation: {
+            defraCustomerOrganisationId: 'org-123',
+            defraCustomerOrganisationIsLocalAuthority: true
+          },
+          receipt: {
+            movement: {}
+          }
+        }
       })
     })
   })
