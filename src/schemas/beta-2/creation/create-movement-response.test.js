@@ -5,17 +5,14 @@ const validateAjv = validatorFor(
 )
 
 describe('Feature: Create movement response', () => {
-  const body = {
-    data: { movementId: '25HRA0B2' },
-    validation: { warnings: [] }
-  }
+  const body = { data: { movementId: '25HRA0B2' } }
 
-  test('a response with a movementId and no warnings is accepted', () => {
+  test('a response with a movementId is accepted', () => {
     expect(validateAjv(body).valid).toBe(true)
   })
 
   test('a response is rejected when data is missing', () => {
-    expect(validateAjv({ validation: { warnings: [] } }).valid).toBe(false)
+    expect(validateAjv({}).valid).toBe(false)
   })
 
   test('a response is rejected when movementId is missing', () => {

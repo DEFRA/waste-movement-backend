@@ -51,7 +51,7 @@ const recordReceipt = {
       })
 
       return h
-        .response({ data: { deliveryId }, validation: { warnings: [] } })
+        .response({ data: { deliveryId } })
         .code(HTTP_STATUS.CREATED)
         .header('x-request-id', traceId)
         .message('Successfully recorded a receipt')

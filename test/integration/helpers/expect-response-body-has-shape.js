@@ -7,9 +7,6 @@ export function expectResponseBodyHasCorrectShape({
   switch (shape) {
     case 'SUCCESS':
       expect(body).toHaveProperty('data')
-      expect(body).toMatchObject({
-        validation: expect.any(Object)
-      })
       break
 
     case 'ERROR':

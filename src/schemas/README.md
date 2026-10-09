@@ -188,10 +188,11 @@ pointed at the route's `<route>-response.schema.json` (`jsonSchemaResponseValida
 requests, these files are the source of truth: `beta-2/openapi.json` `$refs` them rather than
 defining responses itself, so the published contract and the runtime check are the same file.
 
-- **`data` only.** The spec's `validation` envelope (`warnings` of `issue`s) is **not
-  modelled** — whether responses keep it is undecided, and it may be removed. Routes still
-  return `validation: { warnings: [] }`; it passes as an unmodelled property. Don't add it to a
-  response schema until that's decided.
+- **`data` only.** beta-2 success bodies have no `validation` envelope: a `201` means accepted
+  with nothing outstanding, and soft data-quality issues are rejected with `422`
+  `confirmation-required` instead of being returned as warnings (D-046 in the API docs). beta-1
+  routes still return `validation: { warnings: [] }`. Don't add a `validation` member back to a
+  beta-2 response schema.
 - **201 only.** Error responses are Boom errors, which Hapi doesn't validate, and they are
   problem details, not a modelled body.
 - **A mismatch is a 500**, with the generic internal-server-error problem details — no ajv
