@@ -34,6 +34,8 @@ function toErrorType(error) {
     case 'maxItems':
     case 'minimum':
     case 'maximum':
+    case 'exclusiveMinimum':
+    case 'exclusiveMaximum':
       return ERROR_TYPE.OUT_OF_RANGE
     default:
       return ERROR_TYPE.UNEXPECTED_ERROR

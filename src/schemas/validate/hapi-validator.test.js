@@ -69,6 +69,17 @@ describe('jsonSchemaRequestValidator', () => {
     expect(detail).toMatchObject({ path: ['reason'], type: 'OutOfRange' })
   })
 
+  test('maps an exclusiveMinimum violation to OutOfRange', () => {
+    const id = 'beta-2/common/waste-item/weight.schema.json'
+    const [detail] = getDetails(id, {
+      amount: 0,
+      unit: 'KILOGRAMS',
+      isEstimate: false
+    })
+
+    expect(detail).toMatchObject({ path: ['amount'], type: 'OutOfRange' })
+  })
+
   test('maps a forbidden property in a oneOf branch to NotAllowed', () => {
     const id = 'beta-2/common/broker-or-dealer/broker-or-dealer.schema.json'
     const details = getDetails(id, {

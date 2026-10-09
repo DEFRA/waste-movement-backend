@@ -13,7 +13,8 @@ import {
   brokerOrDealerEntry,
   supportingReference,
   carrier,
-  receiver
+  receiver,
+  physicalDetails
 } from '../../schemas/beta-2/test-helpers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
@@ -80,7 +81,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver },
+      payload: { carrier, receiver, physicalDetails },
       headers: tracedAuthHeaders
     })
 
@@ -101,6 +102,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       payload: {
         carrier,
         receiver,
+        physicalDetails,
         brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
         supportingReferences: [supportingReference]
       },
@@ -118,7 +120,12 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, brokerOrDealer: { isPresent: true } },
+      payload: {
+        carrier,
+        receiver,
+        physicalDetails,
+        brokerOrDealer: { isPresent: true }
+      },
       headers: tracedAuthHeaders
     })
 
@@ -137,6 +144,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       payload: {
         carrier,
         receiver,
+        physicalDetails,
         supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
       },
       headers: tracedAuthHeaders
@@ -157,7 +165,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver },
+      payload: { carrier, receiver, physicalDetails },
       headers: {
         ...authHeaders,
         ...organisationHeaders,
@@ -172,7 +180,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver },
+      payload: { carrier, receiver, physicalDetails },
       headers: tracedAuthHeaders
     })
 
@@ -210,7 +218,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, carrier, receiver },
+      payload: { apiCode: apiCode1, carrier, receiver, physicalDetails },
       headers: tracedAuthHeaders
     })
 
@@ -235,7 +243,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { receiver },
+      payload: { receiver, physicalDetails },
       headers: tracedAuthHeaders
     })
 
@@ -256,11 +264,36 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     })
   })
 
+  it('returns a 400 when physicalDetails is missing', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: { carrier, receiver },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result).toEqual({
+      detail: '1 validation error occurred',
+      errors: [
+        {
+          errorType: 'NotProvided',
+          message: '"physicalDetails" is required',
+          pointer: '/physicalDetails'
+        }
+      ],
+      instance: '/beta-2/deliveries/25KMT4Z9/receipt',
+      title: 'Bad Request',
+      type: `${expectedTypeBase}bad-request`,
+      requestId: traceId
+    })
+  })
+
   it('returns a 400 when receiver is missing', async () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier },
+      payload: { carrier, physicalDetails },
       headers: tracedAuthHeaders
     })
 
@@ -287,7 +320,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver },
+      payload: { carrier, receiver, physicalDetails },
       headers: { ...authHeaders, ...tracedHeaders }
     })
 
@@ -308,7 +341,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver },
+      payload: { carrier, receiver, physicalDetails },
       headers: tracedAuthHeaders
     })
 
@@ -325,7 +358,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver },
+      payload: { carrier, receiver, physicalDetails },
       headers: tracedHeaders
     })
 
@@ -346,7 +379,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver },
+      payload: { carrier, receiver, physicalDetails },
       headers: tracedAuthHeaders
     })
 

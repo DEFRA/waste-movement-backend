@@ -4,7 +4,8 @@ import {
   supportingReference,
   carrier,
   receiver,
-  validatorFor
+  validatorFor,
+  physicalDetails
 } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
@@ -15,18 +16,21 @@ describe('record-receipt-request schema', () => {
   const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
 
   test('accepts a valid payload', () => {
-    expect(validateAjv({ carrier, receiver }).valid).toBe(true)
+    expect(validateAjv({ carrier, receiver, physicalDetails }).valid).toBe(true)
   })
 
   // apiCode is sent in the x-api-code header, not the body.
   test('rejects apiCode in the body', () => {
-    expect(validateAjv({ apiCode, carrier, receiver }).valid).toBe(false)
+    expect(
+      validateAjv({ apiCode, carrier, receiver, physicalDetails }).valid
+    ).toBe(false)
   })
 
   test('rejects an additional property beyond the declared ones', () => {
-    expect(validateAjv({ carrier, receiver, extra: 'not allowed' }).valid).toBe(
-      false
-    )
+    expect(
+      validateAjv({ carrier, receiver, physicalDetails, extra: 'not allowed' })
+        .valid
+    ).toBe(false)
   })
 
   // carrier's own rules are covered by carrier.test.js — these confirm
@@ -34,7 +38,7 @@ describe('record-receipt-request schema', () => {
   // $ref wiring is live.
   describe('carrier', () => {
     test('is required', () => {
-      const { valid, errors } = validateAjv({ receiver })
+      const { valid, errors } = validateAjv({ receiver, physicalDetails })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -47,7 +51,11 @@ describe('record-receipt-request schema', () => {
     })
 
     test('rejects a list of carriers', () => {
-      const { valid, errors } = validateAjv({ carrier: [carrier], receiver })
+      const { valid, errors } = validateAjv({
+        carrier: [carrier],
+        receiver,
+        physicalDetails
+      })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -59,7 +67,8 @@ describe('record-receipt-request schema', () => {
       const { organisationName, ...invalidCarrier } = carrier
       const { valid, errors } = validateAjv({
         carrier: invalidCarrier,
-        receiver
+        receiver,
+        physicalDetails
       })
 
       expect(valid).toBe(false)
@@ -78,7 +87,7 @@ describe('record-receipt-request schema', () => {
   // that the $ref wiring is live.
   describe('receiver', () => {
     test('is required', () => {
-      const { valid, errors } = validateAjv({ carrier })
+      const { valid, errors } = validateAjv({ carrier, physicalDetails })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -93,7 +102,8 @@ describe('record-receipt-request schema', () => {
     test('rejects a list of receivers', () => {
       const { valid, errors } = validateAjv({
         carrier,
-        receiver: [receiver]
+        receiver: [receiver],
+        physicalDetails
       })
 
       expect(valid).toBe(false)
@@ -106,7 +116,8 @@ describe('record-receipt-request schema', () => {
       const { siteName, ...invalidReceiver } = receiver
       const { valid, errors } = validateAjv({
         carrier,
-        receiver: invalidReceiver
+        receiver: invalidReceiver,
+        physicalDetails
       })
 
       expect(valid).toBe(false)
@@ -120,18 +131,77 @@ describe('record-receipt-request schema', () => {
     })
   })
 
+  // physicalDetails' own rules are covered by
+  // waste-item/physical-details.test.js — these confirm physicalDetails is
+  // required and that the $ref wiring is live.
+  describe('physicalDetails', () => {
+    // Scenario: A Receipt is created when a valid physical form, containers
+    // and weight are declared.
+    test('accepts valid physical details', () => {
+      expect(validateAjv({ carrier, receiver, physicalDetails }).valid).toBe(
+        true
+      )
+    })
+
+    test('is required', () => {
+      const { valid, errors } = validateAjv({ carrier, receiver })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '',
+          params: { missingProperty: 'physicalDetails' }
+        })
+      )
+    })
+
+    test('rejects a list of physical details', () => {
+      const { valid, errors } = validateAjv({
+        carrier,
+        receiver,
+        physicalDetails: [physicalDetails]
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'type',
+          instancePath: '/physicalDetails'
+        })
+      )
+    })
+
+    test('rejects invalid physical details, reporting the error against the field', () => {
+      const { valid, errors } = validateAjv({
+        carrier,
+        receiver,
+        physicalDetails: { ...physicalDetails, form: 'solid' }
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'enum',
+          instancePath: '/physicalDetails/form'
+        })
+      )
+    })
+  })
+
   describe('brokerOrDealer', () => {
     test('is optional', () => {
       const payload = {
         carrier,
         receiver,
+        physicalDetails,
         supportingReferences: [supportingReference]
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts a declared broker or dealer', () => {
-      const payload = { carrier, receiver, brokerOrDealer }
+      const payload = { carrier, receiver, physicalDetails, brokerOrDealer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
@@ -141,6 +211,7 @@ describe('record-receipt-request schema', () => {
       const payload = {
         carrier,
         receiver,
+        physicalDetails,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items }
       }
       expect(validateAjv(payload).valid).toBe(false)
@@ -152,7 +223,7 @@ describe('record-receipt-request schema', () => {
   // $ref wiring is live.
   describe('supportingReferences', () => {
     test('is optional', () => {
-      const payload = { carrier, receiver, brokerOrDealer }
+      const payload = { carrier, receiver, physicalDetails, brokerOrDealer }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
@@ -160,6 +231,7 @@ describe('record-receipt-request schema', () => {
       const payload = {
         carrier,
         receiver,
+        physicalDetails,
         supportingReferences: [supportingReference]
       }
       expect(validateAjv(payload).valid).toBe(true)
@@ -169,6 +241,7 @@ describe('record-receipt-request schema', () => {
       const payload = {
         carrier,
         receiver,
+        physicalDetails,
         supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
       }
       expect(validateAjv(payload).valid).toBe(false)

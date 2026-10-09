@@ -15,10 +15,12 @@ import {
   brokerOrDealerEntry,
   supportingReference,
   carrier,
-  receiver
+  receiver,
+  wasteItem
 } from '../../schemas/beta-2/test-helpers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
+const wasteItems = [wasteItem]
 const reason =
   'No delivery was recorded prior to receipt; waste received directly from the producer.'
 
@@ -81,7 +83,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, receiver },
+      payload: { reason, carrier, receiver, wasteItems },
       headers: tracedAuthHeaders
     })
 
@@ -111,6 +113,7 @@ describe('POST /beta-2/receipts', () => {
         reason,
         carrier,
         receiver,
+        wasteItems,
         brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
         supportingReferences: [supportingReference]
       },
@@ -132,6 +135,7 @@ describe('POST /beta-2/receipts', () => {
         reason,
         carrier,
         receiver,
+        wasteItems,
         brokerOrDealer: { isPresent: true }
       },
       headers: tracedAuthHeaders
@@ -153,6 +157,7 @@ describe('POST /beta-2/receipts', () => {
         reason,
         carrier,
         receiver,
+        wasteItems,
         supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
       },
       headers: tracedAuthHeaders
@@ -171,7 +176,7 @@ describe('POST /beta-2/receipts', () => {
     const { headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, receiver },
+      payload: { reason, carrier, receiver, wasteItems },
       headers: tracedAuthHeaders
     })
 
@@ -188,7 +193,7 @@ describe('POST /beta-2/receipts', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      detail: '3 validation errors occurred',
+      detail: '4 validation errors occurred',
       errors: [
         {
           errorType: 'NotProvided',
@@ -204,6 +209,11 @@ describe('POST /beta-2/receipts', () => {
           errorType: 'NotProvided',
           message: '"receiver" is required',
           pointer: '/receiver'
+        },
+        {
+          errorType: 'NotProvided',
+          message: '"wasteItems" is required',
+          pointer: '/wasteItems'
         }
       ],
       instance: '/beta-2/receipts',
@@ -217,7 +227,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, receiver },
+      payload: { reason, receiver, wasteItems },
       headers: tracedAuthHeaders
     })
 
@@ -238,11 +248,36 @@ describe('POST /beta-2/receipts', () => {
     })
   })
 
+  it('returns a 400 when wasteItems is missing', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: { reason, carrier, receiver },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result).toEqual({
+      detail: '1 validation error occurred',
+      errors: [
+        {
+          errorType: 'NotProvided',
+          message: '"wasteItems" is required',
+          pointer: '/wasteItems'
+        }
+      ],
+      instance: '/beta-2/receipts',
+      title: 'Bad Request',
+      type: `${expectedTypeBase}bad-request`,
+      requestId: traceId
+    })
+  })
+
   it('returns a 400 when receiver is missing', async () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier },
+      payload: { reason, carrier, wasteItems },
       headers: tracedAuthHeaders
     })
 
@@ -269,7 +304,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, carrier, receiver, reason },
+      payload: { apiCode: apiCode1, carrier, receiver, wasteItems, reason },
       headers: tracedAuthHeaders
     })
 
@@ -294,7 +329,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, receiver },
+      payload: { reason, carrier, receiver, wasteItems },
       headers: { ...authHeaders, ...tracedHeaders }
     })
 
@@ -317,7 +352,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, receiver },
+      payload: { reason, carrier, receiver, wasteItems },
       headers: tracedAuthHeaders
     })
 
@@ -334,7 +369,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, receiver },
+      payload: { reason, carrier, receiver, wasteItems },
       headers: tracedHeaders
     })
 
@@ -359,7 +394,8 @@ describe('POST /beta-2/receipts', () => {
       payload: {
         reason: 'No delivery was recorded',
         carrier,
-        receiver
+        receiver,
+        wasteItems
       },
       headers: tracedAuthHeaders
     })

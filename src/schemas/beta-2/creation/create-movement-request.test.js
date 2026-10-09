@@ -7,7 +7,8 @@ import {
   municipalProducer,
   receiver,
   supportingReference,
-  validatorFor
+  validatorFor,
+  wasteItem
 } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
@@ -16,6 +17,7 @@ const validateAjv = validatorFor(
 
 const intendedCarriers = [carrier]
 const intendedReceivers = [receiver]
+const wasteItems = [wasteItem]
 
 describe('create-movement-request schema', () => {
   // apiCode is sent in the x-api-code header, not the body.
@@ -24,13 +26,14 @@ describe('create-movement-request schema', () => {
       apiCode,
       producer: householdProducer,
       intendedCarriers,
-      intendedReceivers
+      intendedReceivers,
+      wasteItems
     }
     expect(validateAjv(payload).valid).toBe(false)
   })
 
   test('producer is required', () => {
-    const payload = { intendedCarriers, intendedReceivers }
+    const payload = { intendedCarriers, intendedReceivers, wasteItems }
     expect(validateAjv(payload).valid).toBe(false)
   })
 
@@ -39,7 +42,12 @@ describe('create-movement-request schema', () => {
     ['Commercial', commercialProducer],
     ['Municipal', municipalProducer]
   ])('accepts a valid %s producer', (_wasteSource, producer) => {
-    const payload = { producer, intendedCarriers, intendedReceivers }
+    const payload = {
+      producer,
+      intendedCarriers,
+      intendedReceivers,
+      wasteItems
+    }
     expect(validateAjv(payload).valid).toBe(true)
   })
 
@@ -48,6 +56,7 @@ describe('create-movement-request schema', () => {
       producer: householdProducer,
       intendedCarriers,
       intendedReceivers,
+      wasteItems,
       extra: 'not allowed'
     }
     expect(validateAjv(payload).valid).toBe(false)
@@ -107,7 +116,8 @@ describe('create-movement-request schema', () => {
       const payload = {
         producer: householdProducer,
         intendedCarriers,
-        intendedReceivers
+        intendedReceivers,
+        wasteItems
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -119,7 +129,8 @@ describe('create-movement-request schema', () => {
           carrier,
           { ...carrier, organisationName: 'Second Carrier Ltd' }
         ],
-        intendedReceivers
+        intendedReceivers,
+        wasteItems
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -188,7 +199,8 @@ describe('create-movement-request schema', () => {
       const { valid, errors } = validateAjv({
         producer: householdProducer,
         intendedCarriers,
-        intendedReceivers: []
+        intendedReceivers: [],
+        wasteItems
       })
 
       expect(valid).toBe(false)
@@ -204,7 +216,8 @@ describe('create-movement-request schema', () => {
       const { valid, errors } = validateAjv({
         producer: householdProducer,
         intendedCarriers,
-        intendedReceivers: receiver
+        intendedReceivers: receiver,
+        wasteItems
       })
 
       expect(valid).toBe(false)
@@ -220,7 +233,8 @@ describe('create-movement-request schema', () => {
       const payload = {
         producer: householdProducer,
         intendedCarriers,
-        intendedReceivers
+        intendedReceivers,
+        wasteItems
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -236,7 +250,8 @@ describe('create-movement-request schema', () => {
             siteName: 'Second Receiver Site',
             authorisationNumber: 'XX9999XX'
           }
-        ]
+        ],
+        wasteItems
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -249,7 +264,8 @@ describe('create-movement-request schema', () => {
       const { valid, errors } = validateAjv({
         producer: householdProducer,
         intendedCarriers,
-        intendedReceivers: [receiver, invalidSecond]
+        intendedReceivers: [receiver, invalidSecond],
+        wasteItems
       })
 
       expect(valid).toBe(false)
@@ -274,6 +290,77 @@ describe('create-movement-request schema', () => {
     })
   })
 
+  // A waste item's rules are covered by waste-item/*.test.js — these confirm
+  // wasteItems is required and that the $ref wiring is live.
+  describe('wasteItems', () => {
+    // Scenario: A Movement is created when a valid physical form, containers
+    // and weight are declared.
+    test('accepts a valid waste item', () => {
+      const payload = {
+        producer: householdProducer,
+        intendedCarriers,
+        intendedReceivers,
+        wasteItems
+      }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('is required', () => {
+      const { valid, errors } = validateAjv({
+        producer: householdProducer,
+        intendedCarriers,
+        intendedReceivers
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '',
+          params: { missingProperty: 'wasteItems' }
+        })
+      )
+    })
+
+    test('rejects an empty list of waste items', () => {
+      const { valid, errors } = validateAjv({
+        producer: householdProducer,
+        intendedCarriers,
+        intendedReceivers,
+        wasteItems: []
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'minItems',
+          instancePath: '/wasteItems'
+        })
+      )
+    })
+
+    test('rejects a payload whose waste item is invalid, reporting the error against that item', () => {
+      const { valid, errors } = validateAjv({
+        producer: householdProducer,
+        intendedCarriers,
+        intendedReceivers,
+        wasteItems: [
+          {
+            physicalDetails: { ...wasteItem.physicalDetails, form: 'Plasma' }
+          }
+        ]
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'enum',
+          instancePath: '/wasteItems/0/physicalDetails/form'
+        })
+      )
+    })
+  })
+
   describe('brokerOrDealer', () => {
     const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
 
@@ -281,7 +368,8 @@ describe('create-movement-request schema', () => {
       const payload = {
         producer: householdProducer,
         intendedCarriers,
-        intendedReceivers
+        intendedReceivers,
+        wasteItems
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -291,6 +379,7 @@ describe('create-movement-request schema', () => {
         producer: householdProducer,
         intendedCarriers,
         intendedReceivers,
+        wasteItems,
         brokerOrDealer
       }
       expect(validateAjv(payload).valid).toBe(true)
@@ -303,6 +392,7 @@ describe('create-movement-request schema', () => {
         producer: householdProducer,
         intendedCarriers,
         intendedReceivers,
+        wasteItems,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items }
       }
       expect(validateAjv(payload).valid).toBe(false)
@@ -317,7 +407,8 @@ describe('create-movement-request schema', () => {
       const payload = {
         producer: householdProducer,
         intendedCarriers,
-        intendedReceivers
+        intendedReceivers,
+        wasteItems
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -327,6 +418,7 @@ describe('create-movement-request schema', () => {
         producer: householdProducer,
         intendedCarriers,
         intendedReceivers,
+        wasteItems,
         supportingReferences: [supportingReference]
       }
       expect(validateAjv(payload).valid).toBe(true)
@@ -343,7 +435,8 @@ describe('create-movement-request schema', () => {
       const payload = {
         producer: householdProducer,
         intendedCarriers,
-        intendedReceivers
+        intendedReceivers,
+        wasteItems
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -353,6 +446,7 @@ describe('create-movement-request schema', () => {
         producer: householdProducer,
         intendedCarriers,
         intendedReceivers,
+        wasteItems,
         specialHandlingRequirements: 'Handle with care and keep upright.'
       }
       expect(validateAjv(payload).valid).toBe(true)
@@ -363,6 +457,7 @@ describe('create-movement-request schema', () => {
         producer: householdProducer,
         intendedCarriers,
         intendedReceivers,
+        wasteItems,
         specialHandlingRequirements: 'A'.repeat(501)
       }
       expect(validateAjv(payload).valid).toBe(false)

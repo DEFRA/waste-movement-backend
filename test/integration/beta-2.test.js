@@ -15,7 +15,9 @@ import {
   brokerOrDealerEntry,
   carrier,
   receiver,
-  supportingReference
+  supportingReference,
+  physicalDetails,
+  wasteItem
 } from '../../src/schemas/beta-2/test-helpers.js'
 
 describe('beta-2', () => {
@@ -24,10 +26,12 @@ describe('beta-2', () => {
   const version = 'beta-2'
   const intendedCarriers = [carrier]
   const intendedReceivers = [receiver]
+  const wasteItems = [wasteItem]
   const minimalMovement = {
     producer: { wasteSource: 'Household' },
     intendedCarriers,
-    intendedReceivers
+    intendedReceivers,
+    wasteItems
   }
   const dutyOfCareConfirmed = true
 
@@ -71,7 +75,7 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { producer, intendedCarriers, intendedReceivers }
+          body: { producer, intendedCarriers, intendedReceivers, wasteItems }
         }
       )
 
@@ -103,7 +107,7 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { producer, intendedCarriers, intendedReceivers }
+          body: { producer, intendedCarriers, intendedReceivers, wasteItems }
         }
       )
 
@@ -147,7 +151,7 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { producer, intendedCarriers, intendedReceivers }
+          body: { producer, intendedCarriers, intendedReceivers, wasteItems }
         }
       )
 
@@ -299,7 +303,7 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/deliveries/${deliveryId}/receipt`,
-      { method: 'POST', body: { carrier, receiver } }
+      { method: 'POST', body: { carrier, receiver, physicalDetails } }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -329,7 +333,7 @@ describe('beta-2', () => {
       '/beta-2/receipts',
       {
         method: 'POST',
-        body: { reason, carrier, receiver }
+        body: { reason, carrier, receiver, wasteItems }
       }
     )
 
@@ -421,6 +425,7 @@ describe('beta-2', () => {
         body: {
           carrier,
           receiver,
+          physicalDetails,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -446,6 +451,7 @@ describe('beta-2', () => {
           reason: 'No prior movement trail',
           carrier,
           receiver,
+          wasteItems,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -687,7 +693,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason', receiver }
+        body: { reason: 'Some reason', receiver, wasteItems }
       })
 
       expectProblemResponse(response, {
@@ -709,7 +715,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason', carrier }
+        body: { reason: 'Some reason', carrier, wasteItems }
       })
 
       expectProblemResponse(response, {
@@ -740,7 +746,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier }
+        body: { carrier, physicalDetails }
       })
 
       expectProblemResponse(response, {
@@ -758,6 +764,67 @@ describe('beta-2', () => {
       ])
     })
 
+    it('rejects receipt recording without waste items', async () => {
+      const endpoint = '/beta-2/receipts'
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { reason: 'Some reason', carrier, receiver }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toEqual([
+        {
+          errorType: 'NotProvided',
+          message: '"wasteItems" is required',
+          pointer: '/wasteItems'
+        }
+      ])
+    })
+
+    it('rejects receipt recording against a delivery when the total weight is not greater than 0', async () => {
+      const movementId = await createMovement()
+      const createDeliveryRes = await betaHttpRequest(
+        testService.baseUrl,
+        '/beta-2/deliveries',
+        { method: 'POST', body: { movementIds: [movementId], carrier } }
+      )
+      const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
+
+      const endpoint = `/beta-2/deliveries/${deliveryId}/receipt`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          carrier,
+          receiver,
+          physicalDetails: {
+            ...physicalDetails,
+            totalWeight: { ...physicalDetails.totalWeight, amount: 0 }
+          }
+        }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toEqual([
+        {
+          errorType: 'OutOfRange',
+          message: 'must be > 0',
+          pointer: '/physicalDetails/totalWeight/amount'
+        }
+      ])
+    })
+
     // apiCode is sent in the x-api-code header and resolved by the
     // external API, so the backend rejects it in the body.
     it('rejects receipt recording with apiCode in the body', async () => {
@@ -765,7 +832,13 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1, reason: 'Some reason', carrier, receiver }
+        body: {
+          apiCode: apiCode1,
+          reason: 'Some reason',
+          carrier,
+          receiver,
+          wasteItems
+        }
       })
 
       expectProblemResponse(response, {
@@ -787,7 +860,8 @@ describe('beta-2', () => {
           apiCode: apiCode1,
           producer: { wasteSource: 'Household' },
           intendedCarriers,
-          intendedReceivers
+          intendedReceivers,
+          wasteItems
         }
       })
 
@@ -804,7 +878,11 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { producer: { wasteSource: 'Household' }, intendedReceivers }
+        body: {
+          producer: { wasteSource: 'Household' },
+          intendedReceivers,
+          wasteItems
+        }
       })
 
       expectProblemResponse(response, {
@@ -828,7 +906,8 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           producer: { wasteSource: 'Household' },
-          intendedCarriers
+          intendedCarriers,
+          wasteItems
         }
       })
 
@@ -856,6 +935,7 @@ describe('beta-2', () => {
           apiCode: apiCode1,
           producer: { wasteSource: 'Household' },
           intendedReceivers: [],
+          wasteItems,
           intendedCarriers
         }
       })
@@ -871,6 +951,68 @@ describe('beta-2', () => {
       )
     })
 
+    it('rejects a movement without waste items', async () => {
+      const endpoint = '/beta-2/movements'
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          producer: { wasteSource: 'Household' },
+          intendedCarriers,
+          intendedReceivers
+        }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toEqual([
+        {
+          errorType: 'NotProvided',
+          message: '"wasteItems" is required',
+          pointer: '/wasteItems'
+        }
+      ])
+    })
+
+    it('rejects a movement whose loose waste item declares containers', async () => {
+      const endpoint = '/beta-2/movements'
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          producer: { wasteSource: 'Household' },
+          intendedCarriers,
+          intendedReceivers,
+          wasteItems: [
+            {
+              physicalDetails: {
+                ...wasteItem.physicalDetails,
+                containerType: 'LOO',
+                containerCount: 1
+              }
+            }
+          ]
+        }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toContainEqual(
+        expect.objectContaining({
+          errorType: 'InvalidValue',
+          pointer: '/wasteItems/0/physicalDetails/containerCount'
+        })
+      )
+    })
+
     it('rejects invalid producer wasteSource', async () => {
       const endpoint = '/beta-2/movements'
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
@@ -879,6 +1021,7 @@ describe('beta-2', () => {
         body: {
           intendedCarriers,
           intendedReceivers,
+          wasteItems,
           producer: { wasteSource: 'Invalid' }
         }
       })
@@ -898,7 +1041,8 @@ describe('beta-2', () => {
         body: {
           producer: 'fail',
           intendedCarriers: [carrier],
-          intendedReceivers
+          intendedReceivers,
+          wasteItems
         }
       })
 
@@ -924,6 +1068,7 @@ describe('beta-2', () => {
         body: {
           intendedCarriers,
           intendedReceivers,
+          wasteItems,
           producer: {
             wasteSource: 'Commercial',
             sicCode: '38110',
@@ -949,6 +1094,7 @@ describe('beta-2', () => {
         body: {
           intendedCarriers,
           intendedReceivers,
+          wasteItems,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -975,6 +1121,7 @@ describe('beta-2', () => {
         body: {
           intendedCarriers,
           intendedReceivers,
+          wasteItems,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -1000,6 +1147,7 @@ describe('beta-2', () => {
         body: {
           intendedCarriers,
           intendedReceivers,
+          wasteItems,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -1025,6 +1173,7 @@ describe('beta-2', () => {
         body: {
           intendedCarriers,
           intendedReceivers,
+          wasteItems,
           producer: {
             wasteSource: 'Commercial',
             organisationName: 'Test Org',
@@ -1054,6 +1203,7 @@ describe('beta-2', () => {
           body: {
             intendedCarriers,
             intendedReceivers,
+            wasteItems,
             producer: { wasteSource: 'Household' }
           }
         }
@@ -1072,6 +1222,7 @@ describe('beta-2', () => {
           body: {
             intendedCarriers,
             intendedReceivers,
+            wasteItems,
             producer: {
               wasteSource: 'Municipal',
               organisationName: 'Test Council',
@@ -1097,6 +1248,7 @@ describe('beta-2', () => {
           body: {
             intendedCarriers,
             intendedReceivers,
+            wasteItems,
             producer: {
               wasteSource: 'Commercial',
               organisationName: 'Test Company',
