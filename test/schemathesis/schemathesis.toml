@@ -1,0 +1,46 @@
+# Schemathesis config for fuzzing waste-movement-backend against the beta-2
+# OpenAPI contract (src/schemas/beta-2/openapi.json).
+# Reference: https://schemathesis.readthedocs.io/en/stable/reference/configuration/
+
+# Overridable with `--url` (e.g. to target a service running outside compose)
+base-url = "http://waste-movement-backend:3001/beta-2"
+seed = 42
+
+[headers]
+# The public contract describes the external API's auth (Cognito bearer +
+# x-api-code). This service sits behind it: it takes Basic Auth, and the
+# external API forwards the organisation it resolved from x-api-code as
+# x-dwt-organisation-id. Both are fixed here so every generated request is
+# authenticated — see compose.schemathesis.yml for the matching credential.
+Authorization = "Basic c2NoZW1hdGhlc2lzOnNjaGVtYXRoZXNpcy1sb2NhbA=="
+x-dwt-organisation-id = "00000000-0000-0000-0000-000000000000"
+# The external API always forwards the CDP trace id; problem+json bodies take
+# their required `requestId` from it, so without it every error response
+# would (correctly) fail the problemDetails schema.
+x-cdp-request-id = "schemathesis"
+
+[generation]
+max-examples = 50
+# Bearer token and x-api-code are enforced by the external API, not here, so
+# don't generate (or deliberately omit) them.
+with-security-parameters = false
+
+[checks]
+enabled = true
+# Unrouted methods get Hapi's 404 rather than 405; method filtering for the
+# public API happens in front of this service.
+unsupported_method.enabled = false
+
+[[operations]]
+include-operation-id = "recordDelivery"
+# Outside the stateful phase (which chains real IDs via the spec's links),
+# generated movementIds are schema-valid but don't exist, which the contract
+# answers with 400 ("validation, format or state error").
+checks.positive_data_acceptance.expected-statuses = ["2xx", "400", "401", "403", "404"]
+
+[reports]
+directory = "reports"
+
+[reports.junit]
+enabled = true
+path = "reports/junit.xml"
