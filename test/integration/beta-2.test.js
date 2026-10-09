@@ -16,6 +16,7 @@ import {
   carrier,
   receiver,
   supportingReference,
+  physicalDetails,
   wasteItem
 } from '../../src/schemas/beta-2/test-helpers.js'
 
@@ -302,7 +303,7 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/deliveries/${deliveryId}/receipt`,
-      { method: 'POST', body: { carrier, receiver, wasteItems } }
+      { method: 'POST', body: { carrier, receiver, physicalDetails } }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -424,7 +425,7 @@ describe('beta-2', () => {
         body: {
           carrier,
           receiver,
-          wasteItems,
+          physicalDetails,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -745,7 +746,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, wasteItems }
+        body: { carrier, physicalDetails }
       })
 
       expectProblemResponse(response, {
@@ -786,7 +787,7 @@ describe('beta-2', () => {
       ])
     })
 
-    it('rejects receipt recording against a delivery when a waste item weight is not greater than 0', async () => {
+    it('rejects receipt recording against a delivery when the total weight is not greater than 0', async () => {
       const movementId = await createMovement()
       const createDeliveryRes = await betaHttpRequest(
         testService.baseUrl,
@@ -802,17 +803,10 @@ describe('beta-2', () => {
         body: {
           carrier,
           receiver,
-          wasteItems: [
-            {
-              physicalDetails: {
-                ...wasteItem.physicalDetails,
-                totalWeight: {
-                  ...wasteItem.physicalDetails.totalWeight,
-                  amount: 0
-                }
-              }
-            }
-          ]
+          physicalDetails: {
+            ...physicalDetails,
+            totalWeight: { ...physicalDetails.totalWeight, amount: 0 }
+          }
         }
       })
 
@@ -826,7 +820,7 @@ describe('beta-2', () => {
         {
           errorType: 'OutOfRange',
           message: 'must be > 0',
-          pointer: '/wasteItems/0/physicalDetails/totalWeight/amount'
+          pointer: '/physicalDetails/totalWeight/amount'
         }
       ])
     })
