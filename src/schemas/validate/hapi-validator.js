@@ -75,51 +75,52 @@ const isAtOrBelow = (path, ancestor) =>
   ancestor.every((segment, i) => path[i] === segment)
 
 const compositionKeywords = new Set(['if', 'oneOf', 'anyOf'])
+const isSpecific = (error) => !compositionKeywords.has(error.keyword)
+
+// The predicates below are `.filter` callbacks that use its third argument,
+// the whole array, to compare each entry with the others.
 
 // A failed if/then/else, oneOf or anyOf is reported twice: once by the
 // branch's own keywords ("vehicleRegistration" is required) and once as a
 // summary on the parent ('must match "then" schema'). The summary says
 // nothing the caller can act on, so drop it whenever a more specific error
 // sits at or below it.
-function withoutCompositionSummaries(errors) {
-  const isSpecific = (error) => !compositionKeywords.has(error.keyword)
-  return errors.filter(
-    (summary) =>
-      isSpecific(summary) ||
-      !errors.some(
-        (error) =>
-          isSpecific(error) &&
-          (error.instancePath === summary.instancePath ||
-            error.instancePath.startsWith(`${summary.instancePath}/`))
-      )
+const isNotCompositionSummary = (summary, _, errors) =>
+  isSpecific(summary) ||
+  !errors.some(
+    (error) =>
+      isSpecific(error) &&
+      (error.instancePath === summary.instancePath ||
+        error.instancePath.startsWith(`${summary.instancePath}/`))
   )
-}
 
 // With allErrors, ajv reports a value of the wrong type once for every oneOf
 // branch (and nested schema) that checks it, plus each oneOf's own failure.
 // Report it once, with nothing else at or below it — the caller has to fix
 // the type before anything inside it can be checked.
-function withoutRedundantDetails(details) {
-  const wrongTypes = details.filter((d) => d.type === ERROR_TYPE.INVALID_TYPE)
-  const kept = details.filter((d) =>
-    wrongTypes.every(
+const isNotBelowWrongType = (detail, _, details) =>
+  details
+    .filter((d) => d.type === ERROR_TYPE.INVALID_TYPE)
+    .every(
       (wrongType) =>
-        !isAtOrBelow(d.path, wrongType.path) ||
-        (d.type === ERROR_TYPE.INVALID_TYPE &&
-          d.path.length === wrongType.path.length)
+        !isAtOrBelow(detail.path, wrongType.path) ||
+        (detail.type === ERROR_TYPE.INVALID_TYPE &&
+          detail.path.length === wrongType.path.length)
     )
-  )
-  const unique = new Map(kept.map((d) => [JSON.stringify(d), d]))
-  return [...unique.values()]
-}
+
+const isFirstOccurrence = (detail, index, details) =>
+  details.findIndex((d) => JSON.stringify(d) === JSON.stringify(detail)) ===
+  index
 
 export const jsonSchemaRequestValidator = (schemaId) => (value) => {
   if (validate(schemaId, value)) {
     return value
   }
-  const details = withoutRedundantDetails(
-    withoutCompositionSummaries(getErrors(schemaId)).map(toDetail)
-  )
+  const details = getErrors(schemaId)
+    .filter(isNotCompositionSummary)
+    .map(toDetail)
+    .filter(isNotBelowWrongType)
+    .filter(isFirstOccurrence)
   const boomError = Boom.badRequest(details.map((d) => d.message).join('. '))
   boomError.details = details
   throw boomError
