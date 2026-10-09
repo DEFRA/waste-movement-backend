@@ -87,6 +87,80 @@ describe('jsonSchemaRequestValidator', () => {
     )
   })
 
+  describe('composition keyword summaries', () => {
+    const carrierId = 'beta-2/common/carrier.schema.json'
+    const carrier = {
+      organisationName: 'Carrier Ltd',
+      meansOfTransport: 'Rail',
+      registrationNumber: 'CBDU123456',
+      contactDetails: { emailAddress: 'carrier@example.com' }
+    }
+
+    test.each([
+      {
+        rule: 'if/then',
+        value: { ...carrier, meansOfTransport: 'Road' },
+        expected: [
+          {
+            message: '"vehicleRegistration" is required',
+            path: ['vehicleRegistration'],
+            type: 'NotProvided'
+          }
+        ]
+      },
+      {
+        rule: 'if/else',
+        value: { ...carrier, vehicleRegistration: 'AB12 CDE' },
+        expected: [
+          {
+            message: 'must NOT be valid',
+            path: ['vehicleRegistration'],
+            type: 'NotAllowed'
+          }
+        ]
+      },
+      {
+        rule: 'oneOf',
+        value: { ...carrier, registrationNumber: undefined },
+        expected: [
+          {
+            message: '"registrationNumber" is required',
+            path: ['registrationNumber'],
+            type: 'NotProvided'
+          },
+          {
+            message: '"reasonForNoRegistrationNumber" is required',
+            path: ['reasonForNoRegistrationNumber'],
+            type: 'NotProvided'
+          }
+        ]
+      },
+      {
+        rule: 'anyOf',
+        value: { ...carrier, contactDetails: {} },
+        expected: [
+          {
+            message: '"emailAddress" is required',
+            path: ['contactDetails', 'emailAddress'],
+            type: 'NotProvided'
+          },
+          {
+            message: '"phoneNumber" is required',
+            path: ['contactDetails', 'phoneNumber'],
+            type: 'NotProvided'
+          }
+        ]
+      }
+    ])(
+      'reports only the specific errors when $rule fails',
+      ({ value, expected }) => {
+        expect(
+          getDetails(carrierId, JSON.parse(JSON.stringify(value)))
+        ).toEqual(expected)
+      }
+    )
+  })
+
   test('nests the path for an error inside a sub-object', () => {
     const id = 'beta-2/common/producer/producer-commercial.schema.json'
     const [detail] = getDetails(id, {

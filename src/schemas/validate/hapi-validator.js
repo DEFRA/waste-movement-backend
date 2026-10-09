@@ -35,6 +35,12 @@ function toErrorType(error) {
     case 'minimum':
     case 'maximum':
       return ERROR_TYPE.OUT_OF_RANGE
+    // Only reached when withoutCompositionSummaries found nothing more
+    // specific to report in their place: a rule across fields was broken.
+    case 'if':
+    case 'oneOf':
+    case 'anyOf':
+      return ERROR_TYPE.BUSINESS_RULE_VIOLATION
     default:
       return ERROR_TYPE.UNEXPECTED_ERROR
   }
@@ -68,6 +74,27 @@ function toDetail(error) {
 const isAtOrBelow = (path, ancestor) =>
   ancestor.every((segment, i) => path[i] === segment)
 
+const compositionKeywords = new Set(['if', 'oneOf', 'anyOf'])
+
+// A failed if/then/else, oneOf or anyOf is reported twice: once by the
+// branch's own keywords ("vehicleRegistration" is required) and once as a
+// summary on the parent ('must match "then" schema'). The summary says
+// nothing the caller can act on, so drop it whenever a more specific error
+// sits at or below it.
+function withoutCompositionSummaries(errors) {
+  const isSpecific = (error) => !compositionKeywords.has(error.keyword)
+  return errors.filter(
+    (summary) =>
+      isSpecific(summary) ||
+      !errors.some(
+        (error) =>
+          isSpecific(error) &&
+          (error.instancePath === summary.instancePath ||
+            error.instancePath.startsWith(`${summary.instancePath}/`))
+      )
+  )
+}
+
 // With allErrors, ajv reports a value of the wrong type once for every oneOf
 // branch (and nested schema) that checks it, plus each oneOf's own failure.
 // Report it once, with nothing else at or below it — the caller has to fix
@@ -90,7 +117,9 @@ export const jsonSchemaRequestValidator = (schemaId) => (value) => {
   if (validate(schemaId, value)) {
     return value
   }
-  const details = withoutRedundantDetails(getErrors(schemaId).map(toDetail))
+  const details = withoutRedundantDetails(
+    withoutCompositionSummaries(getErrors(schemaId)).map(toDetail)
+  )
   const boomError = Boom.badRequest(details.map((d) => d.message).join('. '))
   boomError.details = details
   throw boomError
