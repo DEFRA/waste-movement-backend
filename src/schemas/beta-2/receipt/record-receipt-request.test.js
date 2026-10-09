@@ -15,22 +15,31 @@ const validateAjv = validatorFor(
 
 describe('record-receipt-request schema', () => {
   const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
+  const treatments = [treatment]
 
   test('accepts a valid payload', () => {
-    expect(validateAjv({ carrier, receiver, physicalDetails }).valid).toBe(true)
+    expect(
+      validateAjv({ carrier, receiver, physicalDetails, treatments }).valid
+    ).toBe(true)
   })
 
   // apiCode is sent in the x-api-code header, not the body.
   test('rejects apiCode in the body', () => {
     expect(
-      validateAjv({ apiCode, carrier, receiver, physicalDetails }).valid
+      validateAjv({ apiCode, carrier, receiver, physicalDetails, treatments })
+        .valid
     ).toBe(false)
   })
 
   test('rejects an additional property beyond the declared ones', () => {
     expect(
-      validateAjv({ carrier, receiver, physicalDetails, extra: 'not allowed' })
-        .valid
+      validateAjv({
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments,
+        extra: 'not allowed'
+      }).valid
     ).toBe(false)
   })
 
@@ -39,7 +48,11 @@ describe('record-receipt-request schema', () => {
   // $ref wiring is live.
   describe('carrier', () => {
     test('is required', () => {
-      const { valid, errors } = validateAjv({ receiver, physicalDetails })
+      const { valid, errors } = validateAjv({
+        receiver,
+        physicalDetails,
+        treatments
+      })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -55,7 +68,8 @@ describe('record-receipt-request schema', () => {
       const { valid, errors } = validateAjv({
         carrier: [carrier],
         receiver,
-        physicalDetails
+        physicalDetails,
+        treatments
       })
 
       expect(valid).toBe(false)
@@ -69,7 +83,8 @@ describe('record-receipt-request schema', () => {
       const { valid, errors } = validateAjv({
         carrier: invalidCarrier,
         receiver,
-        physicalDetails
+        physicalDetails,
+        treatments
       })
 
       expect(valid).toBe(false)
@@ -88,7 +103,11 @@ describe('record-receipt-request schema', () => {
   // that the $ref wiring is live.
   describe('receiver', () => {
     test('is required', () => {
-      const { valid, errors } = validateAjv({ carrier, physicalDetails })
+      const { valid, errors } = validateAjv({
+        carrier,
+        physicalDetails,
+        treatments
+      })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -104,7 +123,8 @@ describe('record-receipt-request schema', () => {
       const { valid, errors } = validateAjv({
         carrier,
         receiver: [receiver],
-        physicalDetails
+        physicalDetails,
+        treatments
       })
 
       expect(valid).toBe(false)
@@ -118,7 +138,8 @@ describe('record-receipt-request schema', () => {
       const { valid, errors } = validateAjv({
         carrier,
         receiver: invalidReceiver,
-        physicalDetails
+        physicalDetails,
+        treatments
       })
 
       expect(valid).toBe(false)
@@ -139,9 +160,9 @@ describe('record-receipt-request schema', () => {
     // Scenario: A Receipt is created when a valid physical form, containers
     // and weight are declared.
     test('accepts valid physical details', () => {
-      expect(validateAjv({ carrier, receiver, physicalDetails }).valid).toBe(
-        true
-      )
+      expect(
+        validateAjv({ carrier, receiver, physicalDetails, treatments }).valid
+      ).toBe(true)
     })
 
     test('is required', () => {
@@ -191,23 +212,45 @@ describe('record-receipt-request schema', () => {
   })
 
   // A treatment's rules are covered by waste-item/treatment*.test.js — these
-  // confirm treatments is optional and that the $ref wiring is live.
+  // confirm at least one treatment is required and that the $ref wiring is live.
   describe('treatments', () => {
-    test('is optional', () => {
-      expect(validateAjv({ carrier, receiver, physicalDetails }).valid).toBe(
-        true
-      )
+    // Scenario: A Receipt is created when a treatment with a valid disposal or
+    // recovery code and weight is declared.
+    test('accepts a valid treatment', () => {
+      expect(
+        validateAjv({ carrier, receiver, physicalDetails, treatments }).valid
+      ).toBe(true)
     })
 
-    test('accepts declared treatments', () => {
+    // Scenario: A Receipt is created when more than one treatment is declared.
+    test('accepts more than one treatment', () => {
+      const disposal = { ...treatment, disposalOrRecoveryCode: 'D10' }
       expect(
         validateAjv({
           carrier,
           receiver,
           physicalDetails,
-          treatments: [treatment]
+          treatments: [treatment, disposal]
         }).valid
       ).toBe(true)
+    })
+
+    // Scenario: A Receipt isn't created when no treatment is declared.
+    test('is required', () => {
+      const { valid, errors } = validateAjv({
+        carrier,
+        receiver,
+        physicalDetails
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '',
+          params: { missingProperty: 'treatments' }
+        })
+      )
     })
 
     test('rejects an empty list of treatments', () => {
@@ -243,6 +286,54 @@ describe('record-receipt-request schema', () => {
         })
       )
     })
+
+    // Scenario: A Receipt isn't created when any one of several treatments is
+    // declared with missing or invalid details.
+    test('reports each invalid field of each invalid treatment, and nothing for a valid one', () => {
+      const { disposalOrRecoveryCode, ...noCode } = treatment
+      const { valid, errors } = validateAjv({
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments: [
+          treatment,
+          { ...noCode, weight: { ...treatment.weight, unit: 'Litres' } },
+          {
+            ...treatment,
+            disposalOrRecoveryCode: 'X1',
+            weight: { ...treatment.weight, amount: 0 }
+          }
+        ]
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            keyword: 'required',
+            instancePath: '/treatments/1',
+            params: { missingProperty: 'disposalOrRecoveryCode' }
+          }),
+          expect.objectContaining({
+            keyword: 'enum',
+            instancePath: '/treatments/1/weight/unit'
+          }),
+          expect.objectContaining({
+            keyword: 'enum',
+            instancePath: '/treatments/2/disposalOrRecoveryCode'
+          }),
+          expect.objectContaining({
+            keyword: 'exclusiveMinimum',
+            instancePath: '/treatments/2/weight/amount'
+          })
+        ])
+      )
+      expect(
+        errors.filter(({ instancePath }) =>
+          instancePath.startsWith('/treatments/0')
+        )
+      ).toEqual([])
+    })
   })
 
   describe('brokerOrDealer', () => {
@@ -251,13 +342,20 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
+        treatments,
         supportingReferences: [supportingReference]
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts a declared broker or dealer', () => {
-      const payload = { carrier, receiver, physicalDetails, brokerOrDealer }
+      const payload = {
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments,
+        brokerOrDealer
+      }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
@@ -268,6 +366,7 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
+        treatments,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items }
       }
       expect(validateAjv(payload).valid).toBe(false)
@@ -279,7 +378,13 @@ describe('record-receipt-request schema', () => {
   // $ref wiring is live.
   describe('supportingReferences', () => {
     test('is optional', () => {
-      const payload = { carrier, receiver, physicalDetails, brokerOrDealer }
+      const payload = {
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments,
+        brokerOrDealer
+      }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
@@ -288,6 +393,7 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
+        treatments,
         supportingReferences: [supportingReference]
       }
       expect(validateAjv(payload).valid).toBe(true)
@@ -298,6 +404,7 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
+        treatments,
         supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
       }
       expect(validateAjv(payload).valid).toBe(false)

@@ -16,7 +16,9 @@ const reason = 'No delivery'
 
 describe('record-receipt-without-delivery-request schema', () => {
   const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
-  const wasteItems = [wasteItem]
+  // A receipt needs at least one treatment on every waste item.
+  const receiptWasteItem = { ...wasteItem, treatments: [treatment] }
+  const wasteItems = [receiptWasteItem]
 
   test('accepts a valid payload', () => {
     expect(validateAjv({ reason, carrier, receiver, wasteItems }).valid).toBe(
@@ -202,7 +204,10 @@ describe('record-receipt-without-delivery-request schema', () => {
         carrier,
         receiver,
         wasteItems: [
-          { physicalDetails: { ...wasteItem.physicalDetails, form: 'solid' } }
+          {
+            ...receiptWasteItem,
+            physicalDetails: { ...wasteItem.physicalDetails, form: 'solid' }
+          }
         ]
       })
 
@@ -214,17 +219,105 @@ describe('record-receipt-without-delivery-request schema', () => {
         })
       )
     })
+  })
 
-    // Unlike creating a movement, a receipt takes treatments on each waste item.
-    test('accepts treatments on a waste item', () => {
+  // A treatment's rules are covered by waste-item/treatment*.test.js — these
+  // confirm every waste item needs at least one treatment and that the $ref
+  // wiring is live. (Creating a movement forbids treatments on the same shared
+  // waste item.)
+  describe('treatments on each waste item', () => {
+    const receiptWith = (...items) => ({
+      reason,
+      carrier,
+      receiver,
+      wasteItems: items
+    })
+
+    // Scenario: A Receipt is created when a treatment with a valid disposal or
+    // recovery code and weight is declared.
+    test('accepts a waste item with a valid treatment', () => {
+      expect(validateAjv(receiptWith(receiptWasteItem)).valid).toBe(true)
+    })
+
+    // Scenario: A Receipt is created when more than one treatment is declared.
+    test('accepts a waste item with more than one treatment', () => {
+      const disposal = { ...treatment, disposalOrRecoveryCode: 'D10' }
       expect(
-        validateAjv({
-          reason,
-          carrier,
-          receiver,
-          wasteItems: [{ ...wasteItem, treatments: [treatment] }]
-        }).valid
+        validateAjv(
+          receiptWith({ ...wasteItem, treatments: [treatment, disposal] })
+        ).valid
       ).toBe(true)
+    })
+
+    // Scenario: A Receipt isn't created when no treatment is declared.
+    test('requires treatments on every waste item', () => {
+      const { valid, errors } = validateAjv(
+        receiptWith(receiptWasteItem, wasteItem)
+      )
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '/wasteItems/1',
+          params: { missingProperty: 'treatments' }
+        })
+      )
+      expect(
+        errors.filter(({ instancePath }) =>
+          instancePath.startsWith('/wasteItems/0')
+        )
+      ).toEqual([])
+    })
+
+    test('rejects an empty list of treatments', () => {
+      const { valid, errors } = validateAjv(
+        receiptWith({ ...wasteItem, treatments: [] })
+      )
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'minItems',
+          instancePath: '/wasteItems/0/treatments'
+        })
+      )
+    })
+
+    // Scenario: A Receipt isn't created when any one of several treatments is
+    // declared with missing or invalid details.
+    test('reports each invalid field of each invalid treatment, and nothing for a valid one', () => {
+      const { weight, ...noWeight } = treatment
+      const { valid, errors } = validateAjv(
+        receiptWith({
+          ...wasteItem,
+          treatments: [
+            treatment,
+            noWeight,
+            { ...treatment, disposalOrRecoveryCode: '' }
+          ]
+        })
+      )
+
+      expect(valid).toBe(false)
+      expect(errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            keyword: 'required',
+            instancePath: '/wasteItems/0/treatments/1',
+            params: { missingProperty: 'weight' }
+          }),
+          expect.objectContaining({
+            keyword: 'enum',
+            instancePath: '/wasteItems/0/treatments/2/disposalOrRecoveryCode'
+          })
+        ])
+      )
+      expect(
+        errors.filter(({ instancePath }) =>
+          instancePath.startsWith('/wasteItems/0/treatments/0')
+        )
+      ).toEqual([])
     })
   })
 

@@ -16,7 +16,7 @@
     },
     "treatments": {
       "$ref": "../common/waste-item/treatments.schema.json",
-      "description": "The disposal or recovery operations applied to the waste received. Optional; when provided, at least one is required."
+      "description": "The disposal or recovery operations applied to the waste received. At least one is required."
     },
     "brokerOrDealer": {
       "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json"
@@ -25,6 +25,6 @@
       "$ref": "../common/supporting-references.schema.json"
     }
   },
-  "required": ["carrier", "receiver", "physicalDetails"],
+  "required": ["carrier", "receiver", "physicalDetails", "treatments"],
   "additionalProperties": false
 }
