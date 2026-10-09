@@ -117,10 +117,10 @@ export const jsonSchemaRequestValidator = (schemaId) => (value) => {
     return value
   }
   const details = getErrors(schemaId)
-    .filter(isNotCompositionSummary)
+    .filter((error, index, all) => isNotCompositionSummary(error, index, all))
     .map(toDetail)
-    .filter(isNotBelowWrongType)
-    .filter(isFirstOccurrence)
+    .filter((detail, index, all) => isNotBelowWrongType(detail, index, all))
+    .filter((detail, index, all) => isFirstOccurrence(detail, index, all))
   const boomError = Boom.badRequest(details.map((d) => d.message).join('. '))
   boomError.details = details
   throw boomError
