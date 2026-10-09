@@ -5,7 +5,7 @@ const validateAjv = validatorFor(
 )
 
 describe('Feature: Create collection response', () => {
-  const body = { data: null, validation: { warnings: [] } }
+  const body = { data: null }
 
   test('a response with null data is accepted', () => {
     expect(validateAjv(body).valid).toBe(true)
@@ -16,7 +16,7 @@ describe('Feature: Create collection response', () => {
   })
 
   test('a response is rejected when data is missing', () => {
-    expect(validateAjv({ validation: { warnings: [] } }).valid).toBe(false)
+    expect(validateAjv({}).valid).toBe(false)
   })
 
   test('a response is rejected when data is neither an object nor null', () => {

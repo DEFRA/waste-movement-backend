@@ -5,17 +5,14 @@ const validateAjv = validatorFor(
 )
 
 describe('Feature: Record receipt without delivery response', () => {
-  const body = {
-    data: { deliveryId: '25KMT4Z9' },
-    validation: { warnings: [] }
-  }
+  const body = { data: { deliveryId: '25KMT4Z9' } }
 
-  test('a response with a deliveryId and no warnings is accepted', () => {
+  test('a response with a deliveryId is accepted', () => {
     expect(validateAjv(body).valid).toBe(true)
   })
 
   test('a response is rejected when data is missing', () => {
-    expect(validateAjv({ validation: { warnings: [] } }).valid).toBe(false)
+    expect(validateAjv({}).valid).toBe(false)
   })
 
   test('a response is rejected when deliveryId is missing', () => {

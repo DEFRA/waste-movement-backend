@@ -204,10 +204,7 @@ describe('jsonSchemaRequestValidatorFor', () => {
 describe('jsonSchemaResponseValidator', () => {
   const responseSchemaId =
     'beta-2/creation/create-movement-response.schema.json'
-  const validBody = {
-    data: { movementId: '25HRA0B2' },
-    validation: { warnings: [] }
-  }
+  const validBody = { data: { movementId: '25HRA0B2' } }
 
   beforeEach(() => {
     mockLoggerError.mockClear()
@@ -221,7 +218,7 @@ describe('jsonSchemaResponseValidator', () => {
   })
 
   test('throws and logs the schema id and ajv errors when the value is invalid', () => {
-    const invalidBody = { data: {}, validation: { warnings: [] } }
+    const invalidBody = { data: {} }
 
     expect(() =>
       jsonSchemaResponseValidator(responseSchemaId)(invalidBody)

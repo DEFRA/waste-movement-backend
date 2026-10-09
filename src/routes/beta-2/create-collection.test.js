@@ -71,8 +71,7 @@ describe('collection Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: null,
-      validation: { warnings: [] }
+      data: null
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
   })
@@ -99,8 +98,7 @@ describe('collection Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: null,
-      validation: { warnings: [] }
+      data: null
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
   })
@@ -190,8 +188,7 @@ describe('collection Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: null,
-      validation: { warnings: [] }
+      data: null
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
   })
@@ -250,8 +247,7 @@ describe('collection Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: null,
-      validation: { warnings: [] }
+      data: null
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
   })

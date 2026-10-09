@@ -3,15 +3,12 @@
   "title": "Create collection response",
   "description": "Response returned when a collection event is recorded.",
   "type": "object",
-  "required": ["data", "validation"],
+  "required": ["data"],
   "properties": {
     "data": {
       "type": ["object", "null"],
       "description": "No resource id is returned for a collection event; always null.",
       "examples": [null]
-    },
-    "validation": {
-      "$ref": "../common/validation.schema.json"
     }
   }
 }
