@@ -107,3 +107,8 @@ export const physicalDetails = {
 export const wasteItem = {
   physicalDetails
 }
+
+export const treatment = {
+  disposalOrRecoveryCode: 'R3',
+  weight
+}

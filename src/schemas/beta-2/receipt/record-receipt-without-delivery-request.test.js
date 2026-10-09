@@ -4,6 +4,7 @@ import {
   supportingReference,
   carrier,
   receiver,
+  treatment,
   validatorFor,
   wasteItem
 } from '../test-helpers.js'
@@ -212,6 +213,18 @@ describe('record-receipt-without-delivery-request schema', () => {
           instancePath: '/wasteItems/0/physicalDetails/form'
         })
       )
+    })
+
+    // Unlike creating a movement, a receipt takes treatments on each waste item.
+    test('accepts treatments on a waste item', () => {
+      expect(
+        validateAjv({
+          reason,
+          carrier,
+          receiver,
+          wasteItems: [{ ...wasteItem, treatments: [treatment] }]
+        }).valid
+      ).toBe(true)
     })
   })
 

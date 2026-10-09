@@ -5,7 +5,8 @@ import {
   carrier,
   receiver,
   validatorFor,
-  physicalDetails
+  physicalDetails,
+  treatment
 } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
@@ -184,6 +185,61 @@ describe('record-receipt-request schema', () => {
         expect.objectContaining({
           keyword: 'enum',
           instancePath: '/physicalDetails/form'
+        })
+      )
+    })
+  })
+
+  // A treatment's rules are covered by waste-item/treatment*.test.js — these
+  // confirm treatments is optional and that the $ref wiring is live.
+  describe('treatments', () => {
+    test('is optional', () => {
+      expect(validateAjv({ carrier, receiver, physicalDetails }).valid).toBe(
+        true
+      )
+    })
+
+    test('accepts declared treatments', () => {
+      expect(
+        validateAjv({
+          carrier,
+          receiver,
+          physicalDetails,
+          treatments: [treatment]
+        }).valid
+      ).toBe(true)
+    })
+
+    test('rejects an empty list of treatments', () => {
+      const { valid, errors } = validateAjv({
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments: []
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'minItems',
+          instancePath: '/treatments'
+        })
+      )
+    })
+
+    test('rejects an invalid treatment, reporting the error against that treatment', () => {
+      const { valid, errors } = validateAjv({
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments: [{ ...treatment, disposalOrRecoveryCode: 'R99' }]
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'enum',
+          instancePath: '/treatments/0/disposalOrRecoveryCode'
         })
       )
     })

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Waste item",
-  "description": "A single item of waste in a movement. physicalDetails is required.",
+  "description": "A single item of waste in a movement. physicalDetails is required; treatments is optional.",
   "examples": [
     {
       "physicalDetails": {
@@ -13,7 +13,17 @@
           "unit": "KILOGRAMS",
           "isEstimate": false
         }
-      }
+      },
+      "treatments": [
+        {
+          "disposalOrRecoveryCode": "R3",
+          "weight": {
+            "amount": 250.5,
+            "unit": "KILOGRAMS",
+            "isEstimate": false
+          }
+        }
+      ]
     },
     {
       "physicalDetails": {
@@ -33,6 +43,10 @@
     "physicalDetails": {
       "$ref": "physical-details.schema.json",
       "description": "The physical form, containers and total weight of the waste item."
+    },
+    "treatments": {
+      "$ref": "treatments.schema.json",
+      "description": "The disposal or recovery operations applied to this waste item. Optional; when provided, at least one is required."
     }
   },
   "required": ["physicalDetails"],
