@@ -16,11 +16,13 @@ import {
   supportingReference,
   carrier,
   receiver,
+  treatment,
   wasteItem
 } from '../../schemas/beta-2/test-helpers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
-const wasteItems = [wasteItem]
+// A receipt needs at least one treatment on every waste item.
+const wasteItems = [{ ...wasteItem, treatments: [treatment] }]
 const reason =
   'No delivery was recorded prior to receipt; waste received directly from the producer.'
 
@@ -102,6 +104,35 @@ describe('POST /beta-2/receipts', () => {
       deliveryId: '25KMT4Z9',
       movementIds: [],
       orgId: forwardedOrganisationId
+    })
+  })
+
+  // Scenario: A Receipt is created when more than one treatment is declared.
+  it('acknowledges receipt when a waste item has more than one treatment', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: {
+        reason,
+        carrier,
+        receiver,
+        wasteItems: [
+          {
+            ...wasteItem,
+            treatments: [
+              treatment,
+              { ...treatment, disposalOrRecoveryCode: 'D10' }
+            ]
+          }
+        ]
+      },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+    expect(result).toEqual({
+      data: { deliveryId: '25KMT4Z9' },
+      validation: { warnings: [] }
     })
   })
 
@@ -264,6 +295,32 @@ describe('POST /beta-2/receipts', () => {
           errorType: 'NotProvided',
           message: '"wasteItems" is required',
           pointer: '/wasteItems'
+        }
+      ],
+      instance: '/beta-2/receipts',
+      title: 'Bad Request',
+      type: `${expectedTypeBase}bad-request`,
+      requestId: traceId
+    })
+  })
+
+  // Scenario: A Receipt isn't created when no treatment is declared.
+  it('returns a 400 when a waste item has no treatments', async () => {
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url,
+      payload: { reason, carrier, receiver, wasteItems: [wasteItem] },
+      headers: tracedAuthHeaders
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result).toEqual({
+      detail: '1 validation error occurred',
+      errors: [
+        {
+          errorType: 'NotProvided',
+          message: '"treatments" is required',
+          pointer: '/wasteItems/0/treatments'
         }
       ],
       instance: '/beta-2/receipts',

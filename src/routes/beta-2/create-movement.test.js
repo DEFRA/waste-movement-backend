@@ -14,6 +14,7 @@ import {
 import {
   carrier,
   receiver,
+  treatment,
   wasteItem
 } from '../../schemas/beta-2/test-helpers.js'
 
@@ -548,6 +549,41 @@ describe('movement Route Tests version: beta-2', () => {
       }
     ])
 
+    expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
+  })
+
+  // Treatments are part of the shared waste item, but creating a movement
+  // doesn't take them yet.
+  it('returns an error when a waste item declares treatments and does not create a movement', async () => {
+    const invalidPayload = {
+      producer,
+      intendedCarriers,
+      intendedReceivers,
+      wasteItems: [{ ...wasteItem, treatments: [treatment] }]
+    }
+    const createMovementRecordSpy = jest.spyOn(
+      movementCreate,
+      'createMovementRecord'
+    )
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements`,
+      payload: invalidPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result.errors).toEqual([
+      expect.objectContaining({
+        errorType: 'NotAllowed',
+        pointer: '/wasteItems/0/treatments'
+      })
+    ])
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 

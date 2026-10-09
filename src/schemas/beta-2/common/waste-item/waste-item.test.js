@@ -1,4 +1,4 @@
-import { validatorFor, wasteItem } from '../../test-helpers.js'
+import { treatment, validatorFor, wasteItem } from '../../test-helpers.js'
 
 const validateAjv = validatorFor(
   'beta-2/common/waste-item/waste-item.schema.json'
@@ -29,7 +29,50 @@ describe('Feature: Schema - declaring a waste item', () => {
     })
   })
 
+  // A treatment's rules are covered by treatment.test.js and treatments.test.js
+  // — these confirm treatments is optional and that the $ref wiring is live.
+  describe('Scenario: Validation passes when a waste item declares its treatments', () => {
+    test('validation passes when the treatments are valid', () => {
+      expect(validateAjv({ ...wasteItem, treatments: [treatment] }).valid).toBe(
+        true
+      )
+    })
+
+    test('validation passes when no treatments are declared', () => {
+      expect(validateAjv(wasteItem).valid).toBe(true)
+    })
+  })
+
+  describe('Scenario: Validation fails when a waste item declares an empty list of treatments', () => {
+    test('validation fails and at least one treatment is reported as required', () => {
+      const { valid, errors } = validateAjv({ ...wasteItem, treatments: [] })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'minItems',
+          instancePath: '/treatments'
+        })
+      )
+    })
+  })
+
   describe('Additional coverage', () => {
+    test('rejects a waste item whose treatment is invalid, reporting the error against that treatment', () => {
+      const { valid, errors } = validateAjv({
+        ...wasteItem,
+        treatments: [{ ...treatment, disposalOrRecoveryCode: 'R99' }]
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'enum',
+          instancePath: '/treatments/0/disposalOrRecoveryCode'
+        })
+      )
+    })
+
     test('rejects a waste item whose physical details are invalid, reporting the error against them', () => {
       const { form, ...withoutForm } = wasteItem.physicalDetails
       const { valid, errors } = validateAjv({ physicalDetails: withoutForm })
