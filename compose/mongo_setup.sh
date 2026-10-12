@@ -24,7 +24,9 @@ mongosh --quiet --eval "
 # Insert test client data
 mongosh --quiet --eval "
   const db = db.getSiblingDB('dwt-client-sync');
-  db.clients.insertMany([
+  // Upsert so restarting with an existing volume doesn't hit the unique
+  // index dwt-client-sync creates on tenantServiceName and clientId
+  [
   {
     clientName: 'Test Client 1',
     clientId: '1234567890abcdef1234567890',
@@ -40,7 +42,13 @@ mongosh --quiet --eval "
     clientId: 'abcdefghijklmnopqrstuvwxyz',
     tenantServiceName: 'waste-movement-external-api'
   }
-  ]);
+  ].forEach((client) =>
+    db.clients.updateOne(
+      { tenantServiceName: client.tenantServiceName, clientId: client.clientId },
+      { \$set: client },
+      { upsert: true }
+    )
+  );
 "
 # Keep the script running
 wait $MONGO_PID
