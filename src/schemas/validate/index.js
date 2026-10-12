@@ -35,10 +35,14 @@ function collectSchemaFiles(dir) {
 // allowUnionTypes: strict mode's strictTypes otherwise rejects a
 // `type: [object, 'null']` union, which the response schemas port verbatim
 // from the OpenAPI spec (recordCollectionResponse's always-null `data`).
+// verbose: each error carries the `parentSchema` that raised it, whose
+// description hapi-validator uses as the message for a conditional rule.
+// It also carries `data`, the offending payload value — keep that out of logs.
 const ajv = new Ajv2020({
   allErrors: true,
   strict: true,
-  allowUnionTypes: true
+  allowUnionTypes: true,
+  verbose: true
 })
 addFormats(ajv, ['email', 'uuid'])
 
