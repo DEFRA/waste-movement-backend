@@ -131,7 +131,8 @@ what they actually sent.
 **The description of a `then`, an `else` or a `not` is the error message**, word for word, and
 the error's `pointer` names the field — so write it as the condition: "Required when …",
 "Not allowed when …". `validate/hapi-validator.js` uses it for any error raised directly by
-that subschema; `conventions.test.js` fails if one has no description.
+that subschema; `conventions.test.js` fails if one that can reject has no description (a
+`then`/`else` holding only `properties` raises nothing itself, so it's exempt).
 
 The empty `"registrationNumber": {}` declarations are for ajv's strict mode, which rejects a
 `required` naming a property the same subschema doesn't declare.
