@@ -17,6 +17,7 @@ import {
   receiver,
   supportingReference,
   physicalDetails,
+  treatment,
   wasteItem
 } from '../../src/schemas/beta-2/test-helpers.js'
 
@@ -27,6 +28,10 @@ describe('beta-2', () => {
   const intendedCarriers = [carrier]
   const intendedReceivers = [receiver]
   const wasteItems = [wasteItem]
+  // Receipts need at least one treatment (on every waste item, for a receipt
+  // without a delivery); creating a movement forbids them.
+  const treatments = [treatment]
+  const receiptWasteItems = [{ ...wasteItem, treatments }]
   const minimalMovement = {
     producer: { wasteSource: 'Household' },
     intendedCarriers,
@@ -303,7 +308,10 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/deliveries/${deliveryId}/receipt`,
-      { method: 'POST', body: { carrier, receiver, physicalDetails } }
+      {
+        method: 'POST',
+        body: { carrier, receiver, physicalDetails, treatments }
+      }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -333,7 +341,7 @@ describe('beta-2', () => {
       '/beta-2/receipts',
       {
         method: 'POST',
-        body: { reason, carrier, receiver, wasteItems }
+        body: { reason, carrier, receiver, wasteItems: receiptWasteItems }
       }
     )
 
@@ -426,6 +434,7 @@ describe('beta-2', () => {
           carrier,
           receiver,
           physicalDetails,
+          treatments,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -451,7 +460,7 @@ describe('beta-2', () => {
           reason: 'No prior movement trail',
           carrier,
           receiver,
-          wasteItems,
+          wasteItems: receiptWasteItems,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -693,7 +702,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason', receiver, wasteItems }
+        body: { reason: 'Some reason', receiver, wasteItems: receiptWasteItems }
       })
 
       expectProblemResponse(response, {
@@ -715,7 +724,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason', carrier, wasteItems }
+        body: { reason: 'Some reason', carrier, wasteItems: receiptWasteItems }
       })
 
       expectProblemResponse(response, {
@@ -746,7 +755,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, physicalDetails }
+        body: { carrier, physicalDetails, treatments }
       })
 
       expectProblemResponse(response, {
@@ -787,6 +796,37 @@ describe('beta-2', () => {
       ])
     })
 
+    it('rejects receipt recording against a delivery without treatments', async () => {
+      const movementId = await createMovement()
+      const createDeliveryRes = await betaHttpRequest(
+        testService.baseUrl,
+        '/beta-2/deliveries',
+        { method: 'POST', body: { movementIds: [movementId], carrier } }
+      )
+      const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
+
+      const endpoint = `/beta-2/deliveries/${deliveryId}/receipt`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { carrier, receiver, physicalDetails }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toEqual([
+        {
+          errorType: 'NotProvided',
+          message: '"treatments" is required',
+          pointer: '/treatments'
+        }
+      ])
+    })
+
     it('rejects receipt recording against a delivery when the total weight is not greater than 0', async () => {
       const movementId = await createMovement()
       const createDeliveryRes = await betaHttpRequest(
@@ -806,7 +846,8 @@ describe('beta-2', () => {
           physicalDetails: {
             ...physicalDetails,
             totalWeight: { ...physicalDetails.totalWeight, amount: 0 }
-          }
+          },
+          treatments
         }
       })
 
@@ -837,7 +878,7 @@ describe('beta-2', () => {
           reason: 'Some reason',
           carrier,
           receiver,
-          wasteItems
+          wasteItems: receiptWasteItems
         }
       })
 

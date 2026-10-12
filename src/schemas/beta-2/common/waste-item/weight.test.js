@@ -47,7 +47,7 @@ describe('Feature: Declaring the weight of the waste', () => {
     })
 
     describe('Examples: Not a permitted value', () => {
-      test.each([['Pounds'], ['kg']])(
+      test.each([['Pounds'], ['Litres'], ['kg']])(
         'a unit of measurement of %s is not recognised',
         (unit) => {
           const { valid, errors } = validateAjv({ ...weight, unit })

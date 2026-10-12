@@ -7,6 +7,7 @@ import {
   municipalProducer,
   receiver,
   supportingReference,
+  treatment,
   validatorFor,
   wasteItem
 } from '../test-helpers.js'
@@ -356,6 +357,25 @@ describe('create-movement-request schema', () => {
         expect.objectContaining({
           keyword: 'enum',
           instancePath: '/wasteItems/0/physicalDetails/form'
+        })
+      )
+    })
+
+    // waste-item.schema.json allows treatments, but creating a movement
+    // doesn't take them yet: this schema forbids them on each waste item.
+    test('rejects treatments on a waste item', () => {
+      const { valid, errors } = validateAjv({
+        producer: householdProducer,
+        intendedCarriers,
+        intendedReceivers,
+        wasteItems: [{ ...wasteItem, treatments: [treatment] }]
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'not',
+          instancePath: '/wasteItems/0/treatments'
         })
       )
     })

@@ -24,7 +24,17 @@
       "description": "The intended receivers of the waste. At least one is required."
     },
     "wasteItems": {
-      "$ref": "../common/waste-item/waste-items.schema.json"
+      "$ref": "../common/waste-item/waste-items.schema.json",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "treatments": {
+            "not": {},
+            "description": "Not accepted when creating a movement yet."
+          }
+        }
+      }
     },
     "brokerOrDealer": {
       "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json"
