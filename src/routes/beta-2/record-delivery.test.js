@@ -187,12 +187,12 @@ describe('POST /beta-2/deliveries', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"movementIds" is required',
+          message: "'movementIds' is required",
           pointer: '/movementIds'
         },
         {
           errorType: 'NotProvided',
-          message: '"carrier" is required',
+          message: "'carrier' is required",
           pointer: '/carrier'
         }
       ],
@@ -217,7 +217,7 @@ describe('POST /beta-2/deliveries', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"carrier" is required',
+          message: "'carrier' is required",
           pointer: '/carrier'
         }
       ],

@@ -140,12 +140,12 @@ describe('POST /beta-1/deliveries', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"apiCode" is required',
+          message: "'apiCode' is required",
           pointer: '/apiCode'
         },
         {
           errorType: 'NotProvided',
-          message: '"movementIds" is required',
+          message: "'movementIds' is required",
           pointer: '/movementIds'
         }
       ],

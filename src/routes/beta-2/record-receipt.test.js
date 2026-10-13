@@ -234,7 +234,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     expect(result.errors).toEqual([
       {
         errorType: 'InvalidFormat',
-        message: 'must match pattern "^[0-9]{2}[A-Z0-9]{6,7}$"',
+        message: "must match pattern '^[0-9]{2}[A-Z0-9]{6,7}$'",
         pointer: '/deliveryId'
       }
     ])
@@ -287,7 +287,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"carrier" is required',
+          message: "'carrier' is required",
           pointer: '/carrier'
         }
       ],
@@ -312,7 +312,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"physicalDetails" is required',
+          message: "'physicalDetails' is required",
           pointer: '/physicalDetails'
         }
       ],
@@ -338,7 +338,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"treatments" is required',
+          message: "'treatments' is required",
           pointer: '/treatments'
         }
       ],
@@ -396,7 +396,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"receiver" is required',
+          message: "'receiver' is required",
           pointer: '/receiver'
         }
       ],

@@ -554,7 +554,7 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"dutyOfCareConfirmed" is required',
+          message: "'dutyOfCareConfirmed' is required",
           pointer: '/dutyOfCareConfirmed'
         }
       ])
@@ -736,7 +736,7 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"receiver" is required',
+          message: "'receiver' is required",
           pointer: '/receiver'
         }
       ])
@@ -767,7 +767,7 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"receiver" is required',
+          message: "'receiver' is required",
           pointer: '/receiver'
         }
       ])
@@ -790,7 +790,7 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"wasteItems" is required',
+          message: "'wasteItems' is required",
           pointer: '/wasteItems'
         }
       ])
@@ -821,7 +821,7 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"treatments" is required',
+          message: "'treatments' is required",
           pointer: '/treatments'
         }
       ])
@@ -961,7 +961,7 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"intendedReceivers" is required',
+          message: "'intendedReceivers' is required",
           pointer: '/intendedReceivers'
         }
       ])
@@ -1013,7 +1013,7 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"wasteItems" is required',
+          message: "'wasteItems' is required",
           pointer: '/wasteItems'
         }
       ])

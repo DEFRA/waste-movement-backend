@@ -122,12 +122,12 @@ describe('POST /beta-1/receipts', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"apiCode" is required',
+          message: "'apiCode' is required",
           pointer: '/apiCode'
         },
         {
           errorType: 'NotProvided',
-          message: '"reason" is required',
+          message: "'reason' is required",
           pointer: '/reason'
         }
       ],

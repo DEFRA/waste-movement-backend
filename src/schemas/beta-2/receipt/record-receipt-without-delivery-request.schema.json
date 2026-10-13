@@ -25,7 +25,7 @@
         "type": "object",
         "properties": {
           "treatments": {
-            "description": "Required on every waste item of a receipt: at least one disposal or recovery operation."
+            "description": "Required on every waste item of a receipt: at least one disposal or recovery operation"
           }
         },
         "required": ["treatments"]

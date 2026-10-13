@@ -64,15 +64,23 @@ function toPath(error) {
 const isCondition = ({ keyword, schemaPath }) =>
   keyword === 'not' || /\/(then|else)\/[^/]+$/.test(schemaPath)
 
+// Field names and values go in single quotes in every message.
+const quote = (value) => `'${value}'`
+
 function toMessage(error) {
   if (isCondition(error)) {
     return error.parentSchema.description
   }
   switch (error.keyword) {
     case 'required':
-      return `"${error.params.missingProperty}" is required`
+      return `${quote(error.params.missingProperty)} is required`
     case 'enum':
-      return `must be one of: ${error.params.allowedValues.join(', ')}`
+      return `must be one of: ${error.params.allowedValues.map(quote).join(', ')}`
+    // ajv's own wording, but quoted like the others.
+    case 'pattern':
+      return `must match pattern ${quote(error.params.pattern)}`
+    case 'format':
+      return `must match format ${quote(error.params.format)}`
     default:
       return error.message
   }
@@ -96,7 +104,7 @@ const isSpecific = (error) => !compositionKeywords.has(error.keyword)
 // the whole array, to compare each entry with the others.
 
 // A failed if/then/else, oneOf or anyOf is reported twice: once by the
-// branch's own keywords ("vehicleRegistration" is required) and once as a
+// branch's own keywords ('vehicleRegistration' is required) and once as a
 // summary on the parent ('must match "then" schema'). The summary says
 // nothing the caller can act on, so drop it whenever a more specific error
 // sits at or below it.
