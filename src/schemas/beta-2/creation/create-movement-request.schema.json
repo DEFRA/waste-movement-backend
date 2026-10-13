@@ -31,7 +31,7 @@
         "properties": {
           "treatments": {
             "not": {},
-            "description": "Not accepted when creating a movement yet."
+            "description": "Not accepted when creating a movement yet"
           }
         }
       }

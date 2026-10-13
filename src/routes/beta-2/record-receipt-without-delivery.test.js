@@ -228,22 +228,22 @@ describe('POST /beta-2/receipts', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"reason" is required',
+          message: "'reason' is required",
           pointer: '/reason'
         },
         {
           errorType: 'NotProvided',
-          message: '"carrier" is required',
+          message: "'carrier' is required",
           pointer: '/carrier'
         },
         {
           errorType: 'NotProvided',
-          message: '"receiver" is required',
+          message: "'receiver' is required",
           pointer: '/receiver'
         },
         {
           errorType: 'NotProvided',
-          message: '"wasteItems" is required',
+          message: "'wasteItems' is required",
           pointer: '/wasteItems'
         }
       ],
@@ -268,7 +268,7 @@ describe('POST /beta-2/receipts', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"carrier" is required',
+          message: "'carrier' is required",
           pointer: '/carrier'
         }
       ],
@@ -293,7 +293,7 @@ describe('POST /beta-2/receipts', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"wasteItems" is required',
+          message: "'wasteItems' is required",
           pointer: '/wasteItems'
         }
       ],
@@ -319,7 +319,7 @@ describe('POST /beta-2/receipts', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"treatments" is required',
+          message: "'treatments' is required",
           pointer: '/wasteItems/0/treatments'
         }
       ],
@@ -344,7 +344,7 @@ describe('POST /beta-2/receipts', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"receiver" is required',
+          message: "'receiver' is required",
           pointer: '/receiver'
         }
       ],

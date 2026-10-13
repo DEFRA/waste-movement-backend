@@ -28,7 +28,7 @@
     "message": {
       "type": "string",
       "description": "Human-readable description of the issue.",
-      "examples": ["apiCode is required."]
+      "examples": ["'apiCode' is required"]
     }
   }
 }

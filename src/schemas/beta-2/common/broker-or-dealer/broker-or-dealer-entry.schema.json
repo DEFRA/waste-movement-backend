@@ -32,14 +32,14 @@
     "properties": {
       "reasonForNoRegistrationNumber": {
         "not": {},
-        "description": "Not allowed when registrationNumber is provided."
+        "description": "Not allowed when 'registrationNumber' is provided"
       }
     }
   },
   "else": {
     "properties": { "reasonForNoRegistrationNumber": {} },
     "required": ["reasonForNoRegistrationNumber"],
-    "description": "Required when registrationNumber is not provided."
+    "description": "Required when 'registrationNumber' is not provided"
   },
   "properties": {
     "organisationName": {

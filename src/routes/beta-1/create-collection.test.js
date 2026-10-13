@@ -149,7 +149,7 @@ describe('collection Route Tests version: beta-1', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"apiCode" is required',
+          message: "'apiCode' is required",
           pointer: '/apiCode'
         }
       ],

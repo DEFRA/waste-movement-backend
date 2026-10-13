@@ -25,7 +25,7 @@ describe('jsonSchemaRequestValidator', () => {
 
   test('throws a Boom badRequest when the value is invalid', () => {
     expect(() => jsonSchemaRequestValidator(schemaId)({})).toThrow(
-      '"wasteSource" is required'
+      "'wasteSource' is required"
     )
   })
 
@@ -41,7 +41,7 @@ describe('jsonSchemaRequestValidator', () => {
   test('maps a missing property to NotProvided', () => {
     expect(getDetails(schemaId, {})).toEqual([
       {
-        message: '"wasteSource" is required',
+        message: "'wasteSource' is required",
         path: ['wasteSource'],
         type: 'NotProvided'
       }
@@ -113,7 +113,7 @@ describe('jsonSchemaRequestValidator', () => {
         value: { ...carrier, meansOfTransport: 'Road' },
         expected: [
           {
-            message: 'Required when meansOfTransport is Road.',
+            message: "Required when 'meansOfTransport' is 'Road'",
             path: ['vehicleRegistration'],
             type: 'NotProvided'
           }
@@ -124,7 +124,7 @@ describe('jsonSchemaRequestValidator', () => {
         value: { ...carrier, vehicleRegistration: 'AB12 CDE' },
         expected: [
           {
-            message: 'Not allowed unless meansOfTransport is Road.',
+            message: "Not allowed unless 'meansOfTransport' is 'Road'",
             path: ['vehicleRegistration'],
             type: 'NotAllowed'
           }
@@ -135,7 +135,7 @@ describe('jsonSchemaRequestValidator', () => {
         value: { ...carrier, registrationNumber: undefined },
         expected: [
           {
-            message: 'Required when registrationNumber is not provided.',
+            message: "Required when 'registrationNumber' is not provided",
             path: ['reasonForNoRegistrationNumber'],
             type: 'NotProvided'
           }
@@ -146,12 +146,12 @@ describe('jsonSchemaRequestValidator', () => {
         value: { ...carrier, contactDetails: {} },
         expected: [
           {
-            message: '"emailAddress" is required',
+            message: "'emailAddress' is required",
             path: ['contactDetails', 'emailAddress'],
             type: 'NotProvided'
           },
           {
-            message: '"phoneNumber" is required',
+            message: "'phoneNumber' is required",
             path: ['contactDetails', 'phoneNumber'],
             type: 'NotProvided'
           }
@@ -188,7 +188,7 @@ describe('jsonSchemaRequestValidator', () => {
           ]
         },
         expected: {
-          message: 'Not allowed when registrationNumber is provided.',
+          message: "Not allowed when 'registrationNumber' is provided",
           path: ['items', '0', 'reasonForNoRegistrationNumber'],
           type: 'NotAllowed'
         }
@@ -198,7 +198,7 @@ describe('jsonSchemaRequestValidator', () => {
         id: brokerOrDealerId,
         value: { isPresent: true },
         expected: {
-          message: 'Required when isPresent is true.',
+          message: "Required when 'isPresent' is true",
           path: ['items'],
           type: 'NotProvided'
         }
@@ -209,7 +209,7 @@ describe('jsonSchemaRequestValidator', () => {
         value: [{ label: 'Purchase order', reference: 'PO-48213' }],
         expected: {
           message:
-            'must be one of: Weighbridge Number, PO Number, Job Number, Invoice Number, Waste Ticket Number, Other',
+            "must be one of: 'Weighbridge Number', 'PO Number', 'Job Number', 'Invoice Number', 'Waste Ticket Number', 'Other'",
           path: ['0', 'label'],
           type: 'InvalidValue'
         }
@@ -223,7 +223,7 @@ describe('jsonSchemaRequestValidator', () => {
           contactDetails: { emailAddress: 'carrier@example.com' }
         },
         expected: {
-          message: 'Required when registrationNumber is not provided.',
+          message: "Required when 'registrationNumber' is not provided",
           path: ['reasonForNoRegistrationNumber'],
           type: 'NotProvided'
         }

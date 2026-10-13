@@ -32,13 +32,13 @@
   "then": {
     "properties": { "items": {} },
     "required": ["items"],
-    "description": "Required when isPresent is true."
+    "description": "Required when 'isPresent' is true"
   },
   "else": {
     "properties": {
       "items": {
         "not": {},
-        "description": "Not allowed when isPresent is false or absent."
+        "description": "Not allowed when 'isPresent' is false or absent"
       }
     }
   },
