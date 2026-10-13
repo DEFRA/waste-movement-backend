@@ -64,21 +64,23 @@ function toPath(error) {
 const isCondition = ({ keyword, schemaPath }) =>
   keyword === 'not' || /\/(then|else)\/[^/]+$/.test(schemaPath)
 
+// Field names and values go in single quotes in every message.
+const quote = (value) => `'${value}'`
+
 function toMessage(error) {
   if (isCondition(error)) {
     return error.parentSchema.description
   }
   switch (error.keyword) {
     case 'required':
-      return `'${error.params.missingProperty}' is required`
+      return `${quote(error.params.missingProperty)} is required`
     case 'enum':
-      return `must be one of: ${error.params.allowedValues.map((value) => `'${value}'`).join(', ')}`
-    // ajv's own wording, but with field names and values in single quotes
-    // like every other message.
+      return `must be one of: ${error.params.allowedValues.map(quote).join(', ')}`
+    // ajv's own wording, but quoted like the others.
     case 'pattern':
-      return `must match pattern '${error.params.pattern}'`
+      return `must match pattern ${quote(error.params.pattern)}`
     case 'format':
-      return `must match format '${error.params.format}'`
+      return `must match format ${quote(error.params.format)}`
     default:
       return error.message
   }
