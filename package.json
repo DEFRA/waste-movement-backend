@@ -21,6 +21,7 @@
     "test": "node --no-experimental-require-module ./node_modules/jest/bin/jest.js --coverage --verbose --runInBand",
     "test:watch": "node --no-experimental-require-module ./node_modules/jest/bin/jest.js --watch",
     "test:integration": "node --no-experimental-require-module ./node_modules/jest/bin/jest.js --config jest.integration.config.js --runInBand",
+    "test:schemathesis": "bash test/schemathesis/run.sh",
     "server:watch": "nodemon --inspect=0.0.0.0 --ext js,json --legacy-watch ./src",
     "server:debug": "nodemon --inspect-brk=0.0.0.0 --ext js,json --legacy-watch ./src",
     "start": "NODE_ENV=production node --use-strict .",
@@ -59,6 +60,7 @@
     "uuid": "13.0.2"
   },
   "devDependencies": {
+    "@apidevtools/json-schema-ref-parser": "11.9.3",
     "@babel/core": "7.29.7",
     "@babel/preset-env": "7.26.9",
     "@jest/globals": "30.0.2",
