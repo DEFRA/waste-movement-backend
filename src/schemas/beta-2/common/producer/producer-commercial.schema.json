@@ -31,14 +31,14 @@
         "properties": {
           "reasonForNoAuthorisationNumber": {
             "not": {},
-            "description": "Not allowed when authorisationNumber is provided."
+            "description": "Not allowed when 'authorisationNumber' is provided"
           }
         }
       },
       "else": {
         "properties": { "reasonForNoAuthorisationNumber": {} },
         "required": ["reasonForNoAuthorisationNumber"],
-        "description": "Required when authorisationNumber is not provided."
+        "description": "Required when 'authorisationNumber' is not provided"
       },
       "properties": {
         "wasteSource": {

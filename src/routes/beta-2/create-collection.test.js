@@ -131,7 +131,7 @@ describe('collection Route Tests version: beta-2', () => {
     expect(result.errors).toEqual([
       {
         errorType: 'NotProvided',
-        message: 'Required when isPresent is true.',
+        message: "Required when 'isPresent' is true",
         pointer: '/brokerOrDealer/items'
       }
     ])
@@ -164,7 +164,7 @@ describe('collection Route Tests version: beta-2', () => {
     expect(result.errors).toEqual([
       {
         errorType: 'NotAllowed',
-        message: 'Not allowed when isPresent is false or absent.',
+        message: "Not allowed when 'isPresent' is false or absent",
         pointer: '/brokerOrDealer/items'
       }
     ])
@@ -226,7 +226,7 @@ describe('collection Route Tests version: beta-2', () => {
       {
         errorType: 'InvalidValue',
         message:
-          'must be one of: Weighbridge Number, PO Number, Job Number, Invoice Number, Waste Ticket Number, Other',
+          "must be one of: 'Weighbridge Number', 'PO Number', 'Job Number', 'Invoice Number', 'Waste Ticket Number', 'Other'",
         pointer: '/supportingReferences/0/label'
       }
     ])
@@ -367,7 +367,7 @@ describe('collection Route Tests version: beta-2', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"carrier" is required',
+          message: "'carrier' is required",
           pointer: '/carrier'
         }
       ],
@@ -401,7 +401,7 @@ describe('collection Route Tests version: beta-2', () => {
     expect(result.errors).toEqual([
       {
         errorType: 'InvalidFormat',
-        message: 'must match pattern "^[0-9]{2}[A-Z0-9]{6,7}$"',
+        message: "must match pattern '^[0-9]{2}[A-Z0-9]{6,7}$'",
         pointer: '/movementId'
       }
     ])
@@ -472,7 +472,7 @@ describe('collection Route Tests version: beta-2', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"dutyOfCareConfirmed" is required',
+          message: "'dutyOfCareConfirmed' is required",
           pointer: '/dutyOfCareConfirmed'
         }
       ],

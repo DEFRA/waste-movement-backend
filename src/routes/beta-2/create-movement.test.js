@@ -269,7 +269,7 @@ describe('movement Route Tests version: beta-2', () => {
     expect(result.errors).toEqual([
       {
         errorType: 'NotProvided',
-        message: 'Required when isPresent is true.',
+        message: "Required when 'isPresent' is true",
         pointer: '/brokerOrDealer/items'
       }
     ])
@@ -387,7 +387,7 @@ describe('movement Route Tests version: beta-2', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"producer" is required',
+          message: "'producer' is required",
           pointer: '/producer'
         }
       ],
@@ -425,7 +425,7 @@ describe('movement Route Tests version: beta-2', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"intendedCarriers" is required',
+          message: "'intendedCarriers' is required",
           pointer: '/intendedCarriers'
         }
       ],
@@ -462,7 +462,7 @@ describe('movement Route Tests version: beta-2', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"intendedReceivers" is required',
+          message: "'intendedReceivers' is required",
           pointer: '/intendedReceivers'
         }
       ],
@@ -499,7 +499,7 @@ describe('movement Route Tests version: beta-2', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"wasteItems" is required',
+          message: "'wasteItems' is required",
           pointer: '/wasteItems'
         }
       ],
@@ -757,7 +757,7 @@ describe('movement Route Tests version: beta-2', () => {
         }),
         expectedError: {
           errorType: 'InvalidFormat',
-          message: 'must match format "email"',
+          message: "must match format 'email'",
           pointer: '/brokerOrDealer/items/0/contactDetails/emailAddress'
         }
       },

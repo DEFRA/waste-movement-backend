@@ -13,14 +13,14 @@
         "properties": {
           "reasonForNoRegistrationNumber": {
             "not": {},
-            "description": "Not allowed when registrationNumber is provided."
+            "description": "Not allowed when 'registrationNumber' is provided"
           }
         }
       },
       "else": {
         "properties": { "reasonForNoRegistrationNumber": {} },
         "required": ["reasonForNoRegistrationNumber"],
-        "description": "Required when registrationNumber is not provided."
+        "description": "Required when 'registrationNumber' is not provided"
       }
     },
     {
@@ -37,13 +37,13 @@
           "vehicleRegistration": {}
         },
         "required": ["vehicleRegistration"],
-        "description": "Required when meansOfTransport is Road."
+        "description": "Required when 'meansOfTransport' is 'Road'"
       },
       "else": {
         "properties": {
           "vehicleRegistration": {
             "not": {},
-            "description": "Not allowed unless meansOfTransport is Road."
+            "description": "Not allowed unless 'meansOfTransport' is 'Road'"
           }
         }
       }
@@ -62,13 +62,13 @@
           "otherMeansOfTransport": {}
         },
         "required": ["otherMeansOfTransport"],
-        "description": "Required when meansOfTransport is Other."
+        "description": "Required when 'meansOfTransport' is 'Other'"
       },
       "else": {
         "properties": {
           "otherMeansOfTransport": {
             "not": {},
-            "description": "Not allowed unless meansOfTransport is Other."
+            "description": "Not allowed unless 'meansOfTransport' is 'Other'"
           }
         }
       }

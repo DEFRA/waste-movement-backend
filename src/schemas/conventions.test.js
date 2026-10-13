@@ -100,6 +100,25 @@ function findUndescribedConditions(node, pointer = '') {
   ]
 }
 
+// The descriptions findUndescribedConditions requires, with their pointers.
+function findConditionMessages(node, pointer = '') {
+  if (!node || typeof node !== 'object') {
+    return []
+  }
+  const messages = ['then', 'else']
+    .filter((key) => node[key]?.description)
+    .map((key) => [`${pointer}/${key}`, node[key].description])
+  if ('not' in node && node.description) {
+    messages.push([pointer, node.description])
+  }
+  return [
+    ...messages,
+    ...Object.entries(node).flatMap(([key, value]) =>
+      findConditionMessages(value, `${pointer}/${key}`)
+    )
+  ]
+}
+
 const readAll = (suffix) =>
   collectFiles(schemaRoot, suffix).map((file) => [
     path.relative(schemaRoot, file),
@@ -139,6 +158,19 @@ describe('schema conventions', () => {
     '%s describes every then, else and not that can reject',
     (_, schema) => {
       expect(findUndescribedConditions(schema)).toEqual([])
+    }
+  )
+
+  // Those descriptions are worded like hapi-validator's own messages
+  // ("'receiver' is required"): field names and values in single quotes, no
+  // full stop, since the validator joins messages with ". " itself.
+  test.each(schemaFiles)(
+    '%s words every condition message like the validator does',
+    (_, schema) => {
+      const malformed = findConditionMessages(schema).filter(
+        ([, message]) => message.endsWith('.') || message.includes('"')
+      )
+      expect(malformed).toEqual([])
     }
   )
 

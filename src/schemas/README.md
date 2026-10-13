@@ -81,7 +81,7 @@ never-matching schema with a description saying why, not a bare `false`:
 ```json
 "reasonForNoAuthorisationNumber": {
   "not": {},
-  "description": "Not allowed when authorisationNumber is provided."
+  "description": "Not allowed when 'authorisationNumber' is provided"
 }
 ```
 
@@ -112,14 +112,14 @@ A rule that depends on another field — "exactly one of `registrationNumber` /
   "properties": {
     "reasonForNoRegistrationNumber": {
       "not": {},
-      "description": "Not allowed when registrationNumber is provided."
+      "description": "Not allowed when 'registrationNumber' is provided"
     }
   }
 },
 "else": {
   "properties": { "reasonForNoRegistrationNumber": {} },
   "required": ["reasonForNoRegistrationNumber"],
-  "description": "Required when registrationNumber is not provided."
+  "description": "Required when 'registrationNumber' is not provided"
 }
 ```
 
@@ -133,6 +133,12 @@ the error's `pointer` names the field — so write it as the condition: "Require
 "Not allowed when …". `validate/hapi-validator.js` uses it for any error raised directly by
 that subschema; `conventions.test.js` fails if one that can reject has no description (a
 `then`/`else` holding only `properties` raises nothing itself, so it's exempt).
+
+Word it like the validator's own messages (`'receiver' is required`, `must be one of: 'Road',
+'Rail'`): **field names and literal values in single quotes, no closing full stop** — "Required
+when 'meansOfTransport' is 'Road'". JSON literals (`true`, `false`) stay bare. The validator
+joins several messages with ". " for the top-level message, so a full stop of their own would
+double up. `conventions.test.js` fails on a trailing full stop or a double quote.
 
 The empty `"registrationNumber": {}` declarations are for ajv's strict mode, which rejects a
 `required` naming a property the same subschema doesn't declare.
