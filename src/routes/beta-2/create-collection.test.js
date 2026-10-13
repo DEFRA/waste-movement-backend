@@ -128,11 +128,13 @@ describe('collection Route Tests version: beta-2', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(result.errors).toContainEqual({
-      errorType: 'NotProvided',
-      message: '"items" is required',
-      pointer: '/brokerOrDealer/items'
-    })
+    expect(result.errors).toEqual([
+      {
+        errorType: 'NotProvided',
+        message: 'Required when isPresent is true.',
+        pointer: '/brokerOrDealer/items'
+      }
+    ])
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
@@ -159,12 +161,13 @@ describe('collection Route Tests version: beta-2', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(result.errors).toContainEqual(
-      expect.objectContaining({
+    expect(result.errors).toEqual([
+      {
         errorType: 'NotAllowed',
+        message: 'Not allowed when isPresent is false or absent.',
         pointer: '/brokerOrDealer/items'
-      })
-    )
+      }
+    ])
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 
@@ -219,12 +222,14 @@ describe('collection Route Tests version: beta-2', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(result.errors).toContainEqual(
-      expect.objectContaining({
+    expect(result.errors).toEqual([
+      {
         errorType: 'InvalidValue',
+        message:
+          'must be one of: Weighbridge Number, PO Number, Job Number, Invoice Number, Waste Ticket Number, Other',
         pointer: '/supportingReferences/0/label'
-      })
-    )
+      }
+    ])
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 

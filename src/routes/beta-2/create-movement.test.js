@@ -266,11 +266,13 @@ describe('movement Route Tests version: beta-2', () => {
     })
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-    expect(result.errors).toContainEqual({
-      errorType: 'NotProvided',
-      message: '"items" is required',
-      pointer: '/brokerOrDealer/items'
-    })
+    expect(result.errors).toEqual([
+      {
+        errorType: 'NotProvided',
+        message: 'Required when isPresent is true.',
+        pointer: '/brokerOrDealer/items'
+      }
+    ])
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 

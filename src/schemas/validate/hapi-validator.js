@@ -10,11 +10,11 @@ function toErrorType(error) {
   switch (error.keyword) {
     case 'required':
       return ERROR_TYPE.NOT_PROVIDED
-    // 'not' comes from a `{ "not": {} }` subschema — how a oneOf branch
-    // forbids a property that the other branch requires (producer's
-    // authorisationNumber/reason pair, brokerOrDealer's items when isPresent
-    // is false). The property is present but not permitted, so it maps like
-    // an extra property rather than falling through to UnexpectedError.
+    // 'not' comes from a `{ "not": {} }` subschema — how a then/else branch
+    // forbids a property under a condition (producer's authorisationNumber/
+    // reason pair, brokerOrDealer's items when isPresent is false). The
+    // property is present but not permitted, so it maps like an extra
+    // property rather than falling through to UnexpectedError.
     // (Not a boolean `false` subschema: see conventions.test.js.)
     case 'additionalProperties':
     case 'propertyNames':
@@ -59,10 +59,23 @@ function toPath(error) {
   return segments
 }
 
+// A then/else branch or a `{ "not": {} }` only exists to state a condition,
+// and its description says it ("Required when …", "Not allowed when …").
+const isCondition = ({ keyword, schemaPath }) =>
+  keyword === 'not' || /\/(then|else)\/[^/]+$/.test(schemaPath)
+
 function toMessage(error) {
-  return error.keyword === 'required'
-    ? `"${error.params.missingProperty}" is required`
-    : error.message
+  if (isCondition(error)) {
+    return error.parentSchema.description
+  }
+  switch (error.keyword) {
+    case 'required':
+      return `"${error.params.missingProperty}" is required`
+    case 'enum':
+      return `must be one of: ${error.params.allowedValues.join(', ')}`
+    default:
+      return error.message
+  }
 }
 
 function toDetail(error) {
@@ -139,7 +152,17 @@ export const jsonSchemaResponseValidator = (schemaId) => (value) => {
   if (validate(schemaId, value)) {
     return value
   }
-  const errors = getErrors(schemaId)
+  // Only what locates the mismatch: verbose errors also carry the schemas and
+  // `data`, which would log the response body.
+  const errors = getErrors(schemaId).map(
+    ({ instancePath, schemaPath, keyword, params, message }) => ({
+      instancePath,
+      schemaPath,
+      keyword,
+      params,
+      message
+    })
+  )
   logger.error({ schemaId, errors }, 'Response failed schema validation')
   throw new Error(`Response does not match ${schemaId}`)
 }

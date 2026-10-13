@@ -32,8 +32,8 @@ conversion step in between.
 
 **OpenAPI 3.0 can't express what these schemas need.** `const` and `propertyNames` are what
 encode rules like "Household forbids these fields" and "exactly one of `authorisationNumber` /
-`reasonForNoAuthorisationNumber`" (with the `oneOf` branches described under
-[No boolean subschemas](#no-boolean-subschemas)). A 3.0 spec would
+`reasonForNoAuthorisationNumber`" (with the `if`/`then`/`else` described under
+[Conditional rules](#conditional-rules-ifthenelse-not-oneof)). A 3.0 spec would
 describe a looser contract than the one actually enforced. 3.1 is required, not preferred.
 
 `hapi-swagger` is not part of this — it can't consume JSON Schema and can't emit 3.1. It serves
@@ -74,8 +74,8 @@ reaching back into utils.
 
 ### No boolean subschemas
 
-To forbid a field in one branch of a `oneOf` — "exactly one of `authorisationNumber` /
-`reasonForNoAuthorisationNumber`", "no `items` when `isPresent` is false" — write an explicit
+To forbid a field under a condition — "no `reasonForNoAuthorisationNumber` alongside an
+`authorisationNumber`", "no `items` when `isPresent` is false" — write an explicit
 never-matching schema with a description saying why, not a bare `false`:
 
 ```json
@@ -90,11 +90,55 @@ never-matching schema with a description saying why, not a bare `false`:
 OpenAPI Viewer for macOS — can't decode a boolean where they expect a schema object, and reject
 the **whole** published spec, since it `$ref`s these files. `{ "not": {} }` validates
 identically, so no payload is accepted or rejected differently, and `validate/hapi-validator.js`
-maps its `not` error to `NotAllowed` with the field's pointer, as callers already get.
+maps its `not` error to `NotAllowed` with the field's pointer, as callers already get. Its
+description is the error message — see [Conditional rules](#conditional-rules-ifthenelse-not-oneof).
 
 `"additionalProperties": false` is the exception and stays: it's how a whole payload is closed,
 and those tools accept a boolean there. `conventions.test.js` fails on any other boolean
 subschema.
+
+### Conditional rules: `if`/`then`/`else`, not `oneOf`
+
+A rule that depends on another field — "exactly one of `registrationNumber` /
+`reasonForNoRegistrationNumber`", "`items` only when `isPresent` is true" — is an
+`if`/`then`/`else`, not a `oneOf` of the allowed shapes:
+
+```json
+"if": {
+  "properties": { "registrationNumber": {} },
+  "required": ["registrationNumber"]
+},
+"then": {
+  "properties": {
+    "reasonForNoRegistrationNumber": {
+      "not": {},
+      "description": "Not allowed when registrationNumber is provided."
+    }
+  }
+},
+"else": {
+  "properties": { "reasonForNoRegistrationNumber": {} },
+  "required": ["reasonForNoRegistrationNumber"],
+  "description": "Required when registrationNumber is not provided."
+}
+```
+
+When a `oneOf` fails, ajv reports every branch's errors, including ones from branches the
+caller never meant ("must be equal to constant" on an `isPresent: true` that's perfectly
+fine). An `if` only ever evaluates the branch that applies, so the caller gets one error about
+what they actually sent.
+
+**The description of a `then`, an `else` or a `not` is the error message**, word for word, and
+the error's `pointer` names the field — so write it as the condition: "Required when …",
+"Not allowed when …". `validate/hapi-validator.js` uses it for any error raised directly by
+that subschema; `conventions.test.js` fails if one that can reject has no description (a
+`then`/`else` holding only `properties` raises nothing itself, so it's exempt).
+
+The empty `"registrationNumber": {}` declarations are for ajv's strict mode, which rejects a
+`required` naming a property the same subschema doesn't declare.
+
+`oneOf` is still right for a genuine choice between variants — `producer.schema.json`'s
+Household / Commercial / Municipal — where code generators turn it into a union type.
 
 ### Granular: one small file per resource
 
