@@ -1,4 +1,3 @@
-import Joi from 'joi'
 import { HTTP_STATUS, AUDIT_LOGGER_TYPE } from '@defra/waste-movement-utils'
 import { auditLogger } from '../common/helpers/logging/audit-logger.js'
 import { retryAuditLogSchema } from '../schemas/retry-audit-log.js'
@@ -11,36 +10,6 @@ const retryAuditLogReceiptMovement = {
     description: 'Retries the sending of a receipt movement to the audit log',
     validate: {
       payload: retryAuditLogSchema
-    },
-    plugins: {
-      'hapi-swagger': {
-        params: {},
-        responses: {
-          [HTTP_STATUS.OK]: {
-            description:
-              'Successfully retried the sending of a receipt movement to the audit log',
-            schema: Joi.object({})
-          },
-          [HTTP_STATUS.BAD_REQUEST]: {
-            description: 'Bad Request',
-            schema: Joi.object({
-              validation: Joi.object({
-                errors: Joi.array()
-                  .items(
-                    Joi.object({
-                      key: Joi.string().description(
-                        'The field path that triggered the error'
-                      ),
-                      errorType: Joi.string().description('The type of error'),
-                      message: Joi.string().description('The error message')
-                    })
-                  )
-                  .description('Array of errors')
-              })
-            })
-          }
-        }
-      }
     }
   },
   handler: async (request, h) => {

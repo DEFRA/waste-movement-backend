@@ -36,8 +36,15 @@ encode rules like "Household forbids these fields" and "exactly one of `authoris
 [Conditional rules](#conditional-rules-ifthenelse-not-oneof)). A 3.0 spec would
 describe a looser contract than the one actually enforced. 3.1 is required, not preferred.
 
-`hapi-swagger` is not part of this — it can't consume JSON Schema and can't emit 3.1. It serves
-the legacy routes only, and finds them by a route tag, so **beta routes carry no `tags`**.
+The legacy (unversioned) routes are described separately, by `openapi.json` at the root of this
+folder: a Swagger 2.0 snapshot of what `hapi-swagger` served before it was removed. Nothing
+generates it any more, so a change to a legacy route's Joi schema or responses needs a matching
+hand edit there. `openapi-matches-joi.test.js` catches the request side drifting: it compares the
+spec with each route's Joi `describe()` — routes, parameters, property names, types,
+unconditional `required`, enums and array limits — and names every field path that differs.
+Most of those request bodies come from `@defra/waste-movement-utils`, so bumping it can fail
+this test with no local schema change. Patterns, descriptions, examples and responses aren't
+checked.
 
 ### The file's path is its identity
 
@@ -276,6 +283,8 @@ mistyped example name fails there rather than on the published page.
 src/schemas/
   validate/          loads every *.schema.json and adapts it to a Hapi route validator
   openapi.test.js    resolves every beta-*/openapi.json and validates it as OpenAPI 3.1
+  openapi.json       hand-maintained Swagger 2.0 spec for the legacy (unversioned) routes
+  openapi-matches-joi.test.js  checks openapi.json against the legacy routes' Joi validation
   beta-1/            flat: a <route>-request / <route>-response pair per route, plus
                      delivery-id-params (tests in beta-1.test.js), and openapi.json
   beta-2/
@@ -313,7 +322,7 @@ validate against.
 **Adding a route** — add `<category>/<route>-request.schema.json` and
 `<category>/<route>-response.schema.json`, named after the new route file, each with its test
 and a matching `.examples.json` (same example names in both). Point the route's `validate.payload` and `response.status[201]` at them the way the existing beta
-routes do. No `tags`, no `hapi-swagger` block. Add the path to `beta-2/openapi.json`, `$ref`-ing
+routes do. Add the path to `beta-2/openapi.json`, `$ref`-ing
 both schemas and their named examples.
 
 **Adding or changing a response** — the change starts here, exactly like a request: edit or

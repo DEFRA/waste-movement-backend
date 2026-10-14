@@ -1,0 +1,2437 @@
+{
+  "basePath": "/",
+  "info": {
+    "title": "Digital Waste Tracking Receipt API",
+    "version": "1.0",
+    "description": "API for managing waste movements and receipts"
+  },
+  "schemes": ["http", "https"],
+  "host": "waste-movement-external-api.dev.cdp-int.defra.cloud",
+  "tags": [
+    {
+      "name": "movements",
+      "description": "Waste movement operations"
+    }
+  ],
+  "swagger": "2.0",
+  "paths": {
+    "/qa-non-prod/movements": {
+      "get": {
+        "summary": "Gets one or more receipt movements",
+        "operationId": "getQanonprodMovements",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "wasteTrackingId",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "bulkId",
+            "in": "query"
+          },
+          {
+            "type": "boolean",
+            "name": "includeHistory",
+            "in": "query"
+          }
+        ],
+        "tags": ["movements"],
+        "responses": {
+          "default": {
+            "schema": {
+              "type": "string"
+            },
+            "description": "Successful"
+          }
+        }
+      }
+    },
+    "/movements/retry-audit-log": {
+      "post": {
+        "summary": "Retries the sending of a receipt movement to the audit log",
+        "operationId": "postMovementsRetryauditlog",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "traceId": {
+                  "type": "string"
+                },
+                "wasteTrackingId": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "number",
+                  "x-constraint": {
+                    "sign": "positive"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "tags": ["movements"],
+        "responses": {
+          "200": {
+            "schema": {
+              "type": "object"
+            },
+            "description": "Successfully retried the sending of a receipt movement to the audit log"
+          },
+          "400": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "validation": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "description": "Array of errors",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "description": "The field path that triggered the error"
+                          },
+                          "errorType": {
+                            "type": "string",
+                            "description": "The type of error"
+                          },
+                          "message": {
+                            "type": "string",
+                            "description": "The error message"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/movements/{wasteTrackingId}/receive": {
+      "post": {
+        "summary": "Create a new waste input with a receipt movement",
+        "operationId": "postMovementsWastetrackingidReceive",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "x-dwt-client-id",
+            "in": "header",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "wasteTrackingId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "movement": {
+                  "type": "object",
+                  "properties": {
+                    "apiCode": {
+                      "type": "string",
+                      "x-format": {
+                        "guid": true
+                      }
+                    },
+                    "softwareProvider": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "submittingOrganisation": {
+                      "type": "object",
+                      "properties": {
+                        "defraCustomerOrganisationId": {
+                          "type": "string"
+                        },
+                        "defraCustomerOrganisationName": {
+                          "type": "string"
+                        },
+                        "defraCustomerOrganisationIsLocalAuthority": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["defraCustomerOrganisationId"]
+                    },
+                    "dateTimeReceived": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Date and time the waste was received, in UTC (2025-09-15T12:12:28Z) or BST (2025-09-15T13:12:28+01:00)",
+                      "example": "2025-09-15T13:12:28+01:00"
+                    },
+                    "hazardousWasteConsignmentCode": {
+                      "type": "string"
+                    },
+                    "reasonForNoConsignmentCode": {
+                      "type": "string"
+                    },
+                    "yourUniqueReference": {
+                      "type": "string"
+                    },
+                    "otherReferencesForMovement": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "reference": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": ["label", "reference"]
+                      }
+                    },
+                    "specialHandlingRequirements": {
+                      "type": "string",
+                      "maxLength": 5000
+                    },
+                    "wasteItems": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "ewcCodes": {
+                            "type": "array",
+                            "minItems": 1,
+                            "maxItems": 5,
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "wasteDescription": {
+                            "type": "string"
+                          },
+                          "physicalForm": {
+                            "type": "string",
+                            "enum": [
+                              "Gas",
+                              "Liquid",
+                              "Solid",
+                              "Powder",
+                              "Sludge",
+                              "Mixed"
+                            ]
+                          },
+                          "numberOfContainers": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "typeOfContainers": {
+                            "type": "string"
+                          },
+                          "weight": {
+                            "type": "object",
+                            "properties": {
+                              "metric": {
+                                "type": "string",
+                                "enum": ["Grams", "Kilograms", "Tonnes"]
+                              },
+                              "amount": {
+                                "type": "number",
+                                "x-constraint": {
+                                  "sign": "positive"
+                                }
+                              },
+                              "isEstimate": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": ["metric", "amount", "isEstimate"]
+                          },
+                          "containsPops": {
+                            "type": "boolean"
+                          },
+                          "pops": {
+                            "type": "object",
+                            "properties": {
+                              "sourceOfComponents": {
+                                "type": "string",
+                                "enum": [
+                                  "PROVIDED_WITH_WASTE",
+                                  "GUIDANCE",
+                                  "OWN_TESTING",
+                                  "NOT_PROVIDED"
+                                ]
+                              },
+                              "components": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "concentration": {
+                                      "type": "number",
+                                      "x-constraint": {
+                                        "sign": "positive"
+                                      }
+                                    },
+                                    "concentrationOperator": {
+                                      "type": "string",
+                                      "enum": [">", "<"]
+                                    }
+                                  },
+                                  "required": ["code", "concentration"]
+                                }
+                              }
+                            }
+                          },
+                          "containsHazardous": {
+                            "type": "boolean"
+                          },
+                          "hazardous": {
+                            "type": "object",
+                            "properties": {
+                              "sourceOfComponents": {
+                                "type": "string",
+                                "enum": [
+                                  "PROVIDED_WITH_WASTE",
+                                  "GUIDANCE",
+                                  "OWN_TESTING",
+                                  "NOT_PROVIDED"
+                                ]
+                              },
+                              "hazCodes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "HP_1",
+                                    "HP_2",
+                                    "HP_3",
+                                    "HP_4",
+                                    "HP_5",
+                                    "HP_6",
+                                    "HP_7",
+                                    "HP_8",
+                                    "HP_9",
+                                    "HP_10",
+                                    "HP_11",
+                                    "HP_12",
+                                    "HP_13",
+                                    "HP_14",
+                                    "HP_15",
+                                    "HP_POP"
+                                  ]
+                                }
+                              },
+                              "components": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "concentration": {
+                                      "type": "number",
+                                      "x-constraint": {
+                                        "sign": "positive"
+                                      }
+                                    },
+                                    "concentrationOperator": {
+                                      "type": "string",
+                                      "enum": [">"]
+                                    }
+                                  },
+                                  "required": ["name", "concentration"]
+                                }
+                              }
+                            }
+                          },
+                          "disposalOrRecoveryCodes": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "R1",
+                                    "R2",
+                                    "R3",
+                                    "R4",
+                                    "R5",
+                                    "R6",
+                                    "R7",
+                                    "R8",
+                                    "R9",
+                                    "R10",
+                                    "R11",
+                                    "R12",
+                                    "R13",
+                                    "D1",
+                                    "D2",
+                                    "D3",
+                                    "D4",
+                                    "D5",
+                                    "D6",
+                                    "D7",
+                                    "D8",
+                                    "D9",
+                                    "D10",
+                                    "D11",
+                                    "D12",
+                                    "D13",
+                                    "D14",
+                                    "D15"
+                                  ]
+                                },
+                                "weight": {
+                                  "type": "object",
+                                  "properties": {
+                                    "metric": {
+                                      "type": "string",
+                                      "enum": ["Grams", "Kilograms", "Tonnes"]
+                                    },
+                                    "amount": {
+                                      "type": "number",
+                                      "x-constraint": {
+                                        "sign": "positive"
+                                      }
+                                    },
+                                    "isEstimate": {
+                                      "type": "boolean"
+                                    }
+                                  },
+                                  "required": ["metric", "amount", "isEstimate"]
+                                }
+                              },
+                              "required": ["code", "weight"]
+                            }
+                          }
+                        },
+                        "required": [
+                          "ewcCodes",
+                          "wasteDescription",
+                          "physicalForm",
+                          "numberOfContainers",
+                          "typeOfContainers",
+                          "weight",
+                          "containsPops",
+                          "pops",
+                          "containsHazardous",
+                          "hazardous"
+                        ]
+                      }
+                    },
+                    "carrier": {
+                      "type": "object",
+                      "properties": {
+                        "registrationNumber": {
+                          "type": "string",
+                          "pattern": "^CBD[LU]\\d{3,}$",
+                          "x-alternatives": [
+                            {
+                              "type": "string",
+                              "pattern": "^CBD[LU]\\d{3,}$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^((WCR\\/R\\/\\d{7})|((SCO|SEA|SNO|SWE|WCR)\\/\\d{6}))$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^PCT-[A-Z]-\\d{3,7}$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^CBD[LU]\\d{3,}$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^ROC\\W*[UL]T\\W*\\d{1,5}$"
+                            }
+                          ]
+                        },
+                        "reasonForNoRegistrationNumber": {
+                          "type": "string",
+                          "enum": ["ON_SITE", "HOUSEHOLD", "ONE_OFF", "MARINE"]
+                        },
+                        "organisationName": {
+                          "type": "string"
+                        },
+                        "address": {
+                          "type": "object",
+                          "properties": {
+                            "fullAddress": {
+                              "type": "string"
+                            },
+                            "postcode": {
+                              "type": "string",
+                              "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$",
+                              "x-alternatives": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$"
+                                },
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:D6W|[AC-FHKNPRTV-Y]\\d{2}) ?[0-9AC-FHKNPRTV-Y]{4}$"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["postcode"]
+                        },
+                        "emailAddress": {
+                          "type": "string",
+                          "x-format": {
+                            "email": true
+                          }
+                        },
+                        "phoneNumber": {
+                          "type": "string"
+                        },
+                        "vehicleRegistration": {
+                          "type": "string"
+                        },
+                        "meansOfTransport": {
+                          "type": "string",
+                          "enum": [
+                            "Road",
+                            "Rail",
+                            "Air",
+                            "Sea",
+                            "Inland Waterway",
+                            "Piped",
+                            "Other"
+                          ]
+                        },
+                        "otherMeansOfTransport": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "registrationNumber",
+                        "organisationName",
+                        "vehicleRegistration",
+                        "meansOfTransport"
+                      ]
+                    },
+                    "brokerOrDealer": {
+                      "type": "object",
+                      "properties": {
+                        "organisationName": {
+                          "type": "string"
+                        },
+                        "address": {
+                          "type": "object",
+                          "properties": {
+                            "fullAddress": {
+                              "type": "string"
+                            },
+                            "postcode": {
+                              "type": "string",
+                              "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$",
+                              "x-alternatives": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$"
+                                },
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:D6W|[AC-FHKNPRTV-Y]\\d{2}) ?[0-9AC-FHKNPRTV-Y]{4}$"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["postcode"]
+                        },
+                        "registrationNumber": {
+                          "type": "string",
+                          "pattern": "^CBD[LU]\\d{3,}$",
+                          "x-alternatives": [
+                            {
+                              "type": "string",
+                              "pattern": "^CBD[LU]\\d{3,}$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^((WCR\\/R\\/\\d{7})|((SCO|SEA|SNO|SWE|WCR)\\/\\d{6}))$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^PCT-[A-Z]-\\d{3,7}$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^CBD[LU]\\d{3,}$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^ROC\\W*[UL]T\\W*\\d{1,5}$"
+                            }
+                          ]
+                        },
+                        "phoneNumber": {
+                          "type": "string"
+                        },
+                        "emailAddress": {
+                          "type": "string",
+                          "x-format": {
+                            "email": true
+                          }
+                        }
+                      },
+                      "required": ["organisationName"]
+                    },
+                    "receiver": {
+                      "type": "object",
+                      "properties": {
+                        "siteName": {
+                          "type": "string"
+                        },
+                        "emailAddress": {
+                          "type": "string",
+                          "x-format": {
+                            "email": true
+                          }
+                        },
+                        "phoneNumber": {
+                          "type": "string"
+                        },
+                        "authorisationNumber": {
+                          "type": "string"
+                        },
+                        "regulatoryPositionStatements": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "x-constraint": {
+                              "sign": "positive"
+                            }
+                          }
+                        }
+                      },
+                      "required": ["siteName", "authorisationNumber"]
+                    },
+                    "receipt": {
+                      "type": "object",
+                      "properties": {
+                        "address": {
+                          "type": "object",
+                          "properties": {
+                            "fullAddress": {
+                              "type": "string"
+                            },
+                            "postcode": {
+                              "type": "string",
+                              "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$"
+                            }
+                          },
+                          "required": ["fullAddress", "postcode"]
+                        }
+                      },
+                      "required": ["address"]
+                    }
+                  },
+                  "required": [
+                    "dateTimeReceived",
+                    "wasteItems",
+                    "carrier",
+                    "receiver",
+                    "receipt"
+                  ]
+                }
+              },
+              "required": ["movement"]
+            }
+          }
+        ],
+        "tags": ["movements"],
+        "responses": {
+          "204": {
+            "description": "Successfully created waste input"
+          },
+          "400": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "statusCode": {
+                  "type": "number",
+                  "enum": [400]
+                },
+                "error": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update an existing waste input with new receipt movement data",
+        "operationId": "putMovementsWastetrackingidReceive",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "x-dwt-client-id",
+            "in": "header",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "wasteTrackingId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "movement": {
+                  "type": "object",
+                  "properties": {
+                    "apiCode": {
+                      "type": "string",
+                      "x-format": {
+                        "guid": true
+                      }
+                    },
+                    "softwareProvider": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "submittingOrganisation": {
+                      "type": "object",
+                      "properties": {
+                        "defraCustomerOrganisationId": {
+                          "type": "string"
+                        },
+                        "defraCustomerOrganisationName": {
+                          "type": "string"
+                        },
+                        "defraCustomerOrganisationIsLocalAuthority": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["defraCustomerOrganisationId"]
+                    },
+                    "dateTimeReceived": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Date and time the waste was received, in UTC (2025-09-15T12:12:28Z) or BST (2025-09-15T13:12:28+01:00)",
+                      "example": "2025-09-15T13:12:28+01:00"
+                    },
+                    "hazardousWasteConsignmentCode": {
+                      "type": "string"
+                    },
+                    "reasonForNoConsignmentCode": {
+                      "type": "string"
+                    },
+                    "yourUniqueReference": {
+                      "type": "string"
+                    },
+                    "otherReferencesForMovement": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "reference": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": ["label", "reference"]
+                      }
+                    },
+                    "specialHandlingRequirements": {
+                      "type": "string",
+                      "maxLength": 5000
+                    },
+                    "wasteItems": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "ewcCodes": {
+                            "type": "array",
+                            "minItems": 1,
+                            "maxItems": 5,
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "wasteDescription": {
+                            "type": "string"
+                          },
+                          "physicalForm": {
+                            "type": "string",
+                            "enum": [
+                              "Gas",
+                              "Liquid",
+                              "Solid",
+                              "Powder",
+                              "Sludge",
+                              "Mixed"
+                            ]
+                          },
+                          "numberOfContainers": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "typeOfContainers": {
+                            "type": "string"
+                          },
+                          "weight": {
+                            "type": "object",
+                            "properties": {
+                              "metric": {
+                                "type": "string",
+                                "enum": ["Grams", "Kilograms", "Tonnes"]
+                              },
+                              "amount": {
+                                "type": "number",
+                                "x-constraint": {
+                                  "sign": "positive"
+                                }
+                              },
+                              "isEstimate": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": ["metric", "amount", "isEstimate"]
+                          },
+                          "containsPops": {
+                            "type": "boolean"
+                          },
+                          "pops": {
+                            "type": "object",
+                            "properties": {
+                              "sourceOfComponents": {
+                                "type": "string",
+                                "enum": [
+                                  "PROVIDED_WITH_WASTE",
+                                  "GUIDANCE",
+                                  "OWN_TESTING",
+                                  "NOT_PROVIDED"
+                                ]
+                              },
+                              "components": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "concentration": {
+                                      "type": "number",
+                                      "x-constraint": {
+                                        "sign": "positive"
+                                      }
+                                    },
+                                    "concentrationOperator": {
+                                      "type": "string",
+                                      "enum": [">", "<"]
+                                    }
+                                  },
+                                  "required": ["code", "concentration"]
+                                }
+                              }
+                            }
+                          },
+                          "containsHazardous": {
+                            "type": "boolean"
+                          },
+                          "hazardous": {
+                            "type": "object",
+                            "properties": {
+                              "sourceOfComponents": {
+                                "type": "string",
+                                "enum": [
+                                  "PROVIDED_WITH_WASTE",
+                                  "GUIDANCE",
+                                  "OWN_TESTING",
+                                  "NOT_PROVIDED"
+                                ]
+                              },
+                              "hazCodes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "HP_1",
+                                    "HP_2",
+                                    "HP_3",
+                                    "HP_4",
+                                    "HP_5",
+                                    "HP_6",
+                                    "HP_7",
+                                    "HP_8",
+                                    "HP_9",
+                                    "HP_10",
+                                    "HP_11",
+                                    "HP_12",
+                                    "HP_13",
+                                    "HP_14",
+                                    "HP_15",
+                                    "HP_POP"
+                                  ]
+                                }
+                              },
+                              "components": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "concentration": {
+                                      "type": "number",
+                                      "x-constraint": {
+                                        "sign": "positive"
+                                      }
+                                    },
+                                    "concentrationOperator": {
+                                      "type": "string",
+                                      "enum": [">"]
+                                    }
+                                  },
+                                  "required": ["name", "concentration"]
+                                }
+                              }
+                            }
+                          },
+                          "disposalOrRecoveryCodes": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "R1",
+                                    "R2",
+                                    "R3",
+                                    "R4",
+                                    "R5",
+                                    "R6",
+                                    "R7",
+                                    "R8",
+                                    "R9",
+                                    "R10",
+                                    "R11",
+                                    "R12",
+                                    "R13",
+                                    "D1",
+                                    "D2",
+                                    "D3",
+                                    "D4",
+                                    "D5",
+                                    "D6",
+                                    "D7",
+                                    "D8",
+                                    "D9",
+                                    "D10",
+                                    "D11",
+                                    "D12",
+                                    "D13",
+                                    "D14",
+                                    "D15"
+                                  ]
+                                },
+                                "weight": {
+                                  "type": "object",
+                                  "properties": {
+                                    "metric": {
+                                      "type": "string",
+                                      "enum": ["Grams", "Kilograms", "Tonnes"]
+                                    },
+                                    "amount": {
+                                      "type": "number",
+                                      "x-constraint": {
+                                        "sign": "positive"
+                                      }
+                                    },
+                                    "isEstimate": {
+                                      "type": "boolean"
+                                    }
+                                  },
+                                  "required": ["metric", "amount", "isEstimate"]
+                                }
+                              },
+                              "required": ["code", "weight"]
+                            }
+                          }
+                        },
+                        "required": [
+                          "ewcCodes",
+                          "wasteDescription",
+                          "physicalForm",
+                          "numberOfContainers",
+                          "typeOfContainers",
+                          "weight",
+                          "containsPops",
+                          "pops",
+                          "containsHazardous",
+                          "hazardous"
+                        ]
+                      }
+                    },
+                    "carrier": {
+                      "type": "object",
+                      "properties": {
+                        "registrationNumber": {
+                          "type": "string",
+                          "pattern": "^CBD[LU]\\d{3,}$",
+                          "x-alternatives": [
+                            {
+                              "type": "string",
+                              "pattern": "^CBD[LU]\\d{3,}$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^((WCR\\/R\\/\\d{7})|((SCO|SEA|SNO|SWE|WCR)\\/\\d{6}))$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^PCT-[A-Z]-\\d{3,7}$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^CBD[LU]\\d{3,}$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^ROC\\W*[UL]T\\W*\\d{1,5}$"
+                            }
+                          ]
+                        },
+                        "reasonForNoRegistrationNumber": {
+                          "type": "string",
+                          "enum": ["ON_SITE", "HOUSEHOLD", "ONE_OFF", "MARINE"]
+                        },
+                        "organisationName": {
+                          "type": "string"
+                        },
+                        "address": {
+                          "type": "object",
+                          "properties": {
+                            "fullAddress": {
+                              "type": "string"
+                            },
+                            "postcode": {
+                              "type": "string",
+                              "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$",
+                              "x-alternatives": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$"
+                                },
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:D6W|[AC-FHKNPRTV-Y]\\d{2}) ?[0-9AC-FHKNPRTV-Y]{4}$"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["postcode"]
+                        },
+                        "emailAddress": {
+                          "type": "string",
+                          "x-format": {
+                            "email": true
+                          }
+                        },
+                        "phoneNumber": {
+                          "type": "string"
+                        },
+                        "vehicleRegistration": {
+                          "type": "string"
+                        },
+                        "meansOfTransport": {
+                          "type": "string",
+                          "enum": [
+                            "Road",
+                            "Rail",
+                            "Air",
+                            "Sea",
+                            "Inland Waterway",
+                            "Piped",
+                            "Other"
+                          ]
+                        },
+                        "otherMeansOfTransport": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "registrationNumber",
+                        "organisationName",
+                        "vehicleRegistration",
+                        "meansOfTransport"
+                      ]
+                    },
+                    "brokerOrDealer": {
+                      "type": "object",
+                      "properties": {
+                        "organisationName": {
+                          "type": "string"
+                        },
+                        "address": {
+                          "type": "object",
+                          "properties": {
+                            "fullAddress": {
+                              "type": "string"
+                            },
+                            "postcode": {
+                              "type": "string",
+                              "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$",
+                              "x-alternatives": [
+                                {
+                                  "type": "string",
+                                  "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$"
+                                },
+                                {
+                                  "type": "string",
+                                  "pattern": "^(?:D6W|[AC-FHKNPRTV-Y]\\d{2}) ?[0-9AC-FHKNPRTV-Y]{4}$"
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["postcode"]
+                        },
+                        "registrationNumber": {
+                          "type": "string",
+                          "pattern": "^CBD[LU]\\d{3,}$",
+                          "x-alternatives": [
+                            {
+                              "type": "string",
+                              "pattern": "^CBD[LU]\\d{3,}$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^((WCR\\/R\\/\\d{7})|((SCO|SEA|SNO|SWE|WCR)\\/\\d{6}))$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^PCT-[A-Z]-\\d{3,7}$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^CBD[LU]\\d{3,}$"
+                            },
+                            {
+                              "type": "string",
+                              "pattern": "^ROC\\W*[UL]T\\W*\\d{1,5}$"
+                            }
+                          ]
+                        },
+                        "phoneNumber": {
+                          "type": "string"
+                        },
+                        "emailAddress": {
+                          "type": "string",
+                          "x-format": {
+                            "email": true
+                          }
+                        }
+                      },
+                      "required": ["organisationName"]
+                    },
+                    "receiver": {
+                      "type": "object",
+                      "properties": {
+                        "siteName": {
+                          "type": "string"
+                        },
+                        "emailAddress": {
+                          "type": "string",
+                          "x-format": {
+                            "email": true
+                          }
+                        },
+                        "phoneNumber": {
+                          "type": "string"
+                        },
+                        "authorisationNumber": {
+                          "type": "string"
+                        },
+                        "regulatoryPositionStatements": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "x-constraint": {
+                              "sign": "positive"
+                            }
+                          }
+                        }
+                      },
+                      "required": ["siteName", "authorisationNumber"]
+                    },
+                    "receipt": {
+                      "type": "object",
+                      "properties": {
+                        "address": {
+                          "type": "object",
+                          "properties": {
+                            "fullAddress": {
+                              "type": "string"
+                            },
+                            "postcode": {
+                              "type": "string",
+                              "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$"
+                            }
+                          },
+                          "required": ["fullAddress", "postcode"]
+                        }
+                      },
+                      "required": ["address"]
+                    }
+                  },
+                  "required": [
+                    "dateTimeReceived",
+                    "wasteItems",
+                    "carrier",
+                    "receiver",
+                    "receipt"
+                  ]
+                }
+              },
+              "required": ["movement"]
+            }
+          }
+        ],
+        "tags": ["movements"],
+        "responses": {
+          "200": {
+            "description": "Successfully updated waste input",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "400": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "statusCode": {
+                  "type": "number",
+                  "enum": [400]
+                },
+                "error": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "statusCode": {
+                  "type": "number",
+                  "enum": [404]
+                },
+                "error": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Waste input not found"
+          }
+        }
+      }
+    },
+    "/bulk/{bulkId}/movements/receive": {
+      "post": {
+        "summary": "Create multiple new waste inputs with receipt movements",
+        "operationId": "postBulkBulkidMovementsReceive",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "bulkId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100000,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "apiCode": {
+                    "type": "string",
+                    "x-format": {
+                      "guid": true
+                    }
+                  },
+                  "softwareProvider": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "submittingOrganisation": {
+                    "type": "object",
+                    "properties": {
+                      "defraCustomerOrganisationId": {
+                        "type": "string"
+                      },
+                      "defraCustomerOrganisationName": {
+                        "type": "string"
+                      },
+                      "defraCustomerOrganisationIsLocalAuthority": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["defraCustomerOrganisationId"]
+                  },
+                  "dateTimeReceived": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Date and time the waste was received, in UTC (2025-09-15T12:12:28Z) or BST (2025-09-15T13:12:28+01:00)",
+                    "example": "2025-09-15T13:12:28+01:00"
+                  },
+                  "hazardousWasteConsignmentCode": {
+                    "type": "string"
+                  },
+                  "reasonForNoConsignmentCode": {
+                    "type": "string"
+                  },
+                  "yourUniqueReference": {
+                    "type": "string"
+                  },
+                  "otherReferencesForMovement": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "reference": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["label", "reference"]
+                    }
+                  },
+                  "specialHandlingRequirements": {
+                    "type": "string",
+                    "maxLength": 5000
+                  },
+                  "wasteItems": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "ewcCodes": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 5,
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "wasteDescription": {
+                          "type": "string"
+                        },
+                        "physicalForm": {
+                          "type": "string",
+                          "enum": [
+                            "Gas",
+                            "Liquid",
+                            "Solid",
+                            "Powder",
+                            "Sludge",
+                            "Mixed"
+                          ]
+                        },
+                        "numberOfContainers": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "typeOfContainers": {
+                          "type": "string"
+                        },
+                        "weight": {
+                          "type": "object",
+                          "properties": {
+                            "metric": {
+                              "type": "string",
+                              "enum": ["Grams", "Kilograms", "Tonnes"]
+                            },
+                            "amount": {
+                              "type": "number",
+                              "x-constraint": {
+                                "sign": "positive"
+                              }
+                            },
+                            "isEstimate": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": ["metric", "amount", "isEstimate"]
+                        },
+                        "containsPops": {
+                          "type": "boolean"
+                        },
+                        "pops": {
+                          "type": "object",
+                          "properties": {
+                            "sourceOfComponents": {
+                              "type": "string",
+                              "enum": [
+                                "PROVIDED_WITH_WASTE",
+                                "GUIDANCE",
+                                "OWN_TESTING",
+                                "NOT_PROVIDED"
+                              ]
+                            },
+                            "components": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string"
+                                  },
+                                  "concentration": {
+                                    "type": "number",
+                                    "x-constraint": {
+                                      "sign": "positive"
+                                    }
+                                  },
+                                  "concentrationOperator": {
+                                    "type": "string",
+                                    "enum": [">", "<"]
+                                  }
+                                },
+                                "required": ["code", "concentration"]
+                              }
+                            }
+                          }
+                        },
+                        "containsHazardous": {
+                          "type": "boolean"
+                        },
+                        "hazardous": {
+                          "type": "object",
+                          "properties": {
+                            "sourceOfComponents": {
+                              "type": "string",
+                              "enum": [
+                                "PROVIDED_WITH_WASTE",
+                                "GUIDANCE",
+                                "OWN_TESTING",
+                                "NOT_PROVIDED"
+                              ]
+                            },
+                            "hazCodes": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "HP_1",
+                                  "HP_2",
+                                  "HP_3",
+                                  "HP_4",
+                                  "HP_5",
+                                  "HP_6",
+                                  "HP_7",
+                                  "HP_8",
+                                  "HP_9",
+                                  "HP_10",
+                                  "HP_11",
+                                  "HP_12",
+                                  "HP_13",
+                                  "HP_14",
+                                  "HP_15",
+                                  "HP_POP"
+                                ]
+                              }
+                            },
+                            "components": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "concentration": {
+                                    "type": "number",
+                                    "x-constraint": {
+                                      "sign": "positive"
+                                    }
+                                  },
+                                  "concentrationOperator": {
+                                    "type": "string",
+                                    "enum": [">"]
+                                  }
+                                },
+                                "required": ["name", "concentration"]
+                              }
+                            }
+                          }
+                        },
+                        "disposalOrRecoveryCodes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "enum": [
+                                  "R1",
+                                  "R2",
+                                  "R3",
+                                  "R4",
+                                  "R5",
+                                  "R6",
+                                  "R7",
+                                  "R8",
+                                  "R9",
+                                  "R10",
+                                  "R11",
+                                  "R12",
+                                  "R13",
+                                  "D1",
+                                  "D2",
+                                  "D3",
+                                  "D4",
+                                  "D5",
+                                  "D6",
+                                  "D7",
+                                  "D8",
+                                  "D9",
+                                  "D10",
+                                  "D11",
+                                  "D12",
+                                  "D13",
+                                  "D14",
+                                  "D15"
+                                ]
+                              },
+                              "weight": {
+                                "type": "object",
+                                "properties": {
+                                  "metric": {
+                                    "type": "string",
+                                    "enum": ["Grams", "Kilograms", "Tonnes"]
+                                  },
+                                  "amount": {
+                                    "type": "number",
+                                    "x-constraint": {
+                                      "sign": "positive"
+                                    }
+                                  },
+                                  "isEstimate": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": ["metric", "amount", "isEstimate"]
+                              }
+                            },
+                            "required": ["code", "weight"]
+                          }
+                        }
+                      },
+                      "required": [
+                        "ewcCodes",
+                        "wasteDescription",
+                        "physicalForm",
+                        "numberOfContainers",
+                        "typeOfContainers",
+                        "weight",
+                        "containsPops",
+                        "pops",
+                        "containsHazardous",
+                        "hazardous"
+                      ]
+                    }
+                  },
+                  "carrier": {
+                    "type": "object",
+                    "properties": {
+                      "registrationNumber": {
+                        "type": "string",
+                        "pattern": "^CBD[LU]\\d{3,}$",
+                        "x-alternatives": [
+                          {
+                            "type": "string",
+                            "pattern": "^CBD[LU]\\d{3,}$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^((WCR\\/R\\/\\d{7})|((SCO|SEA|SNO|SWE|WCR)\\/\\d{6}))$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^PCT-[A-Z]-\\d{3,7}$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^CBD[LU]\\d{3,}$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^ROC\\W*[UL]T\\W*\\d{1,5}$"
+                          }
+                        ]
+                      },
+                      "reasonForNoRegistrationNumber": {
+                        "type": "string",
+                        "enum": ["ON_SITE", "HOUSEHOLD", "ONE_OFF", "MARINE"]
+                      },
+                      "organisationName": {
+                        "type": "string"
+                      },
+                      "address": {
+                        "type": "object",
+                        "properties": {
+                          "fullAddress": {
+                            "type": "string"
+                          },
+                          "postcode": {
+                            "type": "string",
+                            "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$",
+                            "x-alternatives": [
+                              {
+                                "type": "string",
+                                "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$"
+                              },
+                              {
+                                "type": "string",
+                                "pattern": "^(?:D6W|[AC-FHKNPRTV-Y]\\d{2}) ?[0-9AC-FHKNPRTV-Y]{4}$"
+                              }
+                            ]
+                          }
+                        },
+                        "required": ["postcode"]
+                      },
+                      "emailAddress": {
+                        "type": "string",
+                        "x-format": {
+                          "email": true
+                        }
+                      },
+                      "phoneNumber": {
+                        "type": "string"
+                      },
+                      "vehicleRegistration": {
+                        "type": "string"
+                      },
+                      "meansOfTransport": {
+                        "type": "string",
+                        "enum": [
+                          "Road",
+                          "Rail",
+                          "Air",
+                          "Sea",
+                          "Inland Waterway",
+                          "Piped",
+                          "Other"
+                        ]
+                      },
+                      "otherMeansOfTransport": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "registrationNumber",
+                      "organisationName",
+                      "vehicleRegistration",
+                      "meansOfTransport"
+                    ]
+                  },
+                  "brokerOrDealer": {
+                    "type": "object",
+                    "properties": {
+                      "organisationName": {
+                        "type": "string"
+                      },
+                      "address": {
+                        "type": "object",
+                        "properties": {
+                          "fullAddress": {
+                            "type": "string"
+                          },
+                          "postcode": {
+                            "type": "string",
+                            "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$",
+                            "x-alternatives": [
+                              {
+                                "type": "string",
+                                "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$"
+                              },
+                              {
+                                "type": "string",
+                                "pattern": "^(?:D6W|[AC-FHKNPRTV-Y]\\d{2}) ?[0-9AC-FHKNPRTV-Y]{4}$"
+                              }
+                            ]
+                          }
+                        },
+                        "required": ["postcode"]
+                      },
+                      "registrationNumber": {
+                        "type": "string",
+                        "pattern": "^CBD[LU]\\d{3,}$",
+                        "x-alternatives": [
+                          {
+                            "type": "string",
+                            "pattern": "^CBD[LU]\\d{3,}$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^((WCR\\/R\\/\\d{7})|((SCO|SEA|SNO|SWE|WCR)\\/\\d{6}))$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^PCT-[A-Z]-\\d{3,7}$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^CBD[LU]\\d{3,}$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^ROC\\W*[UL]T\\W*\\d{1,5}$"
+                          }
+                        ]
+                      },
+                      "phoneNumber": {
+                        "type": "string"
+                      },
+                      "emailAddress": {
+                        "type": "string",
+                        "x-format": {
+                          "email": true
+                        }
+                      }
+                    },
+                    "required": ["organisationName"]
+                  },
+                  "receiver": {
+                    "type": "object",
+                    "properties": {
+                      "siteName": {
+                        "type": "string"
+                      },
+                      "emailAddress": {
+                        "type": "string",
+                        "x-format": {
+                          "email": true
+                        }
+                      },
+                      "phoneNumber": {
+                        "type": "string"
+                      },
+                      "authorisationNumber": {
+                        "type": "string"
+                      },
+                      "regulatoryPositionStatements": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "x-constraint": {
+                            "sign": "positive"
+                          }
+                        }
+                      }
+                    },
+                    "required": ["siteName", "authorisationNumber"]
+                  },
+                  "receipt": {
+                    "type": "object",
+                    "properties": {
+                      "address": {
+                        "type": "object",
+                        "properties": {
+                          "fullAddress": {
+                            "type": "string"
+                          },
+                          "postcode": {
+                            "type": "string",
+                            "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$"
+                          }
+                        },
+                        "required": ["fullAddress", "postcode"]
+                      }
+                    },
+                    "required": ["address"]
+                  }
+                },
+                "required": [
+                  "dateTimeReceived",
+                  "wasteItems",
+                  "carrier",
+                  "receiver",
+                  "receipt"
+                ]
+              }
+            }
+          }
+        ],
+        "tags": ["movements", "bulk-upload"],
+        "responses": {
+          "204": {
+            "description": "Successfully created waste inputs"
+          },
+          "400": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "statusCode": {
+                  "type": "number",
+                  "enum": [400]
+                },
+                "error": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update multiple existing waste inputs with receipt movements",
+        "operationId": "putBulkBulkidMovementsReceive",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "bulkId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100000,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "apiCode": {
+                    "type": "string",
+                    "x-format": {
+                      "guid": true
+                    }
+                  },
+                  "softwareProvider": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "submittingOrganisation": {
+                    "type": "object",
+                    "properties": {
+                      "defraCustomerOrganisationId": {
+                        "type": "string"
+                      },
+                      "defraCustomerOrganisationName": {
+                        "type": "string"
+                      },
+                      "defraCustomerOrganisationIsLocalAuthority": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["defraCustomerOrganisationId"]
+                  },
+                  "dateTimeReceived": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Date and time the waste was received, in UTC (2025-09-15T12:12:28Z) or BST (2025-09-15T13:12:28+01:00)",
+                    "example": "2025-09-15T13:12:28+01:00"
+                  },
+                  "hazardousWasteConsignmentCode": {
+                    "type": "string"
+                  },
+                  "reasonForNoConsignmentCode": {
+                    "type": "string"
+                  },
+                  "yourUniqueReference": {
+                    "type": "string"
+                  },
+                  "otherReferencesForMovement": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "reference": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["label", "reference"]
+                    }
+                  },
+                  "specialHandlingRequirements": {
+                    "type": "string",
+                    "maxLength": 5000
+                  },
+                  "wasteItems": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "ewcCodes": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 5,
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "wasteDescription": {
+                          "type": "string"
+                        },
+                        "physicalForm": {
+                          "type": "string",
+                          "enum": [
+                            "Gas",
+                            "Liquid",
+                            "Solid",
+                            "Powder",
+                            "Sludge",
+                            "Mixed"
+                          ]
+                        },
+                        "numberOfContainers": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "typeOfContainers": {
+                          "type": "string"
+                        },
+                        "weight": {
+                          "type": "object",
+                          "properties": {
+                            "metric": {
+                              "type": "string",
+                              "enum": ["Grams", "Kilograms", "Tonnes"]
+                            },
+                            "amount": {
+                              "type": "number",
+                              "x-constraint": {
+                                "sign": "positive"
+                              }
+                            },
+                            "isEstimate": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": ["metric", "amount", "isEstimate"]
+                        },
+                        "containsPops": {
+                          "type": "boolean"
+                        },
+                        "pops": {
+                          "type": "object",
+                          "properties": {
+                            "sourceOfComponents": {
+                              "type": "string",
+                              "enum": [
+                                "PROVIDED_WITH_WASTE",
+                                "GUIDANCE",
+                                "OWN_TESTING",
+                                "NOT_PROVIDED"
+                              ]
+                            },
+                            "components": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string"
+                                  },
+                                  "concentration": {
+                                    "type": "number",
+                                    "x-constraint": {
+                                      "sign": "positive"
+                                    }
+                                  },
+                                  "concentrationOperator": {
+                                    "type": "string",
+                                    "enum": [">", "<"]
+                                  }
+                                },
+                                "required": ["code", "concentration"]
+                              }
+                            }
+                          }
+                        },
+                        "containsHazardous": {
+                          "type": "boolean"
+                        },
+                        "hazardous": {
+                          "type": "object",
+                          "properties": {
+                            "sourceOfComponents": {
+                              "type": "string",
+                              "enum": [
+                                "PROVIDED_WITH_WASTE",
+                                "GUIDANCE",
+                                "OWN_TESTING",
+                                "NOT_PROVIDED"
+                              ]
+                            },
+                            "hazCodes": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "HP_1",
+                                  "HP_2",
+                                  "HP_3",
+                                  "HP_4",
+                                  "HP_5",
+                                  "HP_6",
+                                  "HP_7",
+                                  "HP_8",
+                                  "HP_9",
+                                  "HP_10",
+                                  "HP_11",
+                                  "HP_12",
+                                  "HP_13",
+                                  "HP_14",
+                                  "HP_15",
+                                  "HP_POP"
+                                ]
+                              }
+                            },
+                            "components": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "concentration": {
+                                    "type": "number",
+                                    "x-constraint": {
+                                      "sign": "positive"
+                                    }
+                                  },
+                                  "concentrationOperator": {
+                                    "type": "string",
+                                    "enum": [">"]
+                                  }
+                                },
+                                "required": ["name", "concentration"]
+                              }
+                            }
+                          }
+                        },
+                        "disposalOrRecoveryCodes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "enum": [
+                                  "R1",
+                                  "R2",
+                                  "R3",
+                                  "R4",
+                                  "R5",
+                                  "R6",
+                                  "R7",
+                                  "R8",
+                                  "R9",
+                                  "R10",
+                                  "R11",
+                                  "R12",
+                                  "R13",
+                                  "D1",
+                                  "D2",
+                                  "D3",
+                                  "D4",
+                                  "D5",
+                                  "D6",
+                                  "D7",
+                                  "D8",
+                                  "D9",
+                                  "D10",
+                                  "D11",
+                                  "D12",
+                                  "D13",
+                                  "D14",
+                                  "D15"
+                                ]
+                              },
+                              "weight": {
+                                "type": "object",
+                                "properties": {
+                                  "metric": {
+                                    "type": "string",
+                                    "enum": ["Grams", "Kilograms", "Tonnes"]
+                                  },
+                                  "amount": {
+                                    "type": "number",
+                                    "x-constraint": {
+                                      "sign": "positive"
+                                    }
+                                  },
+                                  "isEstimate": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": ["metric", "amount", "isEstimate"]
+                              }
+                            },
+                            "required": ["code", "weight"]
+                          }
+                        }
+                      },
+                      "required": [
+                        "ewcCodes",
+                        "wasteDescription",
+                        "physicalForm",
+                        "numberOfContainers",
+                        "typeOfContainers",
+                        "weight",
+                        "containsPops",
+                        "pops",
+                        "containsHazardous",
+                        "hazardous"
+                      ]
+                    }
+                  },
+                  "carrier": {
+                    "type": "object",
+                    "properties": {
+                      "registrationNumber": {
+                        "type": "string",
+                        "pattern": "^CBD[LU]\\d{3,}$",
+                        "x-alternatives": [
+                          {
+                            "type": "string",
+                            "pattern": "^CBD[LU]\\d{3,}$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^((WCR\\/R\\/\\d{7})|((SCO|SEA|SNO|SWE|WCR)\\/\\d{6}))$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^PCT-[A-Z]-\\d{3,7}$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^CBD[LU]\\d{3,}$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^ROC\\W*[UL]T\\W*\\d{1,5}$"
+                          }
+                        ]
+                      },
+                      "reasonForNoRegistrationNumber": {
+                        "type": "string",
+                        "enum": ["ON_SITE", "HOUSEHOLD", "ONE_OFF", "MARINE"]
+                      },
+                      "organisationName": {
+                        "type": "string"
+                      },
+                      "address": {
+                        "type": "object",
+                        "properties": {
+                          "fullAddress": {
+                            "type": "string"
+                          },
+                          "postcode": {
+                            "type": "string",
+                            "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$",
+                            "x-alternatives": [
+                              {
+                                "type": "string",
+                                "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$"
+                              },
+                              {
+                                "type": "string",
+                                "pattern": "^(?:D6W|[AC-FHKNPRTV-Y]\\d{2}) ?[0-9AC-FHKNPRTV-Y]{4}$"
+                              }
+                            ]
+                          }
+                        },
+                        "required": ["postcode"]
+                      },
+                      "emailAddress": {
+                        "type": "string",
+                        "x-format": {
+                          "email": true
+                        }
+                      },
+                      "phoneNumber": {
+                        "type": "string"
+                      },
+                      "vehicleRegistration": {
+                        "type": "string"
+                      },
+                      "meansOfTransport": {
+                        "type": "string",
+                        "enum": [
+                          "Road",
+                          "Rail",
+                          "Air",
+                          "Sea",
+                          "Inland Waterway",
+                          "Piped",
+                          "Other"
+                        ]
+                      },
+                      "otherMeansOfTransport": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "registrationNumber",
+                      "organisationName",
+                      "vehicleRegistration",
+                      "meansOfTransport"
+                    ]
+                  },
+                  "brokerOrDealer": {
+                    "type": "object",
+                    "properties": {
+                      "organisationName": {
+                        "type": "string"
+                      },
+                      "address": {
+                        "type": "object",
+                        "properties": {
+                          "fullAddress": {
+                            "type": "string"
+                          },
+                          "postcode": {
+                            "type": "string",
+                            "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$",
+                            "x-alternatives": [
+                              {
+                                "type": "string",
+                                "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$"
+                              },
+                              {
+                                "type": "string",
+                                "pattern": "^(?:D6W|[AC-FHKNPRTV-Y]\\d{2}) ?[0-9AC-FHKNPRTV-Y]{4}$"
+                              }
+                            ]
+                          }
+                        },
+                        "required": ["postcode"]
+                      },
+                      "registrationNumber": {
+                        "type": "string",
+                        "pattern": "^CBD[LU]\\d{3,}$",
+                        "x-alternatives": [
+                          {
+                            "type": "string",
+                            "pattern": "^CBD[LU]\\d{3,}$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^((WCR\\/R\\/\\d{7})|((SCO|SEA|SNO|SWE|WCR)\\/\\d{6}))$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^PCT-[A-Z]-\\d{3,7}$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^CBD[LU]\\d{3,}$"
+                          },
+                          {
+                            "type": "string",
+                            "pattern": "^ROC\\W*[UL]T\\W*\\d{1,5}$"
+                          }
+                        ]
+                      },
+                      "phoneNumber": {
+                        "type": "string"
+                      },
+                      "emailAddress": {
+                        "type": "string",
+                        "x-format": {
+                          "email": true
+                        }
+                      }
+                    },
+                    "required": ["organisationName"]
+                  },
+                  "receiver": {
+                    "type": "object",
+                    "properties": {
+                      "siteName": {
+                        "type": "string"
+                      },
+                      "emailAddress": {
+                        "type": "string",
+                        "x-format": {
+                          "email": true
+                        }
+                      },
+                      "phoneNumber": {
+                        "type": "string"
+                      },
+                      "authorisationNumber": {
+                        "type": "string"
+                      },
+                      "regulatoryPositionStatements": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "x-constraint": {
+                            "sign": "positive"
+                          }
+                        }
+                      }
+                    },
+                    "required": ["siteName", "authorisationNumber"]
+                  },
+                  "receipt": {
+                    "type": "object",
+                    "properties": {
+                      "address": {
+                        "type": "object",
+                        "properties": {
+                          "fullAddress": {
+                            "type": "string"
+                          },
+                          "postcode": {
+                            "type": "string",
+                            "pattern": "^((GIR 0A{2})|((([A-Z]\\d{1,2})|(([A-Z][A-HJ-Y]\\d{1,2})|(([A-Z]\\d[A-Z])|([A-Z][A-HJ-Y]\\d?[A-Z])))) \\d[A-Z]{2}))$"
+                          }
+                        },
+                        "required": ["fullAddress", "postcode"]
+                      }
+                    },
+                    "required": ["address"]
+                  },
+                  "wasteTrackingId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "dateTimeReceived",
+                  "wasteItems",
+                  "carrier",
+                  "receiver",
+                  "receipt",
+                  "wasteTrackingId"
+                ]
+              }
+            }
+          }
+        ],
+        "tags": ["movements", "bulk-upload"],
+        "responses": {
+          "200": {
+            "description": "Successfully updated waste inputs",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "400": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "statusCode": {
+                  "type": "number",
+                  "enum": [400]
+                },
+                "error": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        }
+      }
+    }
+  }
+}

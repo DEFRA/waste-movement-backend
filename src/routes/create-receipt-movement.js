@@ -29,24 +29,6 @@ const createReceiptMovement = [
         params: Joi.object({
           wasteTrackingId: Joi.string().required()
         })
-      },
-      plugins: {
-        'hapi-swagger': {
-          params: {},
-          responses: {
-            [HTTP_STATUS.NO_CONTENT]: {
-              description: 'Successfully created waste input'
-            },
-            [HTTP_STATUS.BAD_REQUEST]: {
-              description: 'Bad Request',
-              schema: Joi.object({
-                statusCode: Joi.number().valid(HTTP_STATUS.BAD_REQUEST),
-                error: Joi.string(),
-                message: Joi.string()
-              }).label('BadRequestResponse')
-            }
-          }
-        }
       }
     },
     handler: async (request, h) => {

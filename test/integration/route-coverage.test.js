@@ -20,10 +20,8 @@ describe('route coverage', () => {
   })
 
   it('registers exactly the declared set of routes', () => {
-    // hapi-swagger/vision/inert register their own documentation routes
-    // (/swagger.json, /swaggerui*, ...) under the 'hapi-swagger' realm -
-    // out of scope here, this guard is only for the router/router-beta-1
-    // application routes declared in src/plugins/router.js.
+    // This guard is only for the router/router-beta-* application routes
+    // declared in src/plugins/router.js, not routes other plugins register.
     const actualRoutes = testService.server
       .table()
       .filter(({ realm }) => realm.plugin?.startsWith('router'))
