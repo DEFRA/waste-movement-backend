@@ -39,7 +39,7 @@ describe a looser contract than the one actually enforced. 3.1 is required, not 
 The legacy (unversioned) routes are described separately, by `openapi.json` at the root of this
 folder: a Swagger 2.0 snapshot of what `hapi-swagger` served before it was removed. Nothing
 generates it any more, so a change to a legacy route's Joi schema or responses needs a matching
-hand edit there. `openapi-matches-joi.test.js` catches the request side drifting: it compares the
+hand edit there. `openapi.test.js` catches the request side drifting: it compares the
 spec with each route's Joi `describe()` — routes, parameters, property names, types,
 unconditional `required`, enums and array limits — and names every field path that differs.
 Most of those request bodies come from `@defra/waste-movement-utils`, so bumping it can fail
@@ -273,7 +273,7 @@ schemas and named examples beside it by relative path. It's owned here, not in
 renders it on GitHub Pages, nothing more. So a schema change and the spec change it needs land in
 the same PR.
 
-`openapi.test.js` resolves every `$ref` in each spec — schema files, refs between schemas,
+`openapi-betas.test.js` resolves every `$ref` in each spec — schema files, refs between schemas,
 example names — and checks the result is a valid OpenAPI 3.1 document. A renamed schema file or a
 mistyped example name fails there rather than on the published page.
 
@@ -282,9 +282,9 @@ mistyped example name fails there rather than on the published page.
 ```
 src/schemas/
   validate/          loads every *.schema.json and adapts it to a Hapi route validator
-  openapi.test.js    resolves every beta-*/openapi.json and validates it as OpenAPI 3.1
   openapi.json       hand-maintained Swagger 2.0 spec for the legacy (unversioned) routes
-  openapi-matches-joi.test.js  checks openapi.json against the legacy routes' Joi validation
+  openapi.test.js    checks openapi.json against the legacy routes' Joi validation
+  openapi-betas.test.js  resolves every beta-*/openapi.json and validates it as OpenAPI 3.1
   beta-1/            flat: a <route>-request / <route>-response pair per route, plus
                      delivery-id-params (tests in beta-1.test.js), and openapi.json
   beta-2/
