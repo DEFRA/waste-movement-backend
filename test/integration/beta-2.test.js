@@ -87,8 +87,7 @@ describe('beta-2', () => {
       expect(status).toEqual(HTTP_STATUS.CREATED)
       expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
       expect(body).toEqual({
-        data: { movementId: expect.any(String) },
-        validation: { warnings: [] }
+        data: { movementId: expect.any(String) }
       })
       expectStandardHeaders(headers)
 
@@ -118,10 +117,7 @@ describe('beta-2', () => {
 
       expect(status).toEqual(HTTP_STATUS.CREATED)
       expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
-      expect(body).toMatchObject({
-        data: { movementId: expect.any(String) },
-        validation: { warnings: [] }
-      })
+      expect(body).toEqual({ data: { movementId: expect.any(String) } })
       expectStandardHeaders(headers)
 
       const { movementId } = body.data
@@ -162,10 +158,7 @@ describe('beta-2', () => {
 
       expect(status).toEqual(HTTP_STATUS.CREATED)
       expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
-      expect(body).toMatchObject({
-        data: { movementId: expect.any(String) },
-        validation: { warnings: [] }
-      })
+      expect(body).toEqual({ data: { movementId: expect.any(String) } })
       expectStandardHeaders(headers)
 
       const { movementId } = body.data
@@ -202,8 +195,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: null,
-      validation: { warnings: [] }
+      data: null
     })
     expectStandardHeaders(headers)
 
@@ -238,8 +230,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: null,
-      validation: { warnings: [] }
+      data: null
     })
     expectStandardHeaders(headers)
   })
@@ -317,8 +308,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: { deliveryId },
-      validation: { warnings: [] }
+      data: { deliveryId }
     })
     expectStandardHeaders(headers)
 
@@ -348,8 +338,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: { deliveryId: expect.any(String) },
-      validation: { warnings: [] }
+      data: { deliveryId: expect.any(String) }
     })
     expectStandardHeaders(headers)
 
@@ -385,8 +374,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: null,
-      validation: { warnings: [] }
+      data: null
     })
     expectStandardHeaders(headers)
   })
@@ -444,8 +432,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: { deliveryId },
-      validation: { warnings: [] }
+      data: { deliveryId }
     })
     expectStandardHeaders(headers)
   })
@@ -470,8 +457,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: { deliveryId: expect.any(String) },
-      validation: { warnings: [] }
+      data: { deliveryId: expect.any(String) }
     })
     expectStandardHeaders(headers)
   })

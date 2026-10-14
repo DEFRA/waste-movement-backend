@@ -77,8 +77,7 @@ const recordDelivery = {
 
       return h
         .response({
-          data: { deliveries: [{ deliveryId, movementIds, wasteType }] },
-          validation: { warnings: [] }
+          data: { deliveries: [{ deliveryId, movementIds, wasteType }] }
         })
         .code(HTTP_STATUS.CREATED)
         .header('x-request-id', traceId)

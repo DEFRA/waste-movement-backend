@@ -3,7 +3,7 @@
   "title": "Record delivery response",
   "description": "Response returned when a delivery is recorded.",
   "type": "object",
-  "required": ["data", "validation"],
+  "required": ["data"],
   "properties": {
     "data": {
       "type": "object",
@@ -18,9 +18,6 @@
           "description": "One Delivery per distinct waste type represented in the submitted Movement IDs. Most requests produce a single-item list."
         }
       }
-    },
-    "validation": {
-      "$ref": "../common/validation.schema.json"
     }
   }
 }

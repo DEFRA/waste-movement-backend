@@ -91,8 +91,7 @@ describe('POST /beta-2/receipts', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: { deliveryId: '25KMT4Z9' },
-      validation: { warnings: [] }
+      data: { deliveryId: '25KMT4Z9' }
     })
     expect(headers['x-request-id']).toBeDefined()
 
@@ -153,8 +152,7 @@ describe('POST /beta-2/receipts', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: { deliveryId: '25KMT4Z9' },
-      validation: { warnings: [] }
+      data: { deliveryId: '25KMT4Z9' }
     })
   })
 

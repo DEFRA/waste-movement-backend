@@ -70,6 +70,16 @@
           "$ref": "#/components/schemas/deliveryId"
         },
         "example": "25KMT4Z9"
+      },
+      "confirmWarningsHeader": {
+        "name": "X-Confirm-Warnings",
+        "in": "header",
+        "required": false,
+        "description": "Confirms the warnings returned by a previous `422` `confirmation-required` response. Send the `confirmationToken` from that response, unchanged, with the same request. A token that does not match the request is ignored.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "eyJ2IjoxLCJwIjoiYTk0ZTc3…"
       }
     },
     "headers": {
@@ -142,7 +152,18 @@
             "items": {
               "$ref": "#/components/schemas/issue"
             },
-            "description": "Field-level problems. Present on 400 responses; omitted otherwise."
+            "description": "Field-level errors that must be fixed. Present only when there is at least one; omitted otherwise."
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/issue"
+            },
+            "description": "Data-quality warnings that can be fixed or confirmed. Present only when there is at least one; omitted otherwise. Always present on `confirmation-required`."
+          },
+          "confirmationToken": {
+            "type": "string",
+            "description": "Token that confirms the warnings in this response. Present only on `confirmation-required`. Send it back unchanged in the `X-Confirm-Warnings` header with the same request."
           }
         }
       },
@@ -164,7 +185,7 @@
     },
     "responses": {
       "400": {
-        "description": "The request could not be stored (validation, format or state error).",
+        "description": "The request could not be stored (validation, format or state error). Fix the `errors`; any `warnings` found are listed too.",
         "headers": {
           "x-request-id": {
             "$ref": "#/components/headers/RequestId"
@@ -193,6 +214,36 @@
           }
         }
       },
+      "422": {
+        "description": "The request is valid but has warnings, so it was not stored. Fix the request, or send it again unchanged with the `confirmationToken` in the `X-Confirm-Warnings` header to store it as it is.",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/problemDetails"
+            },
+            "example": {
+              "type": "https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/confirmation-required",
+              "title": "Confirmation Required",
+              "detail": "The receipt was not stored because 1 field has a warning. It can still be accepted: send the same request again with the confirmationToken in the X-Confirm-Warnings header to force it.",
+              "instance": "/deliveries/25KMT4Z9/receipt",
+              "requestId": "4c6f9e1a-8f2b-4e3d-9a1c-2b7d5e6f0a3c",
+              "confirmationToken": "eyJ2IjoxLCJwIjoiYTk0ZTc3…",
+              "warnings": [
+                {
+                  "pointer": "/wasteItems/0/actualTreatments/0/disposalOrRecoveryCode",
+                  "errorType": "NotProvided",
+                  "message": "Recording the actual treatment applied is a legal requirement. Supply the code, or confirm to record this receipt without it."
+                }
+              ]
+            }
+          }
+        }
+      },
       "500": {
         "description": "Unexpected server error.",
         "headers": {
@@ -217,6 +268,11 @@
         "summary": "Create a waste movement",
         "description": "Creates a new waste movement and returns its Movement ID.",
         "operationId": "createMovement",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/confirmWarningsHeader"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -237,7 +293,7 @@
         },
         "responses": {
           "201": {
-            "description": "Movement created. Body carries the new Movement ID and any validation warnings.",
+            "description": "Movement created. Body carries the new Movement ID.",
             "headers": {
               "x-request-id": {
                 "$ref": "#/components/headers/RequestId"
@@ -281,6 +337,9 @@
           "401": {
             "$ref": "#/components/responses/401"
           },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -298,6 +357,11 @@
         "summary": "Record the collection for a movement",
         "description": "Records a collection event for the given movement.",
         "operationId": "recordCollection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/confirmWarningsHeader"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -318,7 +382,7 @@
         },
         "responses": {
           "201": {
-            "description": "Collection recorded. Body carries any validation warnings.",
+            "description": "Collection recorded.",
             "headers": {
               "x-request-id": {
                 "$ref": "#/components/headers/RequestId"
@@ -368,6 +432,9 @@
               }
             }
           },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -380,6 +447,11 @@
         "summary": "Record a delivery",
         "description": "Records a delivery event and returns one Delivery ID per distinct waste type among the submitted Movements.",
         "operationId": "recordDelivery",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/confirmWarningsHeader"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -397,7 +469,7 @@
         },
         "responses": {
           "201": {
-            "description": "Delivery recorded. Body carries a list of the new Delivery(ies) — one per distinct waste type — and any validation warnings.",
+            "description": "Delivery recorded. Body carries a list of the new Delivery(ies) — one per distinct waste type.",
             "headers": {
               "x-request-id": {
                 "$ref": "#/components/headers/RequestId"
@@ -431,6 +503,9 @@
           "401": {
             "$ref": "#/components/responses/401"
           },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -443,6 +518,11 @@
         "summary": "Record receipt of waste without a Delivery ID",
         "description": "Fallback for recording receipt with no prior Delivery, e.g. waste received with no movement trail. Not linked to any Movement; `reason` must explain why. The server creates an empty Delivery behind the scenes and returns its `deliveryId`, so the receipt stays addressable.",
         "operationId": "recordReceiptWithoutDelivery",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/confirmWarningsHeader"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -460,7 +540,7 @@
         },
         "responses": {
           "201": {
-            "description": "Receipt recorded against a server-created empty Delivery. Body carries the new Delivery ID and any validation warnings.",
+            "description": "Receipt recorded against a server-created empty Delivery. Body carries the new Delivery ID.",
             "headers": {
               "x-request-id": {
                 "$ref": "#/components/headers/RequestId"
@@ -485,6 +565,9 @@
           "401": {
             "$ref": "#/components/responses/401"
           },
+          "422": {
+            "$ref": "#/components/responses/422"
+          },
           "500": {
             "$ref": "#/components/responses/500"
           }
@@ -502,6 +585,11 @@
         "summary": "Record receipt of waste against a delivery",
         "description": "Records receipt of the waste delivered under the given delivery.",
         "operationId": "recordReceipt",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/confirmWarningsHeader"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -519,7 +607,7 @@
         },
         "responses": {
           "201": {
-            "description": "Receipt recorded against the delivery. Body carries the Delivery ID and any validation warnings.",
+            "description": "Receipt recorded against the delivery. Body carries the Delivery ID.",
             "headers": {
               "x-request-id": {
                 "$ref": "#/components/headers/RequestId"
@@ -565,6 +653,9 @@
                 }
               }
             }
+          },
+          "422": {
+            "$ref": "#/components/responses/422"
           },
           "500": {
             "$ref": "#/components/responses/500"

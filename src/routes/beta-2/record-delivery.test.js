@@ -101,8 +101,7 @@ describe('POST /beta-2/deliveries', () => {
             wasteType: 'NON_HAZARDOUS'
           }
         ]
-      },
-      validation: { warnings: [] }
+      }
     })
     expect(headers['x-request-id']).toBeDefined()
 

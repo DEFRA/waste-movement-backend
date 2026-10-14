@@ -123,8 +123,7 @@ describe('movement Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: { movementId: expect.any(String) },
-      validation: { warnings: [] }
+      data: { movementId: expect.any(String) }
     })
     expect(headers['x-request-id']).toEqual(traceId)
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
@@ -161,8 +160,7 @@ describe('movement Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: { movementId: expect.any(String) },
-      validation: { warnings: [] }
+      data: { movementId: expect.any(String) }
     })
     expect(headers['x-request-id']).toEqual(traceId)
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
@@ -236,8 +234,7 @@ describe('movement Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: { movementId: expect.any(String) },
-      validation: { warnings: [] }
+      data: { movementId: expect.any(String) }
     })
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
   })

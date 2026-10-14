@@ -88,7 +88,7 @@ One shared `expectStandardHeaders(headers)` so exact header values (`strict-tran
 
 ### `helpers/expect-response-body-has-shape.js`
 
-`expectResponseBodyHasCorrectShape({ body, shape })` asserts a response body matches one of three shapes: `'SUCCESS'` (has `data`, plus a `validation` object — this API always returns a validation container, even on success), `'ERROR'` (RFC9457 fields plus `requestId`), or `'VALIDATION-ERROR'` (the same, plus an `errors` array). Used directly for success-path assertions and internally by `expectProblemResponse` for error paths.
+`expectResponseBodyHasCorrectShape({ body, shape })` asserts a response body matches one of three shapes: `'SUCCESS'` (has `data`; beta-2 success bodies are `{ data }` only, while beta-1 tests assert their `validation` block explicitly), `'ERROR'` (RFC9457 fields plus `requestId`), or `'VALIDATION-ERROR'` (the same, plus an `errors` array). Used directly for success-path assertions and internally by `expectProblemResponse` for error paths.
 
 ### `helpers/expect-problem-response.js`
 

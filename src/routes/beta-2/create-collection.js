@@ -42,8 +42,7 @@ const createCollection = {
       }
 
       const response = {
-        data: null,
-        validation: { warnings: [] }
+        data: null
       }
 
       logger.info(

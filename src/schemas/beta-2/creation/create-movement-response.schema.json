@@ -3,7 +3,7 @@
   "title": "Create movement response",
   "description": "Response returned when a movement is created.",
   "type": "object",
-  "required": ["data", "validation"],
+  "required": ["data"],
   "properties": {
     "data": {
       "type": "object",
@@ -14,9 +14,6 @@
           "$ref": "../common/movement-id.schema.json"
         }
       }
-    },
-    "validation": {
-      "$ref": "../common/validation.schema.json"
     }
   }
 }

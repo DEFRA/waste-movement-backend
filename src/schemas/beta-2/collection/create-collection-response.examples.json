@@ -2,19 +2,13 @@
   "withBrokerAndReferences": {
     "summary": "With broker or dealer, supporting references and special handling",
     "value": {
-      "data": null,
-      "validation": {
-        "warnings": []
-      }
+      "data": null
     }
   },
   "minimal": {
     "summary": "Empty body",
     "value": {
-      "data": null,
-      "validation": {
-        "warnings": []
-      }
+      "data": null
     }
   }
 }

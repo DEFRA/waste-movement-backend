@@ -42,8 +42,7 @@ const createMovement = {
         backoffOptions(createLogger)
       )
       const responseBody = {
-        data: { movementId },
-        validation: { warnings: [] }
+        data: { movementId }
       }
 
       logger.info(

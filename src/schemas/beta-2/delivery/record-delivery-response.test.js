@@ -10,10 +10,7 @@ describe('Feature: Record delivery response', () => {
     movementIds: ['25HRA0B1', '25HRA0B2'],
     wasteType: 'NON_HAZARDOUS'
   }
-  const withDeliveries = (deliveries) => ({
-    data: { deliveries },
-    validation: { warnings: [] }
-  })
+  const withDeliveries = (deliveries) => ({ data: { deliveries } })
 
   test('a response with one delivery is accepted', () => {
     expect(validateAjv(withDeliveries([delivery])).valid).toBe(true)
@@ -29,13 +26,11 @@ describe('Feature: Record delivery response', () => {
   })
 
   test('a response is rejected when data is missing', () => {
-    expect(validateAjv({ validation: { warnings: [] } }).valid).toBe(false)
+    expect(validateAjv({}).valid).toBe(false)
   })
 
   test('a response is rejected when deliveries is missing', () => {
-    expect(validateAjv({ data: {}, validation: { warnings: [] } }).valid).toBe(
-      false
-    )
+    expect(validateAjv({ data: {} }).valid).toBe(false)
   })
 
   test.each(['deliveryId', 'movementIds', 'wasteType'])(
