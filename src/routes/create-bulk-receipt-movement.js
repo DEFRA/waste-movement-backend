@@ -11,7 +11,6 @@ import { httpClients } from '../common/helpers/http-client.js'
 import { config } from '../config.js'
 import { getBatches } from '../common/helpers/batch.js'
 import {
-  badRequestResponse,
   generateResponseWithValidationWarnings,
   handleRouteError
 } from '../common/helpers/bulk-route-helpers.js'
@@ -32,17 +31,6 @@ const createBulkReceiptMovement = {
       params: Joi.object({
         bulkId: Joi.string().required()
       })
-    },
-    plugins: {
-      'hapi-swagger': {
-        params: {},
-        responses: {
-          [HTTP_STATUS.NO_CONTENT]: {
-            description: 'Successfully created waste inputs'
-          },
-          ...badRequestResponse
-        }
-      }
     }
   },
   handler: async (request, h) => {

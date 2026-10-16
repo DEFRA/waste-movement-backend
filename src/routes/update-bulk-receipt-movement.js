@@ -8,7 +8,6 @@ import {
 import { backOff } from 'exponential-backoff'
 import { updateBulkWasteInput } from '../services/movement-update-bulk.js'
 import {
-  badRequestResponse,
   generateResponseWithValidationWarnings,
   handleRouteError
 } from '../common/helpers/bulk-route-helpers.js'
@@ -144,17 +143,6 @@ const updateBulkReceiptMovement = {
       params: Joi.object({
         bulkId: Joi.string().required()
       })
-    },
-    plugins: {
-      'hapi-swagger': {
-        params: {},
-        responses: {
-          [HTTP_STATUS.OK]: {
-            description: 'Successfully updated waste inputs'
-          },
-          ...badRequestResponse
-        }
-      }
     }
   },
   handler: async (request, h) => {
