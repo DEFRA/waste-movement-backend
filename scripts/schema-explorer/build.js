@@ -1,0 +1,227 @@
+#!/usr/bin/env node
+// Builds the schema explorer: a static HTML page per API version that draws
+// every request and response schema in its OpenAPI document as a block diagram,
+// with $ref fragments resolved and oneOf / anyOf / if-then-else turned into
+// plain rules. The model itself is built by model.js.
+//
+// Usage: node scripts/schema-explorer/build.js [schemas] [outDir] [--standalone] [--xlsx] [--legacy]
+//   schemas       a folder of versions (its beta-N subfolders, e.g.
+//                 src/schemas/beta-1 and src/schemas/beta-2), or one version's
+//                 folder (default src/schemas). Within a version, every
+//                 *-request.schema.json and *-response.schema.json is a
+//                 top-level schema; no OpenAPI spec is needed.
+//   outDir        where to write (default .schema-explorer). Each version is
+//                 written to <outDir>/<version>/index.html, and
+//                 <outDir>/index.html sends visitors to the latest version.
+//   --standalone  write complete HTML documents (for GitHub Pages); without it
+//                 each page is a body for hosts that add their own <head>
+//   --xlsx        also write a spreadsheet (<version>-schemas.xlsx) beside each
+//                 page, with one tab per request body and per fragment, and link
+//                 to it from the page. SITE_URL, if set, is noted in the file.
+//   --legacy      also add a "legacy" version, before the others, for the
+//                 Joi-validated receive and bulk-receive routes (legacy/)
+
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { buildModel } from './model.js'
+import { buildSpreadsheet } from './spreadsheet.js'
+import { buildValidators } from './validators.js'
+import { buildLegacyBundle } from './legacy/bundle.js'
+import { buildLegacyModel } from './legacy/joi-model.js'
+
+const here = path.dirname(fileURLToPath(import.meta.url))
+const args = process.argv.slice(2)
+const standalone = args.includes('--standalone')
+const xlsx = args.includes('--xlsx')
+const legacy = args.includes('--legacy')
+const [schemasArg = 'src/schemas', outArg = '.schema-explorer'] = args.filter(
+  (a) => !a.startsWith('--')
+)
+const schemasRoot = path.resolve(schemasArg)
+const outDir = path.resolve(outArg)
+
+// Versions are the beta-N subfolders (the same rule as the docs repo's schema
+// sync); a folder without any is taken to be one version itself. Sorted with
+// numeric awareness so beta-10 comes after beta-9; the last is the latest.
+const VERSION_FOLDER = /^beta-\d+$/
+const subfolders = fs
+  .readdirSync(schemasRoot, { withFileTypes: true })
+  .filter((e) => e.isDirectory() && VERSION_FOLDER.test(e.name))
+  .map((e) => path.join(schemasRoot, e.name))
+  .sort((a, b) =>
+    path.basename(a).localeCompare(path.basename(b), 'en', { numeric: true })
+  )
+const versionDirs = subfolders.length ? subfolders : [schemasRoot]
+
+// Extra examples for fragments live with the explorer (examples/<version>.json,
+// keyed by schema file), not in the schemas. Each must be valid: a schema
+// change that breaks one fails the build, so the page never offers a bad one.
+const extraExamplesFor = (slug, validators) => {
+  const file = path.join(here, 'examples', `${slug}.json`)
+  if (!fs.existsSync(file)) return {}
+  const byFile = JSON.parse(fs.readFileSync(file, 'utf8'))
+  const problems = Object.entries(byFile).flatMap(([schema, examples]) =>
+    examples.flatMap((example, i) => {
+      const errors = validators.check(schema, example)
+      return errors
+        ? [
+            `${schema} example ${i + 1}: ${errors.map((e) => `${e.instancePath || '/'} ${e.message}`).join('; ')}`
+          ]
+        : []
+    })
+  )
+  if (problems.length) {
+    throw new Error(
+      `Invalid examples in ${path.relative(process.cwd(), file)}:\n  ${problems.join('\n  ')}`
+    )
+  }
+  return byFile
+}
+
+// Each version is published under its folder name, e.g. beta-2/.
+const versions = versionDirs.map((dir) => {
+  const slug = path.basename(dir)
+  const validators = buildValidators(dir)
+  const extraExamples = extraExamplesFor(slug, validators)
+  return { dir, slug, validators, model: buildModel(dir, { extraExamples }) }
+})
+// The legacy (Joi) routes come first, as the oldest. Their "Try it" runs the
+// routes' own Joi schemas, bundled for the browser.
+if (legacy) {
+  versions.unshift({
+    slug: 'legacy',
+    model: buildLegacyModel(),
+    bundle: await buildLegacyBundle()
+  })
+}
+const latest = versions.at(-1)
+
+const toDocument = (body, head = '') => {
+  if (!standalone) return body
+  // Everything before the page shell (title, fonts, styles) belongs in <head>.
+  const split = body.indexOf('<div class="shell">')
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+${head}${split > 0 ? body.slice(0, split).trim() : ''}
+</head>
+<body>
+${split > 0 ? body.slice(split) : body}
+</body>
+</html>
+`
+}
+
+const template = fs.readFileSync(path.join(here, 'template.html'), 'utf8')
+
+// ajv's standalone code is CommonJS and needs one runtime helper; give it both
+// in the browser. ucs2length is ajv's string length in Unicode code points.
+const RUNTIME = {
+  'ajv/dist/runtime/ucs2length': `{ default: (str) => {
+    let length = 0
+    for (let pos = 0; pos < str.length; length++) {
+      const value = str.charCodeAt(pos++)
+      if (value >= 0xd800 && value <= 0xdbff && pos < str.length && (str.charCodeAt(pos) & 0xfc00) === 0xdc00) pos++
+    }
+    return length
+  } }`
+}
+const browserValidators = (code) => {
+  const needed = [
+    ...new Set([...code.matchAll(/require\("([^"]+)"\)/g)].map((m) => m[1]))
+  ]
+  const missing = needed.filter((name) => !RUNTIME[name])
+  if (missing.length) {
+    throw new Error(
+      `Validators need runtime modules the page doesn't provide: ${missing.join(', ')}`
+    )
+  }
+  return `window.schemaValidators = (() => {
+  const runtime = { ${needed.map((name) => `${JSON.stringify(name)}: ${RUNTIME[name]}`).join(',\n')} }
+  const require = (name) => runtime[name]
+  const exports = {}
+  ${code.replace(/<\//g, '<\\/')}
+  return exports
+})()`
+}
+
+// errors.js turns ajv's errors into the page's error list. It's a plain module
+// (so errors.test.js can import it); the page gets it as window.schemaErrors.
+const errorsSource = fs.readFileSync(path.join(here, 'errors.js'), 'utf8')
+if (
+  (errorsSource.match(/^export /gm) || []).length !== 1 ||
+  /^import /m.test(errorsSource)
+) {
+  throw new Error('errors.js must have no imports and export only toApiErrors')
+}
+const browserErrors = `window.schemaErrors = (() => {
+${errorsSource.replace(/^export const toApiErrors/m, 'const toApiErrors').replace(/<\//g, '<\\/')}
+  return { toApiErrors }
+})()`
+
+for (const { slug, model, validators, bundle } of versions) {
+  const dir = path.join(outDir, slug)
+  fs.mkdirSync(dir, { recursive: true })
+
+  // Lets the page switch between versions; links are relative to this page.
+  model.versions = versions.map((v) => ({
+    version: v.model.api.version ?? v.slug,
+    href: `../${v.slug}/index.html`,
+    current: v.slug === slug
+  }))
+
+  if (xlsx) {
+    model.spreadsheet = `${(model.api.version ?? slug).replace(/[^\w.-]+/g, '-')}-schemas.xlsx`
+    const file = path.join(dir, model.spreadsheet)
+    const siteUrl = process.env.SITE_URL
+      ? `${process.env.SITE_URL.replace(/\/$/, '')}/${slug}/`
+      : undefined
+    fs.writeFileSync(file, buildSpreadsheet(model, { siteUrl }))
+    console.log(
+      `Schema spreadsheet (${slug}): ${model.roots.filter((r) => r.kind === 'request').length} request tabs, ${model.fragments.length} fragment tabs -> ${path.relative(process.cwd(), file)}`
+    )
+  }
+
+  // The "Try it" view validates with the same compiled schemas as the API, or
+  // for legacy, the same Joi schemas.
+  if (validators) model.validators = validators.ids
+
+  const page = template
+    .split('__ERRORS__')
+    .join(bundle ? '' : browserErrors)
+    .split('__VALIDATORS__')
+    .join(
+      bundle
+        ? bundle.replace(/<\//g, '<\\/')
+        : browserValidators(validators.code)
+    )
+    .split('__MODEL__')
+    .join(JSON.stringify(model).replace(/</g, '\\u003c'))
+  const file = path.join(dir, 'index.html')
+  fs.writeFileSync(file, toDocument(page))
+  console.log(
+    `Schema explorer (${slug}): ${model.roots.length} roots, ${model.fragments.length} fragments -> ${path.relative(process.cwd(), file)}`
+  )
+}
+
+// The site root sends visitors to the latest version, keeping any #deep-link.
+const target = `${latest.slug}/index.html`
+fs.writeFileSync(
+  path.join(outDir, 'index.html'),
+  toDocument(
+    `<p>Opening <a href="${target}">${latest.model.api.version ?? latest.slug}</a>. All versions: ${versions
+      .map(
+        (v) =>
+          `<a href="${v.slug}/index.html">${v.model.api.version ?? v.slug}</a>`
+      )
+      .join(', ')}.</p>
+<script>location.replace(${JSON.stringify(target)} + location.hash)</script>`,
+    `<title>Schema Explorer</title>\n<meta http-equiv="refresh" content="0; url=${target}">\n`
+  )
+)
+console.log(
+  `Schema explorer index -> ${path.relative(process.cwd(), path.join(outDir, 'index.html'))} (opens ${latest.slug})`
+)

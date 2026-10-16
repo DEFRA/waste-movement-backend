@@ -1,0 +1,117 @@
+# Schema explorer
+
+Generates an interactive page per API version (`beta-1`, `beta-2`, …) that draws each request and response
+body as a block diagram. Every `$ref` fragment is resolved, `oneOf` / `anyOf` / `if`-`then`-`else` become
+readable rules, and the page shows where each shared fragment under `common/` is reused. A switcher in the
+sidebar moves between versions, staying on the same endpoint where it exists.
+
+Every endpoint and fragment page also has a **Try it** view: an editor, pre-filled from the schema's
+examples, that checks the JSON as you type. It uses the API's own compiled schemas (the same ajv, options
+and formats as `src/schemas/validate/index.js`) and reduces the errors the way
+`src/schemas/validate/hapi-validator.js` does. So a request body gets the same `errorType`, `pointer` and
+`message` list as the API's 400 response. Each error links to its place in the editor and in the diagram.
+Only the body is checked, not headers, path IDs or checks against stored data. Edits are kept in the
+viewer's browser.
+
+### Legacy (Joi) routes
+
+`--legacy` (on in `npm run docs:schemas`) adds a **legacy** version, listed before `beta-1`, for the routes
+that still validate with Joi: receive a movement (`POST`/`PUT /movements/{wasteTrackingId}/receive`) and bulk
+receive (`POST`/`PUT /bulk/{bulkId}/movements/receive`). There are no JSON Schema files for these, so
+`legacy/joi-model.js` reads each Joi schema's own description (`schema.describe()`) into the same model:
+fields and limits, `.when()` conditions, `xor`/`or`/`with`/`without` rules, alternatives, and `.custom()` checks
+(named where Joi has a description, with the messages they can report; their logic is code, so it isn't
+shown). A nested schema matching one of the utils schemas listed in `legacy/schemas.js` is shown as that
+shared fragment.
+
+Its **Try it** runs the routes' real Joi schemas in the browser: `legacy/check.js` validates as the routes do
+(Joi with `abortEarly` off, then the API's own `validationErrorFormatter`, and per-item errors for bulk
+routes), and `legacy/bundle.js` bundles it with esbuild. Errors therefore come back in the legacy API's format,
+`{ key, errorType, message }`. The examples come from the utils package's own valid test payload.
+
+It also writes a spreadsheet for each version (e.g. `beta-2-schemas.xlsx`), which that version's page links
+to. The spreadsheet has these tabs:
+
+- **About**: version, commit and how to read the file.
+- **Endpoints**: the request bodies, with field, fragment and rule counts.
+- **Usage**: which request bodies use each fragment, directly or nested inside another fragment.
+- **Fragments**: every shared fragment, what references it and every path where it appears.
+- **One tab per request body**: every field path, fully expanded through fragments.
+- **One tab per fragment**: the fragment's own fields.
+
+Field tabs have the same columns: path, field, type, required, conditions and rules, allowed values,
+format or pattern, min, max, description, the fragment the field uses and the fragment it is defined in.
+
+To get a Google Sheet, upload the `.xlsx` to Google Drive and open it with Google Sheets (or turn on
+"Convert uploads" in Drive settings). All tabs come across.
+
+Everything is generated from the schema files alone, so it can't drift from them. Within a version, every
+`*-request.schema.json` and `*-response.schema.json` is a top-level schema, and everything they reference is
+a shared fragment. No OpenAPI spec is read. Each top-level schema's page is named after its file, e.g.
+`beta-2/index.html#create-movement-request`.
+
+## Build it locally
+
+```sh
+npm run docs:schemas
+open .schema-explorer/index.html                     # opens the latest version
+open .schema-explorer/beta-2/beta-2-schemas.xlsx     # a version's spreadsheet
+```
+
+This writes:
+
+```
+.schema-explorer/
+  index.html                  sends visitors to the latest version, keeping any #link
+  beta-1/index.html           beta-1's diagram
+  beta-1/beta-1-schemas.xlsx  beta-1's spreadsheet
+  beta-2/index.html
+  beta-2/beta-2-schemas.xlsx
+```
+
+The generator uses the repo's own `ajv` and `ajv-formats` to compile the validators for **Try it**, and
+`esbuild` (a dev dependency) for the legacy bundle, so run `npm ci` first. To point it at other schemas:
+
+```sh
+node scripts/schema-explorer/build.js <schemas> <outDir> --standalone [--xlsx]
+```
+
+`schemas` is either a folder of versions, whose `beta-N` subfolders are the versions (`src/schemas`), or a
+single version's folder (`src/schemas/beta-2`). Versions are sorted by number, and the last one is the
+latest.
+
+`--xlsx` also writes `<version>-schemas.xlsx` beside each page. Set `SITE_URL` to the site's base address to
+record each version's published page on its About tab.
+
+## Publishing
+
+`.github/workflows/schema-explorer.yml` rebuilds every version's page and spreadsheet and deploys them to
+GitHub Pages on every push to `main` that touches `src/schemas/**` or this folder. It can also be run by
+hand from the Actions tab. The pull request check runs `npm run docs:schemas`, so a schema change that breaks
+the generator fails the PR. A new `beta-N` folder is picked up with no changes here.
+
+## Files
+
+- `build.js` is the command line: it finds the versions and writes each one's page and spreadsheet.
+- `model.js` reads one version's schemas and normalises them into the tree the page and spreadsheet use.
+- `template.html` holds the page's styles and script. The generator replaces `__MODEL__` with the data.
+- `validators.js` compiles a version's schemas into standalone validation code for **Try it**. Keep its
+  ajv options in step with `src/schemas/validate/index.js`.
+- `examples/<version>.json` holds extra examples for shared fragments, keyed by schema file (e.g.
+  `"common/carrier.schema.json": [ … ]`). They're kept here, not in the schemas, so the documentation stays
+  separate from the source. The page offers them after any examples the schema has. Each is checked against
+  the API's compiled schema on every build, and an invalid one fails the build with its file and reason.
+- `errors.js` turns ajv's errors into the error list **Try it** shows (type, pointer, message), following
+  `src/schemas/validate/hapi-validator.js`. The generator inlines it into each page.
+- `errors.test.js` checks the explorer reports exactly what the API would, for every schema in every version:
+  each example as written, then with each field removed, emptied, given the wrong type or an unknown value,
+  and with extra fields. It fails if `validators.js` or `errors.js` drift from `src/schemas/validate/`. Run it
+  with `npm run test:schema-explorer`. The PR check and the Pages workflow both run it.
+- `legacy/schemas.js` lists the legacy route schemas and the utils schemas shown as their fragments.
+  `legacy/joi-model.js` turns them into the model; `legacy/check.js` and `legacy/bundle.js` are the legacy
+  **Try it**.
+- `legacy.test.js` checks the legacy page's bundle reports exactly what `legacy/check.js` does unbundled
+  against the real modules, for every example and every way of breaking each field.
+- `test-cases.js` makes the broken payloads both tests use.
+- `spreadsheet.js` turns the same data into spreadsheet tabs.
+- `xlsx.js` writes the `.xlsx` file. It has no dependencies (an `.xlsx` is a zip of XML).

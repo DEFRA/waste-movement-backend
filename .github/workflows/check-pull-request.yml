@@ -32,6 +32,8 @@ jobs:
           npm run lint
           npm test
           npm run test:integration
+          npm run docs:schemas
+          npm run test:schema-explorer
 
       - name: Test Docker Image Build
         run: |

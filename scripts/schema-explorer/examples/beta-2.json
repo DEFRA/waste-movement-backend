@@ -1,0 +1,244 @@
+{
+  "common/address.schema.json": [
+    {
+      "fullAddress": "Unit 4, Docklands Business Park, Dublin 2",
+      "postcode": "D02 X285"
+    },
+    {
+      "postcode": "TE1 2PQ"
+    }
+  ],
+  "common/authorisation-number.schema.json": [
+    "EPR/AB1234CD",
+    "EAWML100001",
+    "PPC/A/SEPA1234-5678",
+    "P1234/56A"
+  ],
+  "common/carrier.schema.json": [
+    {
+      "organisationName": "Carrier Demo Ltd",
+      "registrationNumber": "CBDU123456",
+      "meansOfTransport": "Road",
+      "vehicleRegistration": "AB12 CDE",
+      "contactDetails": {
+        "emailAddress": "carrier@example.com",
+        "phoneNumber": "01234567890"
+      },
+      "address": {
+        "fullAddress": "4 Carrier Lane, Test City",
+        "postcode": "TE1 4CR"
+      }
+    },
+    {
+      "organisationName": "Rail Freight Ltd",
+      "reasonForNoRegistrationNumber": "ONE_OFF",
+      "meansOfTransport": "Rail",
+      "contactDetails": {
+        "emailAddress": "freight@example.com"
+      }
+    },
+    {
+      "organisationName": "Specialist Haulage Ltd",
+      "registrationNumber": "WCR/R/1234567",
+      "meansOfTransport": "Other",
+      "otherMeansOfTransport": "Tracked vehicle",
+      "contactDetails": {
+        "phoneNumber": "01234567890"
+      }
+    }
+  ],
+  "common/delivery-id.schema.json": ["25KMT4Z9Q"],
+  "common/issue.schema.json": [
+    {
+      "pointer": "/producer",
+      "errorType": "NotProvided",
+      "message": "\"producer\" is required"
+    },
+    {
+      "pointer": "/intendedCarriers/0/colour",
+      "errorType": "NotAllowed",
+      "message": "must NOT have additional properties"
+    }
+  ],
+  "common/movement-id.schema.json": ["25HRA0B2C"],
+  "common/producer/producer-base.schema.json": [{}],
+  "common/producer/producer-commercial.schema.json": [
+    {
+      "wasteSource": "Commercial",
+      "organisationName": "Corner Café Ltd",
+      "reasonForNoAuthorisationNumber": "Not required for this site",
+      "sicCode": "56101",
+      "address": {
+        "postcode": "TE1 4CF"
+      },
+      "contactDetails": {
+        "emailAddress": "owner@example.com"
+      }
+    }
+  ],
+  "common/producer/producer-municipal.schema.json": [
+    {
+      "wasteSource": "Municipal",
+      "organisationName": "Test Borough Council",
+      "authorisationNumber": "EPR/AB1234CD",
+      "sicCode": "38110",
+      "address": {
+        "fullAddress": "Civic Centre, Test City",
+        "postcode": "TE1 6CC"
+      },
+      "contactDetails": {
+        "phoneNumber": "01234567890"
+      }
+    }
+  ],
+  "common/receiver/receiver.schema.json": [
+    {
+      "siteName": "Receiver Site Ltd",
+      "authorisationNumber": "EPR/AB1234CD",
+      "receiptAddress": {
+        "fullAddress": "3 Receiver Road, Test City",
+        "postcode": "TE1 3RC"
+      },
+      "contactDetails": {
+        "emailAddress": "receiver@example.com",
+        "phoneNumber": "01234567890"
+      }
+    },
+    {
+      "siteName": "Northside Transfer Station",
+      "authorisationNumber": "P1234/56A",
+      "receiptAddress": {
+        "postcode": "BT1 1AA"
+      },
+      "contactDetails": {
+        "phoneNumber": "02890123456"
+      }
+    }
+  ],
+  "common/registration-number.schema.json": [
+    "CBDU123456",
+    "CBDL999",
+    "WCR/R/1234567",
+    "SCO/123456",
+    "PCT-A-12345",
+    "ROC UT 123"
+  ],
+  "common/special-handling-requirements.schema.json": [
+    "Contains sharps: keep sealed containers upright and do not compact."
+  ],
+  "common/supporting-references.schema.json": [
+    [
+      {
+        "label": "Weighbridge Number",
+        "reference": "WB-998877"
+      },
+      {
+        "label": "Other",
+        "reference": "SITE-GATE-14"
+      }
+    ]
+  ],
+  "common/validation.schema.json": [
+    {
+      "warnings": [
+        {
+          "pointer": "/receiver/contactDetails/phoneNumber",
+          "errorType": "InvalidFormat",
+          "message": "phoneNumber looks like it is missing a digit"
+        }
+      ]
+    }
+  ],
+  "common/waste-item/physical-details.schema.json": [
+    {
+      "form": "SOLID",
+      "containerType": "DRU",
+      "containerCount": 4,
+      "totalWeight": {
+        "amount": 250.5,
+        "unit": "KILOGRAMS",
+        "isEstimate": false
+      }
+    },
+    {
+      "form": "MIXED",
+      "containerType": "LOO",
+      "containerCount": 0,
+      "totalWeight": {
+        "amount": 2,
+        "unit": "TONNES",
+        "isEstimate": true
+      }
+    },
+    {
+      "form": "LIQUID",
+      "containerType": "IBC",
+      "containerCount": 2,
+      "totalWeight": {
+        "amount": 1800,
+        "unit": "KILOGRAMS",
+        "isEstimate": true
+      }
+    }
+  ],
+  "common/waste-item/waste-items.schema.json": [
+    [
+      {
+        "physicalDetails": {
+          "form": "SOLID",
+          "containerType": "DRU",
+          "containerCount": 4,
+          "totalWeight": {
+            "amount": 250.5,
+            "unit": "KILOGRAMS",
+            "isEstimate": false
+          }
+        }
+      }
+    ],
+    [
+      {
+        "physicalDetails": {
+          "form": "SOLID",
+          "containerType": "DRU",
+          "containerCount": 4,
+          "totalWeight": {
+            "amount": 250.5,
+            "unit": "KILOGRAMS",
+            "isEstimate": false
+          }
+        }
+      },
+      {
+        "physicalDetails": {
+          "form": "MIXED",
+          "containerType": "LOO",
+          "containerCount": 0,
+          "totalWeight": {
+            "amount": 2,
+            "unit": "TONNES",
+            "isEstimate": true
+          }
+        }
+      }
+    ]
+  ],
+  "common/waste-item/weight.schema.json": [
+    {
+      "amount": 250.5,
+      "unit": "KILOGRAMS",
+      "isEstimate": false
+    },
+    {
+      "amount": 2,
+      "unit": "TONNES",
+      "isEstimate": true
+    },
+    {
+      "amount": 750,
+      "unit": "GRAMS",
+      "isEstimate": false
+    }
+  ],
+  "common/waste-type.schema.json": ["HAZARDOUS"]
+}
