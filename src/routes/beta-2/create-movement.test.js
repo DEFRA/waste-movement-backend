@@ -91,7 +91,7 @@ describe('movement Route Tests version: beta-2', () => {
   }
 
   const expectedTypeBase =
-    'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
+    'https://defra.github.io/digital-waste-tracking-api-site/preview/problems/'
 
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
