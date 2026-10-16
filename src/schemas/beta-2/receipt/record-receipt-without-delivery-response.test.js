@@ -26,8 +26,7 @@ describe('Feature: Record receipt without delivery response', () => {
     expect(validateAjv({ ...body, data: { deliveryId: 42 } }).valid).toBe(false)
   })
 
-  // Like the spec, sets no additionalProperties.
-  test('a response with extra properties is accepted', () => {
-    expect(validateAjv({ ...body, extra: true }).valid).toBe(true)
+  test('a response is rejected when it has an extra property', () => {
+    expect(validateAjv({ ...body, extra: true }).valid).toBe(false)
   })
 })

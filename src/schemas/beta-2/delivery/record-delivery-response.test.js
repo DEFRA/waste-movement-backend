@@ -58,11 +58,22 @@ describe('Feature: Record delivery response', () => {
     ).toBe(false)
   })
 
-  // Like the spec, sets no additionalProperties.
-  test('a response with extra properties is accepted', () => {
+  test('a response is rejected when it has an extra property', () => {
+    expect(validateAjv({ ...withDeliveries([delivery]), extra: 1 }).valid).toBe(
+      false
+    )
+  })
+
+  test('a response is rejected when data has an extra property', () => {
+    const response = withDeliveries([delivery])
     expect(
-      validateAjv({ ...withDeliveries([{ ...delivery, extra: 1 }]), extra: 1 })
-        .valid
-    ).toBe(true)
+      validateAjv({ ...response, data: { ...response.data, extra: 1 } }).valid
+    ).toBe(false)
+  })
+
+  test('a response is rejected when a delivery has an extra property', () => {
+    expect(validateAjv(withDeliveries([{ ...delivery, extra: 1 }])).valid).toBe(
+      false
+    )
   })
 })

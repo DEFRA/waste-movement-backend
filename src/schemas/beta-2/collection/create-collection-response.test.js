@@ -23,8 +23,7 @@ describe('Feature: Create collection response', () => {
     expect(validateAjv({ ...body, data: 'collection' }).valid).toBe(false)
   })
 
-  // Like the spec, sets no additionalProperties.
-  test('a response with extra properties is accepted', () => {
-    expect(validateAjv({ ...body, extra: true }).valid).toBe(true)
+  test('a response is rejected when it has an extra property', () => {
+    expect(validateAjv({ ...body, extra: true }).valid).toBe(false)
   })
 })
