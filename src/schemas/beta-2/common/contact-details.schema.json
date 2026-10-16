@@ -27,5 +27,6 @@
   "anyOf": [
     { "properties": { "emailAddress": {} }, "required": ["emailAddress"] },
     { "properties": { "phoneNumber": {} }, "required": ["phoneNumber"] }
-  ]
+  ],
+  "additionalProperties": false
 }

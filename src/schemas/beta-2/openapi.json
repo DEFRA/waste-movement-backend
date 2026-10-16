@@ -144,7 +144,8 @@
             },
             "description": "Field-level problems. Present on 400 responses; omitted otherwise."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "createMovementResponse": {
         "$ref": "./creation/create-movement-response.schema.json"

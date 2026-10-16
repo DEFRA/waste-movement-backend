@@ -20,5 +20,6 @@
       "description": "The subset of the submitted Movement IDs covered by this Delivery."
     },
     "wasteType": { "$ref": "../common/waste-type.schema.json" }
-  }
+  },
+  "additionalProperties": false
 }

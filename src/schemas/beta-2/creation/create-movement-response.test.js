@@ -28,11 +28,13 @@ describe('Feature: Create movement response', () => {
     )
   })
 
-  // Like the spec, sets no additionalProperties.
-  test('a response with extra properties is accepted', () => {
+  test('a response is rejected when it has an extra property', () => {
+    expect(validateAjv({ ...body, extra: true }).valid).toBe(false)
+  })
+
+  test('a response is rejected when data has an extra property', () => {
     expect(
-      validateAjv({ ...body, extra: true, data: { ...body.data, extra: 1 } })
-        .valid
-    ).toBe(true)
+      validateAjv({ ...body, data: { ...body.data, extra: 1 } }).valid
+    ).toBe(false)
   })
 })

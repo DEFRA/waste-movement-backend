@@ -45,4 +45,8 @@ describe('address schema', () => {
   test('rejects a malformed postcode', () => {
     expect(validateAjv({ postcode: 'NOTAPOSTCODE' }).valid).toBe(false)
   })
+
+  test('rejects an address with an extra property', () => {
+    expect(validateAjv({ ...validAddress, extra: true }).valid).toBe(false)
+  })
 })

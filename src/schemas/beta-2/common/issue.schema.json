@@ -30,5 +30,6 @@
       "description": "Human-readable description of the issue.",
       "examples": ["'producer' is required"]
     }
-  }
+  },
+  "additionalProperties": false
 }

@@ -17,10 +17,12 @@
           },
           "description": "One Delivery per distinct waste type represented in the submitted Movement IDs. Most requests produce a single-item list."
         }
-      }
+      },
+      "additionalProperties": false
     },
     "validation": {
       "$ref": "../common/validation.schema.json"
     }
-  }
+  },
+  "additionalProperties": false
 }
