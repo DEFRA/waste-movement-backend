@@ -269,7 +269,7 @@ defining responses itself, so the published contract and the runtime check are t
 
 Each version's spec is `beta-N/openapi.json`, at the root of its version folder, `$ref`-ing the
 schemas and named examples beside it by relative path. It's owned here, not in
-`digital-waste-tracking-api-docs`: that repo copies `beta-*/` (spec, schemas and examples) and
+`digital-waste-tracking-api-site`: that repo copies `beta-*/` (spec, schemas and examples) and
 renders it on GitHub Pages, nothing more. So a schema change and the spec change it needs land in
 the same PR.
 
@@ -299,7 +299,7 @@ src/schemas/
                      and the deliveryId path params
 ```
 
-`digital-waste-tracking-api-docs` copies each `beta-*/` folder as-is, so a file's path from
+`digital-waste-tracking-api-site` copies each `beta-*/` folder as-is, so a file's path from
 `src/schemas/` is its path there too, and the specs' relative `$ref`s resolve unchanged.
 
 **`beta-1` vs `beta-2`**: same mechanism, different shape. beta-1's payloads are trivial (an
