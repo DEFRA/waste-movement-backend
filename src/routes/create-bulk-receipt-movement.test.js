@@ -411,6 +411,34 @@ describe('Create Bulk Receipt Movement Route Tests', () => {
     assertOrgIdWasLogged(loggerInfoSpy)
   })
 
+  it('fails when another bulk upload holds the lock for the whole retry budget', async () => {
+    // Held for the duration of the request, so every attempt to take it fails.
+    // A real competing upload releases its lock once it has committed, which is
+    // what lets the retries above return MOVEMENTS_NOT_CREATED instead.
+    const heldLock = await server.locker.lock(
+      `bulk-receipt-movement-create-${bulkId}`
+    )
+
+    try {
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url: `/bulk/${bulkId}/movements/receive`,
+        payload,
+        headers: {
+          'x-cdp-request-id': traceId,
+          Authorization: `Basic ${requestBasicAuthTest1}`
+        }
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      expect(result.message).toContain(
+        `Timed out waiting for the bulk upload in progress for bulkId (${bulkId})`
+      )
+    } finally {
+      await heldLock.free()
+    }
+  })
+
   it('can handle multiple concurrent requests with the same bulkId', async () => {
     const request = {
       method: 'POST',
