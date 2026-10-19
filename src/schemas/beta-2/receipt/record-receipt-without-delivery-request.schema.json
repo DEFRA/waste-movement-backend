@@ -4,7 +4,7 @@
   "description": "Payload for POST /beta-2/receipts.",
   "type": "object",
   "properties": {
-    "reason": {
+    "reasonForNoDeliveryId": {
       "type": "string",
       "minLength": 1,
       "description": "Mandatory explanation for why this receipt is being recorded without a Delivery ID.",
@@ -38,6 +38,6 @@
       "$ref": "../common/supporting-references.schema.json"
     }
   },
-  "required": ["reason", "carrier", "receiver", "wasteItems"],
+  "required": ["reasonForNoDeliveryId", "carrier", "receiver", "wasteItems"],
   "additionalProperties": false
 }

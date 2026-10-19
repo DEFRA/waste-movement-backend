@@ -12,7 +12,7 @@ import {
 const validateAjv = validatorFor(
   'beta-2/receipt/record-receipt-without-delivery-request.schema.json'
 )
-const reason = 'No delivery'
+const reasonForNoDeliveryId = 'No delivery'
 
 describe('record-receipt-without-delivery-request schema', () => {
   const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
@@ -21,32 +21,40 @@ describe('record-receipt-without-delivery-request schema', () => {
   const wasteItems = [receiptWasteItem]
 
   test('accepts a valid payload', () => {
-    expect(validateAjv({ reason, carrier, receiver, wasteItems }).valid).toBe(
-      true
-    )
+    expect(
+      validateAjv({ reasonForNoDeliveryId, carrier, receiver, wasteItems })
+        .valid
+    ).toBe(true)
   })
 
   // apiCode is sent in the x-api-code header, not the body.
   test('rejects apiCode in the body', () => {
     expect(
-      validateAjv({ apiCode, reason, carrier, receiver, wasteItems }).valid
+      validateAjv({
+        apiCode,
+        reasonForNoDeliveryId,
+        carrier,
+        receiver,
+        wasteItems
+      }).valid
     ).toBe(false)
   })
 
-  test('reason is required', () => {
+  test('reasonForNoDeliveryId is required', () => {
     expect(validateAjv({ carrier, receiver, wasteItems }).valid).toBe(false)
   })
 
-  test('rejects an empty reason', () => {
+  test('rejects an empty reasonForNoDeliveryId', () => {
     expect(
-      validateAjv({ reason: '', carrier, receiver, wasteItems }).valid
+      validateAjv({ reasonForNoDeliveryId: '', carrier, receiver, wasteItems })
+        .valid
     ).toBe(false)
   })
 
   test('rejects an additional property beyond the declared ones', () => {
     expect(
       validateAjv({
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems,
@@ -60,7 +68,11 @@ describe('record-receipt-without-delivery-request schema', () => {
   // $ref wiring is live.
   describe('carrier', () => {
     test('is required', () => {
-      const { valid, errors } = validateAjv({ reason, receiver, wasteItems })
+      const { valid, errors } = validateAjv({
+        reasonForNoDeliveryId,
+        receiver,
+        wasteItems
+      })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -74,7 +86,7 @@ describe('record-receipt-without-delivery-request schema', () => {
 
     test('rejects a list of carriers', () => {
       const { valid, errors } = validateAjv({
-        reason,
+        reasonForNoDeliveryId,
         carrier: [carrier],
         receiver,
         wasteItems
@@ -89,7 +101,7 @@ describe('record-receipt-without-delivery-request schema', () => {
     test('rejects a payload whose carrier is invalid', () => {
       const { organisationName, ...invalidCarrier } = carrier
       const { valid, errors } = validateAjv({
-        reason,
+        reasonForNoDeliveryId,
         carrier: invalidCarrier,
         receiver,
         wasteItems
@@ -111,7 +123,11 @@ describe('record-receipt-without-delivery-request schema', () => {
   // that the $ref wiring is live.
   describe('receiver', () => {
     test('is required', () => {
-      const { valid, errors } = validateAjv({ reason, carrier, wasteItems })
+      const { valid, errors } = validateAjv({
+        reasonForNoDeliveryId,
+        carrier,
+        wasteItems
+      })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -125,7 +141,7 @@ describe('record-receipt-without-delivery-request schema', () => {
 
     test('rejects a list of receivers', () => {
       const { valid, errors } = validateAjv({
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver: [receiver],
         wasteItems
@@ -140,7 +156,7 @@ describe('record-receipt-without-delivery-request schema', () => {
     test('rejects a payload whose receiver is invalid', () => {
       const { siteName, ...invalidReceiver } = receiver
       const { valid, errors } = validateAjv({
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver: invalidReceiver,
         wasteItems
@@ -163,13 +179,18 @@ describe('record-receipt-without-delivery-request schema', () => {
     // Scenario: A Receipt is created when a valid physical form, containers
     // and weight are declared.
     test('accepts a valid waste item', () => {
-      expect(validateAjv({ reason, carrier, receiver, wasteItems }).valid).toBe(
-        true
-      )
+      expect(
+        validateAjv({ reasonForNoDeliveryId, carrier, receiver, wasteItems })
+          .valid
+      ).toBe(true)
     })
 
     test('is required', () => {
-      const { valid, errors } = validateAjv({ reason, carrier, receiver })
+      const { valid, errors } = validateAjv({
+        reasonForNoDeliveryId,
+        carrier,
+        receiver
+      })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -183,7 +204,7 @@ describe('record-receipt-without-delivery-request schema', () => {
 
     test('rejects an empty list of waste items', () => {
       const { valid, errors } = validateAjv({
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems: []
@@ -200,7 +221,7 @@ describe('record-receipt-without-delivery-request schema', () => {
 
     test('rejects a payload whose waste item is invalid, reporting the error against that item', () => {
       const { valid, errors } = validateAjv({
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems: [
@@ -227,7 +248,7 @@ describe('record-receipt-without-delivery-request schema', () => {
   // waste item.)
   describe('treatments on each waste item', () => {
     const receiptWith = (...items) => ({
-      reason,
+      reasonForNoDeliveryId,
       carrier,
       receiver,
       wasteItems: items
@@ -324,7 +345,7 @@ describe('record-receipt-without-delivery-request schema', () => {
   describe('brokerOrDealer', () => {
     test('is optional', () => {
       const payload = {
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems,
@@ -334,7 +355,13 @@ describe('record-receipt-without-delivery-request schema', () => {
     })
 
     test('accepts a declared broker or dealer', () => {
-      const payload = { reason, carrier, receiver, wasteItems, brokerOrDealer }
+      const payload = {
+        reasonForNoDeliveryId,
+        carrier,
+        receiver,
+        wasteItems,
+        brokerOrDealer
+      }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
@@ -342,7 +369,7 @@ describe('record-receipt-without-delivery-request schema', () => {
     // the $ref is wired up, so a rejection propagates to the payload.
     test('rejects a payload whose broker or dealer is invalid', () => {
       const payload = {
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems,
@@ -357,13 +384,19 @@ describe('record-receipt-without-delivery-request schema', () => {
   // $ref wiring is live.
   describe('supportingReferences', () => {
     test('is optional', () => {
-      const payload = { reason, carrier, receiver, wasteItems, brokerOrDealer }
+      const payload = {
+        reasonForNoDeliveryId,
+        carrier,
+        receiver,
+        wasteItems,
+        brokerOrDealer
+      }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
     test('accepts valid supportingReferences', () => {
       const payload = {
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems,
@@ -374,7 +407,7 @@ describe('record-receipt-without-delivery-request schema', () => {
 
     test('rejects a payload whose supportingReferences is invalid', () => {
       const payload = {
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems,
