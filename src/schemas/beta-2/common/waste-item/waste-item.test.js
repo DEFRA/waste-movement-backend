@@ -29,6 +29,39 @@ describe('Feature: Schema - declaring a waste item', () => {
     })
   })
 
+  // The classification's rules are covered by classification.test.js — these
+  // confirm it's required and that the $ref wiring is live.
+  describe('Scenario: Validation fails when a waste item is declared without a classification', () => {
+    test('validation fails and the classification is reported as required', () => {
+      const { classification, ...withoutClassification } = wasteItem
+      const { valid, errors } = validateAjv(withoutClassification)
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '',
+          params: { missingProperty: 'classification' }
+        })
+      )
+    })
+
+    test('rejects a waste item whose classification is invalid, reporting the error against it', () => {
+      const { valid, errors } = validateAjv({
+        ...wasteItem,
+        classification: { ...wasteItem.classification, ewcCodes: ['2001'] }
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'pattern',
+          instancePath: '/classification/ewcCodes/0'
+        })
+      )
+    })
+  })
+
   // A treatment's rules are covered by treatment.test.js and treatments.test.js
   // — these confirm treatments is optional and that the $ref wiring is live.
   describe('Scenario: Validation passes when a waste item declares its treatments', () => {
@@ -75,7 +108,10 @@ describe('Feature: Schema - declaring a waste item', () => {
 
     test('rejects a waste item whose physical details are invalid, reporting the error against them', () => {
       const { form, ...withoutForm } = wasteItem.physicalDetails
-      const { valid, errors } = validateAjv({ physicalDetails: withoutForm })
+      const { valid, errors } = validateAjv({
+        ...wasteItem,
+        physicalDetails: withoutForm
+      })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -89,6 +125,7 @@ describe('Feature: Schema - declaring a waste item', () => {
 
     test('rejects a waste item whose weight is invalid, reporting the error against the weight', () => {
       const { valid, errors } = validateAjv({
+        ...wasteItem,
         physicalDetails: {
           ...wasteItem.physicalDetails,
           totalWeight: { ...wasteItem.physicalDetails.totalWeight, unit: 'kg' }

@@ -104,8 +104,27 @@ export const physicalDetails = {
   totalWeight: weight
 }
 
+export const classification = {
+  wasteDescription: 'Mixed municipal waste',
+  ewcCodes: ['200301']
+}
+
 export const wasteItem = {
+  classification,
   physicalDetails
+}
+
+// 200121 (fluorescent tubes) is hazardous in the EWC reference data.
+export const hazardousWasteItem = {
+  classification: {
+    wasteDescription: 'Fluorescent tubes',
+    ewcCodes: ['200121']
+  },
+  physicalDetails
+}
+
+export const consignmentNote = {
+  code: 'CJTILE/A0001'
 }
 
 export const treatment = {

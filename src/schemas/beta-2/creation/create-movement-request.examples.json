@@ -1,6 +1,6 @@
 {
   "commercial": {
-    "summary": "Commercial producer, with broker or dealer, supporting references and special handling",
+    "summary": "Commercial producer of hazardous waste, with consignment note, broker or dealer, supporting references and special handling",
     "value": {
       "producer": {
         "wasteSource": "Commercial",
@@ -32,6 +32,10 @@
       ],
       "wasteItems": [
         {
+          "classification": {
+            "wasteDescription": "Fluorescent tubes",
+            "ewcCodes": ["200121"]
+          },
           "physicalDetails": {
             "form": "SOLID",
             "containerType": "DRU",
@@ -87,7 +91,10 @@
             "postcode": "TE1 4CR"
           }
         }
-      ]
+      ],
+      "consignmentNote": {
+        "code": "CJTILE/A0001"
+      }
     }
   },
   "household": {
@@ -128,6 +135,10 @@
       ],
       "wasteItems": [
         {
+          "classification": {
+            "wasteDescription": "Mixed municipal waste",
+            "ewcCodes": ["200301"]
+          },
           "physicalDetails": {
             "form": "MIXED",
             "containerType": "LOO",

@@ -3,6 +3,8 @@ import {
   brokerOrDealerEntry,
   supportingReference,
   carrier,
+  consignmentNote,
+  hazardousWasteItem,
   receiver,
   treatment,
   validatorFor,
@@ -381,6 +383,56 @@ describe('record-receipt-without-delivery-request schema', () => {
         supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
       }
       expect(validateAjv(payload).valid).toBe(false)
+    })
+  })
+
+  // When hazardous waste needs a consignment note is checked by
+  // common/helpers/waste-reference-data-checks.js, not this schema — its business
+  // scenarios are in routes/beta-2/record-receipt-without-delivery.test.js.
+  // The note's own rules are in consignment-note.test.js; these confirm the
+  // $ref is live.
+  describe('consignmentNote', () => {
+    const hazardousWasteItems = [
+      { ...hazardousWasteItem, treatments: [treatment] }
+    ]
+
+    test('is optional', () => {
+      const payload = {
+        reason,
+        carrier,
+        receiver,
+        wasteItems: hazardousWasteItems
+      }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('accepts a valid consignment note', () => {
+      const payload = {
+        reason,
+        carrier,
+        receiver,
+        wasteItems: hazardousWasteItems,
+        consignmentNote
+      }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('rejects a payload whose consignment note is invalid', () => {
+      const { valid, errors } = validateAjv({
+        reason,
+        carrier,
+        receiver,
+        wasteItems,
+        consignmentNote: { code: 'INVALID_FORMAT' }
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'pattern',
+          instancePath: '/consignmentNote/code'
+        })
+      )
     })
   })
 })
