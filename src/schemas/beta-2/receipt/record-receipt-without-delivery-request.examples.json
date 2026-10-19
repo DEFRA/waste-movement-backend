@@ -2,7 +2,7 @@
   "withReason": {
     "summary": "Receipt with no prior delivery, with the reason why",
     "value": {
-      "reason": "No delivery was recorded prior to receipt; waste received directly from the producer.",
+      "reasonForNoDeliveryId": "No delivery was recorded prior to receipt; waste received directly from the producer.",
       "carrier": {
         "organisationName": "Carrier Demo Ltd",
         "registrationNumber": "CBDU123456",

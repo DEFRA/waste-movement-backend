@@ -335,13 +335,18 @@ describe('beta-2', () => {
   })
 
   it('POST /beta-2/receipts records a receipt without a delivery', async () => {
-    const reason = 'No prior movement trail'
+    const reasonForNoDeliveryId = 'No prior movement trail'
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       '/beta-2/receipts',
       {
         method: 'POST',
-        body: { reason, carrier, receiver, wasteItems: receiptWasteItems }
+        body: {
+          reasonForNoDeliveryId,
+          carrier,
+          receiver,
+          wasteItems: receiptWasteItems
+        }
       }
     )
 
@@ -457,7 +462,7 @@ describe('beta-2', () => {
       {
         method: 'POST',
         body: {
-          reason: 'No prior movement trail',
+          reasonForNoDeliveryId: 'No prior movement trail',
           carrier,
           receiver,
           wasteItems: receiptWasteItems,
@@ -702,7 +707,11 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason', receiver, wasteItems: receiptWasteItems }
+        body: {
+          reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
+          receiver,
+          wasteItems: receiptWasteItems
+        }
       })
 
       expectProblemResponse(response, {
@@ -724,7 +733,11 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason', carrier, wasteItems: receiptWasteItems }
+        body: {
+          reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
+          carrier,
+          wasteItems: receiptWasteItems
+        }
       })
 
       expectProblemResponse(response, {
@@ -778,7 +791,11 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason', carrier, receiver }
+        body: {
+          reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
+          carrier,
+          receiver
+        }
       })
 
       expectProblemResponse(response, {
@@ -875,7 +892,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
-          reason: 'Some reason',
+          reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
           carrier,
           receiver,
           wasteItems: receiptWasteItems

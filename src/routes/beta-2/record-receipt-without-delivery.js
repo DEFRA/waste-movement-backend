@@ -26,7 +26,7 @@ const recordReceiptWithoutDelivery = {
     description: 'Record receipt of waste without a Delivery ID',
     notes:
       'Fallback for recording receipt with no prior Delivery, e.g. waste received with no movement ' +
-      'trail. Not linked to any Movement; `reason` must explain why. Creates an empty Delivery behind ' +
+      'trail. Not linked to any Movement; `reasonForNoDeliveryId` must explain why. Creates an empty Delivery behind ' +
       'the scenes and returns its Delivery ID, so the receipt stays addressable.',
     validate: {
       payload: validateRequest(
