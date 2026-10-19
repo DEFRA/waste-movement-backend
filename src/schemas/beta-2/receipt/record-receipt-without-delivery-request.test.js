@@ -431,7 +431,7 @@ describe('record-receipt-without-delivery-request schema', () => {
 
     test('is optional', () => {
       const payload = {
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems: hazardousWasteItems
@@ -441,7 +441,7 @@ describe('record-receipt-without-delivery-request schema', () => {
 
     test('accepts a valid consignment note', () => {
       const payload = {
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems: hazardousWasteItems,
@@ -452,7 +452,7 @@ describe('record-receipt-without-delivery-request schema', () => {
 
     test('rejects a payload whose consignment note is invalid', () => {
       const { valid, errors } = validateAjv({
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems,

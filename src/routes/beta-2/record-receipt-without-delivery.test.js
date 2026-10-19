@@ -505,7 +505,7 @@ describe('POST /beta-2/receipts', () => {
     const hazardousItem = receiptItem(hazardousWasteItem)
 
     const withWasteItems = (items, extra = {}) => ({
-      reason,
+      reasonForNoDeliveryId,
       carrier,
       receiver,
       wasteItems: items,
