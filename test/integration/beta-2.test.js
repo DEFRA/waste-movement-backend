@@ -14,6 +14,8 @@ import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-bod
 import {
   brokerOrDealerEntry,
   carrier,
+  consignmentNote,
+  hazardousWasteItem,
   receiver,
   supportingReference,
   physicalDetails,
@@ -53,13 +55,13 @@ describe('beta-2', () => {
     await wasteTrackingStub.stop()
   })
 
-  const createMovement = async () => {
+  const createMovement = async (overrides = {}) => {
     const { body } = await betaHttpRequest(
       testService.baseUrl,
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { ...minimalMovement }
+        body: { ...minimalMovement, ...overrides }
       }
     )
     return body.data.movementId
@@ -101,6 +103,7 @@ describe('beta-2', () => {
         _id: expect.any(ObjectId),
         movementId,
         orgId: forwardedOrganisationId,
+        wasteItems,
         createdAt: expect.any(String)
       })
     })
@@ -282,6 +285,81 @@ describe('beta-2', () => {
       movementIds: [movementId],
       createdAt: expect.any(String)
     })
+  })
+
+  // 200121 (fluorescent tubes) is a hazardous EWC code; hazardous waste needs
+  // a consignment note.
+  const hazardousMovement = {
+    wasteItems: [hazardousWasteItem],
+    consignmentNote
+  }
+
+  it('POST /beta-2/movements stores a hazardous waste item', async () => {
+    const movementId = await createMovement(hazardousMovement)
+
+    const movement = await testService.db
+      .collection('movements')
+      .findOne({ movementId })
+
+    expect(movement).toMatchObject({
+      movementId,
+      wasteItems: [hazardousWasteItem]
+    })
+    expect(movement).not.toHaveProperty('wasteType')
+  })
+
+  it('POST /beta-2/deliveries splits hazardous movements into their own deliveries', async () => {
+    const nonHazardousId1 = await createMovement()
+    const hazardousId = await createMovement(hazardousMovement)
+    const nonHazardousId2 = await createMovement()
+
+    const { status, body } = await betaHttpRequest(
+      testService.baseUrl,
+      '/beta-2/deliveries',
+      {
+        method: 'POST',
+        body: {
+          movementIds: [nonHazardousId1, hazardousId, nonHazardousId2],
+          carrier
+        }
+      }
+    )
+
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
+    expect(body.data.deliveries).toEqual([
+      {
+        deliveryId: expect.any(String),
+        movementIds: [nonHazardousId1, nonHazardousId2],
+        wasteType: 'NON_HAZARDOUS'
+      },
+      {
+        deliveryId: hazardousId,
+        movementIds: [hazardousId],
+        wasteType: 'HAZARDOUS'
+      }
+    ])
+
+    const deliveries = await testService.db
+      .collection('deliveries')
+      .find({
+        deliveryId: {
+          $in: body.data.deliveries.map(({ deliveryId }) => deliveryId)
+        }
+      })
+      .toArray()
+
+    expect(deliveries).toHaveLength(2)
+    expect(deliveries).toEqual(
+      expect.arrayContaining(
+        body.data.deliveries.map((delivery) =>
+          expect.objectContaining({
+            ...delivery,
+            orgId: forwardedOrganisationId
+          })
+        )
+      )
+    )
   })
 
   it('POST /beta-2/deliveries/{deliveryId}/receipt records a receipt against a delivery', async () => {
@@ -700,6 +778,9 @@ describe('beta-2', () => {
         type: 'bad-request',
         instance: endpoint
       })
+      expect(response.body.detail).toEqual(
+        'Movement ID(s) not recognised: 25ZZZZZ0'
+      )
     })
 
     it('rejects receipt recording without a carrier', async () => {

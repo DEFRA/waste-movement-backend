@@ -1,6 +1,7 @@
 import {
   createDeliveryId,
   createDeliveryRecord,
+  createDeliveryRecords,
   deliveryExists
 } from './delivery.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
@@ -116,6 +117,67 @@ describe('delivery', () => {
             })
           },
           { deliveryId: '25KMT4Z9' }
+        )
+      ).rejects.toThrow(mockError.message)
+    })
+  })
+
+  describe('createDeliveryRecords', () => {
+    const orgId = '57aed195-325e-45d5-b1fb-5f201e0324cf'
+    const deliveries = [
+      {
+        deliveryId: '25KMT4Z9',
+        movementIds: ['25HRA0B1', '25HRA0B2'],
+        wasteType: 'NON_HAZARDOUS',
+        orgId
+      },
+      {
+        deliveryId: '25HRA0B4',
+        movementIds: ['25HRA0B4'],
+        wasteType: 'HAZARDOUS',
+        orgId
+      },
+      {
+        deliveryId: '25HRA0B3',
+        movementIds: ['25HRA0B3'],
+        wasteType: 'HAZARDOUS',
+        orgId
+      }
+    ]
+
+    it('inserts every delivery and returns them in input order', async () => {
+      const now = new Date().toISOString()
+
+      const result = await createDeliveryRecords(db, deliveries)
+
+      expect(result).toEqual(
+        deliveries.map(({ deliveryId, movementIds, wasteType }) => ({
+          deliveryId,
+          movementIds,
+          wasteType
+        }))
+      )
+
+      const recordsInDb = await deliveriesCollection
+        .find({}, { projection: { _id: 0 } })
+        .toArray()
+
+      expect(recordsInDb).toEqual(
+        deliveries.map((delivery) => ({ ...delivery, createdAt: now }))
+      )
+    })
+
+    it('should handle database errors', async () => {
+      const mockError = new Error('Database error')
+
+      await expect(
+        createDeliveryRecords(
+          {
+            collection: jest.fn().mockImplementation(() => {
+              throw mockError
+            })
+          },
+          deliveries
         )
       ).rejects.toThrow(mockError.message)
     })

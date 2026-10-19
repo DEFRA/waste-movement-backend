@@ -11,9 +11,10 @@ import {
 } from '../../schemas/validate/hapi-validator.js'
 import {
   createDeliveryId,
-  createDeliveryRecord
+  createDeliveryRecords
 } from '../../services/delivery.js'
-import { findMovementIds } from '../../services/movement.js'
+import { findMovements } from '../../services/movement.js'
+import { hasHazardousEwcCode } from '../../common/helpers/waste-reference-data-checks.js'
 import { badRequest } from '@hapi/boom'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 
@@ -27,7 +28,8 @@ const recordDelivery = {
   path: '/deliveries',
   options: {
     description: 'Record a delivery',
-    notes: 'Records a delivery event and returns a Delivery ID.',
+    notes:
+      'Records a delivery event and returns one Delivery for all non-hazardous Movements, plus one per hazardous Movement.',
     validate: {
       payload: validateRequest('delivery/record-delivery-request')
     },
@@ -36,48 +38,48 @@ const recordDelivery = {
     }
   },
   handler: async (request, h) => {
-    const { movementIds } = request.payload
+    // A Movement ID submitted twice is only delivered once.
+    const movementIds = [...new Set(request.payload.movementIds)]
 
     try {
       const traceId = getTraceId() || randomUUID()
       const orgId = getOrganisationId(request)
 
-      const foundMovementIds = await findMovementIds(request.db, movementIds)
+      const movements = await findMovements(request.db, movementIds)
+      const movementsById = new Map(
+        movements.map((movement) => [movement.movementId, movement])
+      )
       const missingMovementIds = movementIds.filter(
-        (movementId) => !foundMovementIds.includes(movementId)
+        (movementId) => !movementsById.has(movementId)
       )
 
       if (missingMovementIds.length > 0) {
-        const message = `No movement exists for movement ID(s): ${missingMovementIds.join(', ')}`
+        const message = `Movement ID(s) not recognised: ${missingMovementIds.join(', ')}`
         logger.error({ movementIds, missingMovementIds }, message)
 
         throw badRequest(message)
       }
 
-      const deliveryId = await createDeliveryId()
-      // For now, all movements submitted together are bundled into a single
-      // delivery and treated as non-hazardous. Splitting a submission into
-      // multiple deliveries by waste type is not yet supported.
-      const wasteType = WASTE_TYPE.NON_HAZARDOUS
+      const deliveries = await splitIntoDeliveries(movementIds, movementsById)
 
-      await backOff(
+      const recordedDeliveries = await backOff(
         () =>
-          createDeliveryRecord(request.db, {
-            deliveryId,
-            movementIds,
-            wasteType,
-            orgId
-          }),
+          createDeliveryRecords(
+            request.db,
+            deliveries.map((delivery) => ({ ...delivery, orgId }))
+          ),
         backoffOptions(logger)
       )
 
-      logger.info(`Successfully recorded delivery with id ${deliveryId}`, {
-        deliveryId
-      })
+      const deliveryIds = recordedDeliveries.map(({ deliveryId }) => deliveryId)
+      logger.info(
+        `Successfully recorded deliveries with ids ${deliveryIds.join(', ')}`,
+        { deliveryIds }
+      )
 
       return h
         .response({
-          data: { deliveries: [{ deliveryId, movementIds, wasteType }] },
+          data: { deliveries: recordedDeliveries },
           validation: { warnings: [] }
         })
         .code(HTTP_STATUS.CREATED)
@@ -87,6 +89,43 @@ const recordDelivery = {
       return handleBetaRouteError(error)
     }
   }
+}
+
+/**
+ * Groups the submitted movements into deliveries: one minted Delivery for all
+ * the non-hazardous movements, then one Delivery per hazardous movement whose
+ * Delivery ID is its own Movement ID. A movement is hazardous when any of its
+ * waste items has a hazardous EWC code; one stored without waste items
+ * (beta-1, or created before they were stored) is treated as non-hazardous.
+ *
+ * @param {string[]} movementIds - deduplicated, in submission order
+ * @param {Map<string, { wasteItems?: { classification: object }[] }>} movementsById
+ * @returns {Promise<{ deliveryId: string, movementIds: string[], wasteType: string }[]>}
+ */
+const splitIntoDeliveries = async (movementIds, movementsById) => {
+  const isHazardous = (movementId) =>
+    hasHazardousEwcCode(movementsById.get(movementId))
+  const hazardousIds = movementIds.filter(isHazardous)
+  const nonHazardousIds = movementIds.filter((id) => !isHazardous(id))
+
+  const hazardousDeliveries = hazardousIds.map((movementId) => ({
+    deliveryId: movementId,
+    movementIds: [movementId],
+    wasteType: WASTE_TYPE.HAZARDOUS
+  }))
+
+  if (nonHazardousIds.length === 0) {
+    return hazardousDeliveries
+  }
+
+  return [
+    {
+      deliveryId: await createDeliveryId(),
+      movementIds: nonHazardousIds,
+      wasteType: WASTE_TYPE.NON_HAZARDOUS
+    },
+    ...hazardousDeliveries
+  ]
 }
 
 export { recordDelivery }

@@ -23,6 +23,10 @@ const wellFormedEwcCodes = (payload) =>
       )
   )
 
+// A movement is hazardous when any of its waste items has a hazardous EWC code.
+export const hasHazardousEwcCode = (payload) =>
+  wellFormedEwcCodes(payload).some(({ code }) => isValidHazardousEwcCode(code))
+
 export const findUnrecognisedEwcCodes = (payload) =>
   wellFormedEwcCodes(payload)
     .filter(({ code }) => !isValidEwcCode(code))
@@ -50,9 +54,7 @@ const isObject = (value) =>
 // the schema reports its format. A consignmentNote that isn't an object is
 // also left to the schema.
 export const findMissingConsignmentNote = (payload) => {
-  const isHazardous = wellFormedEwcCodes(payload).some(({ code }) =>
-    isValidHazardousEwcCode(code)
-  )
+  const isHazardous = hasHazardousEwcCode(payload)
   const note = payload?.consignmentNote
 
   if (!isHazardous) {

@@ -3,6 +3,7 @@ import { validEwcCodes } from '@defra/waste-movement-utils'
 import {
   findMissingConsignmentNote,
   findUnrecognisedEwcCodes,
+  hasHazardousEwcCode,
   withWasteReferenceDataChecks
 } from './waste-reference-data-checks.js'
 
@@ -75,6 +76,26 @@ describe('findUnrecognisedEwcCodes', () => {
     ]
   ])('finds nothing in a payload with %s', (_, payload) => {
     expect(findUnrecognisedEwcCodes(payload)).toEqual([])
+  })
+})
+
+describe('hasHazardousEwcCode', () => {
+  test('is false when no code is hazardous', () => {
+    expect(hasHazardousEwcCode(withCodes(['200301'], ['170504']))).toBe(false)
+  })
+
+  test('is true when any code on any waste item is hazardous', () => {
+    expect(
+      hasHazardousEwcCode(withCodes(['200301'], ['191212', '200121']))
+    ).toBe(true)
+  })
+
+  test.each([
+    ['no waste items', {}],
+    ['a waste item with no classification', { wasteItems: [{}] }],
+    ['a hazardous code in the wrong format', withCodes(['20 01 21'])]
+  ])('is false for %s', (_, payload) => {
+    expect(hasHazardousEwcCode(payload)).toBe(false)
   })
 })
 

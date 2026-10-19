@@ -65,7 +65,7 @@
         "name": "deliveryId",
         "in": "path",
         "required": true,
-        "description": "Delivery ID minted by `POST /deliveries`.",
+        "description": "Delivery ID returned by `POST /deliveries`.",
         "schema": {
           "$ref": "#/components/schemas/deliveryId"
         },
@@ -379,7 +379,7 @@
       "post": {
         "tags": ["Delivery"],
         "summary": "Record a delivery",
-        "description": "Records a delivery event and returns one Delivery ID per distinct waste type among the submitted Movements.",
+        "description": "Records a delivery event. All the non-hazardous Movements share one new Delivery ID; each hazardous Movement gets its own Delivery, whose Delivery ID is its Movement ID.",
         "operationId": "recordDelivery",
         "requestBody": {
           "required": true,
@@ -391,6 +391,9 @@
               "examples": {
                 "twoMovements": {
                   "$ref": "./delivery/record-delivery-request.examples.json#/twoMovements"
+                },
+                "mixedWasteTypes": {
+                  "$ref": "./delivery/record-delivery-request.examples.json#/mixedWasteTypes"
                 }
               }
             }
@@ -398,7 +401,7 @@
         },
         "responses": {
           "201": {
-            "description": "Delivery recorded. Body carries a list of the new Delivery(ies) — one per distinct waste type — and any validation warnings.",
+            "description": "Delivery recorded. Body carries the recorded Deliveries — the non-hazardous one first, then one per hazardous Movement in the order submitted — and any validation warnings.",
             "headers": {
               "x-request-id": {
                 "$ref": "#/components/headers/RequestId"
@@ -412,6 +415,9 @@
                 "examples": {
                   "twoMovements": {
                     "$ref": "./delivery/record-delivery-response.examples.json#/twoMovements"
+                  },
+                  "mixedWasteTypes": {
+                    "$ref": "./delivery/record-delivery-response.examples.json#/mixedWasteTypes"
                   }
                 }
               }

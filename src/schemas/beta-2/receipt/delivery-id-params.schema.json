@@ -11,7 +11,7 @@
   "properties": {
     "deliveryId": {
       "$ref": "../common/delivery-id.schema.json",
-      "description": "Delivery ID minted by `POST /deliveries`."
+      "description": "Delivery ID returned by `POST /deliveries`."
     }
   },
   "required": ["deliveryId"],

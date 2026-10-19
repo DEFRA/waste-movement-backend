@@ -7,7 +7,7 @@
   "properties": {
     "data": {
       "type": "object",
-      "description": "The Deliveries minted by the request.",
+      "description": "The Deliveries recorded by the request.",
       "required": ["deliveries"],
       "properties": {
         "deliveries": {
@@ -15,7 +15,7 @@
           "items": {
             "$ref": "delivery-item.schema.json"
           },
-          "description": "One Delivery per distinct waste type represented in the submitted Movement IDs. Most requests produce a single-item list."
+          "description": "One Delivery covering all non-hazardous Movements, plus one Delivery per hazardous Movement whose Delivery ID is its Movement ID."
         }
       },
       "additionalProperties": false

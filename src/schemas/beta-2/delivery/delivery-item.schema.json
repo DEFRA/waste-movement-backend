@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Delivery item",
-  "description": "A single Delivery minted from a `POST /deliveries` request, covering the Movements sharing one waste type.",
+  "description": "A single Delivery recorded by a `POST /deliveries` request: either one covering all the non-hazardous Movements, or one for a single hazardous Movement, whose Delivery ID is its Movement ID.",
   "examples": [
     {
       "deliveryId": "25KMT4Z9",

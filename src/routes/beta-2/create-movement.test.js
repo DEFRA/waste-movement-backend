@@ -132,7 +132,8 @@ describe('movement Route Tests version: beta-2', () => {
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
     expect(createMovementRecordSpy).toHaveBeenCalledWith(expect.anything(), {
       movementId: expect.any(String),
-      orgId: forwardedOrganisationId
+      orgId: forwardedOrganisationId,
+      wasteItems
     })
   })
 
@@ -511,6 +512,71 @@ describe('movement Route Tests version: beta-2', () => {
       requestId: traceId
     })
 
+    expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
+  })
+
+  it('stores the waste items', async () => {
+    // Earlier tests stub createMovementRecord; this one needs the real write.
+    jest.spyOn(movementCreate, 'createMovementRecord').mockRestore()
+    jest
+      .spyOn(movementCreate, 'createMovementId')
+      .mockResolvedValueOnce('26CLS001')
+
+    const { statusCode } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements`,
+      payload: {
+        ...goodPayload,
+        wasteItems: [wasteItem, hazardousWasteItem],
+        consignmentNote
+      },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+    const recordInDb = await server.db
+      .collection('movements')
+      .findOne({ movementId: '26CLS001' }, { projection: { _id: 0 } })
+
+    expect(recordInDb).toEqual({
+      movementId: '26CLS001',
+      orgId: forwardedOrganisationId,
+      wasteItems: [wasteItem, hazardousWasteItem],
+      createdAt: expect.any(String)
+    })
+  })
+
+  // Whether the waste is hazardous comes from its EWC codes, so callers
+  // can't declare it.
+  it('returns an error when wasteType is sent in the body and does not create a movement', async () => {
+    const createMovementRecordSpy = jest.spyOn(
+      movementCreate,
+      'createMovementRecord'
+    )
+
+    const { statusCode, result } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements`,
+      payload: { ...goodPayload, wasteType: 'HAZARDOUS' },
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result.errors).toEqual([
+      {
+        errorType: 'NotAllowed',
+        message: 'must NOT have additional properties',
+        pointer: '/wasteType'
+      }
+    ])
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
   })
 

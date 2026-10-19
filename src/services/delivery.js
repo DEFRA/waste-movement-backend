@@ -57,3 +57,33 @@ export const createDeliveryRecord = async (db, delivery) => {
     throw error
   }
 }
+
+/**
+ * Persists several new delivery records, in order, sharing one `createdAt`.
+ *
+ * @param {import('mongodb').Db} db
+ * @param {{ deliveryId: string, movementIds: string[], wasteType: string, orgId: string }[]} deliveries
+ * @returns {Promise<{ deliveryId: string, movementIds: string[], wasteType: string }[]>}
+ */
+export const createDeliveryRecords = async (db, deliveries) => {
+  try {
+    const createdAt = new Date().toISOString()
+    const extendedDeliveries = deliveries.map((delivery) => ({
+      ...delivery,
+      createdAt
+    }))
+
+    await db
+      .collection(deliveriesCollectionId)
+      .insertMany(structuredClone(extendedDeliveries), { ordered: true })
+
+    return extendedDeliveries.map(({ deliveryId, movementIds, wasteType }) => ({
+      deliveryId,
+      movementIds,
+      wasteType
+    }))
+  } catch (error) {
+    logger.error({ error }, 'Failed to create deliveries')
+    throw error
+  }
+}
