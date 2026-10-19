@@ -2,6 +2,7 @@ import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import * as delivery from '../../services/delivery.js'
 import { httpClients } from '../../common/helpers/http-client.js'
 import { config } from '../../config.js'
+import { createTestMongoDb } from '../../test/create-test-mongo-db.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
   requestBasicAuthTest1,
@@ -46,6 +47,7 @@ jest.mock('../../common/helpers/http-client.js', () => ({
 
 describe('POST /beta-2/deliveries', () => {
   let server
+  let testMongo
   const movementId1 = '25HRA0B1'
   const movementId2 = '25HRA0B2'
   const url = '/beta-2/deliveries'
@@ -62,6 +64,10 @@ describe('POST /beta-2/deliveries', () => {
     'https://defra.github.io/digital-waste-tracking-api-site/preview/problems/'
 
   beforeAll(async () => {
+    // A replica set, because deliveries are written in a transaction.
+    testMongo = await createTestMongoDb(true)
+    config.set('mongo.uri', testMongo.mongoUri)
+    config.set('mongo.readPreference', 'primary')
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
     process.env.ACCESS_CRED_TEST1 = userBasicAuthTest1
 
@@ -71,6 +77,8 @@ describe('POST /beta-2/deliveries', () => {
 
   afterAll(async () => {
     await server.stop()
+    await testMongo.client.close()
+    await testMongo.replicaSet?.stop()
   })
 
   beforeEach(async () => {

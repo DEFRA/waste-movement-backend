@@ -60,12 +60,16 @@ export const createDeliveryRecord = async (db, delivery) => {
 
 /**
  * Persists several new delivery records, in order, sharing one `createdAt`.
+ * Written in one transaction, so a failure leaves none of them behind and the
+ * caller can safely retry.
  *
  * @param {import('mongodb').Db} db
+ * @param {import('mongodb').MongoClient} mongoClient
  * @param {{ deliveryId: string, movementIds: string[], wasteType: string, orgId: string }[]} deliveries
  * @returns {Promise<{ deliveryId: string, movementIds: string[], wasteType: string }[]>}
  */
-export const createDeliveryRecords = async (db, deliveries) => {
+export const createDeliveryRecords = async (db, mongoClient, deliveries) => {
+  const session = mongoClient.startSession()
   try {
     const createdAt = new Date().toISOString()
     const extendedDeliveries = deliveries.map((delivery) => ({
@@ -73,9 +77,14 @@ export const createDeliveryRecords = async (db, deliveries) => {
       createdAt
     }))
 
-    await db
-      .collection(deliveriesCollectionId)
-      .insertMany(structuredClone(extendedDeliveries), { ordered: true })
+    await session.withTransaction(() =>
+      db
+        .collection(deliveriesCollectionId)
+        .insertMany(structuredClone(extendedDeliveries), {
+          ordered: true,
+          session
+        })
+    )
 
     return extendedDeliveries.map(({ deliveryId, movementIds, wasteType }) => ({
       deliveryId,
@@ -85,5 +94,7 @@ export const createDeliveryRecords = async (db, deliveries) => {
   } catch (error) {
     logger.error({ error }, 'Failed to create deliveries')
     throw error
+  } finally {
+    await session.endSession()
   }
 }

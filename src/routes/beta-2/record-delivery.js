@@ -66,6 +66,7 @@ const recordDelivery = {
         () =>
           createDeliveryRecords(
             request.db,
+            request.mongoClient,
             deliveries.map((delivery) => ({ ...delivery, orgId }))
           ),
         backoffOptions(logger)
