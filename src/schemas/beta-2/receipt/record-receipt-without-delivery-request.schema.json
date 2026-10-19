@@ -4,7 +4,7 @@
   "description": "Payload for POST /beta-2/receipts. A consignmentNote is required when any waste item has a hazardous EWC code; the service checks that, as the list of hazardous codes is too long to inline here.",
   "type": "object",
   "properties": {
-    "reason": {
+    "reasonForNoDeliveryId": {
       "type": "string",
       "minLength": 1,
       "description": "Mandatory explanation for why this receipt is being recorded without a Delivery ID.",
@@ -42,6 +42,6 @@
       "description": "The hazardous waste consignment note. Required when any waste item has a hazardous EWC code."
     }
   },
-  "required": ["reason", "carrier", "receiver", "wasteItems"],
+  "required": ["reasonForNoDeliveryId", "carrier", "receiver", "wasteItems"],
   "additionalProperties": false
 }

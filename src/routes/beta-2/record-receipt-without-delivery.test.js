@@ -25,7 +25,7 @@ import {
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 // A receipt needs at least one treatment on every waste item.
 const wasteItems = [{ ...wasteItem, treatments: [treatment] }]
-const reason =
+const reasonForNoDeliveryId =
   'No delivery was recorded prior to receipt; waste received directly from the producer.'
 
 jest.mock('@defra/cdp-auditing', () => ({
@@ -87,7 +87,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, receiver, wasteItems },
+      payload: { reasonForNoDeliveryId, carrier, receiver, wasteItems },
       headers: tracedAuthHeaders
     })
 
@@ -115,7 +115,7 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems: [
@@ -143,7 +143,7 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems,
@@ -165,7 +165,7 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems,
@@ -187,7 +187,7 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
-        reason,
+        reasonForNoDeliveryId,
         carrier,
         receiver,
         wasteItems,
@@ -209,7 +209,7 @@ describe('POST /beta-2/receipts', () => {
     const { headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, receiver, wasteItems },
+      payload: { reasonForNoDeliveryId, carrier, receiver, wasteItems },
       headers: tracedAuthHeaders
     })
 
@@ -230,8 +230,8 @@ describe('POST /beta-2/receipts', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: "'reason' is required",
-          pointer: '/reason'
+          message: "'reasonForNoDeliveryId' is required",
+          pointer: '/reasonForNoDeliveryId'
         },
         {
           errorType: 'NotProvided',
@@ -260,7 +260,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, receiver, wasteItems },
+      payload: { reasonForNoDeliveryId, receiver, wasteItems },
       headers: tracedAuthHeaders
     })
 
@@ -285,7 +285,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, receiver },
+      payload: { reasonForNoDeliveryId, carrier, receiver },
       headers: tracedAuthHeaders
     })
 
@@ -311,7 +311,12 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, receiver, wasteItems: [wasteItem] },
+      payload: {
+        reasonForNoDeliveryId,
+        carrier,
+        receiver,
+        wasteItems: [wasteItem]
+      },
       headers: tracedAuthHeaders
     })
 
@@ -336,7 +341,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, wasteItems },
+      payload: { reasonForNoDeliveryId, carrier, wasteItems },
       headers: tracedAuthHeaders
     })
 
@@ -363,7 +368,13 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, carrier, receiver, wasteItems, reason },
+      payload: {
+        apiCode: apiCode1,
+        carrier,
+        receiver,
+        wasteItems,
+        reasonForNoDeliveryId
+      },
       headers: tracedAuthHeaders
     })
 
@@ -388,7 +399,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, receiver, wasteItems },
+      payload: { reasonForNoDeliveryId, carrier, receiver, wasteItems },
       headers: { ...authHeaders, ...tracedHeaders }
     })
 
@@ -411,7 +422,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, receiver, wasteItems },
+      payload: { reasonForNoDeliveryId, carrier, receiver, wasteItems },
       headers: tracedAuthHeaders
     })
 
@@ -428,7 +439,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reason, carrier, receiver, wasteItems },
+      payload: { reasonForNoDeliveryId, carrier, receiver, wasteItems },
       headers: tracedHeaders
     })
 
@@ -451,7 +462,7 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
-        reason: 'No delivery was recorded',
+        reasonForNoDeliveryId: 'No delivery was recorded',
         carrier,
         receiver,
         wasteItems

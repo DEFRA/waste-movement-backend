@@ -442,7 +442,7 @@
       "post": {
         "tags": ["Receipt"],
         "summary": "Record receipt of waste without a Delivery ID",
-        "description": "Fallback for recording receipt with no prior Delivery, e.g. waste received with no movement trail. Not linked to any Movement; `reason` must explain why. The server creates an empty Delivery behind the scenes and returns its `deliveryId`, so the receipt stays addressable.",
+        "description": "Fallback for recording receipt with no prior Delivery, e.g. waste received with no movement trail. Not linked to any Movement; `reasonForNoDeliveryId` must explain why. The server creates an empty Delivery behind the scenes and returns its `deliveryId`, so the receipt stays addressable.",
         "operationId": "recordReceiptWithoutDelivery",
         "requestBody": {
           "required": true,
