@@ -41,13 +41,11 @@ docker compose -f compose.schemathesis.yml run --rm schemathesis
 
 ## How it's wired
 
-- **The spec is bundled first.** The one-shot `bundle` service runs
-  `scripts/bundle-openapi.js`, which dereferences `openapi.json` and every file
-  it `$ref`s into `test/schemathesis/out/spec/openapi.json`. This is the same
-  approach as `digital-waste-tracking-api-docs`' `bundle-specs.js`. Schemathesis
-  tests that bundled file, because the coverage report (TraceCov) doesn't
-  follow `$ref`s into other files: against the split spec it only saw the two
-  path parameters.
+- **The spec is tested as checked in.** The `schemathesis` service mounts
+  `src/schemas/beta-2/` read-only at `/spec` and runs against
+  `/spec/openapi.json`, following its `$ref`s into the other files. The
+  coverage report needs TraceCov 0.25.3 or later for this: older versions
+  didn't follow `$ref`s into other files and only saw the two path parameters.
 - **Auth.** The spec describes the external API's auth: a Cognito bearer token
   plus `x-api-code`. This service sits behind the external API, so
   `schemathesis.toml` instead sends Basic Auth and the `x-dwt-organisation-id`
