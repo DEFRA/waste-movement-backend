@@ -3,6 +3,7 @@ import {
   brokerOrDealerEntry,
   carrier,
   commercialProducer,
+  hazardousWasteItem,
   householdProducer,
   municipalProducer,
   receiver,
@@ -376,6 +377,40 @@ describe('create-movement-request schema', () => {
         expect.objectContaining({
           keyword: 'not',
           instancePath: '/wasteItems/0/treatments'
+        })
+      )
+    })
+  })
+
+  // When hazardous waste needs a consignment note is checked by
+  // common/helpers/waste-reference-data-checks.js, not this schema — its business
+  // scenarios are in routes/beta-2/create-movement.test.js. The note's own
+  // rules are in consignment-note.test.js; these confirm the $ref is live.
+  describe('consignmentNote', () => {
+    test('is optional', () => {
+      const payload = {
+        producer: householdProducer,
+        intendedCarriers,
+        intendedReceivers,
+        wasteItems: [hazardousWasteItem]
+      }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('rejects a payload whose consignment note is invalid', () => {
+      const { valid, errors } = validateAjv({
+        producer: householdProducer,
+        intendedCarriers,
+        intendedReceivers,
+        wasteItems,
+        consignmentNote: { code: 'INVALID_FORMAT' }
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'pattern',
+          instancePath: '/consignmentNote/code'
         })
       )
     })

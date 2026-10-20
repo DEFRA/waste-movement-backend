@@ -13,6 +13,8 @@ import {
 } from '../../test/data/organisation-headers.js'
 import {
   carrier,
+  consignmentNote,
+  hazardousWasteItem,
   receiver,
   treatment,
   wasteItem
@@ -519,6 +521,7 @@ describe('movement Route Tests version: beta-2', () => {
       intendedReceivers,
       wasteItems: [
         {
+          ...wasteItem,
           physicalDetails: {
             ...wasteItem.physicalDetails,
             totalWeight: { ...wasteItem.physicalDetails.totalWeight, amount: 0 }
@@ -795,6 +798,353 @@ describe('movement Route Tests version: beta-2', () => {
 
       expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
       expect(result.errors).toEqual([expectedError])
+    })
+  })
+
+  describe('Feature: Describing the waste when creating a waste movement', () => {
+    // Background: they are authenticated and have a valid API Code.
+    const submit = (payload) =>
+      server.inject({
+        method: 'POST',
+        url: `/${endpointVersion}/movements`,
+        payload,
+        headers: {
+          'x-cdp-request-id': traceId,
+          Authorization: `Basic ${requestBasicAuthTest1}`,
+          ...organisationHeaders
+        }
+      })
+
+    const withWasteItems = (items, extra = {}) => ({
+      ...goodPayload,
+      wasteItems: items,
+      ...extra
+    })
+    const withClassification = (classification) =>
+      withWasteItems([{ ...wasteItem, classification }])
+
+    const reasonForNoCode = 'Carrier did not provide a consignment note'
+
+    // A code that isn't six digits fails the schema; a six-digit code that
+    // isn't in the reference data fails the check in waste-reference-data-checks.js.
+    const ewcCodeBadlyFormatted = (pointer) => ({
+      errorType: 'InvalidFormat',
+      message: "must match pattern '^\\d{6}$'",
+      pointer
+    })
+    const ewcCodeNotRecognised = (pointer) => ({
+      errorType: 'InvalidValue',
+      message: 'must be a recognised EWC code',
+      pointer
+    })
+
+    const expectCreated = async (payload) => {
+      const createMovementRecordSpy = jest
+        .spyOn(movementCreate, 'createMovementRecord')
+        .mockResolvedValue(payload)
+
+      const { statusCode, result } = await submit(payload)
+
+      expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+      expect(result.data).toEqual({ movementId: expect.any(String) })
+      expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
+    }
+
+    const expectRejected = async (payload, errors) => {
+      const createMovementRecordSpy = jest.spyOn(
+        movementCreate,
+        'createMovementRecord'
+      )
+
+      const { statusCode, result } = await submit(payload)
+
+      expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(result.errors).toEqual(errors)
+      expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
+    }
+
+    const reasonRequired = {
+      errorType: 'NotProvided',
+      message:
+        "Required when a waste item has a hazardous EWC code and 'code' is not provided",
+      pointer: '/consignmentNote/reasonForNoCode'
+    }
+    const consignmentNoteRequired = {
+      errorType: 'NotProvided',
+      message:
+        "Required when a waste item has a hazardous EWC code, with a 'code' or a 'reasonForNoCode'",
+      pointer: '/consignmentNote'
+    }
+
+    describe('Scenario: A Movement is created when non-hazardous waste is described without a consignment code', () => {
+      it('creates the movement for a waste description and a non-hazardous EWC code', async () => {
+        await expectCreated(
+          withClassification({
+            wasteDescription: 'Paper and cardboard',
+            ewcCodes: ['200101']
+          })
+        )
+      })
+    })
+
+    describe('Scenario: A Movement is created when a consignment code is given for non-hazardous waste', () => {
+      it('creates the movement for a non-hazardous EWC code and a valid consignment code', async () => {
+        await expectCreated({ ...goodPayload, consignmentNote })
+      })
+    })
+
+    describe('Scenario: A Movement is created when a mirror EWC code is provided', () => {
+      it.each([
+        ['1 EWC code', ['170504']],
+        ['2 EWC codes', ['170504', '191212']],
+        ['5 EWC codes', ['170504', '191212', '170904', '170604', '200101']]
+      ])('creates the movement with %s', async (_, ewcCodes) => {
+        await expectCreated(
+          withClassification({ wasteDescription: 'Soil and stones', ewcCodes })
+        )
+      })
+    })
+
+    describe("Scenario Outline: A Movement isn't created when the waste description is missing", () => {
+      it('rejects a waste description that is not provided as required', async () => {
+        await expectRejected(withClassification({ ewcCodes: ['200101'] }), [
+          {
+            errorType: 'NotProvided',
+            message: "'wasteDescription' is required",
+            pointer: '/wasteItems/0/classification/wasteDescription'
+          }
+        ])
+      })
+
+      it('rejects a waste description of ""', async () => {
+        await expectRejected(
+          withClassification({ wasteDescription: '', ewcCodes: ['200101'] }),
+          [
+            {
+              errorType: 'OutOfRange',
+              message: 'must NOT have fewer than 1 characters',
+              pointer: '/wasteItems/0/classification/wasteDescription'
+            }
+          ]
+        )
+      })
+    })
+
+    describe("Scenario Outline: A Movement isn't created when the EWC code is missing or invalid", () => {
+      const description = { wasteDescription: 'Paper and cardboard' }
+
+      // Examples: Not provided or empty
+      it('rejects EWC codes that are not provided as required', async () => {
+        await expectRejected(withClassification(description), [
+          {
+            errorType: 'NotProvided',
+            message: "'ewcCodes' is required",
+            pointer: '/wasteItems/0/classification/ewcCodes'
+          }
+        ])
+      })
+
+      // "" isn't six digits, so it's reported as a format error.
+      it('rejects an EWC code of ""', async () => {
+        await expectRejected(
+          withClassification({ ...description, ewcCodes: [''] }),
+          [ewcCodeBadlyFormatted('/wasteItems/0/classification/ewcCodes/0')]
+        )
+      })
+
+      // Examples: Not recognised
+      it.each(['2001', '200101*', '20 01 01'])(
+        'rejects an EWC code of %p as not in the recognised format',
+        async (code) => {
+          await expectRejected(
+            withClassification({ ...description, ewcCodes: [code] }),
+            [ewcCodeBadlyFormatted('/wasteItems/0/classification/ewcCodes/0')]
+          )
+        }
+      )
+
+      it('rejects an EWC code of "999999" as not recognised', async () => {
+        await expectRejected(
+          withClassification({ ...description, ewcCodes: ['999999'] }),
+          [ewcCodeNotRecognised('/wasteItems/0/classification/ewcCodes/0')]
+        )
+      })
+
+      it('reports each unrecognised code on a waste, and only those', async () => {
+        await expectRejected(
+          withClassification({
+            ...description,
+            ewcCodes: ['200101', '999999', '200301', '999998']
+          }),
+          [
+            ewcCodeNotRecognised('/wasteItems/0/classification/ewcCodes/1'),
+            ewcCodeNotRecognised('/wasteItems/0/classification/ewcCodes/3')
+          ]
+        )
+      })
+
+      it('rejects an empty list of EWC codes', async () => {
+        await expectRejected(
+          withClassification({ ...description, ewcCodes: [] }),
+          [
+            {
+              errorType: 'OutOfRange',
+              message: 'must NOT have fewer than 1 items',
+              pointer: '/wasteItems/0/classification/ewcCodes'
+            }
+          ]
+        )
+      })
+    })
+
+    describe("Scenario: A Movement isn't created when more than 5 EWC codes are declared", () => {
+      it('rejects 6 EWC codes, saying no more than 5 are permitted', async () => {
+        await expectRejected(
+          withClassification({
+            wasteDescription: 'Soil and stones',
+            ewcCodes: [
+              '170504',
+              '191212',
+              '170904',
+              '170604',
+              '200101',
+              '200301'
+            ]
+          }),
+          [
+            {
+              errorType: 'OutOfRange',
+              message: 'must NOT have more than 5 items',
+              pointer: '/wasteItems/0/classification/ewcCodes'
+            }
+          ]
+        )
+      })
+    })
+
+    describe('Scenario Outline: A Movement is created when hazardous waste has a consignment code', () => {
+      it.each([
+        ['EA / NRW', 'SMITHS/A1234'],
+        ['SEPA', 'SA1234567'],
+        ['NIEA', 'DA1234567']
+      ])('creates the movement with a %s code of %s', async (_, code) => {
+        await expectCreated(
+          withWasteItems([hazardousWasteItem], { consignmentNote: { code } })
+        )
+      })
+    })
+
+    describe('Scenario: A Movement is created when hazardous waste has a reason for no consignment code', () => {
+      it('creates the movement with a hazardous EWC code and a reason', async () => {
+        await expectCreated(
+          withWasteItems([hazardousWasteItem], {
+            consignmentNote: { reasonForNoCode }
+          })
+        )
+      })
+    })
+
+    describe("Scenario Outline: A Movement isn't created when hazardous waste has neither a consignment code nor a reason", () => {
+      it('rejects a code and a reason that are not provided, saying a reason is required', async () => {
+        await expectRejected(
+          withWasteItems([hazardousWasteItem], { consignmentNote: {} }),
+          [reasonRequired]
+        )
+      })
+
+      it.each([
+        ['""', { code: '', reasonForNoCode: '' }],
+        ['null', { code: null, reasonForNoCode: null }]
+      ])(
+        'rejects a code and a reason of %s, saying a reason is required',
+        async (_, note) => {
+          await expectRejected(
+            withWasteItems([hazardousWasteItem], { consignmentNote: note }),
+            [reasonRequired]
+          )
+        }
+      )
+
+      it('rejects a movement with no consignment note at all, saying a code or a reason is required', async () => {
+        await expectRejected(withWasteItems([hazardousWasteItem]), [
+          consignmentNoteRequired
+        ])
+      })
+    })
+
+    describe("Scenario: A Movement isn't created when any one of several wastes is hazardous and has neither a consignment code nor a reason", () => {
+      it('rejects one hazardous and one non-hazardous waste with no consignment code or reason', async () => {
+        await expectRejected(
+          withWasteItems([wasteItem, hazardousWasteItem], {
+            consignmentNote: {}
+          }),
+          [reasonRequired]
+        )
+      })
+
+      it('rejects a hazardous mirror code alongside a non-hazardous one on the same waste', async () => {
+        await expectRejected(
+          withClassification({
+            wasteDescription: 'Mixed waste from shredding',
+            ewcCodes: ['191212', '191211']
+          }),
+          [consignmentNoteRequired]
+        )
+      })
+    })
+
+    describe("Scenario Outline: A Movement isn't created when the consignment code is invalid", () => {
+      it.each(['12345', 'ABC/123', 'SD1234567'])(
+        'rejects a consignment code of %p as not in a recognised format',
+        async (code) => {
+          await expectRejected(
+            withWasteItems([hazardousWasteItem], { consignmentNote: { code } }),
+            [
+              {
+                errorType: 'InvalidFormat',
+                message: expect.stringMatching(/^must match pattern /),
+                pointer: '/consignmentNote/code'
+              }
+            ]
+          )
+        }
+      )
+    })
+
+    describe("Scenario: A Movement isn't created when both a consignment code and a reason are given", () => {
+      it('rejects the reason as not permitted', async () => {
+        await expectRejected(
+          withWasteItems([hazardousWasteItem], {
+            consignmentNote: { ...consignmentNote, reasonForNoCode }
+          }),
+          [
+            {
+              errorType: 'NotAllowed',
+              message: "Not allowed when 'code' is provided",
+              pointer: '/consignmentNote/reasonForNoCode'
+            }
+          ]
+        )
+      })
+    })
+
+    describe("Scenario: A Movement isn't created when any one of several wastes is described with missing or invalid details", () => {
+      it('reports each invalid detail against the waste it belongs to', async () => {
+        await expectRejected(
+          withWasteItems([
+            wasteItem,
+            { ...wasteItem, classification: { ewcCodes: ['999999'] } }
+          ]),
+          [
+            {
+              errorType: 'NotProvided',
+              message: "'wasteDescription' is required",
+              pointer: '/wasteItems/1/classification/wasteDescription'
+            },
+            ewcCodeNotRecognised('/wasteItems/1/classification/ewcCodes/0')
+          ]
+        )
+      })
     })
   })
 })

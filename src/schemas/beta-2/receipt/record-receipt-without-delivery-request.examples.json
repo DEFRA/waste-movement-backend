@@ -31,6 +31,10 @@
       },
       "wasteItems": [
         {
+          "classification": {
+            "wasteDescription": "Mixed municipal waste",
+            "ewcCodes": ["200301"]
+          },
           "physicalDetails": {
             "form": "SOLID",
             "containerType": "DRU",

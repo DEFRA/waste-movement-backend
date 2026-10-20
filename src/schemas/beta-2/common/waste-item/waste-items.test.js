@@ -17,6 +17,7 @@ describe('Feature: Schema - declaring the waste items of a movement', () => {
   describe('Scenario: Validation passes when more than one waste item is declared', () => {
     test('validation passes when valid details are given for each waste item', () => {
       const looseItem = {
+        ...wasteItem,
         physicalDetails: {
           ...wasteItem.physicalDetails,
           form: 'MIXED',
