@@ -2,7 +2,8 @@ import Boom from '@hapi/boom'
 import {
   ERROR_TYPE,
   isValidEwcCode,
-  isValidHazardousEwcCode
+  isValidHazardousEwcCode,
+  isValidPopCode
 } from '@defra/waste-movement-utils'
 
 // The JSON Schema only checks an EWC code's format (six digits): the lists of
@@ -41,6 +42,39 @@ export const findUnrecognisedEwcCodes = (payload) =>
       ],
       type: ERROR_TYPE.INVALID_VALUE
     }))
+
+// The schema only checks that a POP code is given; this checks it against the
+// list GET /reference-data/pop-names serves, as for EWC codes. Components on
+// waste declared as not containing POPs aren't allowed at all, which the
+// schema reports, so their codes aren't checked.
+export const findUnrecognisedPopCodes = (payload) =>
+  asArray(payload?.wasteItems).flatMap((wasteItem, itemIndex) => {
+    const pops = wasteItem?.classification?.pops
+    return pops?.isPresent === true
+      ? asArray(pops.components)
+          .map((component, componentIndex) => ({
+            code: component?.code,
+            componentIndex
+          }))
+          .filter(
+            ({ code }) =>
+              typeof code === 'string' && code !== '' && !isValidPopCode(code)
+          )
+          .map(({ componentIndex }) => ({
+            message: 'must be a recognised POP code',
+            path: [
+              'wasteItems',
+              String(itemIndex),
+              'classification',
+              'pops',
+              'components',
+              String(componentIndex),
+              'code'
+            ],
+            type: ERROR_TYPE.INVALID_VALUE
+          }))
+      : []
+  })
 
 // null, "" and leaving a field out all mean it isn't provided.
 const isProvided = (value) =>
@@ -105,6 +139,7 @@ export const withWasteReferenceDataChecks = (validatePayload) => (payload) => {
   const details = [
     ...schemaDetails,
     ...findUnrecognisedEwcCodes(payload),
+    ...findUnrecognisedPopCodes(payload),
     ...findMissingConsignmentNote(payload)
   ]
   if (details.length === 0) {

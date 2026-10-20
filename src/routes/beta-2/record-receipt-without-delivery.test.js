@@ -17,6 +17,9 @@ import {
   carrier,
   consignmentNote,
   hazardousWasteItem,
+  pops,
+  popComponent,
+  popsPresent,
   receiver,
   treatment,
   wasteItem
@@ -479,64 +482,74 @@ describe('POST /beta-2/receipts', () => {
     })
   })
 
+  // Shared by the business scenario features below.
+  // Background: they are authenticated and have a valid API Code.
+  // The Receipt ID is the Delivery ID minted for the receipt.
+  const receiptId = '25KMT4Z9'
+
+  const submit = (payload) =>
+    server.inject({
+      method: 'POST',
+      url,
+      payload,
+      headers: tracedAuthHeaders
+    })
+
+  // A receipt needs at least one treatment on every waste item.
+  const receiptItem = (item) => ({ ...item, treatments: [treatment] })
+  const nonHazardousItem = receiptItem(wasteItem)
+  const hazardousItem = receiptItem(hazardousWasteItem)
+
+  const withWasteItems = (items, extra = {}) => ({
+    reasonForNoDeliveryId,
+    carrier,
+    receiver,
+    wasteItems: items,
+    ...extra
+  })
+
+  const storedReceipts = () =>
+    server.db.collection('deliveries').countDocuments()
+
+  // An earlier test leaves createDeliveryRecord mocked to fail, and
+  // clearAllMocks doesn't undo that, so the scenarios restore the real one.
+  const restoreCreateDeliveryRecord = () => {
+    if (jest.isMockFunction(delivery.createDeliveryRecord)) {
+      delivery.createDeliveryRecord.mockRestore()
+    }
+  }
+
+  const expectCreated = async (payload) => {
+    const { statusCode, result } = await submit(payload)
+
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+    expect(result.data).toEqual({ deliveryId: receiptId })
+    expect(await storedReceipts()).toBe(1)
+  }
+
+  const expectRejected = async (payload, errors) => {
+    const { statusCode, result } = await submit(payload)
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result.errors).toEqual(errors)
+    expect(await storedReceipts()).toBe(0)
+  }
+
   describe('Feature: Describing the waste when recording the receipt of undocumented waste', () => {
-    // Background: they are authenticated and have a valid API Code.
-    // The Receipt ID is the Delivery ID minted for the receipt.
-    const receiptId = '25KMT4Z9'
+    beforeEach(restoreCreateDeliveryRecord)
 
-    // An earlier test leaves createDeliveryRecord mocked to fail.
-    beforeEach(() => {
-      if (jest.isMockFunction(delivery.createDeliveryRecord)) {
-        delivery.createDeliveryRecord.mockRestore()
-      }
-    })
-
-    const submit = (payload) =>
-      server.inject({
-        method: 'POST',
-        url,
-        payload,
-        headers: tracedAuthHeaders
-      })
-
-    // A receipt needs at least one treatment on every waste item.
-    const receiptItem = (item) => ({ ...item, treatments: [treatment] })
-    const nonHazardousItem = receiptItem(wasteItem)
-    const hazardousItem = receiptItem(hazardousWasteItem)
-
-    const withWasteItems = (items, extra = {}) => ({
-      reasonForNoDeliveryId,
-      carrier,
-      receiver,
-      wasteItems: items,
-      ...extra
-    })
+    // Every classification declares its POPs; these scenarios aren't about
+    // them, so it's always none unless the test says otherwise.
     const withClassification = (classification) =>
-      withWasteItems([{ ...nonHazardousItem, classification }])
+      withWasteItems([
+        { ...nonHazardousItem, classification: { pops, ...classification } }
+      ])
 
     const reasonForNoCode = 'Carrier did not provide a consignment note'
 
-    const storedReceipts = () =>
-      server.db.collection('deliveries').countDocuments()
-
-    const expectCreated = async (payload) => {
-      const { statusCode, result } = await submit(payload)
-
-      expect(statusCode).toEqual(HTTP_STATUS.CREATED)
-      expect(result.data).toEqual({ deliveryId: receiptId })
-      expect(await storedReceipts()).toBe(1)
-    }
-
-    const expectRejected = async (payload, errors) => {
-      const { statusCode, result } = await submit(payload)
-
-      expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expect(result.errors).toEqual(errors)
-      expect(await storedReceipts()).toBe(0)
-    }
-
     // A code that isn't six digits fails the schema; a six-digit code that
-    // isn't in the reference data fails the check in waste-reference-data-checks.js.
+    // isn't in the reference data fails the check in
+    // waste-reference-data-checks.js.
     const ewcCodeBadlyFormatted = (pointer) => ({
       errorType: 'InvalidFormat',
       message: "must match pattern '^\\d{6}$'",
@@ -777,7 +790,10 @@ describe('POST /beta-2/receipts', () => {
         await expectRejected(
           withWasteItems([
             nonHazardousItem,
-            { ...nonHazardousItem, classification: { ewcCodes: ['999999'] } }
+            {
+              ...nonHazardousItem,
+              classification: { ewcCodes: ['999999'], pops }
+            }
           ]),
           [
             {
@@ -786,6 +802,381 @@ describe('POST /beta-2/receipts', () => {
               pointer: '/wasteItems/1/classification/wasteDescription'
             },
             ewcCodeNotRecognised('/wasteItems/1/classification/ewcCodes/0')
+          ]
+        )
+      })
+    })
+  })
+
+  describe('Feature: Declaring persistent organic pollutants when creating a receipt of undocumented waste', () => {
+    beforeEach(restoreCreateDeliveryRecord)
+
+    const withPops = (pops) =>
+      withWasteItems([
+        {
+          ...nonHazardousItem,
+          classification: { ...nonHazardousItem.classification, pops }
+        }
+      ])
+    const withComponents = (components) =>
+      withPops({ ...popsPresent, components })
+
+    const popsPointer = '/wasteItems/0/classification/pops'
+    const componentPointer = (index, field) =>
+      `${popsPointer}/components/${index}/${field}`
+
+    describe('Scenario: A Receipt is created when the waste is declared as not containing POPs', () => {
+      it('creates the receipt', async () => {
+        await expectCreated(withPops({ isPresent: false }))
+      })
+    })
+
+    describe('Scenario Outline: A Receipt is created when a POP is declared with a concentration', () => {
+      // HBCDD in the scenario is HBCD in the reference data.
+      it.each([
+        ['PFOA', 0.5],
+        ['PFOS', 12],
+        ['HBCD', 0.001]
+      ])(
+        'creates the receipt with a POP code of %s and a concentration of %s',
+        async (code, concentration) => {
+          await expectCreated(withComponents([{ code, concentration }]))
+        }
+      )
+    })
+
+    describe('Scenario Outline: A Receipt is created when a POP is declared against its threshold', () => {
+      it.each([
+        ['less than', 'LESS_THAN'],
+        ['equal to', 'EQUAL_TO'],
+        ['greater than', 'GREATER_THAN']
+      ])(
+        'creates the receipt with a PFOA concentration %s its threshold',
+        async (_, concentrationThresholdOperator) => {
+          await expectCreated(
+            withComponents([{ code: 'PFOA', concentrationThresholdOperator }])
+          )
+        }
+      )
+    })
+
+    describe('Scenario Outline: A Receipt is created when the source of the POP details is declared', () => {
+      it.each([
+        ['Government guidance', 'GUIDANCE'],
+        ['Provided with the waste', 'PROVIDED_WITH_WASTE'],
+        ['Own testing or analysis', 'OWN_TESTING'],
+        ['Not provided', 'NOT_PROVIDED']
+      ])(
+        'creates the receipt with a source of %s',
+        async (_, sourceOfComponents) => {
+          await expectCreated(withPops({ ...popsPresent, sourceOfComponents }))
+        }
+      )
+    })
+
+    describe('Scenario: A Receipt is created when more than one POP is declared', () => {
+      it('creates the receipt with a code and a concentration or threshold for each POP', async () => {
+        await expectCreated(
+          withComponents([
+            { code: 'PFOA', concentration: 0.5 },
+            { code: 'PFOS', concentrationThresholdOperator: 'GREATER_THAN' }
+          ])
+        )
+      })
+    })
+
+    describe("Scenario Outline: A Receipt isn't created when whether the waste contains POPs is missing or invalid", () => {
+      // Examples: Not provided or empty
+      it('rejects whether the waste contains POPs not being provided, as required', async () => {
+        await expectRejected(withPops({}), [
+          {
+            errorType: 'NotProvided',
+            message: "'isPresent' is required",
+            pointer: `${popsPointer}/isPresent`
+          }
+        ])
+      })
+
+      // Examples: Not recognised. "" isn't true or false either.
+      it.each(['', 'Maybe', 'Unknown'])(
+        'rejects whether the waste contains POPs of %p as not true or false',
+        async (isPresent) => {
+          await expectRejected(withPops({ isPresent }), [
+            {
+              errorType: 'InvalidType',
+              message: 'must be boolean',
+              pointer: `${popsPointer}/isPresent`
+            }
+          ])
+        }
+      )
+
+      it('rejects POPs not being declared at all', async () => {
+        const { pops: _, ...withoutPops } = nonHazardousItem.classification
+        await expectRejected(
+          withWasteItems([
+            { ...nonHazardousItem, classification: withoutPops }
+          ]),
+          [
+            {
+              errorType: 'NotProvided',
+              message: "'pops' is required",
+              pointer: popsPointer
+            }
+          ]
+        )
+      })
+    })
+
+    describe("Scenario: A Receipt isn't created when POP details are given for waste declared as not containing POPs", () => {
+      it('rejects the POP details as not permitted', async () => {
+        await expectRejected(withPops({ ...popsPresent, isPresent: false }), [
+          {
+            errorType: 'NotAllowed',
+            message: "Not allowed unless 'isPresent' is true",
+            pointer: `${popsPointer}/sourceOfComponents`
+          },
+          {
+            errorType: 'NotAllowed',
+            message: "Not allowed unless 'isPresent' is true",
+            pointer: `${popsPointer}/components`
+          }
+        ])
+      })
+    })
+
+    describe("Scenario: A Receipt isn't created when the waste contains POPs but none are declared", () => {
+      it('rejects no POPs being declared, saying at least one is required', async () => {
+        const { components, ...withoutComponents } = popsPresent
+        await expectRejected(withPops(withoutComponents), [
+          {
+            errorType: 'NotProvided',
+            message: "Required when 'isPresent' is true",
+            pointer: `${popsPointer}/components`
+          }
+        ])
+      })
+
+      it('rejects an empty list of POPs, saying at least one is required', async () => {
+        await expectRejected(withComponents([]), [
+          {
+            errorType: 'OutOfRange',
+            message: 'must NOT have fewer than 1 items',
+            pointer: `${popsPointer}/components`
+          }
+        ])
+      })
+
+      // At least one is needed whatever the source, even when it's not
+      // provided.
+      it('rejects no POPs being declared when the source is not provided', async () => {
+        await expectRejected(
+          withPops({ isPresent: true, sourceOfComponents: 'NOT_PROVIDED' }),
+          [
+            {
+              errorType: 'NotProvided',
+              message: "Required when 'isPresent' is true",
+              pointer: `${popsPointer}/components`
+            }
+          ]
+        )
+      })
+    })
+
+    describe("Scenario Outline: A Receipt isn't created when the POP code is missing or invalid", () => {
+      // Examples: Not provided or empty
+      it('rejects a POP code that is not provided, as required', async () => {
+        await expectRejected(withComponents([{ concentration: 0.5 }]), [
+          {
+            errorType: 'NotProvided',
+            message: "'code' is required",
+            pointer: componentPointer(0, 'code')
+          }
+        ])
+      })
+
+      it('rejects a POP code of ""', async () => {
+        await expectRejected(
+          withComponents([{ code: '', concentration: 0.5 }]),
+          [
+            {
+              errorType: 'OutOfRange',
+              message: 'must NOT have fewer than 1 characters',
+              pointer: componentPointer(0, 'code')
+            }
+          ]
+        )
+      })
+
+      // Examples: Not recognised
+      it.each(['Mercury', 'ABC123'])(
+        'rejects a POP code of %p as not recognised',
+        async (code) => {
+          await expectRejected(withComponents([{ code, concentration: 0.5 }]), [
+            {
+              errorType: 'InvalidValue',
+              message: 'must be a recognised POP code',
+              pointer: componentPointer(0, 'code')
+            }
+          ])
+        }
+      )
+    })
+
+    describe("Scenario: A Receipt isn't created when a POP has neither a concentration nor a threshold", () => {
+      it('rejects the POP, saying a concentration or threshold is required', async () => {
+        await expectRejected(withComponents([{ code: 'PFOA' }]), [
+          {
+            errorType: 'NotProvided',
+            message: "Required when 'concentration' is not provided",
+            pointer: componentPointer(0, 'concentrationThresholdOperator')
+          }
+        ])
+      })
+    })
+
+    describe("Scenario: A Receipt isn't created when a POP has both a concentration and a threshold", () => {
+      it('rejects the threshold, saying only one of the two is permitted', async () => {
+        await expectRejected(
+          withComponents([
+            {
+              code: 'PFOA',
+              concentration: 0.5,
+              concentrationThresholdOperator: 'LESS_THAN'
+            }
+          ]),
+          [
+            {
+              errorType: 'NotAllowed',
+              message: "Not allowed when 'concentration' is provided",
+              pointer: componentPointer(0, 'concentrationThresholdOperator')
+            }
+          ]
+        )
+      })
+    })
+
+    describe("Scenario Outline: A Receipt isn't created when the POP concentration is invalid", () => {
+      // Examples: Empty. "" counts as no concentration, so a threshold is
+      // needed instead.
+      it.each([
+        ['""', ''],
+        ['null', null]
+      ])(
+        'rejects a POP concentration of %s, saying a concentration or threshold is required',
+        async (_, concentration) => {
+          await expectRejected(
+            withComponents([{ code: 'PFOA', concentration }]),
+            [
+              {
+                errorType: 'NotProvided',
+                message: "Required when 'concentration' is not provided",
+                pointer: componentPointer(0, 'concentrationThresholdOperator')
+              }
+            ]
+          )
+        }
+      )
+
+      // Examples: Not greater than 0
+      it.each([0, -1])(
+        'rejects a POP concentration of %p as not greater than 0',
+        async (concentration) => {
+          await expectRejected(
+            withComponents([{ code: 'PFOA', concentration }]),
+            [
+              {
+                errorType: 'OutOfRange',
+                message: 'Must be greater than 0',
+                pointer: componentPointer(0, 'concentration')
+              }
+            ]
+          )
+        }
+      )
+    })
+
+    describe("Scenario Outline: A Receipt isn't created when the POP threshold is invalid", () => {
+      it.each(['Greater than', 'Above'])(
+        'rejects a POP threshold of %p as not recognised',
+        async (concentrationThresholdOperator) => {
+          await expectRejected(
+            withComponents([{ code: 'PFOA', concentrationThresholdOperator }]),
+            [
+              {
+                errorType: 'InvalidValue',
+                message:
+                  "must be one of: 'LESS_THAN', 'EQUAL_TO', 'GREATER_THAN'",
+                pointer: componentPointer(0, 'concentrationThresholdOperator')
+              }
+            ]
+          )
+        }
+      )
+    })
+
+    describe("Scenario Outline: A Receipt isn't created when the source of the POP details is missing or invalid", () => {
+      // Examples: Not provided or empty
+      it('rejects a source that is not provided, as required', async () => {
+        const { sourceOfComponents, ...withoutSource } = popsPresent
+        await expectRejected(withPops(withoutSource), [
+          {
+            errorType: 'NotProvided',
+            message: "Required when 'isPresent' is true",
+            pointer: `${popsPointer}/sourceOfComponents`
+          }
+        ])
+      })
+
+      // Examples: Not recognised. "" isn't one of the sources either.
+      it.each(['', 'Supplier', 'Unknown'])(
+        'rejects a source of %p as not recognised',
+        async (sourceOfComponents) => {
+          await expectRejected(
+            withPops({ ...popsPresent, sourceOfComponents }),
+            [
+              {
+                errorType: 'InvalidValue',
+                message:
+                  "must be one of: 'GUIDANCE', 'PROVIDED_WITH_WASTE', 'OWN_TESTING', 'NOT_PROVIDED'",
+                pointer: `${popsPointer}/sourceOfComponents`
+              }
+            ]
+          )
+        }
+      )
+    })
+
+    describe("Scenario: A Receipt isn't created when any one of several POPs is declared with missing or invalid details", () => {
+      it('reports each invalid detail against the POP it belongs to', async () => {
+        await expectRejected(
+          withComponents([
+            popComponent,
+            { code: 'ABC123', concentration: 0 },
+            { concentrationThresholdOperator: 'Above' }
+          ]),
+          [
+            {
+              errorType: 'OutOfRange',
+              message: 'Must be greater than 0',
+              pointer: componentPointer(1, 'concentration')
+            },
+            {
+              errorType: 'NotProvided',
+              message: "'code' is required",
+              pointer: componentPointer(2, 'code')
+            },
+            {
+              errorType: 'InvalidValue',
+              message:
+                "must be one of: 'LESS_THAN', 'EQUAL_TO', 'GREATER_THAN'",
+              pointer: componentPointer(2, 'concentrationThresholdOperator')
+            },
+            {
+              errorType: 'InvalidValue',
+              message: 'must be a recognised POP code',
+              pointer: componentPointer(1, 'code')
+            }
           ]
         )
       })

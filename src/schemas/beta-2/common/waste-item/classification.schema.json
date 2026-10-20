@@ -1,15 +1,28 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Waste item classification",
-  "description": "What a waste item is: a free-text description and its EWC codes. Both are required. Whether the waste is hazardous comes from its EWC codes.",
+  "description": "What a waste item is: a free-text description, its EWC codes, and whether it contains persistent organic pollutants (POPs). All three are required. Whether the waste is hazardous comes from its EWC codes.",
   "examples": [
     {
       "wasteDescription": "Mixed municipal waste",
-      "ewcCodes": ["200301"]
+      "ewcCodes": ["200301"],
+      "pops": {
+        "isPresent": false
+      }
     },
     {
       "wasteDescription": "Fluorescent tubes",
-      "ewcCodes": ["200121"]
+      "ewcCodes": ["200121"],
+      "pops": {
+        "isPresent": true,
+        "sourceOfComponents": "GUIDANCE",
+        "components": [
+          {
+            "code": "PFOS",
+            "concentrationThresholdOperator": "LESS_THAN"
+          }
+        ]
+      }
     }
   ],
   "type": "object",
@@ -29,8 +42,12 @@
       "minItems": 1,
       "maxItems": 5,
       "description": "The EWC codes that describe the waste: at least one, and up to five to allow for dual and mirror codes. Each must be six digits and a code from GET /reference-data/ewc-codes; the service checks the second."
+    },
+    "pops": {
+      "$ref": "pops.schema.json",
+      "description": "Whether the waste item contains persistent organic pollutants, and if so which. Required, even when there are none."
     }
   },
-  "required": ["wasteDescription", "ewcCodes"],
+  "required": ["wasteDescription", "ewcCodes", "pops"],
   "additionalProperties": false
 }

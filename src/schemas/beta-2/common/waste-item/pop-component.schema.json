@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "POP component",
+  "description": "A persistent organic pollutant (POP) in a waste item: its code, and either its concentration or how its concentration compares with the threshold WM3 sets for that code, but not both. A concentration of null or an empty string is treated as not provided.",
+  "examples": [
+    {
+      "code": "PFOA",
+      "concentration": 0.5
+    },
+    {
+      "code": "PFOS",
+      "concentrationThresholdOperator": "LESS_THAN"
+    }
+  ],
+  "type": "object",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "concentration": {
+            "type": "number"
+          }
+        },
+        "required": ["concentration"]
+      },
+      "then": {
+        "properties": {
+          "concentrationThresholdOperator": {
+            "not": {},
+            "description": "Not allowed when 'concentration' is provided"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "concentrationThresholdOperator": {}
+        },
+        "required": ["concentrationThresholdOperator"],
+        "description": "Required when 'concentration' is not provided"
+      }
+    }
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The POP's code, from GET /reference-data/pop-names. Only checked for being non-empty here; the service checks it against the reference data and reports an unrecognised code as an InvalidValue error."
+    },
+    "concentration": {
+      "if": {
+        "type": "number"
+      },
+      "then": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "Must be greater than 0"
+      },
+      "else": {
+        "enum": [null, ""],
+        "description": "Must be a number greater than 0, or null or an empty string when not provided"
+      },
+      "description": "The POP's concentration: a number greater than 0. null or an empty string means not provided. Exactly one of 'concentration' or 'concentrationThresholdOperator' is required."
+    },
+    "concentrationThresholdOperator": {
+      "type": "string",
+      "enum": ["LESS_THAN", "EQUAL_TO", "GREATER_THAN"],
+      "description": "How the POP's concentration compares with the threshold WM3 sets for its code, when the concentration itself isn't given. The threshold value isn't sent. Exactly one of 'concentration' or 'concentrationThresholdOperator' is required."
+    }
+  },
+  "required": ["code"],
+  "additionalProperties": false
+}

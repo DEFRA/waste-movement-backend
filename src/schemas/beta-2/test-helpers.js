@@ -104,9 +104,25 @@ export const physicalDetails = {
   totalWeight: weight
 }
 
+export const pops = {
+  isPresent: false
+}
+
+export const popComponent = {
+  code: 'PFOA',
+  concentration: 0.5
+}
+
+export const popsPresent = {
+  isPresent: true,
+  sourceOfComponents: 'OWN_TESTING',
+  components: [popComponent]
+}
+
 export const classification = {
   wasteDescription: 'Mixed municipal waste',
-  ewcCodes: ['200301']
+  ewcCodes: ['200301'],
+  pops
 }
 
 export const wasteItem = {
@@ -118,7 +134,8 @@ export const wasteItem = {
 export const hazardousWasteItem = {
   classification: {
     wasteDescription: 'Fluorescent tubes',
-    ewcCodes: ['200121']
+    ewcCodes: ['200121'],
+    pops
   },
   physicalDetails
 }

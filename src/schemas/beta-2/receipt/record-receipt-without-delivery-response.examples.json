@@ -1,6 +1,6 @@
 {
   "withReason": {
-    "summary": "Receipt with no prior delivery, with the reason why",
+    "summary": "Receipt with no prior delivery, with the reason why, of waste containing POPs",
     "value": {
       "data": {
         "deliveryId": "25KMT4Z9"
