@@ -38,6 +38,9 @@
           "isEstimate": false
         }
       },
+      "hazardous": {
+        "isPresent": false
+      },
       "treatments": [
         {
           "disposalOrRecoveryCode": "R3",

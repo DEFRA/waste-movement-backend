@@ -494,7 +494,7 @@ describe('POST /beta-2/deliveries', () => {
       }
     )
 
-    it('treats a movement as hazardous when any one of its waste items has a hazardous EWC code', async () => {
+    it('treats a movement as hazardous when any one of its waste items declares hazardous properties', async () => {
       await seedMovements(['261B23B4'], [])
       await server.db.collection('movements').insertOne({
         movementId: '269X8Y7Z',
@@ -513,6 +513,56 @@ describe('POST /beta-2/deliveries', () => {
         nonHazardous('261B23B4'),
         hazardous('269X8Y7Z')
       ])
+    })
+
+    // The declaration decides, not the EWC codes.
+    describe('decides by the declared hazardous properties', () => {
+      const withDeclaration = (item, hazardous) => ({
+        ...item,
+        classification: { ...item.classification, hazardous }
+      })
+      const deliver = (movementIds) =>
+        server.inject({
+          method: 'POST',
+          url,
+          payload: { movementIds, carrier },
+          headers: tracedAuthHeaders
+        })
+
+      it('delivers a non-hazardous EWC code declared as having hazardous properties on its own', async () => {
+        await seedMovements(['261B23B4'], [])
+        await server.db.collection('movements').insertOne({
+          movementId: '269X8Y7Z',
+          wasteItems: [
+            withDeclaration(wasteItem, { isPresent: true, codes: ['HP_4'] })
+          ]
+        })
+
+        const { statusCode, result } = await deliver(['261B23B4', '269X8Y7Z'])
+
+        expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+        expect(result.data.deliveries).toEqual([
+          nonHazardous('261B23B4'),
+          hazardous('269X8Y7Z')
+        ])
+      })
+
+      it('delivers a hazardous EWC code declared as having no hazardous properties with the non-hazardous movements', async () => {
+        await seedMovements(['261B23B4'], [])
+        await server.db.collection('movements').insertOne({
+          movementId: '262C34C5',
+          wasteItems: [
+            withDeclaration(hazardousWasteItem, { isPresent: false })
+          ]
+        })
+
+        const { statusCode, result } = await deliver(['261B23B4', '262C34C5'])
+
+        expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+        expect(result.data.deliveries).toEqual([
+          nonHazardous('261B23B4', '262C34C5')
+        ])
+      })
     })
 
     // beta-1 movements, and beta-2 ones created before waste items were

@@ -2,15 +2,18 @@ import Boom from '@hapi/boom'
 import {
   ERROR_TYPE,
   isValidEwcCode,
-  isValidHazardousEwcCode,
   isValidPopCode
 } from '@defra/waste-movement-utils'
 
-// The JSON Schema only checks an EWC code's format (six digits): the lists of
-// recognised and hazardous codes are too long to inline there. These check
-// each well-formed code against the reference data in waste-movement-utils —
-// the list GET /reference-data/ewc-codes serves. Codes in the wrong format
-// are left to the schema, which has already reported them.
+// The JSON Schema only checks an EWC code's format (six digits): the list of
+// recognised codes is too long to inline there. These check each well-formed
+// code against the reference data in waste-movement-utils — the list
+// GET /reference-data/ewc-codes serves. Codes in the wrong format are left to
+// the schema, which has already reported them.
+//
+// Whether a movement is hazardous comes from its waste items' hazardous
+// properties declarations, not their EWC codes. The consignment note rule
+// spans the waste items and the note, so it lives here rather than in a schema.
 const wellFormedEwcCode = /^\d{6}$/
 
 const asArray = (value) => (Array.isArray(value) ? value : [])
@@ -24,9 +27,12 @@ const wellFormedEwcCodes = (payload) =>
       )
   )
 
-// A movement is hazardous when any of its waste items has a hazardous EWC code.
-export const hasHazardousEwcCode = (payload) =>
-  wellFormedEwcCodes(payload).some(({ code }) => isValidHazardousEwcCode(code))
+// A movement is hazardous when any of its waste items declares hazardous
+// properties. One with no waste items (beta-1) is non-hazardous.
+export const isHazardous = (payloadOrMovement) =>
+  asArray(payloadOrMovement?.wasteItems).some(
+    (item) => item?.classification?.hazardous?.isPresent === true
+  )
 
 export const findUnrecognisedEwcCodes = (payload) =>
   wellFormedEwcCodes(payload)
@@ -88,17 +94,16 @@ const isObject = (value) =>
 // the schema reports its format. A consignmentNote that isn't an object is
 // also left to the schema.
 export const findMissingConsignmentNote = (payload) => {
-  const isHazardous = hasHazardousEwcCode(payload)
   const note = payload?.consignmentNote
 
-  if (!isHazardous) {
+  if (!isHazardous(payload)) {
     return []
   }
   if (note === undefined) {
     return [
       {
         message:
-          "Required when a waste item has a hazardous EWC code, with a 'code' or a 'reasonForNoCode'",
+          "Required when a waste item declares hazardous properties, with a 'code' or a 'reasonForNoCode'",
         path: ['consignmentNote'],
         type: ERROR_TYPE.NOT_PROVIDED
       }
@@ -114,7 +119,7 @@ export const findMissingConsignmentNote = (payload) => {
   return [
     {
       message:
-        "Required when a waste item has a hazardous EWC code and 'code' is not provided",
+        "Required when a waste item declares hazardous properties and 'code' is not provided",
       path: ['consignmentNote', 'reasonForNoCode'],
       type: ERROR_TYPE.NOT_PROVIDED
     }

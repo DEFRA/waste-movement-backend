@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Record receipt without delivery request",
-  "description": "Payload for POST /beta-2/receipts. A consignmentNote is required when any waste item has a hazardous EWC code; the service checks that, as the list of hazardous codes is too long to inline here.",
+  "description": "Payload for POST /beta-2/receipts. A consignmentNote is required when any waste item declares hazardous properties; the service checks that, as the rule spans the waste items and the consignment note.",
   "type": "object",
   "properties": {
     "reasonForNoDeliveryId": {
@@ -39,7 +39,7 @@
     },
     "consignmentNote": {
       "$ref": "../common/consignment-note.schema.json",
-      "description": "The hazardous waste consignment note. Required when any waste item has a hazardous EWC code."
+      "description": "The hazardous waste consignment note. Required when any waste item declares hazardous properties."
     }
   },
   "required": ["reasonForNoDeliveryId", "carrier", "receiver", "wasteItems"],

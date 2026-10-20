@@ -7,8 +7,9 @@ const validateAjv = validatorFor(
 
 // The business scenarios — a missing or empty description, missing or
 // unrecognised EWC codes, and between one and five codes — live in
-// routes/beta-2/create-movement.test.js, and those for POPs in
-// routes/beta-2/record-receipt-without-delivery.test.js. The schema checks
+// routes/beta-2/create-movement.test.js, those for POPs in
+// routes/beta-2/record-receipt-without-delivery.test.js, and those for
+// hazardous properties in both. The schema checks
 // only an EWC code's format; whether a well-formed code is recognised is
 // checked by common/helpers/waste-reference-data-checks.js. These cover
 // what's left of the classification's shape.
@@ -125,6 +126,37 @@ describe('Feature: Schema - classifying a waste item', () => {
         expect.objectContaining({
           keyword: 'type',
           instancePath: '/pops/isPresent'
+        })
+      )
+    })
+
+    // Likewise for hazardous properties, covered by hazardous.test.js and
+    // the create and receipt scenarios.
+    test('requires hazardous', () => {
+      const { hazardous, ...withoutHazardous } = classification
+      const { valid, errors } = validateAjv(withoutHazardous)
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '',
+          params: { missingProperty: 'hazardous' }
+        })
+      )
+    })
+
+    test('rejects a classification whose hazardous properties are invalid, reporting the error against them', () => {
+      const { valid, errors } = validateAjv({
+        ...classification,
+        hazardous: { isPresent: true, codes: ['HP_22'] }
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'enum',
+          instancePath: '/hazardous/codes/0'
         })
       )
     })

@@ -19,6 +19,7 @@ import {
   receiver,
   supportingReference,
   physicalDetails,
+  hazardous,
   treatment,
   wasteItem
 } from '../../src/schemas/beta-2/test-helpers.js'
@@ -287,8 +288,8 @@ describe('beta-2', () => {
     })
   })
 
-  // 200121 (fluorescent tubes) is a hazardous EWC code; hazardous waste needs
-  // a consignment note.
+  // hazardousWasteItem declares hazardous properties; hazardous waste needs a
+  // consignment note.
   const hazardousMovement = {
     wasteItems: [hazardousWasteItem],
     consignmentNote
@@ -388,7 +389,7 @@ describe('beta-2', () => {
       `/beta-2/deliveries/${deliveryId}/receipt`,
       {
         method: 'POST',
-        body: { carrier, receiver, physicalDetails, treatments }
+        body: { carrier, receiver, physicalDetails, hazardous, treatments }
       }
     )
 
@@ -517,6 +518,7 @@ describe('beta-2', () => {
           carrier,
           receiver,
           physicalDetails,
+          hazardous,
           treatments,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
@@ -849,7 +851,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, physicalDetails, treatments }
+        body: { carrier, physicalDetails, hazardous, treatments }
       })
 
       expectProblemResponse(response, {
@@ -907,7 +909,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, receiver, physicalDetails }
+        body: { carrier, receiver, physicalDetails, hazardous }
       })
 
       expectProblemResponse(response, {
@@ -945,6 +947,7 @@ describe('beta-2', () => {
             ...physicalDetails,
             totalWeight: { ...physicalDetails.totalWeight, amount: 0 }
           },
+          hazardous,
           treatments
         }
       })
