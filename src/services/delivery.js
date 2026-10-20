@@ -63,6 +63,12 @@ export const createDeliveryRecord = async (db, delivery) => {
  * Written in one transaction, so a failure leaves none of them behind and the
  * caller can safely retry.
  *
+ * NOTE: the `deliveries` collection has no indexes, so nothing stops the same
+ * data being stored twice: a Movement submitted in a second delivery gets a
+ * second record, and a resubmitted hazardous Movement produces two records
+ * with the same `deliveryId` (its Movement ID). To be addressed, e.g. with a
+ * unique index on `deliveryId`, once the database layer is defined.
+ *
  * @param {import('mongodb').Db} db
  * @param {import('mongodb').MongoClient} mongoClient
  * @param {{ deliveryId: string, movementIds: string[], wasteType: string, orgId: string }[]} deliveries

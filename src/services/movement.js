@@ -69,6 +69,11 @@ export const createMovementId = async () => {
 /**
  * Persists a new movement record.
  *
+ * NOTE: the `movements` collection has no indexes, so nothing stops a
+ * `movementId` being stored twice, e.g. if a retry repeats a write that had
+ * already succeeded. To be addressed, e.g. with a unique index on
+ * `movementId`, once the database layer is defined.
+ *
  * @param {import('mongodb').Db} db
  * @param {{ movementId: string, orgId: string, wasteItems?: object[] }} movement
  * @returns {Promise<{ movementId: string }>}
