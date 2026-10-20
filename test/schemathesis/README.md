@@ -65,7 +65,9 @@ docker compose -f compose.schemathesis.yml run --rm schemathesis
   generated IDs still exercise the 404 responses. If you change an example ID,
   change the parameter `example` in `openapi.json` to match.
 - **Relaxed checks.** Each one has a comment in `schemathesis.toml`:
-  - `unsupported_method`: Hapi answers unrouted methods with 404, not 405.
+  - The coverage phase doesn't send methods the spec doesn't list
+    (`phases.coverage.unexpected-methods = []`): Hapi answers unrouted
+    methods with 404, not 405.
   - `recordDelivery` allows 400 for schema-valid requests, because generated
     `movementIds` don't exist.
 - **Random seed.** The random seed is fixed (`seed = 42`) so CI runs are reproducible. Pass

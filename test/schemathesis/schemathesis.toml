@@ -27,9 +27,12 @@ with-security-parameters = false
 
 [checks]
 enabled = true
-# Unrouted methods get Hapi's 404 rather than 405; method filtering for the
-# public API happens in front of this service.
-unsupported_method.enabled = false
+
+[phases.coverage]
+# Don't send methods the spec doesn't list: unrouted methods get Hapi's 404
+# rather than 405, and method filtering for the public API happens in front
+# of this service.
+unexpected-methods = []
 
 [[operations]]
 include-operation-id = "recordDelivery"
