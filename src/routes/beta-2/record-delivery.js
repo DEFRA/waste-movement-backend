@@ -14,7 +14,7 @@ import {
   createDeliveryRecords
 } from '../../services/delivery.js'
 import { findMovements } from '../../services/movement.js'
-import { hasHazardousEwcCode } from '../../common/helpers/waste-reference-data-checks.js'
+import { isHazardous } from '../../common/helpers/waste-reference-data-checks.js'
 import { badRequest } from '@hapi/boom'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 
@@ -96,7 +96,7 @@ const recordDelivery = {
  * Groups the submitted movements into deliveries: one minted Delivery for all
  * the non-hazardous movements, then one Delivery per hazardous movement whose
  * Delivery ID is its own Movement ID. A movement is hazardous when any of its
- * waste items has a hazardous EWC code; one stored without waste items
+ * waste items declares hazardous properties; one stored without waste items
  * (beta-1, or created before they were stored) is treated as non-hazardous.
  *
  * @param {string[]} movementIds - deduplicated, in submission order
@@ -104,10 +104,10 @@ const recordDelivery = {
  * @returns {Promise<{ deliveryId: string, movementIds: string[], wasteType: string }[]>}
  */
 const splitIntoDeliveries = async (movementIds, movementsById) => {
-  const isHazardous = (movementId) =>
-    hasHazardousEwcCode(movementsById.get(movementId))
-  const hazardousIds = movementIds.filter(isHazardous)
-  const nonHazardousIds = movementIds.filter((id) => !isHazardous(id))
+  const isHazardousMovement = (movementId) =>
+    isHazardous(movementsById.get(movementId))
+  const hazardousIds = movementIds.filter(isHazardousMovement)
+  const nonHazardousIds = movementIds.filter((id) => !isHazardousMovement(id))
 
   const hazardousDeliveries = hazardousIds.map((movementId) => ({
     deliveryId: movementId,

@@ -1,12 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Waste item classification",
-  "description": "What a waste item is: a free-text description, its EWC codes, and whether it contains persistent organic pollutants (POPs). All three are required. Whether the waste is hazardous comes from its EWC codes.",
+  "description": "What a waste item is: a free-text description, its EWC codes, whether it contains persistent organic pollutants (POPs), and whether it has hazardous properties. All four are required. Whether the waste is hazardous comes from its hazardous properties declaration, not its EWC codes.",
   "examples": [
     {
       "wasteDescription": "Mixed municipal waste",
       "ewcCodes": ["200301"],
       "pops": {
+        "isPresent": false
+      },
+      "hazardous": {
         "isPresent": false
       }
     },
@@ -22,6 +25,10 @@
             "concentrationThresholdOperator": "LESS_THAN"
           }
         ]
+      },
+      "hazardous": {
+        "isPresent": true,
+        "codes": ["HP_6", "HP_14"]
       }
     }
   ],
@@ -46,8 +53,12 @@
     "pops": {
       "$ref": "pops.schema.json",
       "description": "Whether the waste item contains persistent organic pollutants, and if so which. Required, even when there are none."
+    },
+    "hazardous": {
+      "$ref": "hazardous.schema.json",
+      "description": "Whether the waste item has hazardous properties, and if so which. Required, even when there are none. A movement is hazardous when any of its waste items declares hazardous properties."
     }
   },
-  "required": ["wasteDescription", "ewcCodes", "pops"],
+  "required": ["wasteDescription", "ewcCodes", "pops", "hazardous"],
   "additionalProperties": false
 }

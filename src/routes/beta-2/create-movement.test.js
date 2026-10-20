@@ -14,6 +14,7 @@ import {
 import {
   carrier,
   consignmentNote,
+  hazardous,
   hazardousWasteItem,
   pops,
   receiver,
@@ -551,8 +552,8 @@ describe('movement Route Tests version: beta-2', () => {
     })
   })
 
-  // Whether the waste is hazardous comes from its EWC codes, so callers
-  // can't declare it.
+  // Whether the waste is hazardous comes from its waste items' hazardous
+  // properties, so callers can't declare it separately.
   it('returns an error when wasteType is sent in the body and does not create a movement', async () => {
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
@@ -868,30 +869,72 @@ describe('movement Route Tests version: beta-2', () => {
     })
   })
 
-  describe('Feature: Describing the waste when creating a waste movement', () => {
-    // Background: they are authenticated and have a valid API Code.
-    const submit = (payload) =>
-      server.inject({
-        method: 'POST',
-        url: `/${endpointVersion}/movements`,
-        payload,
-        headers: {
-          'x-cdp-request-id': traceId,
-          Authorization: `Basic ${requestBasicAuthTest1}`,
-          ...organisationHeaders
-        }
-      })
-
-    const withWasteItems = (items, extra = {}) => ({
-      ...goodPayload,
-      wasteItems: items,
-      ...extra
+  // Background: they are authenticated and have a valid API Code.
+  const submit = (payload) =>
+    server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
+      }
     })
-    // Every classification declares its POPs; these scenarios aren't about
-    // them, so it's always none unless the test says otherwise.
+
+  const withWasteItems = (items, extra = {}) => ({
+    ...goodPayload,
+    wasteItems: items,
+    ...extra
+  })
+  const expectCreated = async (payload) => {
+    const createMovementRecordSpy = jest
+      .spyOn(movementCreate, 'createMovementRecord')
+      .mockResolvedValue(payload)
+
+    const { statusCode, result } = await submit(payload)
+
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+    expect(result.data).toEqual({ movementId: expect.any(String) })
+    expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
+  }
+
+  const expectRejected = async (payload, errors) => {
+    const createMovementRecordSpy = jest.spyOn(
+      movementCreate,
+      'createMovementRecord'
+    )
+
+    const { statusCode, result } = await submit(payload)
+
+    expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+    expect(result.errors).toEqual(errors)
+    expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
+  }
+
+  const reasonRequired = {
+    errorType: 'NotProvided',
+    message:
+      "Required when a waste item declares hazardous properties and 'code' is not provided",
+    pointer: '/consignmentNote/reasonForNoCode'
+  }
+  const consignmentNoteRequired = {
+    errorType: 'NotProvided',
+    message:
+      "Required when a waste item declares hazardous properties, with a 'code' or a 'reasonForNoCode'",
+    pointer: '/consignmentNote'
+  }
+
+  describe('Feature: Describing the waste when creating a waste movement', () => {
+    // Every classification declares its POPs and hazardous properties; these
+    // scenarios aren't about them, so it's always none unless the test says
+    // otherwise.
     const withClassification = (classification) =>
       withWasteItems([
-        { ...wasteItem, classification: { pops, ...classification } }
+        {
+          ...wasteItem,
+          classification: { pops, hazardous, ...classification }
+        }
       ])
 
     const reasonForNoCode = 'Carrier did not provide a consignment note'
@@ -909,44 +952,6 @@ describe('movement Route Tests version: beta-2', () => {
       message: 'must be a recognised EWC code',
       pointer
     })
-
-    const expectCreated = async (payload) => {
-      const createMovementRecordSpy = jest
-        .spyOn(movementCreate, 'createMovementRecord')
-        .mockResolvedValue(payload)
-
-      const { statusCode, result } = await submit(payload)
-
-      expect(statusCode).toEqual(HTTP_STATUS.CREATED)
-      expect(result.data).toEqual({ movementId: expect.any(String) })
-      expect(createMovementRecordSpy).toHaveBeenCalledTimes(1)
-    }
-
-    const expectRejected = async (payload, errors) => {
-      const createMovementRecordSpy = jest.spyOn(
-        movementCreate,
-        'createMovementRecord'
-      )
-
-      const { statusCode, result } = await submit(payload)
-
-      expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expect(result.errors).toEqual(errors)
-      expect(createMovementRecordSpy).toHaveBeenCalledTimes(0)
-    }
-
-    const reasonRequired = {
-      errorType: 'NotProvided',
-      message:
-        "Required when a waste item has a hazardous EWC code and 'code' is not provided",
-      pointer: '/consignmentNote/reasonForNoCode'
-    }
-    const consignmentNoteRequired = {
-      errorType: 'NotProvided',
-      message:
-        "Required when a waste item has a hazardous EWC code, with a 'code' or a 'reasonForNoCode'",
-      pointer: '/consignmentNote'
-    }
 
     describe('Scenario: A Movement is created when non-hazardous waste is described without a consignment code', () => {
       it('creates the movement for a waste description and a non-hazardous EWC code', async () => {
@@ -1153,16 +1158,6 @@ describe('movement Route Tests version: beta-2', () => {
           [reasonRequired]
         )
       })
-
-      it('rejects a hazardous mirror code alongside a non-hazardous one on the same waste', async () => {
-        await expectRejected(
-          withClassification({
-            wasteDescription: 'Mixed waste from shredding',
-            ewcCodes: ['191212', '191211']
-          }),
-          [consignmentNoteRequired]
-        )
-      })
     })
 
     describe("Scenario Outline: A Movement isn't created when the consignment code is invalid", () => {
@@ -1205,7 +1200,10 @@ describe('movement Route Tests version: beta-2', () => {
         await expectRejected(
           withWasteItems([
             wasteItem,
-            { ...wasteItem, classification: { ewcCodes: ['999999'], pops } }
+            {
+              ...wasteItem,
+              classification: { ewcCodes: ['999999'], pops, hazardous }
+            }
           ]),
           [
             {
@@ -1216,6 +1214,258 @@ describe('movement Route Tests version: beta-2', () => {
             ewcCodeNotRecognised('/wasteItems/1/classification/ewcCodes/0')
           ]
         )
+      })
+    })
+  })
+
+  describe('Feature: Declaring the hazardous properties of the waste', () => {
+    const withHazardous = (hazardous, extra) =>
+      withWasteItems(
+        [
+          {
+            ...wasteItem,
+            classification: { ...wasteItem.classification, hazardous }
+          }
+        ],
+        extra
+      )
+    // Hazardous waste needs a consignment note, which these scenarios
+    // aren't about.
+    const withHazardousProperties = (hazardous) =>
+      withHazardous(hazardous, { consignmentNote })
+
+    const hazardousPointer = '/wasteItems/0/classification/hazardous'
+    const codesPointer = `${hazardousPointer}/codes`
+    const quoted = (code) => `'${code}'`
+    const hpCodes = [
+      'HP_1',
+      'HP_2',
+      'HP_3',
+      'HP_4',
+      'HP_5',
+      'HP_6',
+      'HP_7',
+      'HP_8',
+      'HP_9',
+      'HP_10',
+      'HP_11',
+      'HP_12',
+      'HP_13',
+      'HP_14',
+      'HP_15',
+      'HP_POP'
+    ]
+    const codeNotRecognised = (pointer) => ({
+      errorType: 'InvalidValue',
+      message: `must be one of: ${hpCodes.map(quoted).join(', ')}`,
+      pointer
+    })
+
+    describe('Scenario: A Movement is created when the waste is declared as having no hazardous properties', () => {
+      it('creates the movement', async () => {
+        await expectCreated(withHazardous({ isPresent: false }))
+      })
+    })
+
+    describe('Scenario Outline: A Movement is created when hazardous properties are declared', () => {
+      it.each([[['HP_4']], [['HP_4', 'HP_8']]])(
+        'creates the movement with codes %p',
+        async (codes) => {
+          await expectCreated(
+            withHazardousProperties({ isPresent: true, codes })
+          )
+        }
+      )
+    })
+
+    describe("Scenario Outline: A Movement isn't created when whether the waste has hazardous properties is missing or invalid", () => {
+      it('rejects whether the waste has hazardous properties not being provided, as required', async () => {
+        await expectRejected(withHazardous({}), [
+          {
+            errorType: 'NotProvided',
+            message: "'isPresent' is required",
+            pointer: `${hazardousPointer}/isPresent`
+          }
+        ])
+      })
+
+      // "" isn't true or false either.
+      it.each(['', 'Maybe', 'Unknown'])(
+        'rejects whether the waste has hazardous properties of %p as not true or false',
+        async (isPresent) => {
+          await expectRejected(withHazardous({ isPresent }), [
+            {
+              errorType: 'InvalidType',
+              message: 'must be boolean',
+              pointer: `${hazardousPointer}/isPresent`
+            }
+          ])
+        }
+      )
+
+      it('rejects hazardous properties not being declared at all', async () => {
+        const { hazardous: _, ...withoutHazardous } = wasteItem.classification
+        await expectRejected(
+          withWasteItems([{ ...wasteItem, classification: withoutHazardous }]),
+          [
+            {
+              errorType: 'NotProvided',
+              message: "'hazardous' is required",
+              pointer: hazardousPointer
+            }
+          ]
+        )
+      })
+    })
+
+    describe("Scenario Outline: A Movement isn't created when the waste has hazardous properties but the codes are missing or invalid", () => {
+      it('rejects codes not being provided, saying they are required', async () => {
+        await expectRejected(withHazardousProperties({ isPresent: true }), [
+          {
+            errorType: 'NotProvided',
+            message: "Required when 'isPresent' is true",
+            pointer: codesPointer
+          }
+        ])
+      })
+
+      it('rejects an empty list of codes, saying at least one is required', async () => {
+        await expectRejected(
+          withHazardousProperties({ isPresent: true, codes: [] }),
+          [
+            {
+              errorType: 'OutOfRange',
+              message: 'must NOT have fewer than 1 items',
+              pointer: codesPointer
+            }
+          ]
+        )
+      })
+
+      it('rejects codes of "" as not a list', async () => {
+        await expectRejected(
+          withHazardousProperties({ isPresent: true, codes: '' }),
+          [
+            {
+              errorType: 'InvalidType',
+              message: 'must be array',
+              pointer: codesPointer
+            }
+          ]
+        )
+      })
+
+      it.each(['HP_22', 'Flammable'])(
+        'rejects a code of %p as not recognised',
+        async (code) => {
+          await expectRejected(
+            withHazardousProperties({ isPresent: true, codes: [code] }),
+            [codeNotRecognised(`${codesPointer}/0`)]
+          )
+        }
+      )
+
+      it('reports each unrecognised code against that code', async () => {
+        await expectRejected(
+          withHazardousProperties({
+            isPresent: true,
+            codes: ['HP01', 'HP_99']
+          }),
+          [
+            codeNotRecognised(`${codesPointer}/0`),
+            codeNotRecognised(`${codesPointer}/1`)
+          ]
+        )
+      })
+    })
+
+    describe("Scenario: A Movement isn't created when codes are given for waste declared as having no hazardous properties", () => {
+      it('rejects the codes as not permitted', async () => {
+        await expectRejected(
+          withHazardous({ isPresent: false, codes: ['HP_4'] }),
+          [
+            {
+              errorType: 'NotAllowed',
+              message: "Not allowed unless 'isPresent' is true",
+              pointer: codesPointer
+            }
+          ]
+        )
+      })
+    })
+
+    describe("Scenario: A Movement isn't created when several wastes declare invalid hazardous properties", () => {
+      it('reports each invalid declaration against the waste it belongs to', async () => {
+        const withDeclaration = (hazardous) => ({
+          ...wasteItem,
+          classification: { ...wasteItem.classification, hazardous }
+        })
+        await expectRejected(
+          withWasteItems(
+            [
+              withDeclaration({ isPresent: 'Maybe' }),
+              withDeclaration({ isPresent: true, codes: ['HP_99'] })
+            ],
+            { consignmentNote }
+          ),
+          [
+            {
+              errorType: 'InvalidType',
+              message: 'must be boolean',
+              pointer: '/wasteItems/0/classification/hazardous/isPresent'
+            },
+            codeNotRecognised('/wasteItems/1/classification/hazardous/codes/0')
+          ]
+        )
+      })
+    })
+
+    describe('Scenario: A Movement is created without a consignment note when a hazardous EWC code is declared as having no hazardous properties', () => {
+      it('creates the movement for fluorescent tubes declared as not hazardous', async () => {
+        await expectCreated(
+          withWasteItems([
+            {
+              ...wasteItem,
+              classification: {
+                ...hazardousWasteItem.classification,
+                hazardous: { isPresent: false }
+              }
+            }
+          ])
+        )
+      })
+    })
+
+    describe("Scenario: A Movement isn't created without a consignment note when a non-hazardous EWC code is declared as having hazardous properties", () => {
+      it('rejects the movement, saying a consignment note is required', async () => {
+        await expectRejected(
+          withHazardous({ isPresent: true, codes: ['HP_4'] }),
+          [consignmentNoteRequired]
+        )
+      })
+    })
+
+    describe('Scenario: The declared hazardous properties are stored with the movement', () => {
+      it("stores each waste item's declaration", async () => {
+        // Earlier tests stub createMovementRecord; this one needs the real write.
+        jest.spyOn(movementCreate, 'createMovementRecord').mockRestore()
+        jest
+          .spyOn(movementCreate, 'createMovementId')
+          .mockResolvedValueOnce('26HAZ001')
+
+        const { statusCode } = await submit(
+          withHazardousProperties({ isPresent: true, codes: ['HP_4', 'HP_8'] })
+        )
+
+        expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+        const recordInDb = await server.db
+          .collection('movements')
+          .findOne({ movementId: '26HAZ001' })
+
+        expect(recordInDb.wasteItems[0].classification.hazardous).toEqual({
+          isPresent: true,
+          codes: ['HP_4', 'HP_8']
+        })
       })
     })
   })

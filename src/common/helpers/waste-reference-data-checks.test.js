@@ -1,10 +1,10 @@
 import Boom from '@hapi/boom'
-import { validEwcCodes, validPopNames } from '@defra/waste-movement-utils'
+import { validPopNames } from '@defra/waste-movement-utils'
 import {
   findMissingConsignmentNote,
   findUnrecognisedEwcCodes,
   findUnrecognisedPopCodes,
-  hasHazardousEwcCode,
+  isHazardous,
   withWasteReferenceDataChecks
 } from './waste-reference-data-checks.js'
 
@@ -13,6 +13,19 @@ const withCodes = (...ewcCodesPerItem) => ({
     classification: { wasteDescription: 'Waste', ewcCodes }
   }))
 })
+
+const withHazardous = (...hazardousPerItem) => ({
+  wasteItems: hazardousPerItem.map((hazardous) => ({
+    classification: {
+      wasteDescription: 'Waste',
+      ewcCodes: ['200301'],
+      hazardous
+    }
+  }))
+})
+
+const hazardousProperties = { isPresent: true, codes: ['HP_4'] }
+const noHazardousProperties = { isPresent: false }
 
 const unrecognised = (itemIndex, codeIndex) => ({
   message: 'must be a recognised EWC code',
@@ -150,37 +163,56 @@ describe('findUnrecognisedPopCodes', () => {
   })
 })
 
-describe('hasHazardousEwcCode', () => {
-  test('is false when no code is hazardous', () => {
-    expect(hasHazardousEwcCode(withCodes(['200301'], ['170504']))).toBe(false)
+describe('isHazardous', () => {
+  test('is true when a waste item declares hazardous properties', () => {
+    expect(isHazardous(withHazardous(hazardousProperties))).toBe(true)
   })
 
-  test('is true when any code on any waste item is hazardous', () => {
+  test('is false when no waste item declares hazardous properties', () => {
     expect(
-      hasHazardousEwcCode(withCodes(['200301'], ['191212', '200121']))
+      isHazardous(withHazardous(noHazardousProperties, noHazardousProperties))
+    ).toBe(false)
+  })
+
+  test('is true when any one of several waste items declares hazardous properties', () => {
+    expect(
+      isHazardous(withHazardous(noHazardousProperties, hazardousProperties))
     ).toBe(true)
   })
 
+  // The declaration decides, not the EWC codes.
+  test('is false for a hazardous EWC code declared as having no hazardous properties', () => {
+    const payload = withCodes(['200121'])
+    payload.wasteItems[0].classification.hazardous = noHazardousProperties
+
+    expect(isHazardous(payload)).toBe(false)
+  })
+
   test.each([
-    ['no waste items', {}],
+    ['no payload', undefined],
+    ['no waste items, as stored by beta-1', {}],
+    ['waste items that are not a list', { wasteItems: 'Waste' }],
+    ['a null waste item', { wasteItems: [null] }],
     ['a waste item with no classification', { wasteItems: [{}] }],
-    ['a hazardous code in the wrong format', withCodes(['20 01 21'])]
+    ['no hazardous properties declaration', withCodes(['200121'])],
+    ['a missing isPresent', withHazardous({ codes: ['HP_4'] })],
+    ['an isPresent that is not a boolean', withHazardous({ isPresent: 'true' })]
   ])('is false for %s', (_, payload) => {
-    expect(hasHazardousEwcCode(payload)).toBe(false)
+    expect(isHazardous(payload)).toBe(false)
   })
 })
 
 describe('findMissingConsignmentNote', () => {
-  const hazardous = withCodes(['200121'])
+  const hazardous = withHazardous(hazardousProperties)
   const noteRequired = {
     message:
-      "Required when a waste item has a hazardous EWC code, with a 'code' or a 'reasonForNoCode'",
+      "Required when a waste item declares hazardous properties, with a 'code' or a 'reasonForNoCode'",
     path: ['consignmentNote'],
     type: 'NotProvided'
   }
   const reasonRequired = {
     message:
-      "Required when a waste item has a hazardous EWC code and 'code' is not provided",
+      "Required when a waste item declares hazardous properties and 'code' is not provided",
     path: ['consignmentNote', 'reasonForNoCode'],
     type: 'NotProvided'
   }
@@ -188,24 +220,23 @@ describe('findMissingConsignmentNote', () => {
   // Business scenarios are in routes/beta-2/create-movement.test.js; these
   // cover the edges.
   test('needs nothing for non-hazardous waste', () => {
-    expect(findMissingConsignmentNote(withCodes(['200101']))).toEqual([])
-  })
-
-  test('treats every absolute and mirror hazardous code in the reference data as hazardous, and no others', () => {
-    const misclassified = validEwcCodes
-      .filter(
-        ({ code, isHazardous }) =>
-          findMissingConsignmentNote(withCodes([code])).length > 0 !==
-          (isHazardous === true)
-      )
-      .map(({ code, entryTypeDesc }) => `${code} (${entryTypeDesc})`)
-
-    expect(misclassified).toEqual([])
-  })
-
-  test('requires a consignment note when any code on any waste item is hazardous', () => {
     expect(
-      findMissingConsignmentNote(withCodes(['200101'], ['191212', '191211']))
+      findMissingConsignmentNote(withHazardous(noHazardousProperties))
+    ).toEqual([])
+  })
+
+  test('needs nothing for a hazardous EWC code declared as having no hazardous properties', () => {
+    const payload = withCodes(['200121'])
+    payload.wasteItems[0].classification.hazardous = noHazardousProperties
+
+    expect(findMissingConsignmentNote(payload)).toEqual([])
+  })
+
+  test('requires a consignment note when any waste item declares hazardous properties', () => {
+    expect(
+      findMissingConsignmentNote(
+        withHazardous(noHazardousProperties, hazardousProperties)
+      )
     ).toEqual([noteRequired])
   })
 
@@ -238,12 +269,6 @@ describe('findMissingConsignmentNote', () => {
     expect(
       findMissingConsignmentNote({ ...hazardous, consignmentNote })
     ).toEqual([])
-  })
-
-  // Badly formatted codes are left to the schema, including ones that would
-  // be hazardous once their spaces were removed.
-  test('ignores a hazardous code in the wrong format', () => {
-    expect(findMissingConsignmentNote(withCodes(['20 01 21']))).toEqual([])
   })
 })
 
@@ -283,7 +308,7 @@ describe('withWasteReferenceDataChecks', () => {
 
   test('reports a missing consignment note for hazardous waste', () => {
     const validate = withWasteReferenceDataChecks((value) => value)
-    const error = getError(() => validate(withCodes(['200121'])))
+    const error = getError(() => validate(withHazardous(hazardousProperties)))
 
     expect(error.details).toEqual([
       expect.objectContaining({

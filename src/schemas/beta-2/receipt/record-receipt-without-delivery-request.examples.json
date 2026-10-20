@@ -47,6 +47,9 @@
                   "concentrationThresholdOperator": "LESS_THAN"
                 }
               ]
+            },
+            "hazardous": {
+              "isPresent": false
             }
           },
           "physicalDetails": {

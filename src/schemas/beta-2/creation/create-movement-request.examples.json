@@ -37,6 +37,10 @@
             "ewcCodes": ["200121"],
             "pops": {
               "isPresent": false
+            },
+            "hazardous": {
+              "isPresent": true,
+              "codes": ["HP_6", "HP_14"]
             }
           },
           "physicalDetails": {
@@ -142,6 +146,9 @@
             "wasteDescription": "Mixed municipal waste",
             "ewcCodes": ["200301"],
             "pops": {
+              "isPresent": false
+            },
+            "hazardous": {
               "isPresent": false
             }
           },

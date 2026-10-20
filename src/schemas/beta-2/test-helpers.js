@@ -119,10 +119,20 @@ export const popsPresent = {
   components: [popComponent]
 }
 
+export const hazardous = {
+  isPresent: false
+}
+
+export const hazardousPresent = {
+  isPresent: true,
+  codes: ['HP_4']
+}
+
 export const classification = {
   wasteDescription: 'Mixed municipal waste',
   ewcCodes: ['200301'],
-  pops
+  pops,
+  hazardous
 }
 
 export const wasteItem = {
@@ -130,12 +140,14 @@ export const wasteItem = {
   physicalDetails
 }
 
-// 200121 (fluorescent tubes) is hazardous in the EWC reference data.
+// Declares hazardous properties, which is what makes it hazardous. 200121
+// (fluorescent tubes) is also a hazardous code in the EWC reference data.
 export const hazardousWasteItem = {
   classification: {
     wasteDescription: 'Fluorescent tubes',
     ewcCodes: ['200121'],
-    pops
+    pops,
+    hazardous: hazardousPresent
   },
   physicalDetails
 }

@@ -9,6 +9,9 @@
         "ewcCodes": ["200301"],
         "pops": {
           "isPresent": false
+        },
+        "hazardous": {
+          "isPresent": false
         }
       },
       "physicalDetails": {
@@ -38,6 +41,9 @@
         "ewcCodes": ["170504"],
         "pops": {
           "isPresent": false
+        },
+        "hazardous": {
+          "isPresent": false
         }
       },
       "physicalDetails": {
@@ -56,7 +62,7 @@
   "properties": {
     "classification": {
       "$ref": "classification.schema.json",
-      "description": "What the waste item is: its description and EWC codes."
+      "description": "What the waste item is: its description, EWC codes, POPs and hazardous properties."
     },
     "physicalDetails": {
       "$ref": "physical-details.schema.json",
