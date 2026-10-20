@@ -7,10 +7,11 @@ const validateAjv = validatorFor(
 
 // The business scenarios — a missing or empty description, missing or
 // unrecognised EWC codes, and between one and five codes — live in
-// routes/beta-2/create-movement.test.js. The schema checks only an EWC
-// code's format; whether a well-formed code is recognised is checked by
-// common/helpers/waste-reference-data-checks.js. These cover what's left of the
-// classification's shape.
+// routes/beta-2/create-movement.test.js, and those for POPs in
+// routes/beta-2/record-receipt-without-delivery.test.js. The schema checks
+// only an EWC code's format; whether a well-formed code is recognised is
+// checked by common/helpers/waste-reference-data-checks.js. These cover
+// what's left of the classification's shape.
 describe('Feature: Schema - classifying a waste item', () => {
   const withCode = (code) => ({ ...classification, ewcCodes: [code] })
 
@@ -93,6 +94,37 @@ describe('Feature: Schema - classifying a waste item', () => {
         expect.objectContaining({
           keyword: 'type',
           instancePath: '/wasteDescription'
+        })
+      )
+    })
+
+    // The rules for POPs are covered by pops.test.js and the receipt
+    // scenarios — these confirm pops is required and its $ref is live.
+    test('requires pops', () => {
+      const { pops, ...withoutPops } = classification
+      const { valid, errors } = validateAjv(withoutPops)
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '',
+          params: { missingProperty: 'pops' }
+        })
+      )
+    })
+
+    test('rejects a classification whose pops are invalid, reporting the error against them', () => {
+      const { valid, errors } = validateAjv({
+        ...classification,
+        pops: { isPresent: 'Maybe' }
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'type',
+          instancePath: '/pops/isPresent'
         })
       )
     })

@@ -15,6 +15,7 @@ import {
   carrier,
   consignmentNote,
   hazardousWasteItem,
+  pops,
   receiver,
   treatment,
   wasteItem
@@ -886,13 +887,18 @@ describe('movement Route Tests version: beta-2', () => {
       wasteItems: items,
       ...extra
     })
+    // Every classification declares its POPs; these scenarios aren't about
+    // them, so it's always none unless the test says otherwise.
     const withClassification = (classification) =>
-      withWasteItems([{ ...wasteItem, classification }])
+      withWasteItems([
+        { ...wasteItem, classification: { pops, ...classification } }
+      ])
 
     const reasonForNoCode = 'Carrier did not provide a consignment note'
 
     // A code that isn't six digits fails the schema; a six-digit code that
-    // isn't in the reference data fails the check in waste-reference-data-checks.js.
+    // isn't in the reference data fails the check in
+    // waste-reference-data-checks.js.
     const ewcCodeBadlyFormatted = (pointer) => ({
       errorType: 'InvalidFormat',
       message: "must match pattern '^\\d{6}$'",
@@ -1199,7 +1205,7 @@ describe('movement Route Tests version: beta-2', () => {
         await expectRejected(
           withWasteItems([
             wasteItem,
-            { ...wasteItem, classification: { ewcCodes: ['999999'] } }
+            { ...wasteItem, classification: { ewcCodes: ['999999'], pops } }
           ]),
           [
             {

@@ -6,7 +6,10 @@
     {
       "classification": {
         "wasteDescription": "Mixed municipal waste",
-        "ewcCodes": ["200301"]
+        "ewcCodes": ["200301"],
+        "pops": {
+          "isPresent": false
+        }
       },
       "physicalDetails": {
         "form": "SOLID",
@@ -32,7 +35,10 @@
     {
       "classification": {
         "wasteDescription": "Soil and stones",
-        "ewcCodes": ["170504"]
+        "ewcCodes": ["170504"],
+        "pops": {
+          "isPresent": false
+        }
       },
       "physicalDetails": {
         "form": "MIXED",

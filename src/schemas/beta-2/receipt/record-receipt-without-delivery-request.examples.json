@@ -1,6 +1,6 @@
 {
   "withReason": {
-    "summary": "Receipt with no prior delivery, with the reason why",
+    "summary": "Receipt with no prior delivery, with the reason why, of waste containing POPs",
     "value": {
       "reasonForNoDeliveryId": "No delivery was recorded prior to receipt; waste received directly from the producer.",
       "carrier": {
@@ -33,7 +33,21 @@
         {
           "classification": {
             "wasteDescription": "Mixed municipal waste",
-            "ewcCodes": ["200301"]
+            "ewcCodes": ["200301"],
+            "pops": {
+              "isPresent": true,
+              "sourceOfComponents": "OWN_TESTING",
+              "components": [
+                {
+                  "code": "PFOA",
+                  "concentration": 0.5
+                },
+                {
+                  "code": "PFOS",
+                  "concentrationThresholdOperator": "LESS_THAN"
+                }
+              ]
+            }
           },
           "physicalDetails": {
             "form": "SOLID",

@@ -1,8 +1,9 @@
 import Boom from '@hapi/boom'
-import { validEwcCodes } from '@defra/waste-movement-utils'
+import { validEwcCodes, validPopNames } from '@defra/waste-movement-utils'
 import {
   findMissingConsignmentNote,
   findUnrecognisedEwcCodes,
+  findUnrecognisedPopCodes,
   hasHazardousEwcCode,
   withWasteReferenceDataChecks
 } from './waste-reference-data-checks.js'
@@ -76,6 +77,76 @@ describe('findUnrecognisedEwcCodes', () => {
     ]
   ])('finds nothing in a payload with %s', (_, payload) => {
     expect(findUnrecognisedEwcCodes(payload)).toEqual([])
+  })
+})
+
+describe('findUnrecognisedPopCodes', () => {
+  const withPops = (...popsPerItem) => ({
+    wasteItems: popsPerItem.map((pops) => ({ classification: { pops } }))
+  })
+  const present = (...codes) => ({
+    isPresent: true,
+    components: codes.map((code) => ({ code, concentration: 1 }))
+  })
+  const unrecognisedPop = (itemIndex, componentIndex) => ({
+    message: 'must be a recognised POP code',
+    path: [
+      'wasteItems',
+      String(itemIndex),
+      'classification',
+      'pops',
+      'components',
+      String(componentIndex),
+      'code'
+    ],
+    type: 'InvalidValue'
+  })
+
+  test('finds nothing when every code is recognised', () => {
+    expect(findUnrecognisedPopCodes(withPops(present('PFOA', 'HBCD')))).toEqual(
+      []
+    )
+  })
+
+  test('treats every code in the reference data as recognised', () => {
+    const codes = validPopNames.map(({ code }) => code)
+
+    expect(findUnrecognisedPopCodes(withPops(present(...codes)))).toEqual([])
+  })
+
+  test('reports each unrecognised code against its waste item and position', () => {
+    expect(
+      findUnrecognisedPopCodes(
+        withPops(present('PFOA'), present('PFOS', 'Mercury', 'pfoa'))
+      )
+    ).toEqual([unrecognisedPop(1, 1), unrecognisedPop(1, 2)])
+  })
+
+  // The schema reports these: a missing or empty code, or components on
+  // waste declared as not containing POPs.
+  test.each([
+    ['a missing code', present(undefined)],
+    ['an empty code', present('')],
+    ['a code that is not a string', present(42)],
+    [
+      'components on waste not containing POPs',
+      { isPresent: false, components: [{ code: 'Mercury' }] }
+    ]
+  ])('leaves %s to the schema', (_, pops) => {
+    expect(findUnrecognisedPopCodes(withPops(pops))).toEqual([])
+  })
+
+  test.each([
+    ['no payload', undefined],
+    ['a waste item with no classification', { wasteItems: [{}] }],
+    ['no pops', { wasteItems: [{ classification: {} }] }],
+    [
+      'components that are not a list',
+      withPops({ isPresent: true, components: 'PFOA' })
+    ],
+    ['a null component', withPops({ isPresent: true, components: [null] })]
+  ])('finds nothing in a payload with %s', (_, payload) => {
+    expect(findUnrecognisedPopCodes(payload)).toEqual([])
   })
 })
 
