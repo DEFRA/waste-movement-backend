@@ -1,6 +1,7 @@
 import {
   createDeliveryId,
   createDeliveryRecord,
+  createDeliveryRecords,
   deliveryExists
 } from './delivery.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
@@ -17,12 +18,16 @@ jest.mock('../common/helpers/http-client.js', () => ({
 describe('delivery', () => {
   let client
   let db
+  let replicaSet
   let deliveriesCollection
 
   beforeAll(async () => {
-    const testMongo = await createTestMongoDb()
+    // A replica set, because createDeliveryRecords writes in a transaction.
+    const testMongo = await createTestMongoDb(true)
     client = testMongo.client
     db = testMongo.db
+    replicaSet = testMongo.replicaSet
+    await db.createCollection('deliveries')
 
     jest.useFakeTimers({
       doNotFake: [
@@ -38,6 +43,7 @@ describe('delivery', () => {
 
   afterAll(async () => {
     await client.close()
+    await replicaSet?.stop()
     jest.clearAllTimers()
     jest.useRealTimers()
   })
@@ -116,6 +122,103 @@ describe('delivery', () => {
             })
           },
           { deliveryId: '25KMT4Z9' }
+        )
+      ).rejects.toThrow(mockError.message)
+    })
+  })
+
+  describe('createDeliveryRecords', () => {
+    const orgId = '57aed195-325e-45d5-b1fb-5f201e0324cf'
+    const deliveries = [
+      {
+        deliveryId: '25KMT4Z9',
+        movementIds: ['25HRA0B1', '25HRA0B2'],
+        wasteType: 'NON_HAZARDOUS',
+        orgId
+      },
+      {
+        deliveryId: '25HRA0B4',
+        movementIds: ['25HRA0B4'],
+        wasteType: 'HAZARDOUS',
+        orgId
+      },
+      {
+        deliveryId: '25HRA0B3',
+        movementIds: ['25HRA0B3'],
+        wasteType: 'HAZARDOUS',
+        orgId
+      }
+    ]
+
+    it('inserts every delivery and returns them in input order', async () => {
+      const now = new Date().toISOString()
+
+      const result = await createDeliveryRecords(db, client, deliveries)
+
+      expect(result).toEqual(
+        deliveries.map(({ deliveryId, movementIds, wasteType }) => ({
+          deliveryId,
+          movementIds,
+          wasteType
+        }))
+      )
+
+      const recordsInDb = await deliveriesCollection
+        .find({}, { projection: { _id: 0 } })
+        .toArray()
+
+      expect(recordsInDb).toEqual(
+        deliveries.map((delivery) => ({ ...delivery, createdAt: now }))
+      )
+    })
+
+    describe('when a write fails part-way through the batch', () => {
+      // Rejects the second delivery, after the first has been written.
+      const setValidator = (validator) =>
+        db.command({ collMod: 'deliveries', validator })
+
+      beforeEach(() =>
+        setValidator({ deliveryId: { $ne: deliveries[1].deliveryId } })
+      )
+      afterEach(() => setValidator({}))
+
+      it('writes none of the deliveries', async () => {
+        await expect(
+          createDeliveryRecords(db, client, deliveries)
+        ).rejects.toThrow()
+
+        expect(await deliveriesCollection.countDocuments()).toBe(0)
+      })
+
+      it('leaves exactly one copy of each delivery once a retry succeeds', async () => {
+        await expect(
+          createDeliveryRecords(db, client, deliveries)
+        ).rejects.toThrow()
+        await setValidator({})
+
+        await createDeliveryRecords(db, client, deliveries)
+
+        const recordsInDb = await deliveriesCollection
+          .find({}, { projection: { _id: 0, deliveryId: 1 } })
+          .toArray()
+        expect(recordsInDb).toEqual(
+          deliveries.map(({ deliveryId }) => ({ deliveryId }))
+        )
+      })
+    })
+
+    it('should handle database errors', async () => {
+      const mockError = new Error('Database error')
+
+      await expect(
+        createDeliveryRecords(
+          {
+            collection: jest.fn().mockImplementation(() => {
+              throw mockError
+            })
+          },
+          client,
+          deliveries
         )
       ).rejects.toThrow(mockError.message)
     })

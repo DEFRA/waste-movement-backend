@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Waste type",
-  "description": "Whether the waste covered by this delivery is hazardous or non-hazardous.",
+  "description": "Whether the waste is hazardous or non-hazardous.",
   "type": "string",
   "enum": ["HAZARDOUS", "NON_HAZARDOUS"],
   "examples": ["NON_HAZARDOUS"]

@@ -15,5 +15,27 @@
         "warnings": []
       }
     }
+  },
+  "mixedWasteTypes": {
+    "summary": "Two non-hazardous movements and one hazardous movement delivered together",
+    "value": {
+      "data": {
+        "deliveries": [
+          {
+            "deliveryId": "25KMT4Z9",
+            "movementIds": ["25HRA0B2", "25HRA0B3"],
+            "wasteType": "NON_HAZARDOUS"
+          },
+          {
+            "deliveryId": "25HRZ9X7",
+            "movementIds": ["25HRZ9X7"],
+            "wasteType": "HAZARDOUS"
+          }
+        ]
+      },
+      "validation": {
+        "warnings": []
+      }
+    }
   }
 }

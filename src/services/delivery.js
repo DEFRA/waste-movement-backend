@@ -57,3 +57,50 @@ export const createDeliveryRecord = async (db, delivery) => {
     throw error
   }
 }
+
+/**
+ * Persists several new delivery records, in order, sharing one `createdAt`.
+ * Written in one transaction, so a failure leaves none of them behind and the
+ * caller can safely retry.
+ *
+ * NOTE: the `deliveries` collection has no indexes, so nothing stops the same
+ * data being stored twice: a Movement submitted in a second delivery gets a
+ * second record, and a resubmitted hazardous Movement produces two records
+ * with the same `deliveryId` (its Movement ID). To be addressed, e.g. with a
+ * unique index on `deliveryId`, once the database layer is defined.
+ *
+ * @param {import('mongodb').Db} db
+ * @param {import('mongodb').MongoClient} mongoClient
+ * @param {{ deliveryId: string, movementIds: string[], wasteType: string, orgId: string }[]} deliveries
+ * @returns {Promise<{ deliveryId: string, movementIds: string[], wasteType: string }[]>}
+ */
+export const createDeliveryRecords = async (db, mongoClient, deliveries) => {
+  const session = mongoClient.startSession()
+  try {
+    const createdAt = new Date().toISOString()
+    const extendedDeliveries = deliveries.map((delivery) => ({
+      ...delivery,
+      createdAt
+    }))
+
+    await session.withTransaction(() =>
+      db
+        .collection(deliveriesCollectionId)
+        .insertMany(structuredClone(extendedDeliveries), {
+          ordered: true,
+          session
+        })
+    )
+
+    return extendedDeliveries.map(({ deliveryId, movementIds, wasteType }) => ({
+      deliveryId,
+      movementIds,
+      wasteType
+    }))
+  } catch (error) {
+    logger.error({ error }, 'Failed to create deliveries')
+    throw error
+  } finally {
+    await session.endSession()
+  }
+}

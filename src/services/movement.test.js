@@ -1,6 +1,7 @@
 import {
   createMovementRecord,
   findMovementIds,
+  findMovements,
   getMovementRecord
 } from './movement.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
@@ -140,6 +141,52 @@ describe('movement service', () => {
 
     it('returns an empty array when none exist', async () => {
       const result = await findMovementIds(db, ['25HRA0B1'])
+
+      expect(result).toEqual([])
+    })
+  })
+
+  describe('findMovements', () => {
+    const classification = {
+      wasteDescription: 'Fluorescent tubes',
+      ewcCodes: ['200121']
+    }
+
+    it("returns the movements that exist, with only their waste items' classifications", async () => {
+      await movementsCollection.insertMany([
+        {
+          movementId: '25HRA0B1',
+          orgId: 'org',
+          wasteItems: [{ classification, physicalDetails: { form: 'SOLID' } }]
+        },
+        { movementId: '25HRA0B2', orgId: 'org', wasteItems: [] }
+      ])
+
+      const result = await findMovements(db, [
+        '25HRA0B1',
+        '25HRA0B2',
+        '25HRA0B3'
+      ])
+
+      expect(result).toEqual(
+        expect.arrayContaining([
+          { movementId: '25HRA0B1', wasteItems: [{ classification }] },
+          { movementId: '25HRA0B2', wasteItems: [] }
+        ])
+      )
+      expect(result).toHaveLength(2)
+    })
+
+    it('omits wasteItems for a movement stored without them', async () => {
+      await movementsCollection.insertOne({ movementId: '25HRA0B1' })
+
+      const result = await findMovements(db, ['25HRA0B1'])
+
+      expect(result).toEqual([{ movementId: '25HRA0B1' }])
+    })
+
+    it('returns an empty array when none exist', async () => {
+      const result = await findMovements(db, ['25HRA0B1'])
 
       expect(result).toEqual([])
     })
