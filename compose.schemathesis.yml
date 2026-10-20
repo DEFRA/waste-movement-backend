@@ -16,13 +16,20 @@ x-local-creds:
 services:
   mongodb:
     image: mongo:6.0.13
-    entrypoint: ['bash', '/compose/mongo_setup.sh']
+    command: ['--replSet', 'rs0', '--bind_ip_all']
     tmpfs:
       - /data/db
-    volumes:
-      - ./compose/mongo_setup.sh:/compose/mongo_setup.sh:ro
     healthcheck:
-      test: mongosh --quiet --eval "try { var status = rs.status(); if (status.members[0].stateStr === 'PRIMARY') { quit(0); } else { quit(1); } } catch(e) { quit(1); }"
+      # Initiates the single-node replica set on first run, then reports
+      # healthy once this node is PRIMARY
+      test:
+        [
+          'CMD',
+          'mongosh',
+          '--quiet',
+          '--eval',
+          "try { rs.status() } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongodb:27017' }] }) } quit(db.hello().isWritablePrimary ? 0 : 1)"
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
