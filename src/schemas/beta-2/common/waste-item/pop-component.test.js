@@ -6,7 +6,7 @@ const validateAjv = validatorFor(
 
 // The business scenarios — codes, concentrations, thresholds, and one or the
 // other but not both — live in
-// routes/beta-2/record-receipt-without-delivery.test.js. Whether a code is
+// routes/beta-2/record-receipt-undocumented.test.js. Whether a code is
 // recognised is checked by common/helpers/waste-reference-data-checks.js.
 // These cover the edges of the component's own rules.
 describe('Feature: Schema - declaring a POP component', () => {

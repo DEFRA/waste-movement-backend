@@ -31,8 +31,8 @@ describe('beta-2', () => {
   const intendedCarriers = [carrier]
   const intendedReceivers = [receiver]
   const wasteItems = [wasteItem]
-  // Receipts need at least one treatment (on every waste item, for a receipt
-  // without a delivery); creating a movement forbids them.
+  // Receipts need at least one treatment (on every waste item, for an
+  // undocumented receipt); creating a movement forbids them.
   const treatments = [treatment]
   const receiptWasteItems = [{ ...wasteItem, treatments }]
   const minimalMovement = {
@@ -413,7 +413,7 @@ describe('beta-2', () => {
     })
   })
 
-  it('POST /beta-2/receipts records a receipt without a delivery', async () => {
+  it('POST /beta-2/receipts records an undocumented receipt', async () => {
     const reasonForNoDeliveryId = 'No prior movement trail'
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
@@ -535,7 +535,7 @@ describe('beta-2', () => {
     expectStandardHeaders(headers)
   })
 
-  it('POST /beta-2/receipts records a receipt without a delivery with a brokerOrDealer and supportingReferences', async () => {
+  it('POST /beta-2/receipts records an undocumented receipt with a brokerOrDealer and supportingReferences', async () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       '/beta-2/receipts',

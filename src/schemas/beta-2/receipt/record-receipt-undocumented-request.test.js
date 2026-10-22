@@ -12,11 +12,11 @@ import {
 } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
-  'beta-2/receipt/record-receipt-without-delivery-request.schema.json'
+  'beta-2/receipt/record-receipt-undocumented-request.schema.json'
 )
 const reasonForNoDeliveryId = 'No delivery'
 
-describe('record-receipt-without-delivery-request schema', () => {
+describe('record-receipt-undocumented-request schema', () => {
   const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
   // A receipt needs at least one treatment on every waste item.
   const receiptWasteItem = { ...wasteItem, treatments: [treatment] }
@@ -421,7 +421,7 @@ describe('record-receipt-without-delivery-request schema', () => {
 
   // When hazardous waste needs a consignment note is checked by
   // common/helpers/waste-reference-data-checks.js, not this schema — its business
-  // scenarios are in routes/beta-2/record-receipt-without-delivery.test.js.
+  // scenarios are in routes/beta-2/record-receipt-undocumented.test.js.
   // The note's own rules are in consignment-note.test.js; these confirm the
   // $ref is live.
   describe('consignmentNote', () => {

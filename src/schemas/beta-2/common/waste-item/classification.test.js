@@ -8,7 +8,7 @@ const validateAjv = validatorFor(
 // The business scenarios — a missing or empty description, missing or
 // unrecognised EWC codes, and between one and five codes — live in
 // routes/beta-2/create-movement.test.js, those for POPs in
-// routes/beta-2/record-receipt-without-delivery.test.js, and those for
+// routes/beta-2/record-receipt-undocumented.test.js, and those for
 // hazardous properties in both. The schema checks
 // only an EWC code's format; whether a well-formed code is recognised is
 // checked by common/helpers/waste-reference-data-checks.js. These cover
