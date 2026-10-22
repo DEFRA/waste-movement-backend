@@ -101,8 +101,8 @@
       "recordReceiptRequest": {
         "$ref": "./receipt/record-receipt-request.schema.json"
       },
-      "recordReceiptWithoutDeliveryRequest": {
-        "$ref": "./receipt/record-receipt-without-delivery-request.schema.json"
+      "recordReceiptUndocumentedRequest": {
+        "$ref": "./receipt/record-receipt-undocumented-request.schema.json"
       },
       "issue": {
         "$ref": "./common/issue.schema.json"
@@ -159,8 +159,8 @@
       "recordReceiptResponse": {
         "$ref": "./receipt/record-receipt-response.schema.json"
       },
-      "recordReceiptWithoutDeliveryResponse": {
-        "$ref": "./receipt/record-receipt-without-delivery-response.schema.json"
+      "recordReceiptUndocumentedResponse": {
+        "$ref": "./receipt/record-receipt-undocumented-response.schema.json"
       }
     },
     "responses": {
@@ -447,19 +447,19 @@
     "/receipts": {
       "post": {
         "tags": ["Receipt"],
-        "summary": "Record receipt of waste without a Delivery ID",
+        "summary": "Record receipt of undocumented waste",
         "description": "Fallback for recording receipt with no prior Delivery, e.g. waste received with no movement trail. Not linked to any Movement; `reasonForNoDeliveryId` must explain why. The server creates an empty Delivery behind the scenes and returns its `deliveryId`, so the receipt stays addressable.",
-        "operationId": "recordReceiptWithoutDelivery",
+        "operationId": "recordReceiptUndocumented",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/recordReceiptWithoutDeliveryRequest"
+                "$ref": "#/components/schemas/recordReceiptUndocumentedRequest"
               },
               "examples": {
                 "withReason": {
-                  "$ref": "./receipt/record-receipt-without-delivery-request.examples.json#/withReason"
+                  "$ref": "./receipt/record-receipt-undocumented-request.examples.json#/withReason"
                 }
               }
             }
@@ -476,11 +476,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/recordReceiptWithoutDeliveryResponse"
+                  "$ref": "#/components/schemas/recordReceiptUndocumentedResponse"
                 },
                 "examples": {
                   "withReason": {
-                    "$ref": "./receipt/record-receipt-without-delivery-response.examples.json#/withReason"
+                    "$ref": "./receipt/record-receipt-undocumented-response.examples.json#/withReason"
                   }
                 }
               }

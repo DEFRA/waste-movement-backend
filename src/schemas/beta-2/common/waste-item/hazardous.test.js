@@ -9,7 +9,7 @@ const validateAjv = validatorFor(
 )
 
 // The business scenarios live in routes/beta-2/create-movement.test.js and
-// routes/beta-2/record-receipt-without-delivery.test.js. These cover the
+// routes/beta-2/record-receipt-undocumented.test.js. These cover the
 // edges of the declaration's shape that the scenarios don't.
 describe('Feature: Schema - declaring hazardous properties', () => {
   describe('Additional coverage', () => {

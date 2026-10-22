@@ -3,7 +3,7 @@ import { pops, popsPresent, validatorFor } from '../../test-helpers.js'
 const validateAjv = validatorFor('beta-2/common/waste-item/pops.schema.json')
 
 // The business scenarios live in
-// routes/beta-2/record-receipt-without-delivery.test.js, and a component's
+// routes/beta-2/record-receipt-undocumented.test.js, and a component's
 // own rules in pop-component.test.js. These cover the edges of the
 // declaration's shape that the scenarios don't.
 describe('Feature: Schema - declaring persistent organic pollutants', () => {

@@ -217,7 +217,7 @@ a `-request` or `-response` suffix — `routes/beta-2/create-collection.js` vali
 `collection/create-collection-response.schema.json`. Every route has exactly one pair, so a
 route's whole contract can be found from its file name. Two routes that return the same shape
 still get a file each; the second is a `title`, a `description` and a `$ref` to the first
-(`record-receipt-without-delivery-response` → `record-receipt-response`).
+(`record-receipt-undocumented-response` → `record-receipt-response`).
 
 Only whole bodies get a suffix. Resources they're built from keep resource names (`producer`,
 `delivery-item`, `movement-id`), and path params are `-params` (`delivery-id-params`).
@@ -295,7 +295,7 @@ src/schemas/
     collection/      create-collection-request / -response, and the movementId path params
     delivery/        record-delivery-request / -response, and delivery-item
     receipt/         record-receipt-request / -response,
-                     record-receipt-without-delivery-request / -response,
+                     record-receipt-undocumented-request / -response,
                      and the deliveryId path params
 ```
 

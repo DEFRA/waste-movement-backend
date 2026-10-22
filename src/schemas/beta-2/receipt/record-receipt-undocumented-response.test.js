@@ -1,10 +1,10 @@
 import { validatorFor } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
-  'beta-2/receipt/record-receipt-without-delivery-response.schema.json'
+  'beta-2/receipt/record-receipt-undocumented-response.schema.json'
 )
 
-describe('Feature: Record receipt without delivery response', () => {
+describe('Feature: Record undocumented receipt response', () => {
   const body = {
     data: { deliveryId: '25KMT4Z9' },
     validation: { warnings: [] }
