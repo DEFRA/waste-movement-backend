@@ -17,6 +17,7 @@ import {
 } from '@defra/waste-movement-utils'
 import { requestCustomLogger } from './plugins/request-custom-logger.js'
 import { isBetaRoute } from './common/helpers/beta-route.js'
+import { betaJourneyLogger } from './plugins/beta-journey-logger.js'
 
 async function createServer() {
   setupProxy()
@@ -75,6 +76,7 @@ async function createServer() {
     pulse,
     mongoDb,
     basicAuth(getEnvVars('ACCESS_CRED_')),
+    betaJourneyLogger,
     {
       plugin: formatErrorToRFC9457Response,
       options: {
