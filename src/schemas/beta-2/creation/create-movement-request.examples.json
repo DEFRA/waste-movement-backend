@@ -52,7 +52,7 @@
             "hazardous": {
               "isPresent": true,
               "codes": ["HP_6", "HP_14"],
-              "sourceOfComponents": "OWN_TESTING",
+              "componentsSource": "OWN_TESTING",
               "componentsNotApplicable": false,
               "components": [
                 {

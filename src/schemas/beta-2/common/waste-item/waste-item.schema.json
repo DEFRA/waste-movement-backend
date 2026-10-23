@@ -45,7 +45,7 @@
         "hazardous": {
           "isPresent": true,
           "codes": ["HP_14"],
-          "sourceOfComponents": "GUIDANCE",
+          "componentsSource": "GUIDANCE",
           "componentsNotApplicable": true
         }
       },

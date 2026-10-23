@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Hazardous properties",
-  "description": "Declares whether a waste item has hazardous properties, and if so which, where the details of its hazardous components came from, and those components. isPresent is required. When it is true, codes, sourceOfComponents and componentsNotApplicable are required; at least one component is then required when componentsNotApplicable is false, and none is allowed when it is true. When isPresent is false, none of these is allowed. This declaration, not the EWC codes, decides whether the waste is hazardous.",
+  "description": "Declares whether a waste item has hazardous properties, and if so which, where the details of its hazardous components came from, and those components. isPresent is required. When it is true, codes, componentsSource and componentsNotApplicable are required; at least one component is then required when componentsNotApplicable is false, and none is allowed when it is true. When isPresent is false, none of these is allowed. This declaration, not the EWC codes, decides whether the waste is hazardous.",
   "examples": [
     {
       "isPresent": true,
       "codes": ["HP_4", "HP_8"],
-      "sourceOfComponents": "OWN_TESTING",
+      "componentsSource": "OWN_TESTING",
       "componentsNotApplicable": false,
       "components": [
         {
@@ -23,7 +23,7 @@
     {
       "isPresent": true,
       "codes": ["HP_14"],
-      "sourceOfComponents": "GUIDANCE",
+      "componentsSource": "GUIDANCE",
       "componentsNotApplicable": true
     },
     {
@@ -42,10 +42,10 @@
   "then": {
     "properties": {
       "codes": {},
-      "sourceOfComponents": {},
+      "componentsSource": {},
       "componentsNotApplicable": {}
     },
-    "required": ["codes", "sourceOfComponents", "componentsNotApplicable"],
+    "required": ["codes", "componentsSource", "componentsNotApplicable"],
     "description": "Required when 'isPresent' is true",
     "allOf": [
       {
@@ -91,7 +91,7 @@
         "not": {},
         "description": "Not allowed unless 'isPresent' is true"
       },
-      "sourceOfComponents": {
+      "componentsSource": {
         "not": {},
         "description": "Not allowed unless 'isPresent' is true"
       },
@@ -137,7 +137,7 @@
       },
       "description": "The hazardous property codes that apply to the waste item. At least one is required when isPresent is true; not allowed otherwise. Duplicates are accepted."
     },
-    "sourceOfComponents": {
+    "componentsSource": {
       "type": "string",
       "enum": ["GUIDANCE", "PROVIDED_WITH_WASTE", "OWN_TESTING"],
       "description": "Where the hazardous component details came from: government guidance, provided with the waste, or the receiver's own testing or analysis. Required when isPresent is true, including when componentsNotApplicable is true; not allowed otherwise."

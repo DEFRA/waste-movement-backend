@@ -54,9 +54,9 @@ describe('Feature: Schema - declaring hazardous properties', () => {
   describe('Scenario Outline: The source of the hazardous component details is declared', () => {
     test.each(['GUIDANCE', 'PROVIDED_WITH_WASTE', 'OWN_TESTING'])(
       'accepts a source of %p',
-      (sourceOfComponents) => {
+      (componentsSource) => {
         expect(
-          validateAjv({ ...hazardousPresent, sourceOfComponents }).valid
+          validateAjv({ ...hazardousPresent, componentsSource }).valid
         ).toBe(true)
       }
     )
@@ -121,7 +121,7 @@ describe('Feature: Schema - declaring hazardous properties', () => {
         expect.objectContaining({ keyword: 'not', instancePath: '/codes' }),
         expect.objectContaining({
           keyword: 'not',
-          instancePath: '/sourceOfComponents'
+          instancePath: '/componentsSource'
         }),
         expect.objectContaining({
           keyword: 'not',
@@ -289,31 +289,31 @@ describe('Feature: Schema - declaring hazardous properties', () => {
 
   describe('Scenario Outline: The source of the hazardous component details is missing or invalid', () => {
     test('rejects a source that is not provided, as required', () => {
-      const { sourceOfComponents, ...withoutSource } = hazardousPresent
+      const { componentsSource, ...withoutSource } = hazardousPresent
       expectRejected(withoutSource, {
         keyword: 'required',
-        params: { missingProperty: 'sourceOfComponents' }
+        params: { missingProperty: 'componentsSource' }
       })
     })
 
     // Required even when no components need reporting.
     test('rejects a source that is not provided when components are not applicable', () => {
-      const { sourceOfComponents, components, ...rest } = hazardousPresent
+      const { componentsSource, components, ...rest } = hazardousPresent
       expectRejected(
         { ...rest, componentsNotApplicable: true },
         {
           keyword: 'required',
-          params: { missingProperty: 'sourceOfComponents' }
+          params: { missingProperty: 'componentsSource' }
         }
       )
     })
 
     test.each(['', 'Supplier', 'Unknown'])(
       'rejects a source of %p as not recognised',
-      (sourceOfComponents) => {
+      (componentsSource) => {
         expectRejected(
-          { ...hazardousPresent, sourceOfComponents },
-          { keyword: 'enum', instancePath: '/sourceOfComponents' }
+          { ...hazardousPresent, componentsSource },
+          { keyword: 'enum', instancePath: '/componentsSource' }
         )
       }
     )
@@ -369,7 +369,7 @@ describe('Feature: Schema - declaring hazardous properties', () => {
         }),
         expect.objectContaining({
           keyword: 'required',
-          params: { missingProperty: 'sourceOfComponents' }
+          params: { missingProperty: 'componentsSource' }
         }),
         expect.objectContaining({
           keyword: 'required',

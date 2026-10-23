@@ -18,7 +18,7 @@
       "ewcCodes": ["200121"],
       "pops": {
         "isPresent": true,
-        "sourceOfComponents": "GUIDANCE",
+        "componentsSource": "GUIDANCE",
         "components": [
           {
             "code": "PFOS",
@@ -29,7 +29,7 @@
       "hazardous": {
         "isPresent": true,
         "codes": ["HP_6", "HP_14"],
-        "sourceOfComponents": "PROVIDED_WITH_WASTE",
+        "componentsSource": "PROVIDED_WITH_WASTE",
         "componentsNotApplicable": false,
         "components": [
           {

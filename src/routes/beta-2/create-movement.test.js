@@ -1515,7 +1515,7 @@ describe('movement Route Tests version: beta-2', () => {
           withHazardous({ ...hazardousPresent, isPresent: false }),
           [
             notAllowed('codes'),
-            notAllowed('sourceOfComponents'),
+            notAllowed('componentsSource'),
             notAllowed('componentsNotApplicable'),
             notAllowed('components')
           ]
@@ -1536,12 +1536,12 @@ describe('movement Route Tests version: beta-2', () => {
       })
 
       it('rejects the source not being provided, saying it is required', async () => {
-        const { sourceOfComponents: _, ...withoutSource } = hazardousPresent
+        const { componentsSource: _, ...withoutSource } = hazardousPresent
         await expectRejected(withHazardousProperties(withoutSource), [
           {
             errorType: 'NotProvided',
             message: "Required when 'isPresent' is true",
-            pointer: `${hazardousPointer}/sourceOfComponents`
+            pointer: `${hazardousPointer}/componentsSource`
           }
         ])
       })

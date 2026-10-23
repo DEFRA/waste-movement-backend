@@ -875,8 +875,8 @@ describe('POST /beta-2/receipts', () => {
         ['Own testing or analysis', 'OWN_TESTING']
       ])(
         'creates the receipt with a source of %s',
-        async (_, sourceOfComponents) => {
-          await expectCreated(withPops({ ...popsPresent, sourceOfComponents }))
+        async (_, componentsSource) => {
+          await expectCreated(withPops({ ...popsPresent, componentsSource }))
         }
       )
     })
@@ -941,7 +941,7 @@ describe('POST /beta-2/receipts', () => {
           {
             errorType: 'NotAllowed',
             message: "Not allowed unless 'isPresent' is true",
-            pointer: `${popsPointer}/sourceOfComponents`
+            pointer: `${popsPointer}/componentsSource`
           },
           {
             errorType: 'NotAllowed',
@@ -1120,12 +1120,12 @@ describe('POST /beta-2/receipts', () => {
     describe("Scenario Outline: A Receipt isn't created when the source of the POP details is missing or invalid", () => {
       // Examples: Not provided or empty
       it('rejects a source that is not provided, as required', async () => {
-        const { sourceOfComponents, ...withoutSource } = popsPresent
+        const { componentsSource, ...withoutSource } = popsPresent
         await expectRejected(withPops(withoutSource), [
           {
             errorType: 'NotProvided',
             message: "Required when 'isPresent' is true",
-            pointer: `${popsPointer}/sourceOfComponents`
+            pointer: `${popsPointer}/componentsSource`
           }
         ])
       })
@@ -1133,18 +1133,15 @@ describe('POST /beta-2/receipts', () => {
       // Examples: Not recognised. "" isn't one of the sources either.
       it.each(['', 'Supplier', 'Unknown'])(
         'rejects a source of %p as not recognised',
-        async (sourceOfComponents) => {
-          await expectRejected(
-            withPops({ ...popsPresent, sourceOfComponents }),
-            [
-              {
-                errorType: 'InvalidValue',
-                message:
-                  "must be one of: 'GUIDANCE', 'PROVIDED_WITH_WASTE', 'OWN_TESTING'",
-                pointer: `${popsPointer}/sourceOfComponents`
-              }
-            ]
-          )
+        async (componentsSource) => {
+          await expectRejected(withPops({ ...popsPresent, componentsSource }), [
+            {
+              errorType: 'InvalidValue',
+              message:
+                "must be one of: 'GUIDANCE', 'PROVIDED_WITH_WASTE', 'OWN_TESTING'",
+              pointer: `${popsPointer}/componentsSource`
+            }
+          ])
         }
       )
     })
@@ -1435,7 +1432,7 @@ describe('POST /beta-2/receipts', () => {
           withHazardous({ ...hazardousPresent, isPresent: false }),
           [
             notAllowed('codes'),
-            notAllowed('sourceOfComponents'),
+            notAllowed('componentsSource'),
             notAllowed('componentsNotApplicable'),
             notAllowed('components')
           ]
@@ -1456,12 +1453,12 @@ describe('POST /beta-2/receipts', () => {
       })
 
       it('rejects the source not being provided, saying it is required', async () => {
-        const { sourceOfComponents: _, ...withoutSource } = hazardousPresent
+        const { componentsSource: _, ...withoutSource } = hazardousPresent
         await expectRejected(withHazardousProperties(withoutSource), [
           {
             errorType: 'NotProvided',
             message: "Required when 'isPresent' is true",
-            pointer: `${hazardousPointer}/sourceOfComponents`
+            pointer: `${hazardousPointer}/componentsSource`
           }
         ])
       })

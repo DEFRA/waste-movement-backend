@@ -131,7 +131,7 @@ export const popComponent = {
 
 export const popsPresent = {
   isPresent: true,
-  sourceOfComponents: 'OWN_TESTING',
+  componentsSource: 'OWN_TESTING',
   components: [popComponent]
 }
 
@@ -148,7 +148,7 @@ export const hazardousComponent = {
 export const hazardousPresent = {
   isPresent: true,
   codes: ['HP_4'],
-  sourceOfComponents: 'OWN_TESTING',
+  componentsSource: 'OWN_TESTING',
   componentsNotApplicable: false,
   components: [hazardousComponent]
 }
