@@ -47,9 +47,8 @@ const createCollection = {
       }
 
       logger.info(
-        'Successfully created waste movement collection',
-        request,
-        response
+        { movementId },
+        `Successfully created waste movement collection for movement ${movementId}`
       )
 
       return h

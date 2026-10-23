@@ -46,9 +46,10 @@ const recordReceipt = {
         return notFound(message)
       }
 
-      logger.info(`Successfully recorded receipt for delivery ${deliveryId}`, {
-        deliveryId
-      })
+      logger.info(
+        { deliveryId },
+        `Successfully recorded receipt for delivery ${deliveryId}`
+      )
 
       return h
         .response({ data: { deliveryId }, validation: { warnings: [] } })
