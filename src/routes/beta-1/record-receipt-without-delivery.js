@@ -54,8 +54,8 @@ const recordReceiptWithoutDelivery = {
       )
 
       logger.info(
-        `Successfully recorded receipt without a delivery, created delivery ${deliveryId}`,
-        { deliveryId }
+        { deliveryId },
+        `Successfully recorded receipt without a delivery, created delivery ${deliveryId}`
       )
 
       return h

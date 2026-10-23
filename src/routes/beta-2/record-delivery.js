@@ -74,8 +74,8 @@ const recordDelivery = {
 
       const deliveryIds = recordedDeliveries.map(({ deliveryId }) => deliveryId)
       logger.info(
-        `Successfully recorded deliveries with ids ${deliveryIds.join(', ')}`,
-        { deliveryIds }
+        { deliveryIds },
+        `Successfully recorded deliveries with ids ${deliveryIds.join(', ')}`
       )
 
       return h

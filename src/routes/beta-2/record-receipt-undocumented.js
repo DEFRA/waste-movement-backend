@@ -57,8 +57,8 @@ const recordReceiptUndocumented = {
       )
 
       logger.info(
-        `Successfully recorded an undocumented receipt, created delivery ${deliveryId}`,
-        { deliveryId }
+        { deliveryId },
+        `Successfully recorded an undocumented receipt, created delivery ${deliveryId}`
       )
 
       return h

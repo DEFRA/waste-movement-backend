@@ -47,8 +47,8 @@ const createMovement = {
       }
 
       logger.info(
-        `Successfully created waste movement with id ${movementId}`,
-        responseBody
+        { movementId },
+        `Successfully created waste movement with id ${movementId}`
       )
 
       return h

@@ -71,9 +71,10 @@ const recordDelivery = {
         backoffOptions(logger)
       )
 
-      logger.info(`Successfully recorded delivery with id ${deliveryId}`, {
-        deliveryId
-      })
+      logger.info(
+        { deliveryId },
+        `Successfully recorded delivery with id ${deliveryId}`
+      )
 
       return h
         .response({
