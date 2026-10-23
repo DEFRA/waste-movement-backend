@@ -37,13 +37,16 @@
     },
     {
       "classification": {
-        "wasteDescription": "Soil and stones",
-        "ewcCodes": ["170504"],
+        "wasteDescription": "Soil and stones containing hazardous substances",
+        "ewcCodes": ["170503"],
         "pops": {
           "isPresent": false
         },
         "hazardous": {
-          "isPresent": false
+          "isPresent": true,
+          "codes": ["HP_14"],
+          "componentsSource": "GUIDANCE",
+          "componentsNotApplicable": true
         }
       },
       "physicalDetails": {

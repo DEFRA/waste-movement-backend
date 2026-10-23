@@ -6,8 +6,6 @@ import {
   receiver,
   validatorFor,
   physicalDetails,
-  hazardous,
-  hazardousPresent,
   treatment
 } from '../test-helpers.js'
 
@@ -21,8 +19,7 @@ describe('record-receipt-request schema', () => {
 
   test('accepts a valid payload', () => {
     expect(
-      validateAjv({ carrier, receiver, physicalDetails, hazardous, treatments })
-        .valid
+      validateAjv({ carrier, receiver, physicalDetails, treatments }).valid
     ).toBe(true)
   })
 
@@ -34,7 +31,6 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments
       }).valid
     ).toBe(false)
@@ -46,11 +42,31 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments,
         extra: 'not allowed'
       }).valid
     ).toBe(false)
+  })
+
+  // Hazardous properties are declared per waste item, in its classification,
+  // not on the receipt.
+  test('rejects hazardous as an unknown property', () => {
+    const { valid, errors } = validateAjv({
+      carrier,
+      receiver,
+      physicalDetails,
+      treatments,
+      hazardous: { isPresent: false }
+    })
+
+    expect(valid).toBe(false)
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        keyword: 'additionalProperties',
+        instancePath: '',
+        params: { additionalProperty: 'hazardous' }
+      })
+    )
   })
 
   // carrier's own rules are covered by carrier.test.js — these confirm
@@ -61,7 +77,6 @@ describe('record-receipt-request schema', () => {
       const { valid, errors } = validateAjv({
         receiver,
         physicalDetails,
-        hazardous,
         treatments
       })
 
@@ -80,7 +95,6 @@ describe('record-receipt-request schema', () => {
         carrier: [carrier],
         receiver,
         physicalDetails,
-        hazardous,
         treatments
       })
 
@@ -96,7 +110,6 @@ describe('record-receipt-request schema', () => {
         carrier: invalidCarrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments
       })
 
@@ -119,7 +132,6 @@ describe('record-receipt-request schema', () => {
       const { valid, errors } = validateAjv({
         carrier,
         physicalDetails,
-        hazardous,
         treatments
       })
 
@@ -138,7 +150,6 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver: [receiver],
         physicalDetails,
-        hazardous,
         treatments
       })
 
@@ -154,7 +165,6 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver: invalidReceiver,
         physicalDetails,
-        hazardous,
         treatments
       })
 
@@ -181,7 +191,6 @@ describe('record-receipt-request schema', () => {
           carrier,
           receiver,
           physicalDetails,
-          hazardous,
           treatments
         }).valid
       ).toBe(true)
@@ -233,59 +242,6 @@ describe('record-receipt-request schema', () => {
     })
   })
 
-  // The declaration's own rules are covered by waste-item/hazardous.test.js
-  // and the scenarios in routes/beta-2/record-receipt.test.js — these confirm
-  // it's required and that the $ref wiring is live.
-  describe('hazardous', () => {
-    test('accepts declared hazardous properties', () => {
-      expect(
-        validateAjv({
-          carrier,
-          receiver,
-          physicalDetails,
-          hazardous: hazardousPresent,
-          treatments
-        }).valid
-      ).toBe(true)
-    })
-
-    test('is required', () => {
-      const { valid, errors } = validateAjv({
-        carrier,
-        receiver,
-        physicalDetails,
-        treatments
-      })
-
-      expect(valid).toBe(false)
-      expect(errors).toContainEqual(
-        expect.objectContaining({
-          keyword: 'required',
-          instancePath: '',
-          params: { missingProperty: 'hazardous' }
-        })
-      )
-    })
-
-    test('rejects invalid hazardous properties, reporting the error against the field', () => {
-      const { valid, errors } = validateAjv({
-        carrier,
-        receiver,
-        physicalDetails,
-        hazardous: { isPresent: true, codes: ['HP_22'] },
-        treatments
-      })
-
-      expect(valid).toBe(false)
-      expect(errors).toContainEqual(
-        expect.objectContaining({
-          keyword: 'enum',
-          instancePath: '/hazardous/codes/0'
-        })
-      )
-    })
-  })
-
   // A treatment's rules are covered by waste-item/treatment*.test.js — these
   // confirm at least one treatment is required and that the $ref wiring is live.
   describe('treatments', () => {
@@ -297,7 +253,6 @@ describe('record-receipt-request schema', () => {
           carrier,
           receiver,
           physicalDetails,
-          hazardous,
           treatments
         }).valid
       ).toBe(true)
@@ -311,7 +266,6 @@ describe('record-receipt-request schema', () => {
           carrier,
           receiver,
           physicalDetails,
-          hazardous,
           treatments: [treatment, disposal]
         }).valid
       ).toBe(true)
@@ -322,8 +276,7 @@ describe('record-receipt-request schema', () => {
       const { valid, errors } = validateAjv({
         carrier,
         receiver,
-        physicalDetails,
-        hazardous
+        physicalDetails
       })
 
       expect(valid).toBe(false)
@@ -341,7 +294,6 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments: []
       })
 
@@ -359,7 +311,6 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments: [{ ...treatment, disposalOrRecoveryCode: 'R99' }]
       })
 
@@ -380,7 +331,6 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments: [
           treatment,
           { ...noCode, weight: { ...treatment.weight, unit: 'Litres' } },
@@ -428,7 +378,6 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments,
         supportingReferences: [supportingReference]
       }
@@ -440,7 +389,6 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments,
         brokerOrDealer
       }
@@ -454,7 +402,6 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items }
       }
@@ -471,7 +418,6 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments,
         brokerOrDealer
       }
@@ -483,7 +429,6 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments,
         supportingReferences: [supportingReference]
       }
@@ -495,7 +440,6 @@ describe('record-receipt-request schema', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments,
         supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
       }

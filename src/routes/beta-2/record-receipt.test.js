@@ -15,7 +15,6 @@ import {
   carrier,
   receiver,
   physicalDetails,
-  hazardous,
   treatment
 } from '../../schemas/beta-2/test-helpers.js'
 
@@ -89,7 +88,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, hazardous, treatments },
+      payload: { carrier, receiver, physicalDetails, treatments },
       headers: tracedAuthHeaders
     })
 
@@ -112,7 +111,6 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments: [treatment, { ...treatment, disposalOrRecoveryCode: 'D10' }]
       },
       headers: tracedAuthHeaders
@@ -135,7 +133,6 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments,
         brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
         supportingReferences: [supportingReference]
@@ -158,7 +155,6 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments,
         brokerOrDealer: { isPresent: true }
       },
@@ -181,7 +177,6 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments,
         supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
       },
@@ -203,7 +198,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, hazardous, treatments },
+      payload: { carrier, receiver, physicalDetails, treatments },
       headers: {
         ...authHeaders,
         ...organisationHeaders,
@@ -218,7 +213,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, hazardous, treatments },
+      payload: { carrier, receiver, physicalDetails, treatments },
       headers: tracedAuthHeaders
     })
 
@@ -261,7 +256,6 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments
       },
       headers: tracedAuthHeaders
@@ -288,7 +282,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { receiver, physicalDetails, hazardous, treatments },
+      payload: { receiver, physicalDetails, treatments },
       headers: tracedAuthHeaders
     })
 
@@ -313,7 +307,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, hazardous, treatments },
+      payload: { carrier, receiver, treatments },
       headers: tracedAuthHeaders
     })
 
@@ -339,7 +333,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, hazardous },
+      payload: { carrier, receiver, physicalDetails },
       headers: tracedAuthHeaders
     })
 
@@ -371,7 +365,6 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
         carrier,
         receiver,
         physicalDetails,
-        hazardous,
         treatments: [
           treatment,
           noWeight,
@@ -398,7 +391,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, physicalDetails, hazardous, treatments },
+      payload: { carrier, physicalDetails, treatments },
       headers: tracedAuthHeaders
     })
 
@@ -425,7 +418,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, hazardous, treatments },
+      payload: { carrier, receiver, physicalDetails, treatments },
       headers: { ...authHeaders, ...tracedHeaders }
     })
 
@@ -446,7 +439,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, hazardous, treatments },
+      payload: { carrier, receiver, physicalDetails, treatments },
       headers: tracedAuthHeaders
     })
 
@@ -463,7 +456,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, hazardous, treatments },
+      payload: { carrier, receiver, physicalDetails, treatments },
       headers: tracedHeaders
     })
 
@@ -484,7 +477,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, hazardous, treatments },
+      payload: { carrier, receiver, physicalDetails, treatments },
       headers: tracedAuthHeaders
     })
 
@@ -494,188 +487,6 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       title: 'Internal Server Error',
       type: `${expectedTypeBase}internal-server-error`,
       requestId: traceId
-    })
-  })
-
-  describe('Feature: Declaring the hazardous properties of the waste received against a delivery', () => {
-    const withHazardous = (hazardous) => ({
-      carrier,
-      receiver,
-      physicalDetails,
-      hazardous,
-      treatments
-    })
-
-    const submit = (payload) =>
-      server.inject({
-        method: 'POST',
-        url,
-        payload,
-        headers: tracedAuthHeaders
-      })
-
-    const expectCreated = async (payload) => {
-      await server.db.collection('deliveries').insertOne({ deliveryId })
-
-      const { statusCode, result } = await submit(payload)
-
-      expect(statusCode).toEqual(HTTP_STATUS.CREATED)
-      expect(result.data).toEqual({ deliveryId })
-    }
-
-    const expectRejected = async (payload, errors) => {
-      await server.db.collection('deliveries').insertOne({ deliveryId })
-
-      const { statusCode, result } = await submit(payload)
-
-      expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
-      expect(result.errors).toEqual(errors)
-    }
-
-    const hazardousPointer = '/hazardous'
-    const codesPointer = `${hazardousPointer}/codes`
-    const quoted = (code) => `'${code}'`
-    const hpCodes = [
-      'HP_1',
-      'HP_2',
-      'HP_3',
-      'HP_4',
-      'HP_5',
-      'HP_6',
-      'HP_7',
-      'HP_8',
-      'HP_9',
-      'HP_10',
-      'HP_11',
-      'HP_12',
-      'HP_13',
-      'HP_14',
-      'HP_15',
-      'HP_POP'
-    ]
-    const codeNotRecognised = (pointer) => ({
-      errorType: 'InvalidValue',
-      message: `must be one of: ${hpCodes.map(quoted).join(', ')}`,
-      pointer
-    })
-
-    describe('Scenario: A Receipt is created when the waste is declared as having no hazardous properties', () => {
-      it('creates the receipt', async () => {
-        await expectCreated(withHazardous({ isPresent: false }))
-      })
-    })
-
-    describe('Scenario Outline: A Receipt is created when hazardous properties are declared', () => {
-      it.each([[['HP_4']], [['HP_4', 'HP_8']]])(
-        'creates the receipt with codes %p',
-        async (codes) => {
-          await expectCreated(withHazardous({ isPresent: true, codes }))
-        }
-      )
-    })
-
-    describe("Scenario Outline: A Receipt isn't created when whether the waste has hazardous properties is missing or invalid", () => {
-      it('rejects whether the waste has hazardous properties not being provided, as required', async () => {
-        await expectRejected(withHazardous({}), [
-          {
-            errorType: 'NotProvided',
-            message: "'isPresent' is required",
-            pointer: `${hazardousPointer}/isPresent`
-          }
-        ])
-      })
-
-      // "" isn't true or false either.
-      it.each(['', 'Maybe', 'Unknown'])(
-        'rejects whether the waste has hazardous properties of %p as not true or false',
-        async (isPresent) => {
-          await expectRejected(withHazardous({ isPresent }), [
-            {
-              errorType: 'InvalidType',
-              message: 'must be boolean',
-              pointer: `${hazardousPointer}/isPresent`
-            }
-          ])
-        }
-      )
-
-      it('rejects hazardous properties not being declared at all', async () => {
-        const { hazardous: _, ...withoutHazardous } = withHazardous()
-        await expectRejected(withoutHazardous, [
-          {
-            errorType: 'NotProvided',
-            message: "'hazardous' is required",
-            pointer: hazardousPointer
-          }
-        ])
-      })
-    })
-
-    describe("Scenario Outline: A Receipt isn't created when the waste has hazardous properties but the codes are missing or invalid", () => {
-      it('rejects codes not being provided, saying they are required', async () => {
-        await expectRejected(withHazardous({ isPresent: true }), [
-          {
-            errorType: 'NotProvided',
-            message: "Required when 'isPresent' is true",
-            pointer: codesPointer
-          }
-        ])
-      })
-
-      it('rejects an empty list of codes, saying at least one is required', async () => {
-        await expectRejected(withHazardous({ isPresent: true, codes: [] }), [
-          {
-            errorType: 'OutOfRange',
-            message: 'must NOT have fewer than 1 items',
-            pointer: codesPointer
-          }
-        ])
-      })
-
-      it('rejects codes of "" as not a list', async () => {
-        await expectRejected(withHazardous({ isPresent: true, codes: '' }), [
-          {
-            errorType: 'InvalidType',
-            message: 'must be array',
-            pointer: codesPointer
-          }
-        ])
-      })
-
-      it.each(['HP_22', 'Flammable'])(
-        'rejects a code of %p as not recognised',
-        async (code) => {
-          await expectRejected(
-            withHazardous({ isPresent: true, codes: [code] }),
-            [codeNotRecognised(`${codesPointer}/0`)]
-          )
-        }
-      )
-
-      it('reports each unrecognised code against that code', async () => {
-        await expectRejected(
-          withHazardous({ isPresent: true, codes: ['HP01', 'HP_99'] }),
-          [
-            codeNotRecognised(`${codesPointer}/0`),
-            codeNotRecognised(`${codesPointer}/1`)
-          ]
-        )
-      })
-    })
-
-    describe("Scenario: A Receipt isn't created when codes are given for waste declared as having no hazardous properties", () => {
-      it('rejects the codes as not permitted', async () => {
-        await expectRejected(
-          withHazardous({ isPresent: false, codes: ['HP_4'] }),
-          [
-            {
-              errorType: 'NotAllowed',
-              message: "Not allowed unless 'isPresent' is true",
-              pointer: codesPointer
-            }
-          ]
-        )
-      })
     })
   })
 })

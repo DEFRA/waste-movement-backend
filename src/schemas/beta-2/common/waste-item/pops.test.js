@@ -19,14 +19,14 @@ describe('Feature: Schema - declaring persistent organic pollutants', () => {
     test('rejects a source alone for waste declared as not containing POPs', () => {
       const { valid, errors } = validateAjv({
         isPresent: false,
-        sourceOfComponents: 'GUIDANCE'
+        componentsSource: 'GUIDANCE'
       })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
         expect.objectContaining({
           keyword: 'not',
-          instancePath: '/sourceOfComponents'
+          instancePath: '/componentsSource'
         })
       )
     })
@@ -39,7 +39,7 @@ describe('Feature: Schema - declaring persistent organic pollutants', () => {
         expect.arrayContaining([
           expect.objectContaining({
             keyword: 'required',
-            params: { missingProperty: 'sourceOfComponents' }
+            params: { missingProperty: 'componentsSource' }
           }),
           expect.objectContaining({
             keyword: 'required',
