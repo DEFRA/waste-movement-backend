@@ -36,7 +36,7 @@
             "ewcCodes": ["200301"],
             "pops": {
               "isPresent": true,
-              "sourceOfComponents": "OWN_TESTING",
+              "componentsSource": "OWN_TESTING",
               "components": [
                 {
                   "code": "PFOA",

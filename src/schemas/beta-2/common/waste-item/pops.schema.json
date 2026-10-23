@@ -1,14 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Persistent organic pollutants",
-  "description": "Declares whether a waste item contains persistent organic pollutants (POPs), and if so which, and where those details came from. isPresent is required. When it is true, sourceOfComponents and at least one component are required, whatever the source; when it is false, neither is allowed.",
+  "description": "Declares whether a waste item contains persistent organic pollutants (POPs), and if so which, and where those details came from. isPresent is required. When it is true, componentsSource and at least one component are required, whatever the source; when it is false, neither is allowed.",
   "examples": [
     {
       "isPresent": false
     },
     {
       "isPresent": true,
-      "sourceOfComponents": "OWN_TESTING",
+      "componentsSource": "OWN_TESTING",
       "components": [
         {
           "code": "PFOA",
@@ -28,13 +28,13 @@
     "required": ["isPresent"]
   },
   "then": {
-    "properties": { "sourceOfComponents": {}, "components": {} },
-    "required": ["sourceOfComponents", "components"],
+    "properties": { "componentsSource": {}, "components": {} },
+    "required": ["componentsSource", "components"],
     "description": "Required when 'isPresent' is true"
   },
   "else": {
     "properties": {
-      "sourceOfComponents": {
+      "componentsSource": {
         "not": {},
         "description": "Not allowed unless 'isPresent' is true"
       },
@@ -49,7 +49,7 @@
       "type": "boolean",
       "description": "Whether the waste item contains any persistent organic pollutants."
     },
-    "sourceOfComponents": {
+    "componentsSource": {
       "type": "string",
       "enum": ["GUIDANCE", "PROVIDED_WITH_WASTE", "OWN_TESTING"],
       "description": "Where the POP details came from: government guidance, provided with the waste, or the receiver's own testing or analysis. Required when isPresent is true; not allowed otherwise."

@@ -22,7 +22,6 @@ import {
   receiver,
   supportingReference,
   physicalDetails,
-  hazardous,
   treatment,
   wasteItem
 } from '../../src/schemas/beta-2/test-helpers.js'
@@ -425,7 +424,7 @@ describe('beta-2', () => {
       `/beta-2/deliveries/${deliveryId}/receipt`,
       {
         method: 'POST',
-        body: { carrier, receiver, physicalDetails, hazardous, treatments }
+        body: { carrier, receiver, physicalDetails, treatments }
       }
     )
 
@@ -556,7 +555,6 @@ describe('beta-2', () => {
           carrier,
           receiver,
           physicalDetails,
-          hazardous,
           treatments,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
@@ -906,7 +904,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, physicalDetails, hazardous, treatments }
+        body: { carrier, physicalDetails, treatments }
       })
 
       expectProblemResponse(response, {
@@ -964,7 +962,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, receiver, physicalDetails, hazardous }
+        body: { carrier, receiver, physicalDetails }
       })
 
       expectProblemResponse(response, {
@@ -1002,7 +1000,6 @@ describe('beta-2', () => {
             ...physicalDetails,
             totalWeight: { ...physicalDetails.totalWeight, amount: 0 }
           },
-          hazardous,
           treatments
         }
       })
