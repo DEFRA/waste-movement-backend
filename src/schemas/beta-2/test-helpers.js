@@ -86,6 +86,21 @@ export const carrier = {
   }
 }
 
+export const plannedCollectionDateTime = '2026-01-15T09:30:00Z'
+
+export const actualCollectionDateTime = '2026-01-15T09:30:00Z'
+
+export const collectionSite = {
+  address: {
+    fullAddress: '10 Industrial Way, Test City',
+    postcode: 'TE1 2PQ'
+  },
+  contactDetails: {
+    emailAddress: 'site@example.com',
+    phoneNumber: '01234567890'
+  }
+}
+
 export const supportingReference = {
   label: 'PO Number',
   reference: 'PO-123456'

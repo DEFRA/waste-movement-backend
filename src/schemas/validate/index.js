@@ -44,7 +44,7 @@ const ajv = new Ajv2020({
   allowUnionTypes: true,
   verbose: true
 })
-addFormats(ajv, ['email', 'uuid'])
+addFormats(ajv, ['date-time', 'email', 'uuid'])
 
 for (const file of collectSchemaFiles(schemaRoot)) {
   const schema = JSON.parse(readFileSync(file, 'utf-8'))
