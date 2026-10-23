@@ -104,6 +104,17 @@ description is the error message — see [Conditional rules](#conditional-rules-
 and those tools accept a boolean there. `conventions.test.js` fails on any other boolean
 subschema.
 
+### Optional means left out, not `null` or `""`
+
+An optional field has one type, and a caller who has no value leaves it out. Don't widen it to
+also accept `null` or `""` as "not provided": a field with no single `type` (an
+`if`/`then`/`else` on its type, or a `type` list) reads as a string or untyped in generated docs
+and code, which is confusing for what is really an optional number.
+
+`pop-component.schema.json`'s `amount` is the case that settled this. ROW's `concentration`
+accepted `null` and `""` as not provided, and beta-2 dropped that: `amount` is a plain
+`"type": "number"`, and `null`, `""` or `"0.5"` is rejected with `must be number`.
+
 ### Conditional rules: `if`/`then`/`else`, not `oneOf`
 
 A rule that depends on another field — "exactly one of `registrationNumber` /

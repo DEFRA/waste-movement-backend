@@ -40,11 +40,12 @@
               "components": [
                 {
                   "code": "PFOA",
-                  "concentration": 0.5
+                  "unit": "MG_PER_KG",
+                  "amount": 0.5
                 },
                 {
                   "code": "PFOS",
-                  "concentrationThresholdOperator": "LESS_THAN"
+                  "threshold": "LESS_THAN"
                 }
               ]
             },
