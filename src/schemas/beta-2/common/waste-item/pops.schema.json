@@ -12,11 +12,12 @@
       "components": [
         {
           "code": "PFOA",
-          "concentration": 0.5
+          "unit": "MG_PER_KG",
+          "amount": 0.5
         },
         {
           "code": "PFOS",
-          "concentrationThresholdOperator": "LESS_THAN"
+          "threshold": "LESS_THAN"
         }
       ]
     }
@@ -50,13 +51,8 @@
     },
     "sourceOfComponents": {
       "type": "string",
-      "enum": [
-        "GUIDANCE",
-        "PROVIDED_WITH_WASTE",
-        "OWN_TESTING",
-        "NOT_PROVIDED"
-      ],
-      "description": "Where the POP details came from: government guidance, provided with the waste, the receiver's own testing or analysis, or not provided. Required when isPresent is true; not allowed otherwise."
+      "enum": ["GUIDANCE", "PROVIDED_WITH_WASTE", "OWN_TESTING"],
+      "description": "Where the POP details came from: government guidance, provided with the waste, or the receiver's own testing or analysis. Required when isPresent is true; not allowed otherwise."
     },
     "components": {
       "type": "array",

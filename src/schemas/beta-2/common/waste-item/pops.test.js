@@ -52,7 +52,10 @@ describe('Feature: Schema - declaring persistent organic pollutants', () => {
     test('reports an invalid component against that component', () => {
       const { valid, errors } = validateAjv({
         ...popsPresent,
-        components: [...popsPresent.components, { concentration: 1 }]
+        components: [
+          ...popsPresent.components,
+          { unit: 'MG_PER_KG', amount: 1 }
+        ]
       })
 
       expect(valid).toBe(false)

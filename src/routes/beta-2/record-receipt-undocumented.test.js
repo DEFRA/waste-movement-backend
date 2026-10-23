@@ -837,16 +837,18 @@ describe('POST /beta-2/receipts', () => {
       })
     })
 
-    describe('Scenario Outline: A Receipt is created when a POP is declared with a concentration', () => {
+    describe('Scenario Outline: A Receipt is created when a POP is declared with an amount', () => {
       // HBCDD in the scenario is HBCD in the reference data.
       it.each([
         ['PFOA', 0.5],
         ['PFOS', 12],
         ['HBCD', 0.001]
       ])(
-        'creates the receipt with a POP code of %s and a concentration of %s',
-        async (code, concentration) => {
-          await expectCreated(withComponents([{ code, concentration }]))
+        'creates the receipt with a POP code of %s and an amount of %s mg/kg',
+        async (code, amount) => {
+          await expectCreated(
+            withComponents([{ code, unit: 'MG_PER_KG', amount }])
+          )
         }
       )
     })
@@ -858,10 +860,8 @@ describe('POST /beta-2/receipts', () => {
         ['greater than', 'GREATER_THAN']
       ])(
         'creates the receipt with a PFOA concentration %s its threshold',
-        async (_, concentrationThresholdOperator) => {
-          await expectCreated(
-            withComponents([{ code: 'PFOA', concentrationThresholdOperator }])
-          )
+        async (_, threshold) => {
+          await expectCreated(withComponents([{ code: 'PFOA', threshold }]))
         }
       )
     })
@@ -870,8 +870,7 @@ describe('POST /beta-2/receipts', () => {
       it.each([
         ['Government guidance', 'GUIDANCE'],
         ['Provided with the waste', 'PROVIDED_WITH_WASTE'],
-        ['Own testing or analysis', 'OWN_TESTING'],
-        ['Not provided', 'NOT_PROVIDED']
+        ['Own testing or analysis', 'OWN_TESTING']
       ])(
         'creates the receipt with a source of %s',
         async (_, sourceOfComponents) => {
@@ -881,11 +880,11 @@ describe('POST /beta-2/receipts', () => {
     })
 
     describe('Scenario: A Receipt is created when more than one POP is declared', () => {
-      it('creates the receipt with a code and a concentration or threshold for each POP', async () => {
+      it('creates the receipt with a code and an amount or threshold for each POP', async () => {
         await expectCreated(
           withComponents([
-            { code: 'PFOA', concentration: 0.5 },
-            { code: 'PFOS', concentrationThresholdOperator: 'GREATER_THAN' }
+            { code: 'PFOA', unit: 'MG_PER_KG', amount: 0.5 },
+            { code: 'PFOS', threshold: 'GREATER_THAN' }
           ])
         )
       })
@@ -972,53 +971,38 @@ describe('POST /beta-2/receipts', () => {
           }
         ])
       })
-
-      // At least one is needed whatever the source, even when it's not
-      // provided.
-      it('rejects no POPs being declared when the source is not provided', async () => {
-        await expectRejected(
-          withPops({ isPresent: true, sourceOfComponents: 'NOT_PROVIDED' }),
-          [
-            {
-              errorType: 'NotProvided',
-              message: "Required when 'isPresent' is true",
-              pointer: `${popsPointer}/components`
-            }
-          ]
-        )
-      })
     })
 
     describe("Scenario Outline: A Receipt isn't created when the POP code is missing or invalid", () => {
       // Examples: Not provided or empty
       it('rejects a POP code that is not provided, as required', async () => {
-        await expectRejected(withComponents([{ concentration: 0.5 }]), [
-          {
-            errorType: 'NotProvided',
-            message: "'code' is required",
-            pointer: componentPointer(0, 'code')
-          }
-        ])
-      })
-
-      it('rejects a POP code of ""', async () => {
         await expectRejected(
-          withComponents([{ code: '', concentration: 0.5 }]),
+          withComponents([{ unit: 'MG_PER_KG', amount: 0.5 }]),
           [
             {
-              errorType: 'OutOfRange',
-              message: 'must NOT have fewer than 1 characters',
+              errorType: 'NotProvided',
+              message: "'code' is required",
               pointer: componentPointer(0, 'code')
             }
           ]
         )
       })
 
+      it('rejects a POP code of ""', async () => {
+        await expectRejected(withComponents([{ ...popComponent, code: '' }]), [
+          {
+            errorType: 'OutOfRange',
+            message: 'must NOT have fewer than 1 characters',
+            pointer: componentPointer(0, 'code')
+          }
+        ])
+      })
+
       // Examples: Not recognised
       it.each(['Mercury', 'ABC123'])(
         'rejects a POP code of %p as not recognised',
         async (code) => {
-          await expectRejected(withComponents([{ code, concentration: 0.5 }]), [
+          await expectRejected(withComponents([{ ...popComponent, code }]), [
             {
               errorType: 'InvalidValue',
               message: 'must be a recognised POP code',
@@ -1029,55 +1013,77 @@ describe('POST /beta-2/receipts', () => {
       )
     })
 
-    describe("Scenario: A Receipt isn't created when a POP has neither a concentration nor a threshold", () => {
-      it('rejects the POP, saying a concentration or threshold is required', async () => {
+    describe("Scenario: A Receipt isn't created when a POP has neither an amount nor a threshold", () => {
+      it('rejects the POP, saying an amount or threshold is required', async () => {
         await expectRejected(withComponents([{ code: 'PFOA' }]), [
           {
             errorType: 'NotProvided',
-            message: "Required when 'concentration' is not provided",
-            pointer: componentPointer(0, 'concentrationThresholdOperator')
+            message: "Required when 'amount' is not provided",
+            pointer: componentPointer(0, 'threshold')
           }
         ])
       })
     })
 
-    describe("Scenario: A Receipt isn't created when a POP has both a concentration and a threshold", () => {
+    describe("Scenario: A Receipt isn't created when a POP has both an amount and a threshold", () => {
       it('rejects the threshold, saying only one of the two is permitted', async () => {
         await expectRejected(
-          withComponents([
-            {
-              code: 'PFOA',
-              concentration: 0.5,
-              concentrationThresholdOperator: 'LESS_THAN'
-            }
-          ]),
+          withComponents([{ ...popComponent, threshold: 'LESS_THAN' }]),
           [
             {
               errorType: 'NotAllowed',
-              message: "Not allowed when 'concentration' is provided",
-              pointer: componentPointer(0, 'concentrationThresholdOperator')
+              message: "Not allowed when 'amount' is provided",
+              pointer: componentPointer(0, 'threshold')
             }
           ]
         )
       })
     })
 
-    describe("Scenario Outline: A Receipt isn't created when the POP concentration is invalid", () => {
-      // Examples: Empty. "" counts as no concentration, so a threshold is
-      // needed instead.
+    describe("Scenario: A Receipt isn't created when a POP has an amount but no unit", () => {
+      it('rejects the POP, saying a unit is required', async () => {
+        await expectRejected(withComponents([{ code: 'PFOA', amount: 0.5 }]), [
+          {
+            errorType: 'NotProvided',
+            message: "Required when 'amount' is provided",
+            pointer: componentPointer(0, 'unit')
+          }
+        ])
+      })
+    })
+
+    describe("Scenario Outline: A Receipt isn't created when the POP unit is invalid", () => {
+      // Examples: Not recognised, including in the wrong case.
+      it.each(['', 'mg_per_kg', 'MG/KG', 'PPM'])(
+        'rejects a POP unit of %p as not recognised',
+        async (unit) => {
+          await expectRejected(withComponents([{ ...popComponent, unit }]), [
+            {
+              errorType: 'InvalidValue',
+              message: "must be one of: 'MG_PER_KG'",
+              pointer: componentPointer(0, 'unit')
+            }
+          ])
+        }
+      )
+    })
+
+    describe("Scenario Outline: A Receipt isn't created when the POP amount is invalid", () => {
+      // Examples: Empty. "" counts as no amount, so a threshold is needed
+      // instead.
       it.each([
         ['""', ''],
         ['null', null]
       ])(
-        'rejects a POP concentration of %s, saying a concentration or threshold is required',
-        async (_, concentration) => {
+        'rejects a POP amount of %s, saying an amount or threshold is required',
+        async (_, amount) => {
           await expectRejected(
-            withComponents([{ code: 'PFOA', concentration }]),
+            withComponents([{ code: 'PFOA', unit: 'MG_PER_KG', amount }]),
             [
               {
                 errorType: 'NotProvided',
-                message: "Required when 'concentration' is not provided",
-                pointer: componentPointer(0, 'concentrationThresholdOperator')
+                message: "Required when 'amount' is not provided",
+                pointer: componentPointer(0, 'threshold')
               }
             ]
           )
@@ -1086,18 +1092,15 @@ describe('POST /beta-2/receipts', () => {
 
       // Examples: Not greater than 0
       it.each([0, -1])(
-        'rejects a POP concentration of %p as not greater than 0',
-        async (concentration) => {
-          await expectRejected(
-            withComponents([{ code: 'PFOA', concentration }]),
-            [
-              {
-                errorType: 'OutOfRange',
-                message: 'Must be greater than 0',
-                pointer: componentPointer(0, 'concentration')
-              }
-            ]
-          )
+        'rejects a POP amount of %p as not greater than 0',
+        async (amount) => {
+          await expectRejected(withComponents([{ ...popComponent, amount }]), [
+            {
+              errorType: 'OutOfRange',
+              message: 'Must be greater than 0',
+              pointer: componentPointer(0, 'amount')
+            }
+          ])
         }
       )
     })
@@ -1105,18 +1108,15 @@ describe('POST /beta-2/receipts', () => {
     describe("Scenario Outline: A Receipt isn't created when the POP threshold is invalid", () => {
       it.each(['Greater than', 'Above'])(
         'rejects a POP threshold of %p as not recognised',
-        async (concentrationThresholdOperator) => {
-          await expectRejected(
-            withComponents([{ code: 'PFOA', concentrationThresholdOperator }]),
-            [
-              {
-                errorType: 'InvalidValue',
-                message:
-                  "must be one of: 'LESS_THAN', 'EQUAL_TO', 'GREATER_THAN'",
-                pointer: componentPointer(0, 'concentrationThresholdOperator')
-              }
-            ]
-          )
+        async (threshold) => {
+          await expectRejected(withComponents([{ code: 'PFOA', threshold }]), [
+            {
+              errorType: 'InvalidValue',
+              message:
+                "must be one of: 'LESS_THAN', 'EQUAL_TO', 'GREATER_THAN'",
+              pointer: componentPointer(0, 'threshold')
+            }
+          ])
         }
       )
     })
@@ -1144,7 +1144,7 @@ describe('POST /beta-2/receipts', () => {
               {
                 errorType: 'InvalidValue',
                 message:
-                  "must be one of: 'GUIDANCE', 'PROVIDED_WITH_WASTE', 'OWN_TESTING', 'NOT_PROVIDED'",
+                  "must be one of: 'GUIDANCE', 'PROVIDED_WITH_WASTE', 'OWN_TESTING'",
                 pointer: `${popsPointer}/sourceOfComponents`
               }
             ]
@@ -1158,14 +1158,14 @@ describe('POST /beta-2/receipts', () => {
         await expectRejected(
           withComponents([
             popComponent,
-            { code: 'ABC123', concentration: 0 },
-            { concentrationThresholdOperator: 'Above' }
+            { code: 'ABC123', unit: 'MG_PER_KG', amount: 0 },
+            { threshold: 'Above' }
           ]),
           [
             {
               errorType: 'OutOfRange',
               message: 'Must be greater than 0',
-              pointer: componentPointer(1, 'concentration')
+              pointer: componentPointer(1, 'amount')
             },
             {
               errorType: 'NotProvided',
@@ -1176,7 +1176,7 @@ describe('POST /beta-2/receipts', () => {
               errorType: 'InvalidValue',
               message:
                 "must be one of: 'LESS_THAN', 'EQUAL_TO', 'GREATER_THAN'",
-              pointer: componentPointer(2, 'concentrationThresholdOperator')
+              pointer: componentPointer(2, 'threshold')
             },
             {
               errorType: 'InvalidValue',

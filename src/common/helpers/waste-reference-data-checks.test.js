@@ -99,7 +99,7 @@ describe('findUnrecognisedPopCodes', () => {
   })
   const present = (...codes) => ({
     isPresent: true,
-    components: codes.map((code) => ({ code, concentration: 1 }))
+    components: codes.map((code) => ({ code, unit: 'MG_PER_KG', amount: 1 }))
   })
   const unrecognisedPop = (itemIndex, componentIndex) => ({
     message: 'must be a recognised POP code',

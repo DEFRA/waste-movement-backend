@@ -22,7 +22,7 @@
         "components": [
           {
             "code": "PFOS",
-            "concentrationThresholdOperator": "LESS_THAN"
+            "threshold": "LESS_THAN"
           }
         ]
       },

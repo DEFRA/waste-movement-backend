@@ -125,7 +125,8 @@ export const pops = {
 
 export const popComponent = {
   code: 'PFOA',
-  concentration: 0.5
+  unit: 'MG_PER_KG',
+  amount: 0.5
 }
 
 export const popsPresent = {
