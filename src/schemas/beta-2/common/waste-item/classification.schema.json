@@ -28,7 +28,15 @@
       },
       "hazardous": {
         "isPresent": true,
-        "codes": ["HP_6", "HP_14"]
+        "codes": ["HP_6", "HP_14"],
+        "sourceOfComponents": "PROVIDED_WITH_WASTE",
+        "componentsNotApplicable": false,
+        "components": [
+          {
+            "name": "Mercury",
+            "threshold": "EQUAL_TO"
+          }
+        ]
       }
     }
   ],

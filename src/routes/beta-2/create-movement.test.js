@@ -17,6 +17,8 @@ import {
   carrier,
   consignmentNote,
   hazardous,
+  hazardousComponent,
+  hazardousPresent,
   hazardousWasteItem,
   pops,
   receiver,
@@ -1284,8 +1286,11 @@ describe('movement Route Tests version: beta-2', () => {
     const withHazardousProperties = (hazardous) =>
       withHazardous(hazardous, { consignmentNote })
 
+    const { codes: _, ...withoutCodes } = hazardousPresent
+
     const hazardousPointer = '/wasteItems/0/classification/hazardous'
     const codesPointer = `${hazardousPointer}/codes`
+    const componentsPointer = `${hazardousPointer}/components`
     const quoted = (code) => `'${code}'`
     const hpCodes = [
       'HP_1',
@@ -1322,7 +1327,7 @@ describe('movement Route Tests version: beta-2', () => {
         'creates the movement with codes %p',
         async (codes) => {
           await expectCreated(
-            withHazardousProperties({ isPresent: true, codes })
+            withHazardousProperties({ ...hazardousPresent, codes })
           )
         }
       )
@@ -1370,7 +1375,7 @@ describe('movement Route Tests version: beta-2', () => {
 
     describe("Scenario Outline: A Movement isn't created when the waste has hazardous properties but the codes are missing or invalid", () => {
       it('rejects codes not being provided, saying they are required', async () => {
-        await expectRejected(withHazardousProperties({ isPresent: true }), [
+        await expectRejected(withHazardousProperties(withoutCodes), [
           {
             errorType: 'NotProvided',
             message: "Required when 'isPresent' is true",
@@ -1381,7 +1386,7 @@ describe('movement Route Tests version: beta-2', () => {
 
       it('rejects an empty list of codes, saying at least one is required', async () => {
         await expectRejected(
-          withHazardousProperties({ isPresent: true, codes: [] }),
+          withHazardousProperties({ ...hazardousPresent, codes: [] }),
           [
             {
               errorType: 'OutOfRange',
@@ -1394,7 +1399,7 @@ describe('movement Route Tests version: beta-2', () => {
 
       it('rejects codes of "" as not a list', async () => {
         await expectRejected(
-          withHazardousProperties({ isPresent: true, codes: '' }),
+          withHazardousProperties({ ...hazardousPresent, codes: '' }),
           [
             {
               errorType: 'InvalidType',
@@ -1409,7 +1414,7 @@ describe('movement Route Tests version: beta-2', () => {
         'rejects a code of %p as not recognised',
         async (code) => {
           await expectRejected(
-            withHazardousProperties({ isPresent: true, codes: [code] }),
+            withHazardousProperties({ ...hazardousPresent, codes: [code] }),
             [codeNotRecognised(`${codesPointer}/0`)]
           )
         }
@@ -1418,7 +1423,7 @@ describe('movement Route Tests version: beta-2', () => {
       it('reports each unrecognised code against that code', async () => {
         await expectRejected(
           withHazardousProperties({
-            isPresent: true,
+            ...hazardousPresent,
             codes: ['HP01', 'HP_99']
           }),
           [
@@ -1454,7 +1459,7 @@ describe('movement Route Tests version: beta-2', () => {
           withWasteItems(
             [
               withDeclaration({ isPresent: 'Maybe' }),
-              withDeclaration({ isPresent: true, codes: ['HP_99'] })
+              withDeclaration({ ...hazardousPresent, codes: ['HP_99'] })
             ],
             { consignmentNote }
           ),
@@ -1465,6 +1470,128 @@ describe('movement Route Tests version: beta-2', () => {
               pointer: '/wasteItems/0/classification/hazardous/isPresent'
             },
             codeNotRecognised('/wasteItems/1/classification/hazardous/codes/0')
+          ]
+        )
+      })
+    })
+
+    describe('Scenario Outline: A Movement is created when hazardous components are declared', () => {
+      it.each([
+        [[hazardousComponent]],
+        [[{ name: 'Lead compounds', threshold: 'GREATER_THAN' }]],
+        [
+          [
+            hazardousComponent,
+            { name: 'Lead compounds', threshold: 'EQUAL_TO' }
+          ]
+        ]
+      ])('creates the movement with components %j', async (components) => {
+        await expectCreated(
+          withHazardousProperties({ ...hazardousPresent, components })
+        )
+      })
+    })
+
+    describe('Scenario: A Movement is created when no hazardous components need reporting', () => {
+      it('creates the movement with a source and no components', async () => {
+        const { components: _, ...withoutComponents } = hazardousPresent
+        await expectCreated(
+          withHazardousProperties({
+            ...withoutComponents,
+            componentsNotApplicable: true
+          })
+        )
+      })
+    })
+
+    describe("Scenario: A Movement isn't created when hazardous details are given for waste declared as having no hazardous properties", () => {
+      it('rejects each detail as not permitted', async () => {
+        const notAllowed = (field) => ({
+          errorType: 'NotAllowed',
+          message: "Not allowed unless 'isPresent' is true",
+          pointer: `${hazardousPointer}/${field}`
+        })
+        await expectRejected(
+          withHazardous({ ...hazardousPresent, isPresent: false }),
+          [
+            notAllowed('codes'),
+            notAllowed('sourceOfComponents'),
+            notAllowed('componentsNotApplicable'),
+            notAllowed('components')
+          ]
+        )
+      })
+    })
+
+    describe("Scenario: A Movement isn't created when the waste is hazardous but neither components nor not applicable are declared", () => {
+      it('rejects no components, saying they are required', async () => {
+        const { components: _, ...withoutComponents } = hazardousPresent
+        await expectRejected(withHazardousProperties(withoutComponents), [
+          {
+            errorType: 'NotProvided',
+            message: "Required when 'componentsNotApplicable' is false",
+            pointer: componentsPointer
+          }
+        ])
+      })
+
+      it('rejects the source not being provided, saying it is required', async () => {
+        const { sourceOfComponents: _, ...withoutSource } = hazardousPresent
+        await expectRejected(withHazardousProperties(withoutSource), [
+          {
+            errorType: 'NotProvided',
+            message: "Required when 'isPresent' is true",
+            pointer: `${hazardousPointer}/sourceOfComponents`
+          }
+        ])
+      })
+    })
+
+    describe("Scenario: A Movement isn't created when components are given although declared not applicable", () => {
+      it('rejects the components as not permitted', async () => {
+        await expectRejected(
+          withHazardousProperties({
+            ...hazardousPresent,
+            componentsNotApplicable: true
+          }),
+          [
+            {
+              errorType: 'NotAllowed',
+              message: "Not allowed when 'componentsNotApplicable' is true",
+              pointer: componentsPointer
+            }
+          ]
+        )
+      })
+    })
+
+    describe("Scenario: A Movement isn't created when any one of several hazardous components is declared with missing or invalid details", () => {
+      it('reports each invalid detail against the component it belongs to', async () => {
+        await expectRejected(
+          withHazardousProperties({
+            ...hazardousPresent,
+            components: [
+              hazardousComponent,
+              { name: 'Arsenic', unit: 'MG_PER_KG', amount: 0 },
+              { threshold: 'LESS_THAN' }
+            ]
+          }),
+          [
+            {
+              errorType: 'OutOfRange',
+              message: 'must be > 0',
+              pointer: `${componentsPointer}/1/amount`
+            },
+            {
+              errorType: 'NotProvided',
+              message: "'name' is required",
+              pointer: `${componentsPointer}/2/name`
+            },
+            {
+              errorType: 'InvalidValue',
+              message: "must be one of: 'EQUAL_TO', 'GREATER_THAN'",
+              pointer: `${componentsPointer}/2/threshold`
+            }
           ]
         )
       })
@@ -1489,7 +1616,7 @@ describe('movement Route Tests version: beta-2', () => {
     describe("Scenario: A Movement isn't created without a consignment note when a non-hazardous EWC code is declared as having hazardous properties", () => {
       it('rejects the movement, saying a consignment note is required', async () => {
         await expectRejected(
-          withHazardous({ isPresent: true, codes: ['HP_4'] }),
+          withHazardous({ ...hazardousPresent, codes: ['HP_4'] }),
           [consignmentNoteRequired]
         )
       })
@@ -1504,7 +1631,10 @@ describe('movement Route Tests version: beta-2', () => {
           .mockResolvedValueOnce('26HAZ001')
 
         const { statusCode } = await submit(
-          withHazardousProperties({ isPresent: true, codes: ['HP_4', 'HP_8'] })
+          withHazardousProperties({
+            ...hazardousPresent,
+            codes: ['HP_4', 'HP_8']
+          })
         )
 
         expect(statusCode).toEqual(HTTP_STATUS.CREATED)
@@ -1513,7 +1643,7 @@ describe('movement Route Tests version: beta-2', () => {
           .findOne({ movementId: '26HAZ001' })
 
         expect(recordInDb.wasteItems[0].classification.hazardous).toEqual({
-          isPresent: true,
+          ...hazardousPresent,
           codes: ['HP_4', 'HP_8']
         })
       })

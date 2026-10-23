@@ -139,9 +139,18 @@ export const hazardous = {
   isPresent: false
 }
 
+export const hazardousComponent = {
+  name: 'Mercury',
+  unit: 'MG_PER_KG',
+  amount: 5
+}
+
 export const hazardousPresent = {
   isPresent: true,
-  codes: ['HP_4']
+  codes: ['HP_4'],
+  sourceOfComponents: 'OWN_TESTING',
+  componentsNotApplicable: false,
+  components: [hazardousComponent]
 }
 
 export const classification = {

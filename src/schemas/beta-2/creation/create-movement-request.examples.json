@@ -51,7 +51,20 @@
             },
             "hazardous": {
               "isPresent": true,
-              "codes": ["HP_6", "HP_14"]
+              "codes": ["HP_6", "HP_14"],
+              "sourceOfComponents": "OWN_TESTING",
+              "componentsNotApplicable": false,
+              "components": [
+                {
+                  "name": "Mercury",
+                  "unit": "MG_PER_KG",
+                  "amount": 120
+                },
+                {
+                  "name": "Lead compounds",
+                  "threshold": "GREATER_THAN"
+                }
+              ]
             }
           },
           "physicalDetails": {
