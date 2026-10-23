@@ -12,6 +12,8 @@ import {
   organisationHeaders
 } from '../../test/data/organisation-headers.js'
 import {
+  plannedCollectionDateTime,
+  collectionSite,
   carrier,
   consignmentNote,
   hazardous,
@@ -60,6 +62,8 @@ describe('movement Route Tests version: beta-2', () => {
   const wasteItems = [wasteItem]
   const goodPayload = {
     producer,
+    plannedCollectionDateTime,
+    collectionSite,
     intendedCarriers,
     intendedReceivers,
     wasteItems
@@ -145,6 +149,8 @@ describe('movement Route Tests version: beta-2', () => {
   ])('creates a movement for a %s producer', async (_wasteSource, prod) => {
     const payload = {
       producer: prod,
+      plannedCollectionDateTime,
+      collectionSite,
       intendedCarriers,
       intendedReceivers,
       wasteItems
@@ -206,6 +212,8 @@ describe('movement Route Tests version: beta-2', () => {
   it('creates a movement when a brokerOrDealer is declared', async () => {
     const payload = {
       producer,
+      plannedCollectionDateTime,
+      collectionSite,
       intendedCarriers,
       intendedReceivers,
       wasteItems,
@@ -250,6 +258,8 @@ describe('movement Route Tests version: beta-2', () => {
   it('returns an error when a declared brokerOrDealer has no details', async () => {
     const invalidPayload = {
       producer,
+      plannedCollectionDateTime,
+      collectionSite,
       intendedCarriers,
       intendedReceivers,
       wasteItems,
@@ -284,6 +294,8 @@ describe('movement Route Tests version: beta-2', () => {
   it('returns an error when brokerOrDealer details are given without declaring involvement', async () => {
     const invalidPayload = {
       producer,
+      plannedCollectionDateTime,
+      collectionSite,
       intendedCarriers,
       intendedReceivers,
       wasteItems,
@@ -329,6 +341,8 @@ describe('movement Route Tests version: beta-2', () => {
     const invalidPayload = {
       apiCode: apiCode1,
       producer,
+      plannedCollectionDateTime,
+      collectionSite,
       intendedCarriers,
       intendedReceivers,
       wasteItems
@@ -369,7 +383,13 @@ describe('movement Route Tests version: beta-2', () => {
   })
 
   it('returns an error when producer is missing and does not create a movement', async () => {
-    const invalidPayload = { intendedCarriers, intendedReceivers, wasteItems }
+    const invalidPayload = {
+      plannedCollectionDateTime,
+      collectionSite,
+      intendedCarriers,
+      intendedReceivers,
+      wasteItems
+    }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -407,7 +427,13 @@ describe('movement Route Tests version: beta-2', () => {
 
   // Scenario: A Movement isn't created when no intended carrier is declared.
   it('returns an error when intendedCarriers is missing and does not create a movement', async () => {
-    const invalidPayload = { producer, intendedReceivers, wasteItems }
+    const invalidPayload = {
+      producer,
+      plannedCollectionDateTime,
+      collectionSite,
+      intendedReceivers,
+      wasteItems
+    }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -444,7 +470,13 @@ describe('movement Route Tests version: beta-2', () => {
   })
 
   it('returns an error when intendedReceivers is missing and does not create a movement', async () => {
-    const invalidPayload = { producer, intendedCarriers, wasteItems }
+    const invalidPayload = {
+      producer,
+      plannedCollectionDateTime,
+      collectionSite,
+      intendedCarriers,
+      wasteItems
+    }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -481,7 +513,13 @@ describe('movement Route Tests version: beta-2', () => {
   })
 
   it('returns an error when wasteItems is missing and does not create a movement', async () => {
-    const invalidPayload = { producer, intendedCarriers, intendedReceivers }
+    const invalidPayload = {
+      producer,
+      plannedCollectionDateTime,
+      collectionSite,
+      intendedCarriers,
+      intendedReceivers
+    }
     const createMovementRecordSpy = jest.spyOn(
       movementCreate,
       'createMovementRecord'
@@ -585,6 +623,8 @@ describe('movement Route Tests version: beta-2', () => {
   it('returns an error when a waste item weight is not greater than 0 and does not create a movement', async () => {
     const invalidPayload = {
       producer,
+      plannedCollectionDateTime,
+      collectionSite,
       intendedCarriers,
       intendedReceivers,
       wasteItems: [
@@ -630,6 +670,8 @@ describe('movement Route Tests version: beta-2', () => {
   it('returns an error when a waste item declares treatments and does not create a movement', async () => {
     const invalidPayload = {
       producer,
+      plannedCollectionDateTime,
+      collectionSite,
       intendedCarriers,
       intendedReceivers,
       wasteItems: [{ ...wasteItem, treatments: [treatment] }]
@@ -663,6 +705,8 @@ describe('movement Route Tests version: beta-2', () => {
   it('rejects when no organisation was forwarded (unknown or disabled API code) and does not create a movement', async () => {
     const invalidPayload = {
       producer,
+      plannedCollectionDateTime,
+      collectionSite,
       intendedCarriers,
       intendedReceivers,
       wasteItems
@@ -754,6 +798,8 @@ describe('movement Route Tests version: beta-2', () => {
         description: 'producer',
         payload: {
           producer: 'fail',
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers: [carrier],
           intendedReceivers,
           wasteItems
@@ -764,6 +810,8 @@ describe('movement Route Tests version: beta-2', () => {
         payload: {
           producer,
           brokerOrDealer: 'fail',
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers: [carrier],
           intendedReceivers,
           wasteItems
@@ -815,6 +863,8 @@ describe('movement Route Tests version: beta-2', () => {
         isPresent: true,
         items: [{ ...brokerOrDealerEntry, ...entry }]
       },
+      plannedCollectionDateTime,
+      collectionSite,
       intendedCarriers: [carrier],
       intendedReceivers,
       wasteItems
@@ -1467,6 +1517,164 @@ describe('movement Route Tests version: beta-2', () => {
           codes: ['HP_4', 'HP_8']
         })
       })
+    })
+  })
+
+  describe('Feature: Declare where and when the waste will be collected', () => {
+    // Background: authenticated, with a valid API Code — every request here
+    // sends the basic auth and organisation headers.
+    const without = (field, from) => {
+      const { [field]: excluded, ...rest } = from
+      return rest
+    }
+    const withCollectionSite = (site) => ({
+      ...goodPayload,
+      collectionSite: site
+    })
+    const notProvided = (field, pointer) => ({
+      errorType: 'NotProvided',
+      message: `'${field}' is required`,
+      pointer
+    })
+
+    describe('Scenario: A Movement is created with valid collection site details', () => {
+      it('creates the movement with a valid planned collection date and time, a collection address and contact details', async () => {
+        await expectCreated(goodPayload)
+      })
+    })
+
+    describe("Scenario: A Movement isn't created without a planned collection date and time", () => {
+      it('rejects the movement, saying the planned collection date and time is required', async () => {
+        await expectRejected(
+          without('plannedCollectionDateTime', goodPayload),
+          [
+            notProvided(
+              'plannedCollectionDateTime',
+              '/plannedCollectionDateTime'
+            )
+          ]
+        )
+      })
+    })
+
+    describe("Scenario Outline: A Movement isn't created without a collection address", () => {
+      it('rejects a collection site with no address, saying the address is required', async () => {
+        await expectRejected(
+          withCollectionSite(without('address', collectionSite)),
+          [notProvided('address', '/collectionSite/address')]
+        )
+      })
+
+      it('rejects a movement with no collection site, saying it is required', async () => {
+        await expectRejected(without('collectionSite', goodPayload), [
+          notProvided('collectionSite', '/collectionSite')
+        ])
+      })
+    })
+
+    describe("Scenario: A Movement isn't created without a collection contact detail", () => {
+      it('rejects a valid collection address with no contact details, saying they are required', async () => {
+        await expectRejected(
+          withCollectionSite(without('contactDetails', collectionSite)),
+          [notProvided('contactDetails', '/collectionSite/contactDetails')]
+        )
+      })
+    })
+
+    describe("Scenario: A Movement isn't created when a planned collection date and time is invalid", () => {
+      it.each([
+        ['2026-01-15'],
+        ['09:30:00'],
+        ['15/01/2026 09:30'],
+        ['2026-01-15T09:30:00'],
+        ['not-a-date']
+      ])('rejects a planned collection date and time of %j', async (value) => {
+        await expectRejected(
+          { ...goodPayload, plannedCollectionDateTime: value },
+          [
+            {
+              errorType: 'InvalidFormat',
+              message: "must match format 'date-time'",
+              pointer: '/plannedCollectionDateTime'
+            }
+          ]
+        )
+      })
+    })
+
+    describe("Scenario: A Movement isn't created when a collection contact detail is invalid", () => {
+      it('rejects an invalid collection email address', async () => {
+        await expectRejected(
+          withCollectionSite({
+            ...collectionSite,
+            contactDetails: { emailAddress: 'not-an-email' }
+          }),
+          [
+            {
+              errorType: 'InvalidFormat',
+              message: "must match format 'email'",
+              pointer: '/collectionSite/contactDetails/emailAddress'
+            }
+          ]
+        )
+      })
+
+      it('rejects an invalid collection phone number', async () => {
+        await expectRejected(
+          withCollectionSite({
+            ...collectionSite,
+            contactDetails: { phoneNumber: 'not-a-number' }
+          }),
+          [
+            expect.objectContaining({
+              errorType: 'InvalidFormat',
+              pointer: '/collectionSite/contactDetails/phoneNumber'
+            })
+          ]
+        )
+      })
+
+      it('rejects both an invalid email address and phone number, reporting each', async () => {
+        await expectRejected(
+          withCollectionSite({
+            ...collectionSite,
+            contactDetails: {
+              emailAddress: 'not-an-email',
+              phoneNumber: 'not-a-number'
+            }
+          }),
+          [
+            expect.objectContaining({
+              errorType: 'InvalidFormat',
+              pointer: '/collectionSite/contactDetails/emailAddress'
+            }),
+            expect.objectContaining({
+              errorType: 'InvalidFormat',
+              pointer: '/collectionSite/contactDetails/phoneNumber'
+            })
+          ]
+        )
+      })
+    })
+
+    describe("Scenario: A Movement isn't created when the collection postcode is invalid", () => {
+      it.each([['NOT A POSTCODE'], ['12345'], ['TE1']])(
+        'rejects a collection postcode of %j',
+        async (postcode) => {
+          await expectRejected(
+            withCollectionSite({
+              ...collectionSite,
+              address: { ...collectionSite.address, postcode }
+            }),
+            [
+              expect.objectContaining({
+                errorType: 'InvalidFormat',
+                pointer: '/collectionSite/address/postcode'
+              })
+            ]
+          )
+        }
+      )
     })
   })
 })

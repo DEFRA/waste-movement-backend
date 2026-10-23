@@ -7,6 +7,14 @@
     "producer": {
       "$ref": "../common/producer/producer.schema.json"
     },
+    "plannedCollectionDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The planned collection time, as an ISO 8601 date-time. The actual time is recorded by the Collection event."
+    },
+    "collectionSite": {
+      "$ref": "../common/collection-site.schema.json"
+    },
     "intendedCarriers": {
       "type": "array",
       "items": {
@@ -54,7 +62,9 @@
     "producer",
     "intendedCarriers",
     "intendedReceivers",
-    "wasteItems"
+    "wasteItems",
+    "plannedCollectionDateTime",
+    "collectionSite"
   ],
   "additionalProperties": false
 }
