@@ -1069,24 +1069,18 @@ describe('POST /beta-2/receipts', () => {
     })
 
     describe("Scenario Outline: A Receipt isn't created when the POP amount is invalid", () => {
-      // Examples: Empty. "" counts as no amount, so a threshold is needed
-      // instead.
-      it.each([
-        ['""', ''],
-        ['null', null]
-      ])(
-        'rejects a POP amount of %s, saying an amount or threshold is required',
-        async (_, amount) => {
-          await expectRejected(
-            withComponents([{ code: 'PFOA', unit: 'MG_PER_KG', amount }]),
-            [
-              {
-                errorType: 'NotProvided',
-                message: "Required when 'amount' is not provided",
-                pointer: componentPointer(0, 'threshold')
-              }
-            ]
-          )
+      // Examples: Not a number. An amount that isn't known is left out,
+      // and a threshold given instead.
+      it.each(['', null, '0.5'])(
+        'rejects a POP amount of %p as not a number',
+        async (amount) => {
+          await expectRejected(withComponents([{ ...popComponent, amount }]), [
+            {
+              errorType: 'InvalidType',
+              message: 'must be number',
+              pointer: componentPointer(0, 'amount')
+            }
+          ])
         }
       )
 
@@ -1097,7 +1091,7 @@ describe('POST /beta-2/receipts', () => {
           await expectRejected(withComponents([{ ...popComponent, amount }]), [
             {
               errorType: 'OutOfRange',
-              message: 'Must be greater than 0',
+              message: 'must be > 0',
               pointer: componentPointer(0, 'amount')
             }
           ])
@@ -1164,7 +1158,7 @@ describe('POST /beta-2/receipts', () => {
           [
             {
               errorType: 'OutOfRange',
-              message: 'Must be greater than 0',
+              message: 'must be > 0',
               pointer: componentPointer(1, 'amount')
             },
             {
