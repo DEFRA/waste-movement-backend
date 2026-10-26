@@ -13,12 +13,18 @@ import {
   createDeliveryRecord
 } from '../../services/delivery.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
-import { withWasteReferenceDataChecks } from '../../common/helpers/waste-reference-data-checks.js'
+import { wasteReferenceDataChecks } from '../../common/helpers/waste-reference-data-checks.js'
+import {
+  emptyIsNotProvided,
+  notInFuture
+} from '../../common/helpers/date-time-checks.js'
+import { withPayloadChecks } from '../../schemas/validate/payload-checks.js'
 
 const apiVersion = 'beta-2'
 const logger = createLogger({ apiVersion })
 const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
 const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
+const receiptDateTime = ['receiptDateTime']
 
 const recordReceiptUndocumented = {
   method: 'POST',
@@ -30,8 +36,11 @@ const recordReceiptUndocumented = {
       'trail. Not linked to any Movement; `reasonForNoDeliveryId` must explain why. Creates an empty Delivery behind ' +
       'the scenes and returns its Delivery ID, so the receipt stays addressable.',
     validate: {
-      payload: withWasteReferenceDataChecks(
-        validateRequest('receipt/record-receipt-undocumented-request')
+      payload: withPayloadChecks(
+        validateRequest('receipt/record-receipt-undocumented-request'),
+        wasteReferenceDataChecks,
+        emptyIsNotProvided(receiptDateTime),
+        notInFuture(receiptDateTime)
       )
     },
     response: {

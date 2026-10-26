@@ -4,6 +4,12 @@
   "description": "Payload for POST /beta-2/deliveries/{deliveryId}/receipt.",
   "type": "object",
   "properties": {
+    "receiptDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the waste was received at the receiver's site, as an ISO 8601 date-time with a timezone. Must not be later than the time the receipt is submitted; the service checks that, as it depends on when the request arrives.",
+      "examples": ["2026-10-14T09:30:00Z"]
+    },
     "carrier": {
       "$ref": "../common/carrier.schema.json"
     },
@@ -25,6 +31,12 @@
       "$ref": "../common/supporting-references.schema.json"
     }
   },
-  "required": ["carrier", "receiver", "physicalDetails", "treatments"],
+  "required": [
+    "receiptDateTime",
+    "carrier",
+    "receiver",
+    "physicalDetails",
+    "treatments"
+  ],
   "additionalProperties": false
 }

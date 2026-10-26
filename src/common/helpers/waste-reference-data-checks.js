@@ -1,4 +1,3 @@
-import Boom from '@hapi/boom'
 import {
   ERROR_TYPE,
   isValidEwcCode,
@@ -126,31 +125,12 @@ export const findMissingConsignmentNote = (payload) => {
   ]
 }
 
-// Wraps a route's payload validator so these checks are reported alongside
-// the schema's own errors, in the same shape, rather than only once the rest
-// of the payload is valid. Every payload it wraps (creating a movement,
-// recording a receipt without a delivery) carries a consignmentNote.
-export const withWasteReferenceDataChecks = (validatePayload) => (payload) => {
-  let schemaDetails = []
-  try {
-    validatePayload(payload)
-  } catch (error) {
-    if (!Array.isArray(error.details)) {
-      throw error
-    }
-    schemaDetails = error.details
-  }
-
-  const details = [
-    ...schemaDetails,
-    ...findUnrecognisedEwcCodes(payload),
-    ...findUnrecognisedPopCodes(payload),
-    ...findMissingConsignmentNote(payload)
-  ]
-  if (details.length === 0) {
-    return payload
-  }
-  const boomError = Boom.badRequest(details.map((d) => d.message).join('. '))
-  boomError.details = details
-  throw boomError
-}
+// The payload check (see schemas/validate/payload-checks.js) for every
+// payload with waste items and a consignmentNote: creating a movement, and
+// recording a receipt without a delivery.
+export const wasteReferenceDataChecks = (payload, details) => [
+  ...details,
+  ...findUnrecognisedEwcCodes(payload),
+  ...findUnrecognisedPopCodes(payload),
+  ...findMissingConsignmentNote(payload)
+]

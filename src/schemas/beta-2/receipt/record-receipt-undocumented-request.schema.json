@@ -12,6 +12,12 @@
         "No delivery was recorded prior to receipt; waste received directly from the producer."
       ]
     },
+    "receiptDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the waste was received at the receiver's site, as an ISO 8601 date-time with a timezone. Must not be later than the time the receipt is submitted; the service checks that, as it depends on when the request arrives.",
+      "examples": ["2026-10-14T09:30:00Z"]
+    },
     "carrier": {
       "$ref": "../common/carrier.schema.json"
     },
@@ -42,6 +48,12 @@
       "description": "The hazardous waste consignment note. Required when any waste item declares hazardous properties."
     }
   },
-  "required": ["reasonForNoDeliveryId", "carrier", "receiver", "wasteItems"],
+  "required": [
+    "reasonForNoDeliveryId",
+    "receiptDateTime",
+    "carrier",
+    "receiver",
+    "wasteItems"
+  ],
   "additionalProperties": false
 }
