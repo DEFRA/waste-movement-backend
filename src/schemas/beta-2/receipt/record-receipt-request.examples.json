@@ -38,6 +38,16 @@
           "isEstimate": false
         }
       },
+      "treatments": [
+        {
+          "disposalOrRecoveryCode": "R3",
+          "weight": {
+            "amount": 248.2,
+            "unit": "KILOGRAMS",
+            "isEstimate": false
+          }
+        }
+      ],
       "brokerOrDealer": {
         "isPresent": true,
         "items": [

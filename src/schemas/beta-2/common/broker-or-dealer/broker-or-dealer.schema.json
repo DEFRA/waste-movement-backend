@@ -25,24 +25,23 @@
     }
   ],
   "type": "object",
-  "oneOf": [
-    {
-      "required": ["isPresent", "items"],
-      "properties": {
-        "isPresent": { "const": true },
-        "items": { "type": "array", "minItems": 1 }
-      }
-    },
-    {
-      "properties": {
-        "isPresent": { "const": false },
-        "items": {
-          "not": {},
-          "description": "Not allowed when isPresent is false or absent."
-        }
+  "if": {
+    "properties": { "isPresent": { "const": true } },
+    "required": ["isPresent"]
+  },
+  "then": {
+    "properties": { "items": {} },
+    "required": ["items"],
+    "description": "Required when 'isPresent' is true"
+  },
+  "else": {
+    "properties": {
+      "items": {
+        "not": {},
+        "description": "Not allowed when 'isPresent' is false or absent"
       }
     }
-  ],
+  },
   "properties": {
     "isPresent": {
       "type": "boolean",
@@ -50,6 +49,7 @@
     },
     "items": {
       "type": "array",
+      "minItems": 1,
       "items": { "$ref": "broker-or-dealer-entry.schema.json" },
       "description": "The brokers or dealers involved. Required with at least one entry when isPresent is true, and must not be provided otherwise. More than one may be declared."
     }

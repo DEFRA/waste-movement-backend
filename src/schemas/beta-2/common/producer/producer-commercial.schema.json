@@ -23,28 +23,23 @@
     { "$ref": "producer-base.schema.json" },
     {
       "type": "object",
-      "oneOf": [
-        {
-          "required": ["authorisationNumber"],
-          "properties": {
-            "authorisationNumber": {},
-            "reasonForNoAuthorisationNumber": {
-              "not": {},
-              "description": "Not allowed when authorisationNumber is provided."
-            }
-          }
-        },
-        {
-          "required": ["reasonForNoAuthorisationNumber"],
-          "properties": {
-            "authorisationNumber": {
-              "not": {},
-              "description": "Not allowed when reasonForNoAuthorisationNumber is provided."
-            },
-            "reasonForNoAuthorisationNumber": {}
+      "if": {
+        "properties": { "authorisationNumber": {} },
+        "required": ["authorisationNumber"]
+      },
+      "then": {
+        "properties": {
+          "reasonForNoAuthorisationNumber": {
+            "not": {},
+            "description": "Not allowed when 'authorisationNumber' is provided"
           }
         }
-      ],
+      },
+      "else": {
+        "properties": { "reasonForNoAuthorisationNumber": {} },
+        "required": ["reasonForNoAuthorisationNumber"],
+        "description": "Required when 'authorisationNumber' is not provided"
+      },
       "properties": {
         "wasteSource": {
           "const": "Commercial",

@@ -52,7 +52,7 @@ describe('POST /beta-1/deliveries', () => {
   }
 
   const expectedTypeBase =
-    'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
+    'https://defra.github.io/digital-waste-tracking-api-site/preview/problems/'
 
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
@@ -140,12 +140,12 @@ describe('POST /beta-1/deliveries', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"apiCode" is required',
+          message: "'apiCode' is required",
           pointer: '/apiCode'
         },
         {
           errorType: 'NotProvided',
-          message: '"movementIds" is required',
+          message: "'movementIds' is required",
           pointer: '/movementIds'
         }
       ],

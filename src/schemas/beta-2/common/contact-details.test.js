@@ -38,4 +38,9 @@ describe('contact-details schema', () => {
     const payload = { phoneNumber: '123456' }
     expect(validateAjv(payload).valid).toBe(false)
   })
+
+  test('rejects contact details with an extra property', () => {
+    const payload = { ...validContactDetails, extra: true }
+    expect(validateAjv(payload).valid).toBe(false)
+  })
 })

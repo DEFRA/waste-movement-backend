@@ -73,6 +73,52 @@ function findBooleanSubschemas(node, pointer = '') {
   return [...new Set(found)]
 }
 
+/** JSON pointers to every then / else / not that can reject but has no description. */
+function findUndescribedConditions(node, pointer = '') {
+  if (!node || typeof node !== 'object') {
+    return []
+  }
+  // A branch holding only `properties` raises nothing itself — its errors
+  // come from the subschemas inside, which are checked in their own right.
+  const raisesErrors = (branch) =>
+    Object.keys(branch).some(
+      (key) => !['properties', 'description'].includes(key)
+    )
+  const undescribed = ['then', 'else']
+    .filter(
+      (key) => node[key] && raisesErrors(node[key]) && !node[key].description
+    )
+    .map((key) => `${pointer}/${key}`)
+  if ('not' in node && !node.description) {
+    undescribed.push(pointer)
+  }
+  return [
+    ...undescribed,
+    ...Object.entries(node).flatMap(([key, value]) =>
+      findUndescribedConditions(value, `${pointer}/${key}`)
+    )
+  ]
+}
+
+// The descriptions findUndescribedConditions requires, with their pointers.
+function findConditionMessages(node, pointer = '') {
+  if (!node || typeof node !== 'object') {
+    return []
+  }
+  const messages = ['then', 'else']
+    .filter((key) => node[key]?.description)
+    .map((key) => [`${pointer}/${key}`, node[key].description])
+  if ('not' in node && node.description) {
+    messages.push([pointer, node.description])
+  }
+  return [
+    ...messages,
+    ...Object.entries(node).flatMap(([key, value]) =>
+      findConditionMessages(value, `${pointer}/${key}`)
+    )
+  ]
+}
+
 const readAll = (suffix) =>
   collectFiles(schemaRoot, suffix).map((file) => [
     path.relative(schemaRoot, file),
@@ -104,6 +150,29 @@ describe('schema conventions', () => {
   test.each(schemaFiles)('%s uses no boolean subschemas', (_, schema) => {
     expect(findBooleanSubschemas(schema)).toEqual([])
   })
+
+  // hapi-validator uses a then / else / not subschema's description as the
+  // message for an error it raises directly ("Required when …", "Not allowed
+  // when …"), so each one that can raise an error needs a description.
+  test.each(schemaFiles)(
+    '%s describes every then, else and not that can reject',
+    (_, schema) => {
+      expect(findUndescribedConditions(schema)).toEqual([])
+    }
+  )
+
+  // Those descriptions are worded like hapi-validator's own messages
+  // ("'receiver' is required"): field names and values in single quotes, no
+  // full stop, since the validator joins messages with ". " itself.
+  test.each(schemaFiles)(
+    '%s words every condition message like the validator does',
+    (_, schema) => {
+      const malformed = findConditionMessages(schema).filter(
+        ([, message]) => message.endsWith('.') || message.includes('"')
+      )
+      expect(malformed).toEqual([])
+    }
+  )
 
   // ajv treats `examples` as an annotation and never checks it, so an example
   // that has drifted from its schema would be published in the spec unnoticed.

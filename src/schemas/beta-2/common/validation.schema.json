@@ -15,5 +15,6 @@
       "items": { "$ref": "issue.schema.json" },
       "description": "Data-quality warnings. Empty when there are none."
     }
-  }
+  },
+  "additionalProperties": false
 }

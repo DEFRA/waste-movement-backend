@@ -7,7 +7,6 @@ import {
   METRIC_NAMES,
   backoffOptions
 } from '@defra/waste-movement-utils'
-import { updatePlugins } from './update-plugins.js'
 import { backOff } from 'exponential-backoff'
 import { getOrganisationValidationError } from '../common/helpers/validate-organisation.js'
 import { handleRouteError } from '../common/helpers/bulk-route-helpers.js'
@@ -28,8 +27,7 @@ const updateReceiptMovement = {
       params: Joi.object({
         wasteTrackingId: Joi.string().required()
       })
-    },
-    plugins: updatePlugins
+    }
   },
   handler: async (request, h) => {
     try {

@@ -24,28 +24,23 @@
     }
   ],
   "type": "object",
-  "oneOf": [
-    {
-      "required": ["registrationNumber"],
-      "properties": {
-        "registrationNumber": {},
-        "reasonForNoRegistrationNumber": {
-          "not": {},
-          "description": "Not allowed when registrationNumber is provided."
-        }
-      }
-    },
-    {
-      "required": ["reasonForNoRegistrationNumber"],
-      "properties": {
-        "registrationNumber": {
-          "not": {},
-          "description": "Not allowed when reasonForNoRegistrationNumber is provided."
-        },
-        "reasonForNoRegistrationNumber": {}
+  "if": {
+    "properties": { "registrationNumber": {} },
+    "required": ["registrationNumber"]
+  },
+  "then": {
+    "properties": {
+      "reasonForNoRegistrationNumber": {
+        "not": {},
+        "description": "Not allowed when 'registrationNumber' is provided"
       }
     }
-  ],
+  },
+  "else": {
+    "properties": { "reasonForNoRegistrationNumber": {} },
+    "required": ["reasonForNoRegistrationNumber"],
+    "description": "Required when 'registrationNumber' is not provided"
+  },
   "properties": {
     "organisationName": {
       "type": "string",

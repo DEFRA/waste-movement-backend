@@ -25,7 +25,7 @@ describe('jsonSchemaRequestValidator', () => {
 
   test('throws a Boom badRequest when the value is invalid', () => {
     expect(() => jsonSchemaRequestValidator(schemaId)({})).toThrow(
-      '"wasteSource" is required'
+      "'wasteSource' is required"
     )
   })
 
@@ -41,7 +41,7 @@ describe('jsonSchemaRequestValidator', () => {
   test('maps a missing property to NotProvided', () => {
     expect(getDetails(schemaId, {})).toEqual([
       {
-        message: '"wasteSource" is required',
+        message: "'wasteSource' is required",
         path: ['wasteSource'],
         type: 'NotProvided'
       }
@@ -113,7 +113,7 @@ describe('jsonSchemaRequestValidator', () => {
         value: { ...carrier, meansOfTransport: 'Road' },
         expected: [
           {
-            message: '"vehicleRegistration" is required',
+            message: "Required when 'meansOfTransport' is 'Road'",
             path: ['vehicleRegistration'],
             type: 'NotProvided'
           }
@@ -124,23 +124,18 @@ describe('jsonSchemaRequestValidator', () => {
         value: { ...carrier, vehicleRegistration: 'AB12 CDE' },
         expected: [
           {
-            message: 'must NOT be valid',
+            message: "Not allowed unless 'meansOfTransport' is 'Road'",
             path: ['vehicleRegistration'],
             type: 'NotAllowed'
           }
         ]
       },
       {
-        rule: 'oneOf',
+        rule: 'if/else on a required field',
         value: { ...carrier, registrationNumber: undefined },
         expected: [
           {
-            message: '"registrationNumber" is required',
-            path: ['registrationNumber'],
-            type: 'NotProvided'
-          },
-          {
-            message: '"reasonForNoRegistrationNumber" is required',
+            message: "Required when 'registrationNumber' is not provided",
             path: ['reasonForNoRegistrationNumber'],
             type: 'NotProvided'
           }
@@ -151,12 +146,12 @@ describe('jsonSchemaRequestValidator', () => {
         value: { ...carrier, contactDetails: {} },
         expected: [
           {
-            message: '"emailAddress" is required',
+            message: "'emailAddress' is required",
             path: ['contactDetails', 'emailAddress'],
             type: 'NotProvided'
           },
           {
-            message: '"phoneNumber" is required',
+            message: "'phoneNumber' is required",
             path: ['contactDetails', 'phoneNumber'],
             type: 'NotProvided'
           }
@@ -170,6 +165,72 @@ describe('jsonSchemaRequestValidator', () => {
         ).toEqual(expected)
       }
     )
+  })
+
+  // The four rejections raised in review: each is reported once, saying why.
+  describe('messages', () => {
+    const brokerOrDealerId =
+      'beta-2/common/broker-or-dealer/broker-or-dealer.schema.json'
+    const brokerOrDealerEntry = {
+      organisationName: 'Broker Demo Ltd',
+      registrationNumber: 'CBDU654321',
+      contactDetails: { emailAddress: 'broker@example.com' }
+    }
+
+    test.each([
+      {
+        scenario: 'a field forbidden by the other one of a pair',
+        id: brokerOrDealerId,
+        value: {
+          isPresent: true,
+          items: [
+            { ...brokerOrDealerEntry, reasonForNoRegistrationNumber: 'ONE_OFF' }
+          ]
+        },
+        expected: {
+          message: "Not allowed when 'registrationNumber' is provided",
+          path: ['items', '0', 'reasonForNoRegistrationNumber'],
+          type: 'NotAllowed'
+        }
+      },
+      {
+        scenario: 'a field required by a condition',
+        id: brokerOrDealerId,
+        value: { isPresent: true },
+        expected: {
+          message: "Required when 'isPresent' is true",
+          path: ['items'],
+          type: 'NotProvided'
+        }
+      },
+      {
+        scenario: 'a value outside an enum',
+        id: 'beta-2/common/supporting-references.schema.json',
+        value: [{ label: 'Purchase order', reference: 'PO-48213' }],
+        expected: {
+          message:
+            "must be one of: 'Weighbridge Number', 'PO Number', 'Job Number', 'Invoice Number', 'Waste Ticket Number', 'Other'",
+          path: ['0', 'label'],
+          type: 'InvalidValue'
+        }
+      },
+      {
+        scenario: 'neither of a pair',
+        id: 'beta-2/common/carrier.schema.json',
+        value: {
+          organisationName: 'Carrier Ltd',
+          meansOfTransport: 'Rail',
+          contactDetails: { emailAddress: 'carrier@example.com' }
+        },
+        expected: {
+          message: "Required when 'registrationNumber' is not provided",
+          path: ['reasonForNoRegistrationNumber'],
+          type: 'NotProvided'
+        }
+      }
+    ])('reports $scenario once, saying why', ({ id, value, expected }) => {
+      expect(getDetails(id, value)).toEqual([expected])
+    })
   })
 
   test('nests the path for an error inside a sub-object', () => {
@@ -239,6 +300,17 @@ describe('jsonSchemaResponseValidator', () => {
       },
       'Response failed schema validation'
     )
+  })
+
+  test('leaves the response body out of the logged errors', () => {
+    const invalidBody = { data: {}, validation: { warnings: [] } }
+
+    expect(() =>
+      jsonSchemaResponseValidator(responseSchemaId)(invalidBody)
+    ).toThrow()
+    const [[{ errors }]] = mockLoggerError.mock.calls
+    expect(errors[0]).not.toHaveProperty('data')
+    expect(errors[0]).not.toHaveProperty('parentSchema')
   })
 
   test('throws for an unknown schema id', () => {

@@ -12,11 +12,17 @@ import { ObjectId } from 'mongodb'
 import { expectProblemResponse } from './helpers/expect-problem-response.js'
 import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-body-has-shape.js'
 import {
+  actualCollectionDateTime,
+  plannedCollectionDateTime,
   brokerOrDealerEntry,
   carrier,
+  collectionSite,
+  consignmentNote,
+  hazardousWasteItem,
   receiver,
   supportingReference,
   physicalDetails,
+  treatment,
   wasteItem
 } from '../../src/schemas/beta-2/test-helpers.js'
 
@@ -27,8 +33,14 @@ describe('beta-2', () => {
   const intendedCarriers = [carrier]
   const intendedReceivers = [receiver]
   const wasteItems = [wasteItem]
+  // Receipts need at least one treatment (on every waste item, for an
+  // undocumented receipt); creating a movement forbids them.
+  const treatments = [treatment]
+  const receiptWasteItems = [{ ...wasteItem, treatments }]
   const minimalMovement = {
     producer: { wasteSource: 'Household' },
+    plannedCollectionDateTime,
+    collectionSite,
     intendedCarriers,
     intendedReceivers,
     wasteItems
@@ -48,13 +60,13 @@ describe('beta-2', () => {
     await wasteTrackingStub.stop()
   })
 
-  const createMovement = async () => {
+  const createMovement = async (overrides = {}) => {
     const { body } = await betaHttpRequest(
       testService.baseUrl,
       '/beta-2/movements',
       {
         method: 'POST',
-        body: { ...minimalMovement }
+        body: { ...minimalMovement, ...overrides }
       }
     )
     return body.data.movementId
@@ -75,7 +87,14 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { producer, intendedCarriers, intendedReceivers, wasteItems }
+          body: {
+            producer,
+            plannedCollectionDateTime,
+            collectionSite,
+            intendedCarriers,
+            intendedReceivers,
+            wasteItems
+          }
         }
       )
 
@@ -96,6 +115,7 @@ describe('beta-2', () => {
         _id: expect.any(ObjectId),
         movementId,
         orgId: forwardedOrganisationId,
+        wasteItems,
         createdAt: expect.any(String)
       })
     })
@@ -107,7 +127,14 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { producer, intendedCarriers, intendedReceivers, wasteItems }
+          body: {
+            producer,
+            plannedCollectionDateTime,
+            collectionSite,
+            intendedCarriers,
+            intendedReceivers,
+            wasteItems
+          }
         }
       )
 
@@ -151,7 +178,14 @@ describe('beta-2', () => {
         '/beta-2/movements',
         {
           method: 'POST',
-          body: { producer, intendedCarriers, intendedReceivers, wasteItems }
+          body: {
+            producer,
+            plannedCollectionDateTime,
+            collectionSite,
+            intendedCarriers,
+            intendedReceivers,
+            wasteItems
+          }
         }
       )
 
@@ -191,7 +225,15 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/movements/${movementId}/collection`,
-      { method: 'POST', body: { carrier, dutyOfCareConfirmed } }
+      {
+        method: 'POST',
+        body: {
+          carrier,
+          actualCollectionDateTime,
+          collectionSite,
+          dutyOfCareConfirmed
+        }
+      }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -223,6 +265,8 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           carrier,
+          actualCollectionDateTime,
+          collectionSite,
           dutyOfCareConfirmed,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
@@ -279,6 +323,81 @@ describe('beta-2', () => {
     })
   })
 
+  // hazardousWasteItem declares hazardous properties; hazardous waste needs a
+  // consignment note.
+  const hazardousMovement = {
+    wasteItems: [hazardousWasteItem],
+    consignmentNote
+  }
+
+  it('POST /beta-2/movements stores a hazardous waste item', async () => {
+    const movementId = await createMovement(hazardousMovement)
+
+    const movement = await testService.db
+      .collection('movements')
+      .findOne({ movementId })
+
+    expect(movement).toMatchObject({
+      movementId,
+      wasteItems: [hazardousWasteItem]
+    })
+    expect(movement).not.toHaveProperty('wasteType')
+  })
+
+  it('POST /beta-2/deliveries splits hazardous movements into their own deliveries', async () => {
+    const nonHazardousId1 = await createMovement()
+    const hazardousId = await createMovement(hazardousMovement)
+    const nonHazardousId2 = await createMovement()
+
+    const { status, body } = await betaHttpRequest(
+      testService.baseUrl,
+      '/beta-2/deliveries',
+      {
+        method: 'POST',
+        body: {
+          movementIds: [nonHazardousId1, hazardousId, nonHazardousId2],
+          carrier
+        }
+      }
+    )
+
+    expect(status).toEqual(HTTP_STATUS.CREATED)
+    expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
+    expect(body.data.deliveries).toEqual([
+      {
+        deliveryId: expect.any(String),
+        movementIds: [nonHazardousId1, nonHazardousId2],
+        wasteType: 'NON_HAZARDOUS'
+      },
+      {
+        deliveryId: hazardousId,
+        movementIds: [hazardousId],
+        wasteType: 'HAZARDOUS'
+      }
+    ])
+
+    const deliveries = await testService.db
+      .collection('deliveries')
+      .find({
+        deliveryId: {
+          $in: body.data.deliveries.map(({ deliveryId }) => deliveryId)
+        }
+      })
+      .toArray()
+
+    expect(deliveries).toHaveLength(2)
+    expect(deliveries).toEqual(
+      expect.arrayContaining(
+        body.data.deliveries.map((delivery) =>
+          expect.objectContaining({
+            ...delivery,
+            orgId: forwardedOrganisationId
+          })
+        )
+      )
+    )
+  })
+
   it('POST /beta-2/deliveries/{deliveryId}/receipt records a receipt against a delivery', async () => {
     const createMovementRes = await betaHttpRequest(
       testService.baseUrl,
@@ -303,7 +422,10 @@ describe('beta-2', () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       `/beta-2/deliveries/${deliveryId}/receipt`,
-      { method: 'POST', body: { carrier, receiver, physicalDetails } }
+      {
+        method: 'POST',
+        body: { carrier, receiver, physicalDetails, treatments }
+      }
     )
 
     expect(status).toEqual(HTTP_STATUS.CREATED)
@@ -326,14 +448,19 @@ describe('beta-2', () => {
     })
   })
 
-  it('POST /beta-2/receipts records a receipt without a delivery', async () => {
-    const reason = 'No prior movement trail'
+  it('POST /beta-2/receipts records an undocumented receipt', async () => {
+    const reasonForNoDeliveryId = 'No prior movement trail'
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       '/beta-2/receipts',
       {
         method: 'POST',
-        body: { reason, carrier, receiver, wasteItems }
+        body: {
+          reasonForNoDeliveryId,
+          carrier,
+          receiver,
+          wasteItems: receiptWasteItems
+        }
       }
     )
 
@@ -368,6 +495,8 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           carrier,
+          actualCollectionDateTime,
+          collectionSite,
           dutyOfCareConfirmed,
           specialHandlingRequirements: 'Handle with care and keep upright.'
         }
@@ -426,6 +555,7 @@ describe('beta-2', () => {
           carrier,
           receiver,
           physicalDetails,
+          treatments,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -441,17 +571,17 @@ describe('beta-2', () => {
     expectStandardHeaders(headers)
   })
 
-  it('POST /beta-2/receipts records a receipt without a delivery with a brokerOrDealer and supportingReferences', async () => {
+  it('POST /beta-2/receipts records an undocumented receipt with a brokerOrDealer and supportingReferences', async () => {
     const { status, body, headers } = await betaHttpRequest(
       testService.baseUrl,
       '/beta-2/receipts',
       {
         method: 'POST',
         body: {
-          reason: 'No prior movement trail',
+          reasonForNoDeliveryId: 'No prior movement trail',
           carrier,
           receiver,
-          wasteItems,
+          wasteItems: receiptWasteItems,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -473,7 +603,12 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, dutyOfCareConfirmed }
+        body: {
+          carrier,
+          actualCollectionDateTime,
+          collectionSite,
+          dutyOfCareConfirmed
+        }
       })
 
       expectProblemResponse(response, {
@@ -491,7 +626,13 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { apiCode: apiCode1, carrier, dutyOfCareConfirmed }
+        body: {
+          apiCode: apiCode1,
+          carrier,
+          actualCollectionDateTime,
+          collectionSite,
+          dutyOfCareConfirmed
+        }
       })
 
       expectProblemResponse(response, {
@@ -533,7 +674,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier }
+        body: { carrier, actualCollectionDateTime, collectionSite }
       })
 
       expectProblemResponse(response, {
@@ -545,7 +686,7 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"dutyOfCareConfirmed" is required',
+          message: "'dutyOfCareConfirmed' is required",
           pointer: '/dutyOfCareConfirmed'
         }
       ])
@@ -559,6 +700,8 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           carrier,
+          actualCollectionDateTime,
+          collectionSite,
           dutyOfCareConfirmed,
           brokerOrDealer: { isPresent: true }
         }
@@ -586,6 +729,8 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           carrier,
+          actualCollectionDateTime,
+          collectionSite,
           dutyOfCareConfirmed,
           brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
         }
@@ -613,6 +758,8 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           carrier,
+          actualCollectionDateTime,
+          collectionSite,
           dutyOfCareConfirmed,
           supportingReferences: [
             { ...supportingReference, label: 'Not A Label' }
@@ -686,6 +833,9 @@ describe('beta-2', () => {
         type: 'bad-request',
         instance: endpoint
       })
+      expect(response.body.detail).toEqual(
+        'Movement ID(s) not recognised: 25ZZZZZ0'
+      )
     })
 
     it('rejects receipt recording without a carrier', async () => {
@@ -693,7 +843,11 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason', receiver, wasteItems }
+        body: {
+          reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
+          receiver,
+          wasteItems: receiptWasteItems
+        }
       })
 
       expectProblemResponse(response, {
@@ -715,7 +869,11 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason', carrier, wasteItems }
+        body: {
+          reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
+          carrier,
+          wasteItems: receiptWasteItems
+        }
       })
 
       expectProblemResponse(response, {
@@ -727,7 +885,7 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"receiver" is required',
+          message: "'receiver' is required",
           pointer: '/receiver'
         }
       ])
@@ -746,7 +904,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, physicalDetails }
+        body: { carrier, physicalDetails, treatments }
       })
 
       expectProblemResponse(response, {
@@ -758,7 +916,7 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"receiver" is required',
+          message: "'receiver' is required",
           pointer: '/receiver'
         }
       ])
@@ -769,7 +927,11 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { reason: 'Some reason', carrier, receiver }
+        body: {
+          reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
+          carrier,
+          receiver
+        }
       })
 
       expectProblemResponse(response, {
@@ -781,8 +943,39 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"wasteItems" is required',
+          message: "'wasteItems' is required",
           pointer: '/wasteItems'
+        }
+      ])
+    })
+
+    it('rejects receipt recording against a delivery without treatments', async () => {
+      const movementId = await createMovement()
+      const createDeliveryRes = await betaHttpRequest(
+        testService.baseUrl,
+        '/beta-2/deliveries',
+        { method: 'POST', body: { movementIds: [movementId], carrier } }
+      )
+      const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
+
+      const endpoint = `/beta-2/deliveries/${deliveryId}/receipt`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: { carrier, receiver, physicalDetails }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toEqual([
+        {
+          errorType: 'NotProvided',
+          message: "'treatments' is required",
+          pointer: '/treatments'
         }
       ])
     })
@@ -806,7 +999,8 @@ describe('beta-2', () => {
           physicalDetails: {
             ...physicalDetails,
             totalWeight: { ...physicalDetails.totalWeight, amount: 0 }
-          }
+          },
+          treatments
         }
       })
 
@@ -834,10 +1028,10 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
-          reason: 'Some reason',
+          reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
           carrier,
           receiver,
-          wasteItems
+          wasteItems: receiptWasteItems
         }
       })
 
@@ -859,6 +1053,8 @@ describe('beta-2', () => {
         body: {
           apiCode: apiCode1,
           producer: { wasteSource: 'Household' },
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers,
           intendedReceivers,
           wasteItems
@@ -906,6 +1102,8 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           producer: { wasteSource: 'Household' },
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers,
           wasteItems
         }
@@ -920,7 +1118,7 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"intendedReceivers" is required',
+          message: "'intendedReceivers' is required",
           pointer: '/intendedReceivers'
         }
       ])
@@ -936,6 +1134,8 @@ describe('beta-2', () => {
           producer: { wasteSource: 'Household' },
           intendedReceivers: [],
           wasteItems,
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers
         }
       })
@@ -958,6 +1158,8 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           producer: { wasteSource: 'Household' },
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers,
           intendedReceivers
         }
@@ -972,7 +1174,7 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: '"wasteItems" is required',
+          message: "'wasteItems' is required",
           pointer: '/wasteItems'
         }
       ])
@@ -985,6 +1187,8 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           producer: { wasteSource: 'Household' },
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers,
           intendedReceivers,
           wasteItems: [
@@ -1019,6 +1223,8 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers,
           intendedReceivers,
           wasteItems,
@@ -1040,6 +1246,8 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           producer: 'fail',
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers: [carrier],
           intendedReceivers,
           wasteItems
@@ -1066,6 +1274,8 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers,
           intendedReceivers,
           wasteItems,
@@ -1092,6 +1302,8 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers,
           intendedReceivers,
           wasteItems,
@@ -1119,6 +1331,8 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers,
           intendedReceivers,
           wasteItems,
@@ -1145,6 +1359,8 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers,
           intendedReceivers,
           wasteItems,
@@ -1171,6 +1387,8 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          plannedCollectionDateTime,
+          collectionSite,
           intendedCarriers,
           intendedReceivers,
           wasteItems,
@@ -1201,6 +1419,8 @@ describe('beta-2', () => {
         {
           method: 'POST',
           body: {
+            plannedCollectionDateTime,
+            collectionSite,
             intendedCarriers,
             intendedReceivers,
             wasteItems,
@@ -1220,6 +1440,8 @@ describe('beta-2', () => {
         {
           method: 'POST',
           body: {
+            plannedCollectionDateTime,
+            collectionSite,
             intendedCarriers,
             intendedReceivers,
             wasteItems,
@@ -1246,6 +1468,8 @@ describe('beta-2', () => {
         {
           method: 'POST',
           body: {
+            plannedCollectionDateTime,
+            collectionSite,
             intendedCarriers,
             intendedReceivers,
             wasteItems,

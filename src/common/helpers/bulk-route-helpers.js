@@ -1,4 +1,3 @@
-import Joi from 'joi'
 import {
   HTTP_STATUS,
   generateAllValidationWarnings
@@ -8,17 +7,6 @@ import { createLogger } from './logging/logger.js'
 import { boomify } from '@hapi/boom'
 
 const logger = createLogger()
-
-const badRequestResponse = {
-  [HTTP_STATUS.BAD_REQUEST]: {
-    description: 'Bad Request',
-    schema: Joi.object({
-      statusCode: Joi.number().valid(HTTP_STATUS.BAD_REQUEST),
-      error: Joi.string(),
-      message: Joi.string()
-    }).label('BadRequestResponse')
-  }
-}
 
 function handleRouteError(h, error) {
   let statusCode = error.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -89,7 +77,6 @@ const handleBetaRouteError = (error) => {
 }
 
 export {
-  badRequestResponse,
   handleRouteError,
   handleBetaRouteError,
   generateResponseWithValidationWarnings

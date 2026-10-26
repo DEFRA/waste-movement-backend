@@ -86,6 +86,21 @@ export const carrier = {
   }
 }
 
+export const plannedCollectionDateTime = '2026-01-15T09:30:00Z'
+
+export const actualCollectionDateTime = '2026-01-15T09:30:00Z'
+
+export const collectionSite = {
+  address: {
+    fullAddress: '10 Industrial Way, Test City',
+    postcode: 'TE1 2PQ'
+  },
+  contactDetails: {
+    emailAddress: 'site@example.com',
+    phoneNumber: '01234567890'
+  }
+}
+
 export const supportingReference = {
   label: 'PO Number',
   reference: 'PO-123456'
@@ -104,6 +119,69 @@ export const physicalDetails = {
   totalWeight: weight
 }
 
+export const pops = {
+  isPresent: false
+}
+
+export const popComponent = {
+  code: 'PFOA',
+  unit: 'MG_PER_KG',
+  amount: 0.5
+}
+
+export const popsPresent = {
+  isPresent: true,
+  componentsSource: 'OWN_TESTING',
+  components: [popComponent]
+}
+
+export const hazardous = {
+  isPresent: false
+}
+
+export const hazardousComponent = {
+  name: 'Mercury',
+  unit: 'MG_PER_KG',
+  amount: 5
+}
+
+export const hazardousPresent = {
+  isPresent: true,
+  codes: ['HP_4'],
+  componentsSource: 'OWN_TESTING',
+  componentsNotApplicable: false,
+  components: [hazardousComponent]
+}
+
+export const classification = {
+  wasteDescription: 'Mixed municipal waste',
+  ewcCodes: ['200301'],
+  pops,
+  hazardous
+}
+
 export const wasteItem = {
+  classification,
   physicalDetails
+}
+
+// Declares hazardous properties, which is what makes it hazardous. 200121
+// (fluorescent tubes) is also a hazardous code in the EWC reference data.
+export const hazardousWasteItem = {
+  classification: {
+    wasteDescription: 'Fluorescent tubes',
+    ewcCodes: ['200121'],
+    pops,
+    hazardous: hazardousPresent
+  },
+  physicalDetails
+}
+
+export const consignmentNote = {
+  code: 'CJTILE/A0001'
+}
+
+export const treatment = {
+  disposalOrRecoveryCode: 'R3',
+  weight
 }

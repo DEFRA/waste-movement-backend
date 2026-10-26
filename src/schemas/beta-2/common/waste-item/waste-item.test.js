@@ -1,4 +1,4 @@
-import { validatorFor, wasteItem } from '../../test-helpers.js'
+import { treatment, validatorFor, wasteItem } from '../../test-helpers.js'
 
 const validateAjv = validatorFor(
   'beta-2/common/waste-item/waste-item.schema.json'
@@ -29,10 +29,89 @@ describe('Feature: Schema - declaring a waste item', () => {
     })
   })
 
+  // The classification's rules are covered by classification.test.js — these
+  // confirm it's required and that the $ref wiring is live.
+  describe('Scenario: Validation fails when a waste item is declared without a classification', () => {
+    test('validation fails and the classification is reported as required', () => {
+      const { classification, ...withoutClassification } = wasteItem
+      const { valid, errors } = validateAjv(withoutClassification)
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '',
+          params: { missingProperty: 'classification' }
+        })
+      )
+    })
+
+    test('rejects a waste item whose classification is invalid, reporting the error against it', () => {
+      const { valid, errors } = validateAjv({
+        ...wasteItem,
+        classification: { ...wasteItem.classification, ewcCodes: ['2001'] }
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'pattern',
+          instancePath: '/classification/ewcCodes/0'
+        })
+      )
+    })
+  })
+
+  // A treatment's rules are covered by treatment.test.js and treatments.test.js
+  // — these confirm treatments is optional and that the $ref wiring is live.
+  describe('Scenario: Validation passes when a waste item declares its treatments', () => {
+    test('validation passes when the treatments are valid', () => {
+      expect(validateAjv({ ...wasteItem, treatments: [treatment] }).valid).toBe(
+        true
+      )
+    })
+
+    test('validation passes when no treatments are declared', () => {
+      expect(validateAjv(wasteItem).valid).toBe(true)
+    })
+  })
+
+  describe('Scenario: Validation fails when a waste item declares an empty list of treatments', () => {
+    test('validation fails and at least one treatment is reported as required', () => {
+      const { valid, errors } = validateAjv({ ...wasteItem, treatments: [] })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'minItems',
+          instancePath: '/treatments'
+        })
+      )
+    })
+  })
+
   describe('Additional coverage', () => {
+    test('rejects a waste item whose treatment is invalid, reporting the error against that treatment', () => {
+      const { valid, errors } = validateAjv({
+        ...wasteItem,
+        treatments: [{ ...treatment, disposalOrRecoveryCode: 'R99' }]
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'enum',
+          instancePath: '/treatments/0/disposalOrRecoveryCode'
+        })
+      )
+    })
+
     test('rejects a waste item whose physical details are invalid, reporting the error against them', () => {
       const { form, ...withoutForm } = wasteItem.physicalDetails
-      const { valid, errors } = validateAjv({ physicalDetails: withoutForm })
+      const { valid, errors } = validateAjv({
+        ...wasteItem,
+        physicalDetails: withoutForm
+      })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -46,6 +125,7 @@ describe('Feature: Schema - declaring a waste item', () => {
 
     test('rejects a waste item whose weight is invalid, reporting the error against the weight', () => {
       const { valid, errors } = validateAjv({
+        ...wasteItem,
         physicalDetails: {
           ...wasteItem.physicalDetails,
           totalWeight: { ...wasteItem.physicalDetails.totalWeight, unit: 'kg' }

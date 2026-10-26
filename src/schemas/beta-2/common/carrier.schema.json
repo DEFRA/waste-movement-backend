@@ -3,29 +3,26 @@
   "title": "Carrier",
   "description": "A single waste carrier. organisationName, meansOfTransport and contactDetails are required, and exactly one of registrationNumber or reasonForNoRegistrationNumber must be provided. vehicleRegistration is required for Road and otherMeansOfTransport for Other; each is forbidden otherwise. address is optional.",
   "type": "object",
-  "oneOf": [
+  "allOf": [
     {
-      "required": ["registrationNumber"],
-      "properties": {
-        "registrationNumber": {},
-        "reasonForNoRegistrationNumber": {
-          "not": {},
-          "description": "Not allowed when registrationNumber is provided."
+      "if": {
+        "properties": { "registrationNumber": {} },
+        "required": ["registrationNumber"]
+      },
+      "then": {
+        "properties": {
+          "reasonForNoRegistrationNumber": {
+            "not": {},
+            "description": "Not allowed when 'registrationNumber' is provided"
+          }
         }
+      },
+      "else": {
+        "properties": { "reasonForNoRegistrationNumber": {} },
+        "required": ["reasonForNoRegistrationNumber"],
+        "description": "Required when 'registrationNumber' is not provided"
       }
     },
-    {
-      "required": ["reasonForNoRegistrationNumber"],
-      "properties": {
-        "registrationNumber": {
-          "not": {},
-          "description": "Not allowed when reasonForNoRegistrationNumber is provided."
-        },
-        "reasonForNoRegistrationNumber": {}
-      }
-    }
-  ],
-  "allOf": [
     {
       "if": {
         "properties": {
@@ -39,13 +36,14 @@
         "properties": {
           "vehicleRegistration": {}
         },
-        "required": ["vehicleRegistration"]
+        "required": ["vehicleRegistration"],
+        "description": "Required when 'meansOfTransport' is 'Road'"
       },
       "else": {
         "properties": {
           "vehicleRegistration": {
             "not": {},
-            "description": "Not allowed unless meansOfTransport is Road."
+            "description": "Not allowed unless 'meansOfTransport' is 'Road'"
           }
         }
       }
@@ -63,13 +61,14 @@
         "properties": {
           "otherMeansOfTransport": {}
         },
-        "required": ["otherMeansOfTransport"]
+        "required": ["otherMeansOfTransport"],
+        "description": "Required when 'meansOfTransport' is 'Other'"
       },
       "else": {
         "properties": {
           "otherMeansOfTransport": {
             "not": {},
-            "description": "Not allowed unless meansOfTransport is Other."
+            "description": "Not allowed unless 'meansOfTransport' is 'Other'"
           }
         }
       }

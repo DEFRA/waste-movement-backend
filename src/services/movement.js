@@ -9,7 +9,7 @@ const movementsCollectionId = 'movements'
  *
  * @param {import('mongodb').Db} db
  * @param {string} movementId
- * @returns {Promise<import('../common/types/movement.js').MovementRecord | null>}
+ * @returns {Promise<{ movementId: string, orgId: string, wasteItems?: object[], createdAt: string } | null>}
  */
 export const getMovementRecord = async (db, movementId) => {
   const movementsCollection = db.collection(movementsCollectionId)
@@ -37,6 +37,26 @@ export const findMovementIds = async (db, movementIds) => {
 }
 
 /**
+ * Looks up the given movement IDs in the `movements` collection and returns
+ * the subset that exist, with only their waste items' classifications, which
+ * is all a delivery needs. Beta-1 movements, and beta-2 movements created
+ * before waste items were stored, have no `wasteItems`.
+ *
+ * @param {import('mongodb').Db} db
+ * @param {string[]} movementIds
+ * @returns {Promise<{ movementId: string, wasteItems?: { classification: object }[] }[]>}
+ */
+export const findMovements = async (db, movementIds) => {
+  const movementsCollection = db.collection(movementsCollectionId)
+  return movementsCollection
+    .find(
+      { movementId: { $in: movementIds } },
+      { projection: { _id: 0, movementId: 1, 'wasteItems.classification': 1 } }
+    )
+    .toArray()
+}
+
+/**
  * Mints a new unique movement id.
  *
  * @returns {Promise<string>}
@@ -49,8 +69,13 @@ export const createMovementId = async () => {
 /**
  * Persists a new movement record.
  *
+ * NOTE: the `movements` collection has no indexes, so nothing stops a
+ * `movementId` being stored twice, e.g. if a retry repeats a write that had
+ * already succeeded. To be addressed, e.g. with a unique index on
+ * `movementId`, once the database layer is defined.
+ *
  * @param {import('mongodb').Db} db
- * @param {{ movementId: string, orgId: string }} movement
+ * @param {{ movementId: string, orgId: string, wasteItems?: object[] }} movement
  * @returns {Promise<{ movementId: string }>}
  */
 export const createMovementRecord = async (db, movement) => {

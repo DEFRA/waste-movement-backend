@@ -21,5 +21,6 @@
       "description": "Accepts UK postcodes and Irish Eircodes."
     }
   },
-  "required": ["postcode"]
+  "required": ["postcode"],
+  "additionalProperties": false
 }

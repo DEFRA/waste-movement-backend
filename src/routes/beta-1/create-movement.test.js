@@ -50,7 +50,7 @@ describe('movement Route Tests version: beta-1', () => {
   const goodPayload = { apiCode }
 
   const expectedTypeBase =
-    'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
+    'https://defra.github.io/digital-waste-tracking-api-site/preview/problems/'
 
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
@@ -148,7 +148,7 @@ describe('movement Route Tests version: beta-1', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: '"apiCode" is required',
+          message: "'apiCode' is required",
           pointer: '/apiCode'
         }
       ],

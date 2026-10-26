@@ -8,10 +8,12 @@
     "data": {
       "type": ["object", "null"],
       "description": "No resource id is returned for a collection event; always null.",
-      "examples": [null]
+      "examples": [null],
+      "additionalProperties": false
     },
     "validation": {
       "$ref": "../common/validation.schema.json"
     }
-  }
+  },
+  "additionalProperties": false
 }

@@ -65,7 +65,7 @@ MongoDB (Database)
 
 ### Node.js
 
-Please install [Node.js](http://nodejs.org/) `>= v22` and [npm](https://nodejs.org/) `>= v11`. You will find it
+Please install the [Node.js](http://nodejs.org/) version noted in `engines` in `package.json` and [npm](https://nodejs.org/) `>= v12`. You will find it
 easier to use the Node Version Manager [nvm](https://github.com/creationix/nvm)
 
 To use the correct version of Node.js for this application, via nvm:
@@ -254,6 +254,8 @@ A local environment with:
 ```bash
 docker compose up --build -d
 ```
+
+The stack is defined once in digital-waste-tracking-uat ([shared-compose/](https://github.com/DEFRA/digital-waste-tracking-uat/tree/main/shared-compose)) and shared with the other service repos. `compose.yml` includes it and `compose.override-shared.yml` builds this service from your checkout. Its credentials are made-up local-only values, so no `.env` is needed; see `.env.example` for the optional overrides.
 
 ### Dependabot
 

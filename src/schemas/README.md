@@ -32,12 +32,19 @@ conversion step in between.
 
 **OpenAPI 3.0 can't express what these schemas need.** `const` and `propertyNames` are what
 encode rules like "Household forbids these fields" and "exactly one of `authorisationNumber` /
-`reasonForNoAuthorisationNumber`" (with the `oneOf` branches described under
-[No boolean subschemas](#no-boolean-subschemas)). A 3.0 spec would
+`reasonForNoAuthorisationNumber`" (with the `if`/`then`/`else` described under
+[Conditional rules](#conditional-rules-ifthenelse-not-oneof)). A 3.0 spec would
 describe a looser contract than the one actually enforced. 3.1 is required, not preferred.
 
-`hapi-swagger` is not part of this — it can't consume JSON Schema and can't emit 3.1. It serves
-the legacy routes only, and finds them by a route tag, so **beta routes carry no `tags`**.
+The legacy (unversioned) routes are described separately, by `openapi.json` at the root of this
+folder: a Swagger 2.0 snapshot of what `hapi-swagger` served before it was removed. Nothing
+generates it any more, so a change to a legacy route's Joi schema or responses needs a matching
+hand edit there. `openapi.test.js` catches the request side drifting: it compares the
+spec with each route's Joi `describe()` — routes, parameters, property names, types,
+unconditional `required`, enums and array limits — and names every field path that differs.
+Most of those request bodies come from `@defra/waste-movement-utils`, so bumping it can fail
+this test with no local schema change. Patterns, descriptions, examples and responses aren't
+checked.
 
 ### The file's path is its identity
 
@@ -74,14 +81,14 @@ reaching back into utils.
 
 ### No boolean subschemas
 
-To forbid a field in one branch of a `oneOf` — "exactly one of `authorisationNumber` /
-`reasonForNoAuthorisationNumber`", "no `items` when `isPresent` is false" — write an explicit
+To forbid a field under a condition — "no `reasonForNoAuthorisationNumber` alongside an
+`authorisationNumber`", "no `items` when `isPresent` is false" — write an explicit
 never-matching schema with a description saying why, not a bare `false`:
 
 ```json
 "reasonForNoAuthorisationNumber": {
   "not": {},
-  "description": "Not allowed when authorisationNumber is provided."
+  "description": "Not allowed when 'authorisationNumber' is provided"
 }
 ```
 
@@ -90,11 +97,72 @@ never-matching schema with a description saying why, not a bare `false`:
 OpenAPI Viewer for macOS — can't decode a boolean where they expect a schema object, and reject
 the **whole** published spec, since it `$ref`s these files. `{ "not": {} }` validates
 identically, so no payload is accepted or rejected differently, and `validate/hapi-validator.js`
-maps its `not` error to `NotAllowed` with the field's pointer, as callers already get.
+maps its `not` error to `NotAllowed` with the field's pointer, as callers already get. Its
+description is the error message — see [Conditional rules](#conditional-rules-ifthenelse-not-oneof).
 
 `"additionalProperties": false` is the exception and stays: it's how a whole payload is closed,
 and those tools accept a boolean there. `conventions.test.js` fails on any other boolean
 subschema.
+
+### Optional means left out, not `null` or `""`
+
+An optional field has one type, and a caller who has no value leaves it out. Don't widen it to
+also accept `null` or `""` as "not provided": a field with no single `type` (an
+`if`/`then`/`else` on its type, or a `type` list) reads as a string or untyped in generated docs
+and code, which is confusing for what is really an optional number.
+
+`pop-component.schema.json`'s `amount` is the case that settled this. ROW's `concentration`
+accepted `null` and `""` as not provided, and beta-2 dropped that: `amount` is a plain
+`"type": "number"`, and `null`, `""` or `"0.5"` is rejected with `must be number`.
+
+### Conditional rules: `if`/`then`/`else`, not `oneOf`
+
+A rule that depends on another field — "exactly one of `registrationNumber` /
+`reasonForNoRegistrationNumber`", "`items` only when `isPresent` is true" — is an
+`if`/`then`/`else`, not a `oneOf` of the allowed shapes:
+
+```json
+"if": {
+  "properties": { "registrationNumber": {} },
+  "required": ["registrationNumber"]
+},
+"then": {
+  "properties": {
+    "reasonForNoRegistrationNumber": {
+      "not": {},
+      "description": "Not allowed when 'registrationNumber' is provided"
+    }
+  }
+},
+"else": {
+  "properties": { "reasonForNoRegistrationNumber": {} },
+  "required": ["reasonForNoRegistrationNumber"],
+  "description": "Required when 'registrationNumber' is not provided"
+}
+```
+
+When a `oneOf` fails, ajv reports every branch's errors, including ones from branches the
+caller never meant ("must be equal to constant" on an `isPresent: true` that's perfectly
+fine). An `if` only ever evaluates the branch that applies, so the caller gets one error about
+what they actually sent.
+
+**The description of a `then`, an `else` or a `not` is the error message**, word for word, and
+the error's `pointer` names the field — so write it as the condition: "Required when …",
+"Not allowed when …". `validate/hapi-validator.js` uses it for any error raised directly by
+that subschema; `conventions.test.js` fails if one that can reject has no description (a
+`then`/`else` holding only `properties` raises nothing itself, so it's exempt).
+
+Word it like the validator's own messages (`'receiver' is required`, `must be one of: 'Road',
+'Rail'`): **field names and literal values in single quotes, no closing full stop** — "Required
+when 'meansOfTransport' is 'Road'". JSON literals (`true`, `false`) stay bare. The validator
+joins several messages with ". " for the top-level message, so a full stop of their own would
+double up. `conventions.test.js` fails on a trailing full stop or a double quote.
+
+The empty `"registrationNumber": {}` declarations are for ajv's strict mode, which rejects a
+`required` naming a property the same subschema doesn't declare.
+
+`oneOf` is still right for a genuine choice between variants — `producer.schema.json`'s
+Household / Commercial / Municipal — where code generators turn it into a union type.
 
 ### Granular: one small file per resource
 
@@ -160,7 +228,7 @@ a `-request` or `-response` suffix — `routes/beta-2/create-collection.js` vali
 `collection/create-collection-response.schema.json`. Every route has exactly one pair, so a
 route's whole contract can be found from its file name. Two routes that return the same shape
 still get a file each; the second is a `title`, a `description` and a `$ref` to the first
-(`record-receipt-without-delivery-response` → `record-receipt-response`).
+(`record-receipt-undocumented-response` → `record-receipt-response`).
 
 Only whole bodies get a suffix. Resources they're built from keep resource names (`producer`,
 `delivery-item`, `movement-id`), and path params are `-params` (`delivery-id-params`).
@@ -212,11 +280,11 @@ defining responses itself, so the published contract and the runtime check are t
 
 Each version's spec is `beta-N/openapi.json`, at the root of its version folder, `$ref`-ing the
 schemas and named examples beside it by relative path. It's owned here, not in
-`digital-waste-tracking-api-docs`: that repo copies `beta-*/` (spec, schemas and examples) and
+`digital-waste-tracking-api-site`: that repo copies `beta-*/` (spec, schemas and examples) and
 renders it on GitHub Pages, nothing more. So a schema change and the spec change it needs land in
 the same PR.
 
-`openapi.test.js` resolves every `$ref` in each spec — schema files, refs between schemas,
+`openapi-betas.test.js` resolves every `$ref` in each spec — schema files, refs between schemas,
 example names — and checks the result is a valid OpenAPI 3.1 document. A renamed schema file or a
 mistyped example name fails there rather than on the published page.
 
@@ -225,7 +293,9 @@ mistyped example name fails there rather than on the published page.
 ```
 src/schemas/
   validate/          loads every *.schema.json and adapts it to a Hapi route validator
-  openapi.test.js    resolves every beta-*/openapi.json and validates it as OpenAPI 3.1
+  openapi.json       hand-maintained Swagger 2.0 spec for the legacy (unversioned) routes
+  openapi.test.js    checks openapi.json against the legacy routes' Joi validation
+  openapi-betas.test.js  resolves every beta-*/openapi.json and validates it as OpenAPI 3.1
   beta-1/            flat: a <route>-request / <route>-response pair per route, plus
                      delivery-id-params (tests in beta-1.test.js), and openapi.json
   beta-2/
@@ -236,11 +306,11 @@ src/schemas/
     collection/      create-collection-request / -response, and the movementId path params
     delivery/        record-delivery-request / -response, and delivery-item
     receipt/         record-receipt-request / -response,
-                     record-receipt-without-delivery-request / -response,
+                     record-receipt-undocumented-request / -response,
                      and the deliveryId path params
 ```
 
-`digital-waste-tracking-api-docs` copies each `beta-*/` folder as-is, so a file's path from
+`digital-waste-tracking-api-site` copies each `beta-*/` folder as-is, so a file's path from
 `src/schemas/` is its path there too, and the specs' relative `$ref`s resolve unchanged.
 
 **`beta-1` vs `beta-2`**: same mechanism, different shape. beta-1's payloads are trivial (an
@@ -263,7 +333,7 @@ validate against.
 **Adding a route** — add `<category>/<route>-request.schema.json` and
 `<category>/<route>-response.schema.json`, named after the new route file, each with its test
 and a matching `.examples.json` (same example names in both). Point the route's `validate.payload` and `response.status[201]` at them the way the existing beta
-routes do. No `tags`, no `hapi-swagger` block. Add the path to `beta-2/openapi.json`, `$ref`-ing
+routes do. Add the path to `beta-2/openapi.json`, `$ref`-ing
 both schemas and their named examples.
 
 **Adding or changing a response** — the change starts here, exactly like a request: edit or

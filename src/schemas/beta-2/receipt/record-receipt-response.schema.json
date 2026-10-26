@@ -13,10 +13,12 @@
         "deliveryId": {
           "$ref": "../common/delivery-id.schema.json"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "validation": {
       "$ref": "../common/validation.schema.json"
     }
-  }
+  },
+  "additionalProperties": false
 }

@@ -1,11 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Create movement request",
-  "description": "Payload for POST /beta-2/movements.",
+  "description": "Payload for POST /beta-2/movements. A consignmentNote is required when any waste item declares hazardous properties; the service checks that, as the rule spans the waste items and the consignment note.",
   "type": "object",
   "properties": {
     "producer": {
       "$ref": "../common/producer/producer.schema.json"
+    },
+    "plannedCollectionDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The planned collection time, as an ISO 8601 date-time. The actual time is recorded by the Collection event."
+    },
+    "collectionSite": {
+      "$ref": "../common/collection-site.schema.json"
     },
     "intendedCarriers": {
       "type": "array",
@@ -24,7 +32,17 @@
       "description": "The intended receivers of the waste. At least one is required."
     },
     "wasteItems": {
-      "$ref": "../common/waste-item/waste-items.schema.json"
+      "$ref": "../common/waste-item/waste-items.schema.json",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "treatments": {
+            "not": {},
+            "description": "Not accepted when creating a movement yet"
+          }
+        }
+      }
     },
     "brokerOrDealer": {
       "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json"
@@ -34,13 +52,19 @@
     },
     "specialHandlingRequirements": {
       "$ref": "../common/special-handling-requirements.schema.json"
+    },
+    "consignmentNote": {
+      "$ref": "../common/consignment-note.schema.json",
+      "description": "The hazardous waste consignment note. Required when any waste item declares hazardous properties. Replaces hazardousWasteConsignmentCode and reasonForNoConsignmentCode."
     }
   },
   "required": [
     "producer",
     "intendedCarriers",
     "intendedReceivers",
-    "wasteItems"
+    "wasteItems",
+    "plannedCollectionDateTime",
+    "collectionSite"
   ],
   "additionalProperties": false
 }
