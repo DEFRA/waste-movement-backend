@@ -12,6 +12,7 @@ import { ObjectId } from 'mongodb'
 import { expectProblemResponse } from './helpers/expect-problem-response.js'
 import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-body-has-shape.js'
 import {
+  receiptDateTime,
   actualCollectionDateTime,
   plannedCollectionDateTime,
   brokerOrDealerEntry,
@@ -424,7 +425,13 @@ describe('beta-2', () => {
       `/beta-2/deliveries/${deliveryId}/receipt`,
       {
         method: 'POST',
-        body: { carrier, receiver, physicalDetails, treatments }
+        body: {
+          receiptDateTime,
+          carrier,
+          receiver,
+          physicalDetails,
+          treatments
+        }
       }
     )
 
@@ -456,6 +463,7 @@ describe('beta-2', () => {
       {
         method: 'POST',
         body: {
+          receiptDateTime,
           reasonForNoDeliveryId,
           carrier,
           receiver,
@@ -552,6 +560,7 @@ describe('beta-2', () => {
       {
         method: 'POST',
         body: {
+          receiptDateTime,
           carrier,
           receiver,
           physicalDetails,
@@ -578,6 +587,7 @@ describe('beta-2', () => {
       {
         method: 'POST',
         body: {
+          receiptDateTime,
           reasonForNoDeliveryId: 'No prior movement trail',
           carrier,
           receiver,
@@ -844,6 +854,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          receiptDateTime,
           reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
           receiver,
           wasteItems: receiptWasteItems
@@ -870,6 +881,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          receiptDateTime,
           reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
           carrier,
           wasteItems: receiptWasteItems
@@ -891,6 +903,72 @@ describe('beta-2', () => {
       ])
     })
 
+    it('rejects receipt recording with a date and time of receipt in the future', async () => {
+      const endpoint = '/beta-2/receipts'
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          receiptDateTime: '2099-01-01T09:00:00Z',
+          reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
+          carrier,
+          receiver,
+          wasteItems: receiptWasteItems
+        }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toEqual([
+        {
+          errorType: 'OutOfRange',
+          message: 'must not be in the future',
+          pointer: '/receiptDateTime'
+        }
+      ])
+    })
+
+    it('rejects receipt recording against a delivery without a date and time of receipt', async () => {
+      const movementId = await createMovement()
+      const createDeliveryRes = await betaHttpRequest(
+        testService.baseUrl,
+        '/beta-2/deliveries',
+        { method: 'POST', body: { movementIds: [movementId], carrier } }
+      )
+      const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
+
+      const endpoint = `/beta-2/deliveries/${deliveryId}/receipt`
+      const response = await betaHttpRequest(testService.baseUrl, endpoint, {
+        method: 'POST',
+        requestId: randomUUID(),
+        body: {
+          receiptDateTime: '',
+          carrier,
+          receiver,
+          physicalDetails,
+          treatments
+        }
+      })
+
+      expectProblemResponse(response, {
+        status: HTTP_STATUS.BAD_REQUEST,
+        type: 'bad-request',
+        instance: endpoint,
+        shape: 'VALIDATION-ERROR'
+      })
+      expect(response.body.errors).toEqual([
+        {
+          errorType: 'NotProvided',
+          message: "'receiptDateTime' is required",
+          pointer: '/receiptDateTime'
+        }
+      ])
+    })
+
     it('rejects receipt recording against a delivery without a receiver', async () => {
       const movementId = await createMovement()
       const createDeliveryRes = await betaHttpRequest(
@@ -904,7 +982,12 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, physicalDetails, treatments }
+        body: {
+          receiptDateTime,
+          carrier,
+          physicalDetails,
+          treatments
+        }
       })
 
       expectProblemResponse(response, {
@@ -928,6 +1011,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          receiptDateTime,
           reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
           carrier,
           receiver
@@ -962,7 +1046,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, receiver, physicalDetails }
+        body: { receiptDateTime, carrier, receiver, physicalDetails }
       })
 
       expectProblemResponse(response, {
@@ -994,6 +1078,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          receiptDateTime,
           carrier,
           receiver,
           physicalDetails: {
@@ -1027,6 +1112,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
+          receiptDateTime,
           apiCode: apiCode1,
           reasonForNoDeliveryId: 'Some reasonForNoDeliveryId',
           carrier,
@@ -1193,6 +1279,7 @@ describe('beta-2', () => {
           intendedReceivers,
           wasteItems: [
             {
+              receiptDateTime,
               physicalDetails: {
                 ...wasteItem.physicalDetails,
                 containerType: 'LOO',

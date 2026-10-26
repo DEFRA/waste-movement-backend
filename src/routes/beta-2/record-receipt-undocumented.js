@@ -14,6 +14,7 @@ import {
 } from '../../services/delivery.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { withWasteReferenceDataChecks } from '../../common/helpers/waste-reference-data-checks.js'
+import { withReceiptDateTimeChecks } from '../../common/helpers/receipt-date-time-checks.js'
 
 const apiVersion = 'beta-2'
 const logger = createLogger({ apiVersion })
@@ -30,8 +31,10 @@ const recordReceiptUndocumented = {
       'trail. Not linked to any Movement; `reasonForNoDeliveryId` must explain why. Creates an empty Delivery behind ' +
       'the scenes and returns its Delivery ID, so the receipt stays addressable.',
     validate: {
-      payload: withWasteReferenceDataChecks(
-        validateRequest('receipt/record-receipt-undocumented-request')
+      payload: withReceiptDateTimeChecks(
+        withWasteReferenceDataChecks(
+          validateRequest('receipt/record-receipt-undocumented-request')
+        )
       )
     },
     response: {

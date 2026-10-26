@@ -10,6 +10,7 @@ import {
 import { deliveryExists } from '../../services/delivery.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { notFound } from '@hapi/boom'
+import { withReceiptDateTimeChecks } from '../../common/helpers/receipt-date-time-checks.js'
 
 const apiVersion = 'beta-2'
 const logger = createLogger({ apiVersion })
@@ -23,7 +24,9 @@ const recordReceipt = {
     description: 'Record receipt of waste against a delivery',
     notes: 'Records receipt of the waste delivered under the given delivery.',
     validate: {
-      payload: validateRequest('receipt/record-receipt-request'),
+      payload: withReceiptDateTimeChecks(
+        validateRequest('receipt/record-receipt-request')
+      ),
       params: validateRequest('receipt/delivery-id-params')
     },
     response: {
