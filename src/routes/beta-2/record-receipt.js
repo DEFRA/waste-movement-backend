@@ -10,12 +10,17 @@ import {
 import { deliveryExists } from '../../services/delivery.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { notFound } from '@hapi/boom'
-import { withReceiptDateTimeChecks } from '../../common/helpers/receipt-date-time-checks.js'
+import {
+  emptyIsNotProvided,
+  notInFuture
+} from '../../common/helpers/date-time-checks.js'
+import { withPayloadChecks } from '../../schemas/validate/payload-checks.js'
 
 const apiVersion = 'beta-2'
 const logger = createLogger({ apiVersion })
 const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
 const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
+const receiptDateTime = ['receiptDateTime']
 
 const recordReceipt = {
   method: 'POST',
@@ -24,8 +29,10 @@ const recordReceipt = {
     description: 'Record receipt of waste against a delivery',
     notes: 'Records receipt of the waste delivered under the given delivery.',
     validate: {
-      payload: withReceiptDateTimeChecks(
-        validateRequest('receipt/record-receipt-request')
+      payload: withPayloadChecks(
+        validateRequest('receipt/record-receipt-request'),
+        emptyIsNotProvided(receiptDateTime),
+        notInFuture(receiptDateTime)
       ),
       params: validateRequest('receipt/delivery-id-params')
     },
