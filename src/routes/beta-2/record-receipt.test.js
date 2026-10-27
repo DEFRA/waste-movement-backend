@@ -75,10 +75,11 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks()
-    // clearAllMocks doesn't undo a test's mockRejectedValue on deliveryExists,
-    // which would otherwise fail every later request with a 500.
-    if (jest.isMockFunction(delivery.deliveryExists)) {
-      delivery.deliveryExists.mockRestore()
+    // clearAllMocks doesn't undo a test's mockRejectedValue on
+    // findDeliveryMovementIds, which would otherwise fail every later request
+    // with a 500.
+    if (jest.isMockFunction(delivery.findDeliveryMovementIds)) {
+      delivery.findDeliveryMovementIds.mockRestore()
     }
     await server.db.collection('deliveries').deleteMany({})
   })
@@ -480,7 +481,9 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
 
   it('returns a 500 when the delivery lookup fails', async () => {
     const error = 'Database connection failed'
-    jest.spyOn(delivery, 'deliveryExists').mockRejectedValue(new Error(error))
+    jest
+      .spyOn(delivery, 'findDeliveryMovementIds')
+      .mockRejectedValue(new Error(error))
 
     const { statusCode, result } = await server.inject({
       method: 'POST',

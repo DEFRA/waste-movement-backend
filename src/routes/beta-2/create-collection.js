@@ -21,6 +21,7 @@ const createCollection = {
   path: '/movements/{movementId}/collection',
   options: {
     description: 'Create a new waste collection',
+    app: { journeyStep: 'collection-recorded' },
     validate: {
       payload: validateRequest('collection/create-collection-request'),
       params: validateRequest('collection/movement-id-params')
@@ -47,10 +48,10 @@ const createCollection = {
       }
 
       logger.info(
-        'Successfully created waste movement collection',
-        request,
-        response
+        { movementId },
+        `Successfully created waste movement collection for movement ${movementId}`
       )
+      request.app.journey = [{ movementId }]
 
       return h
         .response(response)

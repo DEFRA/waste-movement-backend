@@ -2,7 +2,8 @@ import {
   createDeliveryId,
   createDeliveryRecord,
   createDeliveryRecords,
-  deliveryExists
+  deliveryExists,
+  findDeliveryMovementIds
 } from './delivery.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { httpClients } from '../common/helpers/http-client.js'
@@ -81,6 +82,48 @@ describe('delivery', () => {
       const result = await deliveryExists(db, '25KMT4Z9')
 
       expect(result).toBe(false)
+    })
+  })
+
+  describe('findDeliveryMovementIds', () => {
+    it('returns the movement ids delivered under the delivery id', async () => {
+      await deliveriesCollection.insertOne({
+        deliveryId: '25KMT4Z9',
+        movementIds: ['25HRA0B2', '25HRA0B3']
+      })
+
+      const result = await findDeliveryMovementIds(db, '25KMT4Z9')
+
+      expect(result).toEqual(['25HRA0B2', '25HRA0B3'])
+    })
+
+    it('combines and deduplicates every record with the delivery id', async () => {
+      // A resubmitted hazardous movement stores a second record
+      await deliveriesCollection.insertMany([
+        { deliveryId: '25HRZ9X7', movementIds: ['25HRZ9X7'] },
+        { deliveryId: '25HRZ9X7', movementIds: ['25HRZ9X7'] }
+      ])
+
+      const result = await findDeliveryMovementIds(db, '25HRZ9X7')
+
+      expect(result).toEqual(['25HRZ9X7'])
+    })
+
+    it('returns an empty list for a delivery with no movements', async () => {
+      await deliveriesCollection.insertOne({
+        deliveryId: '25KMT4Z9',
+        movementIds: []
+      })
+
+      const result = await findDeliveryMovementIds(db, '25KMT4Z9')
+
+      expect(result).toEqual([])
+    })
+
+    it('returns null when no delivery with the given id exists', async () => {
+      const result = await findDeliveryMovementIds(db, '25KMT4Z9')
+
+      expect(result).toBeNull()
     })
   })
 

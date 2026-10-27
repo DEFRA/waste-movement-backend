@@ -45,6 +45,26 @@ describe('loggerOptions', () => {
       }
     })
   })
+  it('keeps the mixin event.reference when a line logs its own event', () => {
+    expect(
+      loggerOptions.mixinMergeStrategy(
+        { event: { action: 'movement-created' }, transaction: { id: 'M1' } },
+        { event: { reference: 'org-123' }, tenant: { id: 'client-123' } }
+      )
+    ).toEqual({
+      event: { reference: 'org-123', action: 'movement-created' },
+      tenant: { id: 'client-123' },
+      transaction: { id: 'M1' }
+    })
+  })
+  it("lets a line's own values override the mixin's", () => {
+    expect(
+      loggerOptions.mixinMergeStrategy(
+        { event: { reference: 'org-override' } },
+        { event: { reference: 'org-123' } }
+      )
+    ).toEqual({ event: { reference: 'org-override' } })
+  })
   it('only adds client name when no client id is available', () => {
     getClientId.mockReturnValue(null)
     getClientName.mockReturnValue('Client 123')

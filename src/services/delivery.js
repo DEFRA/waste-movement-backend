@@ -30,6 +30,31 @@ export const deliveryExists = async (db, deliveryId) => {
 }
 
 /**
+ * Finds the Movement IDs delivered under the given delivery id. Reads every
+ * record with that id, as a resubmitted hazardous Movement has more than one
+ * (see createDeliveryRecords).
+ *
+ * @param {import('mongodb').Db} db
+ * @param {string} deliveryId
+ * @returns {Promise<string[] | null>} deduplicated (empty for an undocumented
+ * receipt's delivery); null when no delivery exists
+ */
+export const findDeliveryMovementIds = async (db, deliveryId) => {
+  const deliveries = await db
+    .collection(deliveriesCollectionId)
+    .find({ deliveryId }, { projection: { movementIds: 1 } })
+    .toArray()
+
+  if (deliveries.length === 0) {
+    return null
+  }
+
+  return [
+    ...new Set(deliveries.flatMap(({ movementIds }) => movementIds ?? []))
+  ]
+}
+
+/**
  * Persists a new delivery record.
  *
  * @param {import('mongodb').Db} db
