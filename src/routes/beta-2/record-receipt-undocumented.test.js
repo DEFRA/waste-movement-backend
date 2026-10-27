@@ -12,6 +12,7 @@ import {
   organisationHeaders
 } from '../../test/data/organisation-headers.js'
 import {
+  receiptDateTime,
   brokerOrDealerEntry,
   supportingReference,
   carrier,
@@ -93,7 +94,13 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { reasonForNoDeliveryId, carrier, receiver, wasteItems },
+      payload: {
+        receiptDateTime,
+        reasonForNoDeliveryId,
+        carrier,
+        receiver,
+        wasteItems
+      },
       headers: tracedAuthHeaders
     })
 
@@ -121,6 +128,7 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         reasonForNoDeliveryId,
         carrier,
         receiver,
@@ -149,6 +157,7 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         reasonForNoDeliveryId,
         carrier,
         receiver,
@@ -171,6 +180,7 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         reasonForNoDeliveryId,
         carrier,
         receiver,
@@ -193,6 +203,7 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         reasonForNoDeliveryId,
         carrier,
         receiver,
@@ -215,7 +226,13 @@ describe('POST /beta-2/receipts', () => {
     const { headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { reasonForNoDeliveryId, carrier, receiver, wasteItems },
+      payload: {
+        receiptDateTime,
+        reasonForNoDeliveryId,
+        carrier,
+        receiver,
+        wasteItems
+      },
       headers: tracedAuthHeaders
     })
 
@@ -232,12 +249,17 @@ describe('POST /beta-2/receipts', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      detail: '4 validation errors occurred',
+      detail: '5 validation errors occurred',
       errors: [
         {
           errorType: 'NotProvided',
           message: "'reasonForNoDeliveryId' is required",
           pointer: '/reasonForNoDeliveryId'
+        },
+        {
+          errorType: 'NotProvided',
+          message: "'receiptDateTime' is required",
+          pointer: '/receiptDateTime'
         },
         {
           errorType: 'NotProvided',
@@ -266,7 +288,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reasonForNoDeliveryId, receiver, wasteItems },
+      payload: { receiptDateTime, reasonForNoDeliveryId, receiver, wasteItems },
       headers: tracedAuthHeaders
     })
 
@@ -291,7 +313,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reasonForNoDeliveryId, carrier, receiver },
+      payload: { receiptDateTime, reasonForNoDeliveryId, carrier, receiver },
       headers: tracedAuthHeaders
     })
 
@@ -318,6 +340,7 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         reasonForNoDeliveryId,
         carrier,
         receiver,
@@ -347,7 +370,7 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reasonForNoDeliveryId, carrier, wasteItems },
+      payload: { receiptDateTime, reasonForNoDeliveryId, carrier, wasteItems },
       headers: tracedAuthHeaders
     })
 
@@ -375,6 +398,7 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         apiCode: apiCode1,
         carrier,
         receiver,
@@ -405,7 +429,13 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reasonForNoDeliveryId, carrier, receiver, wasteItems },
+      payload: {
+        receiptDateTime,
+        reasonForNoDeliveryId,
+        carrier,
+        receiver,
+        wasteItems
+      },
       headers: { ...authHeaders, ...tracedHeaders }
     })
 
@@ -428,7 +458,13 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reasonForNoDeliveryId, carrier, receiver, wasteItems },
+      payload: {
+        receiptDateTime,
+        reasonForNoDeliveryId,
+        carrier,
+        receiver,
+        wasteItems
+      },
       headers: tracedAuthHeaders
     })
 
@@ -445,7 +481,13 @@ describe('POST /beta-2/receipts', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { reasonForNoDeliveryId, carrier, receiver, wasteItems },
+      payload: {
+        receiptDateTime,
+        reasonForNoDeliveryId,
+        carrier,
+        receiver,
+        wasteItems
+      },
       headers: tracedHeaders
     })
 
@@ -468,6 +510,7 @@ describe('POST /beta-2/receipts', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         reasonForNoDeliveryId: 'No delivery was recorded',
         carrier,
         receiver,
@@ -504,6 +547,7 @@ describe('POST /beta-2/receipts', () => {
   const hazardousItem = receiptItem(hazardousWasteItem)
 
   const withWasteItems = (items, extra = {}) => ({
+    receiptDateTime,
     reasonForNoDeliveryId,
     carrier,
     receiver,
@@ -1536,6 +1580,72 @@ describe('POST /beta-2/receipts', () => {
           withHazardous({ ...hazardousPresent, codes: ['HP_4'] }),
           [consignmentNoteRequired]
         )
+      })
+    })
+  })
+
+  describe('Feature: Recording when the waste was actually received, with no delivery record', () => {
+    beforeEach(restoreCreateDeliveryRecord)
+
+    const withReceiptDateTime = (value = receiptDateTime) =>
+      withWasteItems([nonHazardousItem], { receiptDateTime: value })
+
+    describe('Scenario: A receipt is recorded when a valid date and time of receipt is declared with no delivery record', () => {
+      it.each([
+        ['2026-10-14T09:30:00Z'],
+        ['2026-10-14T10:30:00+01:00'],
+        // A moment ago: anything not later than the time of submission.
+        [new Date(Date.now() - 1000).toISOString()]
+      ])('records the receipt received at %p', async (value) => {
+        await expectCreated(withReceiptDateTime(value))
+      })
+    })
+
+    describe("Scenario Outline: A receipt isn't recorded when the date and time of receipt is missing or invalid", () => {
+      const pointer = '/receiptDateTime'
+
+      it('rejects a date and time of receipt that is not provided, as required', async () => {
+        const { receiptDateTime: _, ...payload } = withReceiptDateTime()
+        await expectRejected(payload, [
+          {
+            errorType: 'NotProvided',
+            message: "'receiptDateTime' is required",
+            pointer
+          }
+        ])
+      })
+
+      it('rejects a date and time of receipt of "", as required', async () => {
+        await expectRejected(withReceiptDateTime(''), [
+          {
+            errorType: 'NotProvided',
+            message: "'receiptDateTime' is required",
+            pointer
+          }
+        ])
+      })
+
+      it.each(['14/10/2026', '2026-13-01T10:00:00Z', 'Yesterday'])(
+        'rejects a date and time of receipt of %p as not a valid date and time',
+        async (value) => {
+          await expectRejected(withReceiptDateTime(value), [
+            {
+              errorType: 'InvalidFormat',
+              message: "must match format 'date-time'",
+              pointer
+            }
+          ])
+        }
+      )
+
+      it('rejects a date and time of receipt in the future', async () => {
+        await expectRejected(withReceiptDateTime('2099-01-01T09:00:00Z'), [
+          {
+            errorType: 'OutOfRange',
+            message: 'must not be in the future',
+            pointer
+          }
+        ])
       })
     })
   })

@@ -1,11 +1,10 @@
-import Boom from '@hapi/boom'
 import { validPopNames } from '@defra/waste-movement-utils'
 import {
   findMissingConsignmentNote,
   findUnrecognisedEwcCodes,
   findUnrecognisedPopCodes,
   isHazardous,
-  withWasteReferenceDataChecks
+  wasteReferenceDataChecks
 } from './waste-reference-data-checks.js'
 
 const withCodes = (...ewcCodesPerItem) => ({
@@ -38,21 +37,6 @@ const unrecognised = (itemIndex, codeIndex) => ({
   ],
   type: 'InvalidValue'
 })
-
-const schemaError = (details) => {
-  const error = Boom.badRequest(details.map((d) => d.message).join('. '))
-  error.details = details
-  return error
-}
-
-const getError = (fn) => {
-  try {
-    fn()
-  } catch (error) {
-    return error
-  }
-  throw new Error('expected it to throw')
-}
 
 describe('findUnrecognisedEwcCodes', () => {
   test('finds nothing when every code is recognised', () => {
@@ -272,58 +256,37 @@ describe('findMissingConsignmentNote', () => {
   })
 })
 
-describe('withWasteReferenceDataChecks', () => {
-  test('returns the payload when it passes the schema and every code is recognised', () => {
-    const payload = withCodes(['200101'])
-    const validate = withWasteReferenceDataChecks((value) => value)
+describe('wasteReferenceDataChecks', () => {
+  const missingDescription = {
+    message: "'wasteDescription' is required",
+    path: ['wasteItems', '0', 'classification', 'wasteDescription'],
+    type: 'NotProvided'
+  }
 
-    expect(validate(payload)).toBe(payload)
+  test('reports nothing when every code is recognised', () => {
+    expect(wasteReferenceDataChecks(withCodes(['200101']), [])).toEqual([])
   })
 
-  test('throws a Boom badRequest for an unrecognised code', () => {
-    const validate = withWasteReferenceDataChecks((value) => value)
-    const error = getError(() => validate(withCodes(['999999'])))
-
-    expect(error.output.statusCode).toBe(400)
-    expect(error.message).toBe('must be a recognised EWC code')
-    expect(error.details).toEqual([unrecognised(0, 0)])
+  test('keeps the earlier errors when it finds nothing', () => {
+    expect(
+      wasteReferenceDataChecks(withCodes(['200101']), [missingDescription])
+    ).toEqual([missingDescription])
   })
 
-  test("reports unrecognised codes after the schema's own errors", () => {
-    const missingDescription = {
-      message: "'wasteDescription' is required",
-      path: ['wasteItems', '0', 'classification', 'wasteDescription'],
-      type: 'NotProvided'
-    }
-    const validate = withWasteReferenceDataChecks(() => {
-      throw schemaError([missingDescription])
-    })
-    const error = getError(() => validate(withCodes(['999999'])))
-
-    expect(error.details).toEqual([missingDescription, unrecognised(0, 0)])
-    expect(error.message).toBe(
-      "'wasteDescription' is required. must be a recognised EWC code"
-    )
+  test('reports unrecognised codes after the earlier errors', () => {
+    expect(
+      wasteReferenceDataChecks(withCodes(['999999']), [missingDescription])
+    ).toEqual([missingDescription, unrecognised(0, 0)])
   })
 
   test('reports a missing consignment note for hazardous waste', () => {
-    const validate = withWasteReferenceDataChecks((value) => value)
-    const error = getError(() => validate(withHazardous(hazardousProperties)))
-
-    expect(error.details).toEqual([
+    expect(
+      wasteReferenceDataChecks(withHazardous(hazardousProperties), [])
+    ).toEqual([
       expect.objectContaining({
         path: ['consignmentNote'],
         type: 'NotProvided'
       })
     ])
-  })
-
-  test('rethrows an error that is not a validation error unchanged', () => {
-    const unexpected = new Error('boom')
-    const validate = withWasteReferenceDataChecks(() => {
-      throw unexpected
-    })
-
-    expect(getError(() => validate(withCodes(['999999'])))).toBe(unexpected)
   })
 })
