@@ -4,7 +4,7 @@
   "description": "Producer fields specific to household waste. organisationName, authorisationNumber, sicCode, contactDetails and address do not apply and must not be provided.",
   "examples": [
     {
-      "wasteSource": "Household"
+      "wasteSource": "HOUSEHOLD"
     }
   ],
   "type": "object",
@@ -14,7 +14,7 @@
       "type": "object",
       "properties": {
         "wasteSource": {
-          "const": "Household",
+          "const": "HOUSEHOLD",
           "description": "Waste originates from a household."
         }
       },

@@ -4,7 +4,7 @@
   "description": "Producer fields specific to municipal waste. organisationName, address and contactDetails are required; sicCode is optional. Exactly one of authorisationNumber or reasonForNoAuthorisationNumber must be provided.",
   "examples": [
     {
-      "wasteSource": "Municipal",
+      "wasteSource": "MUNICIPAL",
       "organisationName": "Test Council",
       "reasonForNoAuthorisationNumber": "TBC",
       "address": {
@@ -41,7 +41,7 @@
       },
       "properties": {
         "wasteSource": {
-          "const": "Municipal",
+          "const": "MUNICIPAL",
           "description": "Waste originates from a municipal source."
         },
         "organisationName": {

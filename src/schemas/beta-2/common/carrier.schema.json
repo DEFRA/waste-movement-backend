@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Carrier",
-  "description": "A single waste carrier. organisationName, meansOfTransport and contactDetails are required, and exactly one of registrationNumber or reasonForNoRegistrationNumber must be provided. vehicleRegistration is required for Road and otherMeansOfTransport for Other; each is forbidden otherwise. address is optional.",
+  "description": "A single waste carrier. organisationName, meansOfTransport and contactDetails are required, and exactly one of registrationNumber or reasonForNoRegistrationNumber must be provided. vehicleRegistration is required for ROAD and otherMeansOfTransport for OTHER; each is forbidden otherwise. address is optional.",
   "type": "object",
   "allOf": [
     {
@@ -27,7 +27,7 @@
       "if": {
         "properties": {
           "meansOfTransport": {
-            "const": "Road"
+            "const": "ROAD"
           }
         },
         "required": ["meansOfTransport"]
@@ -37,13 +37,13 @@
           "vehicleRegistration": {}
         },
         "required": ["vehicleRegistration"],
-        "description": "Required when 'meansOfTransport' is 'Road'"
+        "description": "Required when 'meansOfTransport' is 'ROAD'"
       },
       "else": {
         "properties": {
           "vehicleRegistration": {
             "not": {},
-            "description": "Not allowed unless 'meansOfTransport' is 'Road'"
+            "description": "Not allowed unless 'meansOfTransport' is 'ROAD'"
           }
         }
       }
@@ -52,7 +52,7 @@
       "if": {
         "properties": {
           "meansOfTransport": {
-            "const": "Other"
+            "const": "OTHER"
           }
         },
         "required": ["meansOfTransport"]
@@ -62,13 +62,13 @@
           "otherMeansOfTransport": {}
         },
         "required": ["otherMeansOfTransport"],
-        "description": "Required when 'meansOfTransport' is 'Other'"
+        "description": "Required when 'meansOfTransport' is 'OTHER'"
       },
       "else": {
         "properties": {
           "otherMeansOfTransport": {
             "not": {},
-            "description": "Not allowed unless 'meansOfTransport' is 'Other'"
+            "description": "Not allowed unless 'meansOfTransport' is 'OTHER'"
           }
         }
       }
@@ -92,25 +92,25 @@
     "meansOfTransport": {
       "type": "string",
       "enum": [
-        "Road",
-        "Rail",
-        "Air",
-        "Sea",
-        "Inland Waterway",
-        "Piped",
-        "Other"
+        "ROAD",
+        "RAIL",
+        "AIR",
+        "SEA",
+        "INLAND_WATERWAY",
+        "PIPED",
+        "OTHER"
       ],
       "description": "How the carrier will transport the waste."
     },
     "vehicleRegistration": {
       "type": "string",
       "minLength": 1,
-      "description": "Registration of the vehicle carrying the waste. Required when meansOfTransport is Road; forbidden otherwise."
+      "description": "Registration of the vehicle carrying the waste. Required when meansOfTransport is ROAD; forbidden otherwise."
     },
     "otherMeansOfTransport": {
       "type": "string",
       "minLength": 1,
-      "description": "Description of the means of transport. Required when meansOfTransport is Other; forbidden otherwise."
+      "description": "Description of the means of transport. Required when meansOfTransport is OTHER; forbidden otherwise."
     },
     "contactDetails": {
       "$ref": "contact-details.schema.json"

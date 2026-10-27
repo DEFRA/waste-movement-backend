@@ -115,6 +115,33 @@ and code, which is confusing for what is really an optional number.
 accepted `null` and `""` as not provided, and beta-2 dropped that: `amount` is a plain
 `"type": "number"`, and `null`, `""` or `"0.5"` is rejected with `must be number`.
 
+### Enum values are `SCREAMING_SNAKE`
+
+Every value in an `enum`, or in a `const` that picks one of them, is upper case with words
+separated by `_`: `ROAD`, `INLAND_WATERWAY`, `COMMERCIAL`, `PO_NUMBER`, `MG_PER_KG`. Upper-case
+codes fit the same pattern unchanged (`DRU`, `LOO`, `HP_1`, `R13`).
+
+One casing means a caller never has to guess whether a value is `Road`, `road` or `ROAD`, and
+the values read as identifiers rather than display text. Title-case values with spaces
+(`Inland Waterway`, `PO Number`) look like labels for a screen, and invite callers to send the
+label they show their users. Turning a value into display text is the client's job.
+
+This also applies to discriminators: `wasteSource` picks the producer variant, so each variant's
+`const` is `HOUSEHOLD`, `COMMERCIAL` or `MUNICIPAL`.
+
+A description or error message that names a value uses the value as it is sent: "Required when
+'meansOfTransport' is 'ROAD'", not "… is Road".
+
+Two kinds of value are exempt:
+
+- **`propertyNames` enums** list field names, which are camelCase.
+- **`common/issue.schema.json`'s `errorType`** (`NotProvided`, `BusinessRuleViolation`, …). These
+  are `waste-movement-utils`' validation error categories, which the legacy routes also return.
+
+`conventions.test.js` fails on any other beta-2 `enum` or `const` string that isn't
+`SCREAMING_SNAKE`. beta-1 isn't checked, but already follows it (`HAZARDOUS`, `NON_HAZARDOUS`),
+apart from its own copy of `errorType`.
+
 ### Conditional rules: `if`/`then`/`else`, not `oneOf`
 
 A rule that depends on another field — "exactly one of `registrationNumber` /
@@ -152,9 +179,9 @@ the error's `pointer` names the field — so write it as the condition: "Require
 that subschema; `conventions.test.js` fails if one that can reject has no description (a
 `then`/`else` holding only `properties` raises nothing itself, so it's exempt).
 
-Word it like the validator's own messages (`'receiver' is required`, `must be one of: 'Road',
-'Rail'`): **field names and literal values in single quotes, no closing full stop** — "Required
-when 'meansOfTransport' is 'Road'". JSON literals (`true`, `false`) stay bare. The validator
+Word it like the validator's own messages (`'receiver' is required`, `must be one of: 'ROAD',
+'RAIL'`): **field names and literal values in single quotes, no closing full stop** — "Required
+when 'meansOfTransport' is 'ROAD'". JSON literals (`true`, `false`) stay bare. The validator
 joins several messages with ". " for the top-level message, so a full stop of their own would
 double up. `conventions.test.js` fails on a trailing full stop or a double quote.
 

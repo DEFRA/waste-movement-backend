@@ -3,7 +3,7 @@
     "summary": "Commercial producer of hazardous waste, with consignment note, broker or dealer, supporting references and special handling",
     "value": {
       "producer": {
-        "wasteSource": "Commercial",
+        "wasteSource": "COMMERCIAL",
         "organisationName": "ACME Waste Producers Ltd",
         "authorisationNumber": "EAS/P/123456",
         "sicCode": "38110",
@@ -98,11 +98,11 @@
       },
       "supportingReferences": [
         {
-          "label": "PO Number",
+          "label": "PO_NUMBER",
           "reference": "PO-123456"
         },
         {
-          "label": "Job Number",
+          "label": "JOB_NUMBER",
           "reference": "CARRIER-JOB-001"
         }
       ],
@@ -111,7 +111,7 @@
         {
           "organisationName": "Carrier Demo Ltd",
           "registrationNumber": "CBDU123456",
-          "meansOfTransport": "Road",
+          "meansOfTransport": "ROAD",
           "vehicleRegistration": "AB12 CDE",
           "contactDetails": {
             "emailAddress": "carrier@example.com",
@@ -132,7 +132,7 @@
     "summary": "Household producer, minimal",
     "value": {
       "producer": {
-        "wasteSource": "Household"
+        "wasteSource": "HOUSEHOLD"
       },
       "plannedCollectionDateTime": "2026-01-15T09:30:00Z",
       "collectionSite": {
@@ -149,7 +149,7 @@
         {
           "organisationName": "Carrier Demo Ltd",
           "registrationNumber": "CBDU123456",
-          "meansOfTransport": "Road",
+          "meansOfTransport": "ROAD",
           "vehicleRegistration": "AB12 CDE",
           "contactDetails": {
             "emailAddress": "carrier@example.com",

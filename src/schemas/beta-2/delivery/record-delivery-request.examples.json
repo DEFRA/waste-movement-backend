@@ -6,7 +6,7 @@
       "carrier": {
         "organisationName": "Carrier Demo Ltd",
         "registrationNumber": "CBDU123456",
-        "meansOfTransport": "Road",
+        "meansOfTransport": "ROAD",
         "vehicleRegistration": "AB12 CDE",
         "contactDetails": {
           "emailAddress": "carrier@example.com",
@@ -19,7 +19,7 @@
       },
       "supportingReferences": [
         {
-          "label": "Waste Ticket Number",
+          "label": "WASTE_TICKET_NUMBER",
           "reference": "WT-7781"
         }
       ]
@@ -32,7 +32,7 @@
       "carrier": {
         "organisationName": "Carrier Demo Ltd",
         "registrationNumber": "CBDU123456",
-        "meansOfTransport": "Road",
+        "meansOfTransport": "ROAD",
         "vehicleRegistration": "AB12 CDE",
         "contactDetails": {
           "emailAddress": "carrier@example.com",

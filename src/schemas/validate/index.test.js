@@ -21,7 +21,7 @@ describe('schema registry', () => {
     const valid = validate(
       'beta-2/common/producer/producer-household.schema.json',
       {
-        wasteSource: 'Household'
+        wasteSource: 'HOUSEHOLD'
       }
     )
 

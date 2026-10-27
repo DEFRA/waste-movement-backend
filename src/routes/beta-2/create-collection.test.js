@@ -243,7 +243,7 @@ describe('collection Route Tests version: beta-2', () => {
       {
         errorType: 'InvalidValue',
         message:
-          "must be one of: 'Weighbridge Number', 'PO Number', 'Job Number', 'Invoice Number', 'Waste Ticket Number', 'Other'",
+          "must be one of: 'WEIGHBRIDGE_NUMBER', 'PO_NUMBER', 'JOB_NUMBER', 'INVOICE_NUMBER', 'WASTE_TICKET_NUMBER', 'OTHER'",
         pointer: '/supportingReferences/0/label'
       }
     ])

@@ -5,11 +5,11 @@
   "examples": [
     [
       {
-        "label": "PO Number",
+        "label": "PO_NUMBER",
         "reference": "PO-123456"
       },
       {
-        "label": "Job Number",
+        "label": "JOB_NUMBER",
         "reference": "CARRIER-JOB-001"
       }
     ]
@@ -28,12 +28,12 @@
       "label": {
         "type": "string",
         "enum": [
-          "Weighbridge Number",
-          "PO Number",
-          "Job Number",
-          "Invoice Number",
-          "Waste Ticket Number",
-          "Other"
+          "WEIGHBRIDGE_NUMBER",
+          "PO_NUMBER",
+          "JOB_NUMBER",
+          "INVOICE_NUMBER",
+          "WASTE_TICKET_NUMBER",
+          "OTHER"
         ],
         "description": "Label identifying the reference type."
       }

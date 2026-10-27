@@ -39,7 +39,7 @@ describe('beta-2', () => {
   const treatments = [treatment]
   const receiptWasteItems = [{ ...wasteItem, treatments }]
   const minimalMovement = {
-    producer: { wasteSource: 'Household' },
+    producer: { wasteSource: 'HOUSEHOLD' },
     plannedCollectionDateTime,
     collectionSite,
     intendedCarriers,
@@ -82,7 +82,7 @@ describe('beta-2', () => {
 
   describe('POST /beta-2/movements', () => {
     it('creates a movement with minimal payload', async () => {
-      const producer = { wasteSource: 'Household' }
+      const producer = { wasteSource: 'HOUSEHOLD' }
       const { status, body, headers } = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/movements',
@@ -122,7 +122,7 @@ describe('beta-2', () => {
     })
 
     it('creates a movement with producer payload', async () => {
-      const producer = { wasteSource: 'Household' }
+      const producer = { wasteSource: 'HOUSEHOLD' }
       const { status, body, headers } = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/movements',
@@ -162,7 +162,7 @@ describe('beta-2', () => {
 
     it('creates a movement with commercial producer', async () => {
       const producer = {
-        wasteSource: 'Commercial',
+        wasteSource: 'COMMERCIAL',
         organisationName: 'ACME Waste Ltd',
         sicCode: '38110',
         authorisationNumber: 'EAS/P/123456',
@@ -1138,7 +1138,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
-          producer: { wasteSource: 'Household' },
+          producer: { wasteSource: 'HOUSEHOLD' },
           plannedCollectionDateTime,
           collectionSite,
           intendedCarriers,
@@ -1161,7 +1161,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          producer: { wasteSource: 'Household' },
+          producer: { wasteSource: 'HOUSEHOLD' },
           intendedReceivers,
           wasteItems
         }
@@ -1187,7 +1187,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          producer: { wasteSource: 'Household' },
+          producer: { wasteSource: 'HOUSEHOLD' },
           plannedCollectionDateTime,
           collectionSite,
           intendedCarriers,
@@ -1217,7 +1217,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           apiCode: apiCode1,
-          producer: { wasteSource: 'Household' },
+          producer: { wasteSource: 'HOUSEHOLD' },
           intendedReceivers: [],
           wasteItems,
           plannedCollectionDateTime,
@@ -1243,7 +1243,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          producer: { wasteSource: 'Household' },
+          producer: { wasteSource: 'HOUSEHOLD' },
           plannedCollectionDateTime,
           collectionSite,
           intendedCarriers,
@@ -1272,7 +1272,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          producer: { wasteSource: 'Household' },
+          producer: { wasteSource: 'HOUSEHOLD' },
           plannedCollectionDateTime,
           collectionSite,
           intendedCarriers,
@@ -1367,7 +1367,7 @@ describe('beta-2', () => {
           intendedReceivers,
           wasteItems,
           producer: {
-            wasteSource: 'Commercial',
+            wasteSource: 'COMMERCIAL',
             sicCode: '38110',
             authorisationNumber: 'EAS/P/123456',
             address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
@@ -1395,7 +1395,7 @@ describe('beta-2', () => {
           intendedReceivers,
           wasteItems,
           producer: {
-            wasteSource: 'Commercial',
+            wasteSource: 'COMMERCIAL',
             organisationName: 'Test Org',
             sicCode: '123',
             authorisationNumber: 'EAS/P/123456',
@@ -1424,7 +1424,7 @@ describe('beta-2', () => {
           intendedReceivers,
           wasteItems,
           producer: {
-            wasteSource: 'Commercial',
+            wasteSource: 'COMMERCIAL',
             organisationName: 'Test Org',
             sicCode: '38110',
             authorisationNumber: 'EAS/P/123456',
@@ -1452,7 +1452,7 @@ describe('beta-2', () => {
           intendedReceivers,
           wasteItems,
           producer: {
-            wasteSource: 'Commercial',
+            wasteSource: 'COMMERCIAL',
             organisationName: 'Test Org',
             sicCode: '38110',
             address: { fullAddress: 'Test', postcode: 'TE1 2PQ' },
@@ -1480,7 +1480,7 @@ describe('beta-2', () => {
           intendedReceivers,
           wasteItems,
           producer: {
-            wasteSource: 'Commercial',
+            wasteSource: 'COMMERCIAL',
             organisationName: 'Test Org',
             sicCode: '38110',
             authorisationNumber: 'EAS/P/123456',
@@ -1511,7 +1511,7 @@ describe('beta-2', () => {
             intendedCarriers,
             intendedReceivers,
             wasteItems,
-            producer: { wasteSource: 'Household' }
+            producer: { wasteSource: 'HOUSEHOLD' }
           }
         }
       )
@@ -1533,7 +1533,7 @@ describe('beta-2', () => {
             intendedReceivers,
             wasteItems,
             producer: {
-              wasteSource: 'Municipal',
+              wasteSource: 'MUNICIPAL',
               organisationName: 'Test Council',
               address: { fullAddress: 'Council Office', postcode: 'TE1 3ST' },
               contactDetails: { phoneNumber: '01234567890' },
@@ -1561,7 +1561,7 @@ describe('beta-2', () => {
             intendedReceivers,
             wasteItems,
             producer: {
-              wasteSource: 'Commercial',
+              wasteSource: 'COMMERCIAL',
               organisationName: 'Test Company',
               sicCode: '38110',
               address: { fullAddress: '123 Test St', postcode: 'TE1 2PQ' },
