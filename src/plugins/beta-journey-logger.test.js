@@ -15,14 +15,23 @@ jest.mock('../services/delivery.js', () => ({
   findDeliveryMovementIds: jest.fn()
 }))
 
-// Each handler fails with the Boom error in payload.fail, if given
-const respondWith = (body) => (request, h) => {
-  const { fail } = request.payload ?? {}
-  if (fail) {
-    throw Boom[fail]('step failed')
+// A route in the given journey step. Its handler fails with the Boom error in
+// payload.fail, if given, else sets the journey entries in payload.journey.
+const journeyRoute = (path, journeyStep) => ({
+  method: 'POST',
+  path,
+  options: { app: { journeyStep } },
+  handler: (request, h) => {
+    const { fail, journey } = request.payload ?? {}
+    if (fail) {
+      throw Boom[fail]('step failed')
+    }
+    if (journey) {
+      request.app.journey = journey
+    }
+    return h.response({}).code(201)
   }
-  return h.response(body(request)).code(201)
-}
+})
 
 describe('betaJourneyLogger', () => {
   let server
@@ -31,37 +40,21 @@ describe('betaJourneyLogger', () => {
     server = Hapi.server()
     await server.register(betaJourneyLogger)
     server.route([
-      {
-        method: 'POST',
-        path: '/beta-2/movements',
-        handler: respondWith(() => ({ data: { movementId: 'M1' } }))
-      },
-      {
-        method: 'POST',
-        path: '/beta-2/movements/{movementId}/collection',
-        handler: respondWith(() => ({ data: null }))
-      },
-      {
-        method: 'POST',
-        path: '/beta-2/deliveries',
-        handler: respondWith(({ payload }) => ({ data: payload.response }))
-      },
-      {
-        method: 'POST',
-        path: '/beta-2/deliveries/{deliveryId}/receipt',
-        handler: respondWith(({ params }) => ({
-          data: { deliveryId: params.deliveryId }
-        }))
-      },
-      {
-        method: 'POST',
-        path: '/beta-2/receipts',
-        handler: respondWith(() => ({ data: { deliveryId: 'D9' } }))
-      },
+      journeyRoute('/beta-2/movements', 'movement-created'),
+      journeyRoute(
+        '/beta-2/movements/{movementId}/collection',
+        'collection-recorded'
+      ),
+      journeyRoute('/beta-2/deliveries', 'delivery-recorded'),
+      journeyRoute(
+        '/beta-2/deliveries/{deliveryId}/receipt',
+        'receipt-recorded'
+      ),
+      journeyRoute('/beta-2/receipts', 'undocumented-receipt-recorded'),
       {
         method: 'POST',
         path: '/beta-1/movements',
-        handler: respondWith(() => ({ data: { movementId: 'M1' } }))
+        handler: (request, h) => h.response({}).code(201)
       }
     ])
   })
@@ -85,7 +78,7 @@ describe('betaJourneyLogger', () => {
 
   describe('B1A - single non-hazardous movement', () => {
     it('logs the created movement', async () => {
-      await send('/beta-2/movements')
+      await send('/beta-2/movements', { journey: [{ movementId: 'M1' }] })
 
       expect(loggedLines()).toEqual([
         {
@@ -99,7 +92,9 @@ describe('betaJourneyLogger', () => {
     })
 
     it('logs the collection against its movement', async () => {
-      await send('/beta-2/movements/M1/collection')
+      await send('/beta-2/movements/M1/collection', {
+        journey: [{ movementId: 'M1' }]
+      })
 
       expect(loggedLines()).toEqual([
         {
@@ -113,9 +108,9 @@ describe('betaJourneyLogger', () => {
     })
 
     it('logs the receipt against each movement in the delivery', async () => {
-      findDeliveryMovementIds.mockResolvedValue(['M1'])
-
-      await send('/beta-2/deliveries/D1/receipt')
+      await send('/beta-2/deliveries/D1/receipt', {
+        journey: [{ movementId: 'M1', deliveryId: 'D1' }]
+      })
 
       expect(loggedLines()).toEqual([
         {
@@ -127,18 +122,18 @@ describe('betaJourneyLogger', () => {
           message: 'Beta-2 receipt-recorded: success (movement M1, delivery D1)'
         }
       ])
+      expect(findDeliveryMovementIds).not.toHaveBeenCalled()
     })
   })
 
   describe('B1B / B2B - several movements delivered together', () => {
     it('logs one line per movement, each with the delivery it went into', async () => {
       await send('/beta-2/deliveries', {
-        response: {
-          deliveries: [
-            { deliveryId: 'D1', movementIds: ['M1', 'M2'] },
-            { deliveryId: 'M3', movementIds: ['M3'] }
-          ]
-        }
+        journey: [
+          { movementId: 'M1', deliveryId: 'D1' },
+          { movementId: 'M2', deliveryId: 'D1' },
+          { movementId: 'M3', deliveryId: 'M3' }
+        ]
       })
 
       expect(loggedLines().map(({ fields }) => fields)).toEqual([
@@ -159,28 +154,11 @@ describe('betaJourneyLogger', () => {
         }
       ])
     })
-
-    it('logs the receipt against every movement in the delivery', async () => {
-      findDeliveryMovementIds.mockResolvedValue(['M1', 'M2'])
-
-      await send('/beta-2/deliveries/D1/receipt')
-
-      expect(findDeliveryMovementIds).toHaveBeenCalledWith(undefined, 'D1')
-      expect(
-        loggedLines().map(({ fields }) => [
-          fields.transaction.id,
-          fields.span.id
-        ])
-      ).toEqual([
-        ['M1', 'D1'],
-        ['M2', 'D1']
-      ])
-    })
   })
 
   describe('B1D - waste received without a Delivery ID', () => {
     it('logs the new delivery, with no movement', async () => {
-      await send('/beta-2/receipts')
+      await send('/beta-2/receipts', { journey: [{ deliveryId: 'D9' }] })
 
       expect(loggedLines()).toEqual([
         {
@@ -212,7 +190,7 @@ describe('betaJourneyLogger', () => {
       ])
     })
 
-    it('logs a rejected collection against its movement', async () => {
+    it('logs a rejected collection against the movement in its path', async () => {
       await send('/beta-2/movements/M1/collection', { fail: 'notFound' })
 
       expect(loggedLines()[0].fields).toEqual({
@@ -235,8 +213,26 @@ describe('betaJourneyLogger', () => {
       expect(loggedLines()[0].fields.event.outcome).toEqual('failure')
     })
 
+    it('logs a rejected receipt against each movement in the delivery', async () => {
+      findDeliveryMovementIds.mockResolvedValue(['M1', 'M2'])
+
+      await send('/beta-2/deliveries/D1/receipt', { fail: 'badRequest' })
+
+      expect(findDeliveryMovementIds).toHaveBeenCalledWith(undefined, 'D1')
+      expect(
+        loggedLines().map(({ fields }) => [
+          fields.transaction.id,
+          fields.span.id,
+          fields.event.outcome
+        ])
+      ).toEqual([
+        ['M1', 'D1', 'failure'],
+        ['M2', 'D1', 'failure']
+      ])
+    })
+
     it('logs a receipt for an unknown delivery with the delivery id only', async () => {
-      findDeliveryMovementIds.mockResolvedValue([])
+      findDeliveryMovementIds.mockResolvedValue(null)
 
       await send('/beta-2/deliveries/D404/receipt', { fail: 'notFound' })
 
@@ -250,9 +246,11 @@ describe('betaJourneyLogger', () => {
     it('still responds when the journey line cannot be logged', async () => {
       findDeliveryMovementIds.mockRejectedValue(new Error('mongo down'))
 
-      const { statusCode } = await send('/beta-2/deliveries/D1/receipt')
+      const { statusCode } = await send('/beta-2/deliveries/D1/receipt', {
+        fail: 'badRequest'
+      })
 
-      expect(statusCode).toEqual(201)
+      expect(statusCode).toEqual(400)
       expect(mockLogger.info).not.toHaveBeenCalled()
       expect(mockLogger.warn).toHaveBeenCalledWith(
         { err: expect.any(Error) },
@@ -261,7 +259,19 @@ describe('betaJourneyLogger', () => {
     })
   })
 
-  it('logs nothing for routes outside beta-2', async () => {
+  it('trims IDs to the CDP field limit and ignores entries without one', async () => {
+    const longId = 'M'.repeat(300)
+
+    await send('/beta-2/movements', {
+      journey: [{ movementId: longId }, { movementId: 42 }]
+    })
+
+    expect(loggedLines().map(({ fields }) => fields.transaction.id)).toEqual([
+      longId.slice(0, 256)
+    ])
+  })
+
+  it('logs nothing for routes without a journey step', async () => {
     await send('/beta-1/movements')
 
     expect(mockLogger.info).not.toHaveBeenCalled()

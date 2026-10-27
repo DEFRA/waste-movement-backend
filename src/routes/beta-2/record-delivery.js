@@ -30,6 +30,7 @@ const recordDelivery = {
     description: 'Record a delivery',
     notes:
       'Records a delivery event and returns one Delivery for all non-hazardous Movements, plus one per hazardous Movement.',
+    app: { journeyStep: 'delivery-recorded' },
     validate: {
       payload: validateRequest('delivery/record-delivery-request')
     },
@@ -76,6 +77,10 @@ const recordDelivery = {
       logger.info(
         { deliveryIds },
         `Successfully recorded deliveries with ids ${deliveryIds.join(', ')}`
+      )
+      request.app.journey = recordedDeliveries.flatMap(
+        ({ deliveryId, movementIds: deliveredIds }) =>
+          deliveredIds.map((movementId) => ({ movementId, deliveryId }))
       )
 
       return h

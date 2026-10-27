@@ -11,78 +11,46 @@ const MAX_LINES_PER_STEP = 100
 
 const isFailure = (statusCode) => statusCode >= 400
 
+const asId = (value) =>
+  typeof value === 'string' ? value.slice(0, MAX_ID_LENGTH) : undefined
+
 const asIds = (values) =>
-  Array.isArray(values)
-    ? [
-        ...new Set(
-          values
-            .filter((value) => typeof value === 'string')
-            .map((value) => value.slice(0, MAX_ID_LENGTH))
-        )
-      ]
-    : []
+  Array.isArray(values) ? [...new Set(values.map(asId).filter(Boolean))] : []
 
 /**
- * What each Beta 2 journey step logs: one entry per Movement the step
- * involves, each with the Movement and Delivery ID known for it. A step that
- * involves no known Movement logs a single entry without one.
+ * The Movement and Delivery IDs the handler set on request.app.journey, or,
+ * when it didn't get that far (e.g. a validation error), the ones in the
+ * request: the movementId param, the payload's movementIds, or the
+ * deliveryId param with the Movements delivered under it.
  */
-const STEPS = {
-  'post /beta-2/movements': {
-    action: 'movement-created',
-    ids: async ({ response, statusCode }) =>
-      isFailure(statusCode)
-        ? []
-        : asIds([response.source?.data?.movementId]).map((movementId) => ({
-            movementId
-          }))
-  },
-  'post /beta-2/movements/{movementId}/collection': {
-    action: 'collection-recorded',
-    ids: async ({ request }) =>
-      asIds([request.params?.movementId]).map((movementId) => ({
-        movementId
+const journeyEntries = async (request) => {
+  if (Array.isArray(request.app.journey)) {
+    return request.app.journey
+      .map(({ movementId, deliveryId } = {}) => ({
+        movementId: asId(movementId),
+        deliveryId: asId(deliveryId)
       }))
-  },
-  'post /beta-2/deliveries': {
-    action: 'delivery-recorded',
-    ids: async ({ request, response, statusCode }) =>
-      isFailure(statusCode)
-        ? asIds(request.payload?.movementIds).map((movementId) => ({
-            movementId
-          }))
-        : (response.source?.data?.deliveries ?? []).flatMap(
-            ({ deliveryId, movementIds }) =>
-              asIds(movementIds).map((movementId) => ({
-                movementId,
-                deliveryId
-              }))
-          )
-  },
-  'post /beta-2/deliveries/{deliveryId}/receipt': {
-    action: 'receipt-recorded',
-    ids: async ({ request }) => {
-      const [deliveryId] = asIds([request.params?.deliveryId])
-      if (!deliveryId) {
-        return []
-      }
-
-      const movementIds = await findDeliveryMovementIds(request.db, deliveryId)
-
-      return movementIds.length > 0
-        ? movementIds.map((movementId) => ({ movementId, deliveryId }))
-        : [{ deliveryId }]
-    }
-  },
-  'post /beta-2/receipts': {
-    action: 'undocumented-receipt-recorded',
-    ids: async ({ response, statusCode }) =>
-      isFailure(statusCode)
-        ? []
-        : asIds([response.source?.data?.deliveryId]).map((deliveryId) => ({
-            deliveryId
-          }))
+      .filter(({ movementId, deliveryId }) => movementId || deliveryId)
   }
+
+  const { params, payload } = request
+  const deliveryId = asId(params?.deliveryId)
+  const movementIds = asIds([
+    params?.movementId,
+    ...(Array.isArray(payload?.movementIds) ? payload.movementIds : [])
+  ])
+
+  if (movementIds.length > 0 || !deliveryId) {
+    return movementIds.map((movementId) => ({ movementId, deliveryId }))
+  }
+
+  const deliveredIds = asIds(
+    await findDeliveryMovementIds(request.db, deliveryId)
+  )
+
+  return deliveredIds.length > 0
+    ? deliveredIds.map((movementId) => ({ movementId, deliveryId }))
+    : [{ deliveryId }]
 }
 
 const describeIds = ({ movementId, deliveryId }) => {
@@ -99,6 +67,12 @@ const describeIds = ({ movementId, deliveryId }) => {
  * validation errors), so a Movement can be followed from creation to receipt
  * in OpenSearch.
  *
+ * A route opts in by naming its step in its config, and its handler sets the
+ * IDs it involves on success:
+ *
+ *   options: { app: { journeyStep: 'delivery-recorded' } }
+ *   request.app.journey = [{ movementId, deliveryId }]
+ *
  * One line is logged per Movement the step involves, in CDP allowlisted ECS
  * fields (cdp-documentation how-to/logging.md):
  * - transaction.id: the Movement ID (keyword-mapped, so dashboards filter on it)
@@ -114,8 +88,8 @@ export const betaJourneyLogger = {
     name: 'beta-journey-logger',
     register(server) {
       server.ext('onPreResponse', async (request, h) => {
-        const step = STEPS[`${request.method} ${request.route?.path}`]
-        if (!step) {
+        const action = request.route?.settings?.app?.journeyStep
+        if (!action) {
           return h.continue
         }
 
@@ -126,7 +100,7 @@ export const betaJourneyLogger = {
             : response.statusCode
           const failed = isFailure(statusCode)
           const outcome = failed ? 'failure' : 'success'
-          const entries = await step.ids({ request, response, statusCode })
+          const entries = await journeyEntries(request)
 
           for (const { movementId, deliveryId } of (entries.length > 0
             ? entries
@@ -134,7 +108,7 @@ export const betaJourneyLogger = {
           ).slice(0, MAX_LINES_PER_STEP)) {
             logger.info(
               {
-                event: { action: step.action, outcome },
+                event: { action, outcome },
                 ...(movementId && { transaction: { id: movementId } }),
                 ...(deliveryId && { span: { id: deliveryId } }),
                 ...(failed && {
@@ -144,7 +118,7 @@ export const betaJourneyLogger = {
                   }
                 })
               },
-              `Beta-2 ${step.action}: ${outcome}${describeIds({ movementId, deliveryId })}`
+              `Beta-2 ${action}: ${outcome}${describeIds({ movementId, deliveryId })}`
             )
           }
         } catch (error) {

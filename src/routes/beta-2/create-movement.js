@@ -26,6 +26,7 @@ const createMovement = {
   path: '/movements',
   options: {
     description: 'Create a new waste movement',
+    app: { journeyStep: 'movement-created' },
     validate: {
       payload: withPayloadChecks(
         validateRequest('creation/create-movement-request'),
@@ -60,6 +61,7 @@ const createMovement = {
         { movementId },
         `Successfully created waste movement with id ${movementId}`
       )
+      request.app.journey = [{ movementId }]
 
       return h
         .response(responseBody)

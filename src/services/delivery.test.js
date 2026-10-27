@@ -109,10 +109,21 @@ describe('delivery', () => {
       expect(result).toEqual(['25HRZ9X7'])
     })
 
-    it('returns an empty list when no delivery with the given id exists', async () => {
+    it('returns an empty list for a delivery with no movements', async () => {
+      await deliveriesCollection.insertOne({
+        deliveryId: '25KMT4Z9',
+        movementIds: []
+      })
+
       const result = await findDeliveryMovementIds(db, '25KMT4Z9')
 
       expect(result).toEqual([])
+    })
+
+    it('returns null when no delivery with the given id exists', async () => {
+      const result = await findDeliveryMovementIds(db, '25KMT4Z9')
+
+      expect(result).toBeNull()
     })
   })
 

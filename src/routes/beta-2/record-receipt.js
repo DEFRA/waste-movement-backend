@@ -7,7 +7,7 @@ import {
   jsonSchemaRequestValidatorFor,
   jsonSchemaResponseValidatorFor
 } from '../../schemas/validate/hapi-validator.js'
-import { deliveryExists } from '../../services/delivery.js'
+import { findDeliveryMovementIds } from '../../services/delivery.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { notFound } from '@hapi/boom'
 import {
@@ -28,6 +28,7 @@ const recordReceipt = {
   options: {
     description: 'Record receipt of waste against a delivery',
     notes: 'Records receipt of the waste delivered under the given delivery.',
+    app: { journeyStep: 'receipt-recorded' },
     validate: {
       payload: withPayloadChecks(
         validateRequest('receipt/record-receipt-request'),
@@ -47,9 +48,9 @@ const recordReceipt = {
       const traceId = getTraceId() || randomUUID()
       getOrganisationId(request)
 
-      const found = await deliveryExists(request.db, deliveryId)
+      const movementIds = await findDeliveryMovementIds(request.db, deliveryId)
 
-      if (!found) {
+      if (!movementIds) {
         const message = `No delivery exists with delivery ID: ${deliveryId}`
         logger.error({ deliveryId }, message)
 
@@ -60,6 +61,10 @@ const recordReceipt = {
         { deliveryId },
         `Successfully recorded receipt for delivery ${deliveryId}`
       )
+      request.app.journey =
+        movementIds.length > 0
+          ? movementIds.map((movementId) => ({ movementId, deliveryId }))
+          : [{ deliveryId }]
 
       return h
         .response({ data: { deliveryId }, validation: { warnings: [] } })
