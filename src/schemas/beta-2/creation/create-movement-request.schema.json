@@ -8,10 +8,10 @@
       "$ref": "../common/producer/producer.schema.json",
       "description": "The producer of the waste. wasteSource picks which fields apply."
     },
-    "plannedCollectionDateTime": {
+    "collectionDateTime": {
       "type": "string",
       "format": "date-time",
-      "description": "The planned collection time, as an ISO 8601 date-time. The actual time is recorded by the Collection event."
+      "description": "The planned time the waste will be collected, as an ISO 8601 date-time. The actual time is given when the collection is recorded."
     },
     "collectionSite": {
       "$ref": "../common/collection-site.schema.json",
@@ -69,7 +69,7 @@
     "intendedCarriers",
     "intendedReceivers",
     "wasteItems",
-    "plannedCollectionDateTime",
+    "collectionDateTime",
     "collectionSite"
   ],
   "additionalProperties": false

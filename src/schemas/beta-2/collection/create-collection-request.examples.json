@@ -16,7 +16,7 @@
           "postcode": "TE1 4CR"
         }
       },
-      "actualCollectionDateTime": "2026-01-15T09:30:00Z",
+      "collectionDateTime": "2026-01-15T09:30:00Z",
       "collectionSite": {
         "address": {
           "fullAddress": "10 Industrial Way, Test City",
@@ -75,7 +75,7 @@
           "postcode": "TE1 4CR"
         }
       },
-      "actualCollectionDateTime": "2026-01-15T09:30:00Z",
+      "collectionDateTime": "2026-01-15T09:30:00Z",
       "collectionSite": {
         "address": {
           "fullAddress": "10 Industrial Way, Test City",

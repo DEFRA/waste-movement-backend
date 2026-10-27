@@ -12,7 +12,7 @@ import { organisationHeaders } from '../../test/data/organisation-headers.js'
 import {
   brokerOrDealerEntry,
   carrier,
-  actualCollectionDateTime,
+  collectionDateTime,
   collectionSite,
   supportingReference
 } from '../../schemas/beta-2/test-helpers.js'
@@ -39,7 +39,7 @@ describe('collection Route Tests version: beta-2', () => {
   const isDutyOfCareConfirmed = true
   const goodPayload = {
     carrier,
-    actualCollectionDateTime,
+    collectionDateTime,
     collectionSite,
     isDutyOfCareConfirmed
   }
@@ -87,7 +87,7 @@ describe('collection Route Tests version: beta-2', () => {
   it('creates a collection when a brokerOrDealer is declared', async () => {
     const payload = {
       carrier,
-      actualCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
       brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] }
@@ -117,7 +117,7 @@ describe('collection Route Tests version: beta-2', () => {
   it('returns an error when a declared brokerOrDealer has no details', async () => {
     const invalidPayload = {
       carrier,
-      actualCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
       brokerOrDealer: { isPresent: true }
@@ -152,7 +152,7 @@ describe('collection Route Tests version: beta-2', () => {
   it('returns an error when brokerOrDealer details are given without declaring involvement', async () => {
     const invalidPayload = {
       carrier,
-      actualCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
       brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
@@ -187,7 +187,7 @@ describe('collection Route Tests version: beta-2', () => {
   it('creates a collection when supportingReferences are provided', async () => {
     const payload = {
       carrier,
-      actualCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
       supportingReferences: [supportingReference]
@@ -217,7 +217,7 @@ describe('collection Route Tests version: beta-2', () => {
   it('returns an error when a supportingReference has an unrecognised label', async () => {
     const invalidPayload = {
       carrier,
-      actualCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
       supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
@@ -253,7 +253,7 @@ describe('collection Route Tests version: beta-2', () => {
   it('creates a collection when specialHandlingRequirements are provided', async () => {
     const payload = {
       carrier,
-      actualCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
       specialHandlingRequirements: 'Handle with care and keep upright.'
@@ -364,7 +364,7 @@ describe('collection Route Tests version: beta-2', () => {
 
   it('returns an error when carrier is missing', async () => {
     const invalidPayload = {
-      actualCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed
     }
@@ -438,7 +438,7 @@ describe('collection Route Tests version: beta-2', () => {
       apiCode: apiCode1,
       isDutyOfCareConfirmed,
       carrier,
-      actualCollectionDateTime,
+      collectionDateTime,
       collectionSite
     }
     const getMovementRecordSpy = jest.spyOn(
@@ -478,7 +478,7 @@ describe('collection Route Tests version: beta-2', () => {
   // Scenario: A Collection isn't created when a carrier fails to submit a duty
   // of care.
   it('returns an error when the duty of care confirmation is missing and does not create a collection', async () => {
-    const invalidPayload = { carrier, actualCollectionDateTime, collectionSite }
+    const invalidPayload = { carrier, collectionDateTime, collectionSite }
     const getMovementRecordSpy = jest.spyOn(
       movementService,
       'getMovementRecord'
@@ -654,8 +654,8 @@ describe('collection Route Tests version: beta-2', () => {
     describe("Scenario: A Collection isn't created without an actual collection date and time", () => {
       it('rejects the collection, saying the actual collection date and time is required', async () => {
         await expectCollectionRejected(
-          without('actualCollectionDateTime', goodPayload),
-          [notProvided('actualCollectionDateTime', '/actualCollectionDateTime')]
+          without('collectionDateTime', goodPayload),
+          [notProvided('collectionDateTime', '/collectionDateTime')]
         )
       })
     })
@@ -693,12 +693,12 @@ describe('collection Route Tests version: beta-2', () => {
         ['not-a-date']
       ])('rejects an actual collection date and time of %j', async (value) => {
         await expectCollectionRejected(
-          { ...goodPayload, actualCollectionDateTime: value },
+          { ...goodPayload, collectionDateTime: value },
           [
             {
               errorType: 'InvalidFormat',
               message: "must match format 'date-time'",
-              pointer: '/actualCollectionDateTime'
+              pointer: '/collectionDateTime'
             }
           ]
         )

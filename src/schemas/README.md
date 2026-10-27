@@ -357,6 +357,39 @@ Path params (`-params`) and shared resources have no body of their own, so they 
 so put the fullest example first. The one exception is a base schema with no fields of its own
 (`producer-base`), which has nothing to show.
 
+### Field names: same concept, same name
+
+A concept has one field name in every schema and on every endpoint. A party's name is
+`organisationName` and its location is `address`, wherever they appear. When the same thing turns up
+under a second name, rename one of them so they match. Don't add an alias.
+
+**Sibling fields that qualify the same noun start with that noun**, so related fields sort and
+group together:
+
+| Noun         | Fields                            |
+| ------------ | --------------------------------- |
+| `components` | `components`, `componentsSource`  |
+| `container`  | `containerType`, `containerCount` |
+
+The rule only covers siblings. A field with no sibling to group with keeps its natural name, as
+`totalWeight` and `intendedCarriers` do.
+
+**An event's time is `<event>DateTime`**: `collectionDateTime`, `receiptDateTime`. The name
+doesn't say whether the time is planned or actual; the field's description does. Creating a
+movement gives the planned collection time, and recording the Collection gives the actual one,
+both as `collectionDateTime`, and each description says which it is and where the other is given.
+
+Known exceptions, kept on purpose or pending a decision (see
+`docs/beta-2-spec-consistency-review.md`):
+
+- `receiver.siteName`, not `organisationName`, because a receiver is identified as a site.
+- `receiver.receiptAddress`, not `address`, until site naming is decided.
+- `carrier.otherMeansOfTransport`, not `meansOfTransportDescription`, because it describes the
+  `OTHER` means of transport rather than qualifying `meansOfTransport` in general.
+- The `reasonForNoX` family (`reasonForNoRegistrationNumber`, `reasonForNoAuthorisationNumber`,
+  `reasonForNoCode`, `reasonForNoDeliveryId`) puts the noun last. These fields are consistent with
+  each other, so they get renamed all together or not at all.
+
 ### Whole bodies are named after their route
 
 A schema for a whole request or response body is named after the route file it belongs to, with

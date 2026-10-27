@@ -12,7 +12,7 @@ import {
   organisationHeaders
 } from '../../test/data/organisation-headers.js'
 import {
-  plannedCollectionDateTime,
+  collectionDateTime,
   collectionSite,
   carrier,
   consignmentNote,
@@ -64,7 +64,7 @@ describe('movement Route Tests version: beta-2', () => {
   const wasteItems = [wasteItem]
   const goodPayload = {
     producer,
-    plannedCollectionDateTime,
+    collectionDateTime,
     collectionSite,
     intendedCarriers,
     intendedReceivers,
@@ -151,7 +151,7 @@ describe('movement Route Tests version: beta-2', () => {
   ])('creates a movement for a %s producer', async (_wasteSource, prod) => {
     const payload = {
       producer: prod,
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedCarriers,
       intendedReceivers,
@@ -214,7 +214,7 @@ describe('movement Route Tests version: beta-2', () => {
   it('creates a movement when a brokerOrDealer is declared', async () => {
     const payload = {
       producer,
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedCarriers,
       intendedReceivers,
@@ -260,7 +260,7 @@ describe('movement Route Tests version: beta-2', () => {
   it('returns an error when a declared brokerOrDealer has no details', async () => {
     const invalidPayload = {
       producer,
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedCarriers,
       intendedReceivers,
@@ -296,7 +296,7 @@ describe('movement Route Tests version: beta-2', () => {
   it('returns an error when brokerOrDealer details are given without declaring involvement', async () => {
     const invalidPayload = {
       producer,
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedCarriers,
       intendedReceivers,
@@ -343,7 +343,7 @@ describe('movement Route Tests version: beta-2', () => {
     const invalidPayload = {
       apiCode: apiCode1,
       producer,
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedCarriers,
       intendedReceivers,
@@ -386,7 +386,7 @@ describe('movement Route Tests version: beta-2', () => {
 
   it('returns an error when producer is missing and does not create a movement', async () => {
     const invalidPayload = {
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedCarriers,
       intendedReceivers,
@@ -431,7 +431,7 @@ describe('movement Route Tests version: beta-2', () => {
   it('returns an error when intendedCarriers is missing and does not create a movement', async () => {
     const invalidPayload = {
       producer,
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedReceivers,
       wasteItems
@@ -474,7 +474,7 @@ describe('movement Route Tests version: beta-2', () => {
   it('returns an error when intendedReceivers is missing and does not create a movement', async () => {
     const invalidPayload = {
       producer,
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedCarriers,
       wasteItems
@@ -517,7 +517,7 @@ describe('movement Route Tests version: beta-2', () => {
   it('returns an error when wasteItems is missing and does not create a movement', async () => {
     const invalidPayload = {
       producer,
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedCarriers,
       intendedReceivers
@@ -625,7 +625,7 @@ describe('movement Route Tests version: beta-2', () => {
   it('returns an error when a waste item weight is not greater than 0 and does not create a movement', async () => {
     const invalidPayload = {
       producer,
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedCarriers,
       intendedReceivers,
@@ -672,7 +672,7 @@ describe('movement Route Tests version: beta-2', () => {
   it('returns an error when a waste item declares treatments and does not create a movement', async () => {
     const invalidPayload = {
       producer,
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedCarriers,
       intendedReceivers,
@@ -707,7 +707,7 @@ describe('movement Route Tests version: beta-2', () => {
   it('rejects when no organisation was forwarded (unknown or disabled API code) and does not create a movement', async () => {
     const invalidPayload = {
       producer,
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedCarriers,
       intendedReceivers,
@@ -800,7 +800,7 @@ describe('movement Route Tests version: beta-2', () => {
         description: 'producer',
         payload: {
           producer: 'fail',
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers: [carrier],
           intendedReceivers,
@@ -812,7 +812,7 @@ describe('movement Route Tests version: beta-2', () => {
         payload: {
           producer,
           brokerOrDealer: 'fail',
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers: [carrier],
           intendedReceivers,
@@ -865,7 +865,7 @@ describe('movement Route Tests version: beta-2', () => {
         isPresent: true,
         items: [{ ...brokerOrDealerEntry, ...entry }]
       },
-      plannedCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       intendedCarriers: [carrier],
       intendedReceivers,
@@ -1685,15 +1685,9 @@ describe('movement Route Tests version: beta-2', () => {
 
     describe("Scenario: A Movement isn't created without a planned collection date and time", () => {
       it('rejects the movement, saying the planned collection date and time is required', async () => {
-        await expectRejected(
-          without('plannedCollectionDateTime', goodPayload),
-          [
-            notProvided(
-              'plannedCollectionDateTime',
-              '/plannedCollectionDateTime'
-            )
-          ]
-        )
+        await expectRejected(without('collectionDateTime', goodPayload), [
+          notProvided('collectionDateTime', '/collectionDateTime')
+        ])
       })
     })
 
@@ -1729,16 +1723,13 @@ describe('movement Route Tests version: beta-2', () => {
         ['2026-01-15T09:30:00'],
         ['not-a-date']
       ])('rejects a planned collection date and time of %j', async (value) => {
-        await expectRejected(
-          { ...goodPayload, plannedCollectionDateTime: value },
-          [
-            {
-              errorType: 'InvalidFormat',
-              message: "must match format 'date-time'",
-              pointer: '/plannedCollectionDateTime'
-            }
-          ]
-        )
+        await expectRejected({ ...goodPayload, collectionDateTime: value }, [
+          {
+            errorType: 'InvalidFormat',
+            message: "must match format 'date-time'",
+            pointer: '/collectionDateTime'
+          }
+        ])
       })
     })
 

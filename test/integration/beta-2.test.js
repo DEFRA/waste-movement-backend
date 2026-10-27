@@ -13,8 +13,7 @@ import { expectProblemResponse } from './helpers/expect-problem-response.js'
 import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-body-has-shape.js'
 import {
   receiptDateTime,
-  actualCollectionDateTime,
-  plannedCollectionDateTime,
+  collectionDateTime,
   brokerOrDealerEntry,
   carrier,
   collectionSite,
@@ -40,7 +39,7 @@ describe('beta-2', () => {
   const receiptWasteItems = [{ ...wasteItem, treatments }]
   const minimalMovement = {
     producer: { wasteSource: 'HOUSEHOLD' },
-    plannedCollectionDateTime,
+    collectionDateTime,
     collectionSite,
     intendedCarriers,
     intendedReceivers,
@@ -90,7 +89,7 @@ describe('beta-2', () => {
           method: 'POST',
           body: {
             producer,
-            plannedCollectionDateTime,
+            collectionDateTime,
             collectionSite,
             intendedCarriers,
             intendedReceivers,
@@ -130,7 +129,7 @@ describe('beta-2', () => {
           method: 'POST',
           body: {
             producer,
-            plannedCollectionDateTime,
+            collectionDateTime,
             collectionSite,
             intendedCarriers,
             intendedReceivers,
@@ -181,7 +180,7 @@ describe('beta-2', () => {
           method: 'POST',
           body: {
             producer,
-            plannedCollectionDateTime,
+            collectionDateTime,
             collectionSite,
             intendedCarriers,
             intendedReceivers,
@@ -230,7 +229,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           carrier,
-          actualCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed
         }
@@ -266,7 +265,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           carrier,
-          actualCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
@@ -503,7 +502,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           carrier,
-          actualCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
           specialHandlingRequirements: 'Handle with care and keep upright.'
@@ -615,7 +614,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           carrier,
-          actualCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed
         }
@@ -639,7 +638,7 @@ describe('beta-2', () => {
         body: {
           apiCode: apiCode1,
           carrier,
-          actualCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed
         }
@@ -684,7 +683,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, actualCollectionDateTime, collectionSite }
+        body: { carrier, collectionDateTime, collectionSite }
       })
 
       expectProblemResponse(response, {
@@ -710,7 +709,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           carrier,
-          actualCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
           brokerOrDealer: { isPresent: true }
@@ -739,7 +738,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           carrier,
-          actualCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
           brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
@@ -768,7 +767,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           carrier,
-          actualCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
           supportingReferences: [
@@ -1139,7 +1138,7 @@ describe('beta-2', () => {
         body: {
           apiCode: apiCode1,
           producer: { wasteSource: 'HOUSEHOLD' },
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers,
           intendedReceivers,
@@ -1188,7 +1187,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           producer: { wasteSource: 'HOUSEHOLD' },
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers,
           wasteItems
@@ -1220,7 +1219,7 @@ describe('beta-2', () => {
           producer: { wasteSource: 'HOUSEHOLD' },
           intendedReceivers: [],
           wasteItems,
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers
         }
@@ -1244,7 +1243,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           producer: { wasteSource: 'HOUSEHOLD' },
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers,
           intendedReceivers
@@ -1273,7 +1272,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           producer: { wasteSource: 'HOUSEHOLD' },
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers,
           intendedReceivers,
@@ -1310,7 +1309,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers,
           intendedReceivers,
@@ -1333,7 +1332,7 @@ describe('beta-2', () => {
         requestId: randomUUID(),
         body: {
           producer: 'fail',
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers: [carrier],
           intendedReceivers,
@@ -1361,7 +1360,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers,
           intendedReceivers,
@@ -1389,7 +1388,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers,
           intendedReceivers,
@@ -1418,7 +1417,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers,
           intendedReceivers,
@@ -1446,7 +1445,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers,
           intendedReceivers,
@@ -1474,7 +1473,7 @@ describe('beta-2', () => {
         method: 'POST',
         requestId: randomUUID(),
         body: {
-          plannedCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           intendedCarriers,
           intendedReceivers,
@@ -1506,7 +1505,7 @@ describe('beta-2', () => {
         {
           method: 'POST',
           body: {
-            plannedCollectionDateTime,
+            collectionDateTime,
             collectionSite,
             intendedCarriers,
             intendedReceivers,
@@ -1527,7 +1526,7 @@ describe('beta-2', () => {
         {
           method: 'POST',
           body: {
-            plannedCollectionDateTime,
+            collectionDateTime,
             collectionSite,
             intendedCarriers,
             intendedReceivers,
@@ -1555,7 +1554,7 @@ describe('beta-2', () => {
         {
           method: 'POST',
           body: {
-            plannedCollectionDateTime,
+            collectionDateTime,
             collectionSite,
             intendedCarriers,
             intendedReceivers,
