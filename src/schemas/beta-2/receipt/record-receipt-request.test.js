@@ -1,4 +1,5 @@
 import {
+  receiptDateTime,
   apiCode,
   brokerOrDealerEntry,
   supportingReference,
@@ -19,21 +20,34 @@ describe('record-receipt-request schema', () => {
 
   test('accepts a valid payload', () => {
     expect(
-      validateAjv({ carrier, receiver, physicalDetails, treatments }).valid
+      validateAjv({
+        receiptDateTime,
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments
+      }).valid
     ).toBe(true)
   })
 
   // apiCode is sent in the x-api-code header, not the body.
   test('rejects apiCode in the body', () => {
     expect(
-      validateAjv({ apiCode, carrier, receiver, physicalDetails, treatments })
-        .valid
+      validateAjv({
+        receiptDateTime,
+        apiCode,
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments
+      }).valid
     ).toBe(false)
   })
 
   test('rejects an additional property beyond the declared ones', () => {
     expect(
       validateAjv({
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -43,12 +57,111 @@ describe('record-receipt-request schema', () => {
     ).toBe(false)
   })
 
+  // Hazardous properties are declared per waste item, in its classification,
+  // not on the receipt.
+  test('rejects hazardous as an unknown property', () => {
+    const { valid, errors } = validateAjv({
+      receiptDateTime,
+      carrier,
+      receiver,
+      physicalDetails,
+      treatments,
+      hazardous: { isPresent: false }
+    })
+
+    expect(valid).toBe(false)
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        keyword: 'additionalProperties',
+        instancePath: '',
+        params: { additionalProperty: 'hazardous' }
+      })
+    )
+  })
+
+  // Whether it's in the future depends on when the request arrives, so that's
+  // checked by receipt-date-time-checks.js, not the schema.
+  describe('receiptDateTime', () => {
+    const validPayload = {
+      receiptDateTime,
+      carrier,
+      receiver,
+      physicalDetails,
+      treatments
+    }
+
+    test('is required', () => {
+      const { receiptDateTime: excluded, ...payload } = validPayload
+      const { valid, errors } = validateAjv(payload)
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '',
+          params: { missingProperty: 'receiptDateTime' }
+        })
+      )
+    })
+
+    test.each([
+      ['2026-10-14T09:30:00Z'],
+      ['2026-10-14T09:30:00.123Z'],
+      ['2026-10-14T09:30:00+01:00']
+    ])('accepts the ISO 8601 date-time %j', (value) => {
+      expect(
+        validateAjv({ ...validPayload, receiptDateTime: value }).valid
+      ).toBe(true)
+    })
+
+    test.each([
+      ['14/10/2026'],
+      ['2026-13-01T10:00:00Z'],
+      ['Yesterday'],
+      ['2026-10-14'],
+      ['2026-10-14T09:30:00'],
+      ['']
+    ])(
+      'rejects %j, which is not an ISO 8601 date-time with a timezone',
+      (value) => {
+        const { valid, errors } = validateAjv({
+          ...validPayload,
+          receiptDateTime: value
+        })
+
+        expect(valid).toBe(false)
+        expect(errors).toContainEqual(
+          expect.objectContaining({
+            keyword: 'format',
+            instancePath: '/receiptDateTime'
+          })
+        )
+      }
+    )
+
+    test('rejects a value that is not a string', () => {
+      const { valid, errors } = validateAjv({
+        ...validPayload,
+        receiptDateTime: 1792056600000
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'type',
+          instancePath: '/receiptDateTime'
+        })
+      )
+    })
+  })
+
   // carrier's own rules are covered by carrier.test.js — these confirm
   // it's required, that it's a single carrier rather than a list, and that the
   // $ref wiring is live.
   describe('carrier', () => {
     test('is required', () => {
       const { valid, errors } = validateAjv({
+        receiptDateTime,
         receiver,
         physicalDetails,
         treatments
@@ -66,6 +179,7 @@ describe('record-receipt-request schema', () => {
 
     test('rejects a list of carriers', () => {
       const { valid, errors } = validateAjv({
+        receiptDateTime,
         carrier: [carrier],
         receiver,
         physicalDetails,
@@ -81,6 +195,7 @@ describe('record-receipt-request schema', () => {
     test('rejects a payload whose carrier is invalid', () => {
       const { organisationName, ...invalidCarrier } = carrier
       const { valid, errors } = validateAjv({
+        receiptDateTime,
         carrier: invalidCarrier,
         receiver,
         physicalDetails,
@@ -104,6 +219,7 @@ describe('record-receipt-request schema', () => {
   describe('receiver', () => {
     test('is required', () => {
       const { valid, errors } = validateAjv({
+        receiptDateTime,
         carrier,
         physicalDetails,
         treatments
@@ -121,6 +237,7 @@ describe('record-receipt-request schema', () => {
 
     test('rejects a list of receivers', () => {
       const { valid, errors } = validateAjv({
+        receiptDateTime,
         carrier,
         receiver: [receiver],
         physicalDetails,
@@ -136,6 +253,7 @@ describe('record-receipt-request schema', () => {
     test('rejects a payload whose receiver is invalid', () => {
       const { siteName, ...invalidReceiver } = receiver
       const { valid, errors } = validateAjv({
+        receiptDateTime,
         carrier,
         receiver: invalidReceiver,
         physicalDetails,
@@ -161,12 +279,22 @@ describe('record-receipt-request schema', () => {
     // and weight are declared.
     test('accepts valid physical details', () => {
       expect(
-        validateAjv({ carrier, receiver, physicalDetails, treatments }).valid
+        validateAjv({
+          receiptDateTime,
+          carrier,
+          receiver,
+          physicalDetails,
+          treatments
+        }).valid
       ).toBe(true)
     })
 
     test('is required', () => {
-      const { valid, errors } = validateAjv({ carrier, receiver })
+      const { valid, errors } = validateAjv({
+        receiptDateTime,
+        carrier,
+        receiver
+      })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
@@ -180,6 +308,7 @@ describe('record-receipt-request schema', () => {
 
     test('rejects a list of physical details', () => {
       const { valid, errors } = validateAjv({
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails: [physicalDetails]
@@ -196,6 +325,7 @@ describe('record-receipt-request schema', () => {
 
     test('rejects invalid physical details, reporting the error against the field', () => {
       const { valid, errors } = validateAjv({
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails: { ...physicalDetails, form: 'solid' }
@@ -218,7 +348,13 @@ describe('record-receipt-request schema', () => {
     // recovery code and weight is declared.
     test('accepts a valid treatment', () => {
       expect(
-        validateAjv({ carrier, receiver, physicalDetails, treatments }).valid
+        validateAjv({
+          receiptDateTime,
+          carrier,
+          receiver,
+          physicalDetails,
+          treatments
+        }).valid
       ).toBe(true)
     })
 
@@ -227,6 +363,7 @@ describe('record-receipt-request schema', () => {
       const disposal = { ...treatment, disposalOrRecoveryCode: 'D10' }
       expect(
         validateAjv({
+          receiptDateTime,
           carrier,
           receiver,
           physicalDetails,
@@ -238,6 +375,7 @@ describe('record-receipt-request schema', () => {
     // Scenario: A Receipt isn't created when no treatment is declared.
     test('is required', () => {
       const { valid, errors } = validateAjv({
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails
@@ -255,6 +393,7 @@ describe('record-receipt-request schema', () => {
 
     test('rejects an empty list of treatments', () => {
       const { valid, errors } = validateAjv({
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -272,6 +411,7 @@ describe('record-receipt-request schema', () => {
 
     test('rejects an invalid treatment, reporting the error against that treatment', () => {
       const { valid, errors } = validateAjv({
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -292,6 +432,7 @@ describe('record-receipt-request schema', () => {
     test('reports each invalid field of each invalid treatment, and nothing for a valid one', () => {
       const { disposalOrRecoveryCode, ...noCode } = treatment
       const { valid, errors } = validateAjv({
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -339,6 +480,7 @@ describe('record-receipt-request schema', () => {
   describe('brokerOrDealer', () => {
     test('is optional', () => {
       const payload = {
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -350,6 +492,7 @@ describe('record-receipt-request schema', () => {
 
     test('accepts a declared broker or dealer', () => {
       const payload = {
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -363,6 +506,7 @@ describe('record-receipt-request schema', () => {
     // the $ref is wired up, so a rejection propagates to the payload.
     test('rejects a payload whose broker or dealer is invalid', () => {
       const payload = {
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -379,6 +523,7 @@ describe('record-receipt-request schema', () => {
   describe('supportingReferences', () => {
     test('is optional', () => {
       const payload = {
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -390,6 +535,7 @@ describe('record-receipt-request schema', () => {
 
     test('accepts valid supportingReferences', () => {
       const payload = {
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -401,6 +547,7 @@ describe('record-receipt-request schema', () => {
 
     test('rejects a payload whose supportingReferences is invalid', () => {
       const payload = {
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,

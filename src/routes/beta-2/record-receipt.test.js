@@ -10,6 +10,7 @@ import { createServer } from '../../server.js'
 import { breakNextResponse } from '../../test/break-next-response.js'
 import { organisationHeaders } from '../../test/data/organisation-headers.js'
 import {
+  receiptDateTime,
   brokerOrDealerEntry,
   supportingReference,
   carrier,
@@ -58,7 +59,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
   }
 
   const expectedTypeBase =
-    'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
+    'https://defra.github.io/digital-waste-tracking-api-site/preview/problems/'
 
   beforeAll(async () => {
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
@@ -74,6 +75,11 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks()
+    // clearAllMocks doesn't undo a test's mockRejectedValue on deliveryExists,
+    // which would otherwise fail every later request with a 500.
+    if (jest.isMockFunction(delivery.deliveryExists)) {
+      delivery.deliveryExists.mockRestore()
+    }
     await server.db.collection('deliveries').deleteMany({})
   })
 
@@ -83,7 +89,13 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, treatments },
+      payload: {
+        receiptDateTime,
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments
+      },
       headers: tracedAuthHeaders
     })
 
@@ -103,6 +115,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -125,6 +138,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -147,6 +161,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -169,6 +184,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -193,7 +209,13 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, treatments },
+      payload: {
+        receiptDateTime,
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments
+      },
       headers: {
         ...authHeaders,
         ...organisationHeaders,
@@ -208,7 +230,13 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, treatments },
+      payload: {
+        receiptDateTime,
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments
+      },
       headers: tracedAuthHeaders
     })
 
@@ -247,6 +275,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         apiCode: apiCode1,
         carrier,
         receiver,
@@ -277,7 +306,12 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { receiver, physicalDetails, treatments },
+      payload: {
+        receiptDateTime,
+        receiver,
+        physicalDetails,
+        treatments
+      },
       headers: tracedAuthHeaders
     })
 
@@ -302,7 +336,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, treatments },
+      payload: { receiptDateTime, carrier, receiver, treatments },
       headers: tracedAuthHeaders
     })
 
@@ -328,7 +362,12 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails },
+      payload: {
+        receiptDateTime,
+        carrier,
+        receiver,
+        physicalDetails
+      },
       headers: tracedAuthHeaders
     })
 
@@ -357,6 +396,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       method: 'POST',
       url,
       payload: {
+        receiptDateTime,
         carrier,
         receiver,
         physicalDetails,
@@ -386,7 +426,12 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, physicalDetails, treatments },
+      payload: {
+        receiptDateTime,
+        carrier,
+        physicalDetails,
+        treatments
+      },
       headers: tracedAuthHeaders
     })
 
@@ -413,7 +458,13 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, treatments },
+      payload: {
+        receiptDateTime,
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments
+      },
       headers: { ...authHeaders, ...tracedHeaders }
     })
 
@@ -434,7 +485,13 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, treatments },
+      payload: {
+        receiptDateTime,
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments
+      },
       headers: tracedAuthHeaders
     })
 
@@ -451,7 +508,13 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, treatments },
+      payload: {
+        receiptDateTime,
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments
+      },
       headers: tracedHeaders
     })
 
@@ -472,7 +535,13 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { carrier, receiver, physicalDetails, treatments },
+      payload: {
+        receiptDateTime,
+        carrier,
+        receiver,
+        physicalDetails,
+        treatments
+      },
       headers: tracedAuthHeaders
     })
 
@@ -482,6 +551,101 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       title: 'Internal Server Error',
       type: `${expectedTypeBase}internal-server-error`,
       requestId: traceId
+    })
+  })
+
+  describe('Feature: Recording when the waste was actually received', () => {
+    const withReceiptDateTime = (value = receiptDateTime) => ({
+      receiptDateTime: value,
+      carrier,
+      receiver,
+      physicalDetails,
+      treatments
+    })
+
+    const submit = (payload) =>
+      server.inject({
+        method: 'POST',
+        url,
+        payload,
+        headers: tracedAuthHeaders
+      })
+
+    const expectCreated = async (payload) => {
+      await server.db.collection('deliveries').insertOne({ deliveryId })
+
+      const { statusCode, result } = await submit(payload)
+
+      expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+      expect(result.data).toEqual({ deliveryId })
+    }
+
+    const expectRejected = async (payload, errors) => {
+      await server.db.collection('deliveries').insertOne({ deliveryId })
+
+      const { statusCode, result } = await submit(payload)
+
+      expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(result.errors).toEqual(errors)
+    }
+
+    describe('Scenario: A receipt is recorded when a valid date and time of receipt is declared for a known delivery', () => {
+      it.each([
+        ['2026-10-14T09:30:00Z'],
+        ['2026-10-14T10:30:00+01:00'],
+        // A moment ago: anything not later than the time of submission.
+        [new Date(Date.now() - 1000).toISOString()]
+      ])('records the receipt received at %p', async (value) => {
+        await expectCreated(withReceiptDateTime(value))
+      })
+    })
+
+    describe("Scenario Outline: A receipt isn't recorded when the date and time of receipt is missing or invalid", () => {
+      const pointer = '/receiptDateTime'
+
+      it('rejects a date and time of receipt that is not provided, as required', async () => {
+        const { receiptDateTime: _, ...payload } = withReceiptDateTime()
+        await expectRejected(payload, [
+          {
+            errorType: 'NotProvided',
+            message: "'receiptDateTime' is required",
+            pointer
+          }
+        ])
+      })
+
+      it('rejects a date and time of receipt of "", as required', async () => {
+        await expectRejected(withReceiptDateTime(''), [
+          {
+            errorType: 'NotProvided',
+            message: "'receiptDateTime' is required",
+            pointer
+          }
+        ])
+      })
+
+      it.each(['14/10/2026', '2026-13-01T10:00:00Z', 'Yesterday'])(
+        'rejects a date and time of receipt of %p as not a valid date and time',
+        async (value) => {
+          await expectRejected(withReceiptDateTime(value), [
+            {
+              errorType: 'InvalidFormat',
+              message: "must match format 'date-time'",
+              pointer
+            }
+          ])
+        }
+      )
+
+      it('rejects a date and time of receipt in the future', async () => {
+        await expectRejected(withReceiptDateTime('2099-01-01T09:00:00Z'), [
+          {
+            errorType: 'OutOfRange',
+            message: 'must not be in the future',
+            pointer
+          }
+        ])
+      })
     })
   })
 })

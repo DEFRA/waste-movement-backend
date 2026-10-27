@@ -13,10 +13,12 @@
         "movementId": {
           "$ref": "../common/movement-id.schema.json"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "validation": {
       "$ref": "../common/validation.schema.json"
     }
-  }
+  },
+  "additionalProperties": false
 }

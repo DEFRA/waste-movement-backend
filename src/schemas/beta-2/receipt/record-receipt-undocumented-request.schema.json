@@ -1,16 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Record receipt without delivery request",
-  "description": "Payload for POST /beta-2/receipts.",
+  "title": "Record undocumented receipt request",
+  "description": "Payload for POST /beta-2/receipts. A consignmentNote is required when any waste item declares hazardous properties; the service checks that, as the rule spans the waste items and the consignment note.",
   "type": "object",
   "properties": {
-    "reason": {
+    "reasonForNoDeliveryId": {
       "type": "string",
       "minLength": 1,
       "description": "Mandatory explanation for why this receipt is being recorded without a Delivery ID.",
       "examples": [
         "No delivery was recorded prior to receipt; waste received directly from the producer."
       ]
+    },
+    "receiptDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the waste was received at the receiver's site, as an ISO 8601 date-time with a timezone. Must not be later than the time the receipt is submitted; the service checks that, as it depends on when the request arrives.",
+      "examples": ["2026-10-14T09:30:00Z"]
     },
     "carrier": {
       "$ref": "../common/carrier.schema.json"
@@ -36,8 +42,18 @@
     },
     "supportingReferences": {
       "$ref": "../common/supporting-references.schema.json"
+    },
+    "consignmentNote": {
+      "$ref": "../common/consignment-note.schema.json",
+      "description": "The hazardous waste consignment note. Required when any waste item declares hazardous properties."
     }
   },
-  "required": ["reason", "carrier", "receiver", "wasteItems"],
+  "required": [
+    "reasonForNoDeliveryId",
+    "receiptDateTime",
+    "carrier",
+    "receiver",
+    "wasteItems"
+  ],
   "additionalProperties": false
 }

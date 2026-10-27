@@ -7,6 +7,14 @@
     "carrier": {
       "$ref": "../common/carrier.schema.json"
     },
+    "actualCollectionDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The time the waste was collected, as an ISO 8601 date-time."
+    },
+    "collectionSite": {
+      "$ref": "../common/collection-site.schema.json"
+    },
     "brokerOrDealer": {
       "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json"
     },
@@ -21,6 +29,11 @@
       "$ref": "../common/special-handling-requirements.schema.json"
     }
   },
-  "required": ["carrier", "dutyOfCareConfirmed"],
+  "required": [
+    "carrier",
+    "dutyOfCareConfirmed",
+    "actualCollectionDateTime",
+    "collectionSite"
+  ],
   "additionalProperties": false
 }

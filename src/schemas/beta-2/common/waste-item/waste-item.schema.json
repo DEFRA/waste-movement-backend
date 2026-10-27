@@ -1,9 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Waste item",
-  "description": "A single item of waste in a movement. physicalDetails is required; treatments is optional.",
+  "description": "A single item of waste in a movement. classification and physicalDetails are required; treatments is optional.",
   "examples": [
     {
+      "classification": {
+        "wasteDescription": "Mixed municipal waste",
+        "ewcCodes": ["200301"],
+        "pops": {
+          "isPresent": false
+        },
+        "hazardous": {
+          "isPresent": false
+        }
+      },
       "physicalDetails": {
         "form": "SOLID",
         "containerType": "DRU",
@@ -26,6 +36,19 @@
       ]
     },
     {
+      "classification": {
+        "wasteDescription": "Soil and stones containing hazardous substances",
+        "ewcCodes": ["170503"],
+        "pops": {
+          "isPresent": false
+        },
+        "hazardous": {
+          "isPresent": true,
+          "codes": ["HP_14"],
+          "componentsSource": "GUIDANCE",
+          "componentsNotApplicable": true
+        }
+      },
       "physicalDetails": {
         "form": "MIXED",
         "containerType": "LOO",
@@ -40,6 +63,10 @@
   ],
   "type": "object",
   "properties": {
+    "classification": {
+      "$ref": "classification.schema.json",
+      "description": "What the waste item is: its description, EWC codes, POPs and hazardous properties."
+    },
     "physicalDetails": {
       "$ref": "physical-details.schema.json",
       "description": "The physical form, containers and total weight of the waste item."
@@ -49,6 +76,6 @@
       "description": "The disposal or recovery operations applied to this waste item. Optional; when provided, at least one is required."
     }
   },
-  "required": ["physicalDetails"],
+  "required": ["classification", "physicalDetails"],
   "additionalProperties": false
 }

@@ -24,5 +24,25 @@
         }
       ]
     }
+  },
+  "mixedWasteTypes": {
+    "summary": "Two non-hazardous movements and one hazardous movement delivered together",
+    "value": {
+      "movementIds": ["25HRA0B2", "25HRZ9X7", "25HRA0B3"],
+      "carrier": {
+        "organisationName": "Carrier Demo Ltd",
+        "registrationNumber": "CBDU123456",
+        "meansOfTransport": "Road",
+        "vehicleRegistration": "AB12 CDE",
+        "contactDetails": {
+          "emailAddress": "carrier@example.com",
+          "phoneNumber": "01234567890"
+        },
+        "address": {
+          "fullAddress": "4 Carrier Lane, Test City",
+          "postcode": "TE1 4CR"
+        }
+      }
+    }
   }
 }

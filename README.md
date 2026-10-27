@@ -65,7 +65,7 @@ MongoDB (Database)
 
 ### Node.js
 
-Please install [Node.js](http://nodejs.org/) `>= v22` and [npm](https://nodejs.org/) `>= v11`. You will find it
+Please install the [Node.js](http://nodejs.org/) version noted in `engines` in `package.json` and [npm](https://nodejs.org/) `>= v12`. You will find it
 easier to use the Node Version Manager [nvm](https://github.com/creationix/nvm)
 
 To use the correct version of Node.js for this application, via nvm:

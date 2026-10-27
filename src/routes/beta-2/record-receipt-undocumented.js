@@ -13,31 +13,39 @@ import {
   createDeliveryRecord
 } from '../../services/delivery.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
+import { wasteReferenceDataChecks } from '../../common/helpers/waste-reference-data-checks.js'
+import {
+  emptyIsNotProvided,
+  notInFuture
+} from '../../common/helpers/date-time-checks.js'
+import { withPayloadChecks } from '../../schemas/validate/payload-checks.js'
 
 const apiVersion = 'beta-2'
 const logger = createLogger({ apiVersion })
 const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
 const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
+const receiptDateTime = ['receiptDateTime']
 
-const recordReceiptWithoutDelivery = {
+const recordReceiptUndocumented = {
   method: 'POST',
   path: '/receipts',
   options: {
-    description: 'Record receipt of waste without a Delivery ID',
+    description: 'Record receipt of undocumented waste',
     notes:
       'Fallback for recording receipt with no prior Delivery, e.g. waste received with no movement ' +
-      'trail. Not linked to any Movement; `reason` must explain why. Creates an empty Delivery behind ' +
+      'trail. Not linked to any Movement; `reasonForNoDeliveryId` must explain why. Creates an empty Delivery behind ' +
       'the scenes and returns its Delivery ID, so the receipt stays addressable.',
     validate: {
-      payload: validateRequest(
-        'receipt/record-receipt-without-delivery-request'
+      payload: withPayloadChecks(
+        validateRequest('receipt/record-receipt-undocumented-request'),
+        wasteReferenceDataChecks,
+        emptyIsNotProvided(receiptDateTime),
+        notInFuture(receiptDateTime)
       )
     },
     response: {
       status: {
-        201: validateResponse(
-          'receipt/record-receipt-without-delivery-response'
-        )
+        201: validateResponse('receipt/record-receipt-undocumented-response')
       }
     }
   },
@@ -58,7 +66,7 @@ const recordReceiptWithoutDelivery = {
       )
 
       logger.info(
-        `Successfully recorded receipt without a delivery, created delivery ${deliveryId}`,
+        `Successfully recorded an undocumented receipt, created delivery ${deliveryId}`,
         { deliveryId }
       )
 
@@ -66,11 +74,11 @@ const recordReceiptWithoutDelivery = {
         .response({ data: { deliveryId }, validation: { warnings: [] } })
         .code(HTTP_STATUS.CREATED)
         .header('x-request-id', traceId)
-        .message('Successfully recorded a receipt without a delivery')
+        .message('Successfully recorded an undocumented receipt')
     } catch (error) {
       return handleBetaRouteError(error)
     }
   }
 }
 
-export { recordReceiptWithoutDelivery }
+export { recordReceiptUndocumented }

@@ -1,8 +1,11 @@
 import {
+  plannedCollectionDateTime,
+  collectionSite,
   apiCode,
   brokerOrDealerEntry,
   carrier,
   commercialProducer,
+  hazardousWasteItem,
   householdProducer,
   municipalProducer,
   receiver,
@@ -19,6 +22,14 @@ const validateAjv = validatorFor(
 const intendedCarriers = [carrier]
 const intendedReceivers = [receiver]
 const wasteItems = [wasteItem]
+const validMovement = {
+  producer: householdProducer,
+  plannedCollectionDateTime,
+  collectionSite,
+  intendedCarriers,
+  intendedReceivers,
+  wasteItems
+}
 
 describe('create-movement-request schema', () => {
   // apiCode is sent in the x-api-code header, not the body.
@@ -26,6 +37,8 @@ describe('create-movement-request schema', () => {
     const payload = {
       apiCode,
       producer: householdProducer,
+      plannedCollectionDateTime,
+      collectionSite,
       intendedCarriers,
       intendedReceivers,
       wasteItems
@@ -34,7 +47,13 @@ describe('create-movement-request schema', () => {
   })
 
   test('producer is required', () => {
-    const payload = { intendedCarriers, intendedReceivers, wasteItems }
+    const payload = {
+      plannedCollectionDateTime,
+      collectionSite,
+      intendedCarriers,
+      intendedReceivers,
+      wasteItems
+    }
     expect(validateAjv(payload).valid).toBe(false)
   })
 
@@ -45,6 +64,8 @@ describe('create-movement-request schema', () => {
   ])('accepts a valid %s producer', (_wasteSource, producer) => {
     const payload = {
       producer,
+      plannedCollectionDateTime,
+      collectionSite,
       intendedCarriers,
       intendedReceivers,
       wasteItems
@@ -55,6 +76,8 @@ describe('create-movement-request schema', () => {
   test('rejects an additional property beyond the declared ones', () => {
     const payload = {
       producer: householdProducer,
+      plannedCollectionDateTime,
+      collectionSite,
       intendedCarriers,
       intendedReceivers,
       wasteItems,
@@ -86,6 +109,8 @@ describe('create-movement-request schema', () => {
     test('rejects an empty list of carriers', () => {
       const { valid, errors } = validateAjv({
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers: []
       })
 
@@ -116,6 +141,8 @@ describe('create-movement-request schema', () => {
     test('accepts one carrier', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems
@@ -126,6 +153,8 @@ describe('create-movement-request schema', () => {
     test('accepts more than one carrier', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers: [
           carrier,
           { ...carrier, organisationName: 'Second Carrier Ltd' }
@@ -140,6 +169,8 @@ describe('create-movement-request schema', () => {
       const { organisationName, ...invalidCarrier } = carrier
       const { valid, errors } = validateAjv({
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers: [invalidCarrier]
       })
 
@@ -157,6 +188,8 @@ describe('create-movement-request schema', () => {
       const { organisationName, ...invalidSecond } = carrier
       const { valid, errors } = validateAjv({
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers: [carrier, invalidSecond]
       })
 
@@ -199,6 +232,8 @@ describe('create-movement-request schema', () => {
     test('rejects an empty list of receivers', () => {
       const { valid, errors } = validateAjv({
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers: [],
         wasteItems
@@ -216,6 +251,8 @@ describe('create-movement-request schema', () => {
     test('rejects a single receiver rather than a list', () => {
       const { valid, errors } = validateAjv({
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers: receiver,
         wasteItems
@@ -233,6 +270,8 @@ describe('create-movement-request schema', () => {
     test('accepts one receiver', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems
@@ -243,6 +282,8 @@ describe('create-movement-request schema', () => {
     test('accepts more than one receiver', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers: [
           receiver,
@@ -264,6 +305,8 @@ describe('create-movement-request schema', () => {
       }
       const { valid, errors } = validateAjv({
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers: [receiver, invalidSecond],
         wasteItems
@@ -299,6 +342,8 @@ describe('create-movement-request schema', () => {
     test('accepts a valid waste item', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems
@@ -309,6 +354,8 @@ describe('create-movement-request schema', () => {
     test('is required', () => {
       const { valid, errors } = validateAjv({
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers
       })
@@ -326,6 +373,8 @@ describe('create-movement-request schema', () => {
     test('rejects an empty list of waste items', () => {
       const { valid, errors } = validateAjv({
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems: []
@@ -343,6 +392,8 @@ describe('create-movement-request schema', () => {
     test('rejects a payload whose waste item is invalid, reporting the error against that item', () => {
       const { valid, errors } = validateAjv({
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems: [
@@ -366,6 +417,8 @@ describe('create-movement-request schema', () => {
     test('rejects treatments on a waste item', () => {
       const { valid, errors } = validateAjv({
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems: [{ ...wasteItem, treatments: [treatment] }]
@@ -381,12 +434,52 @@ describe('create-movement-request schema', () => {
     })
   })
 
+  // When hazardous waste needs a consignment note is checked by
+  // common/helpers/waste-reference-data-checks.js, not this schema — its business
+  // scenarios are in routes/beta-2/create-movement.test.js. The note's own
+  // rules are in consignment-note.test.js; these confirm the $ref is live.
+  describe('consignmentNote', () => {
+    test('is optional', () => {
+      const payload = {
+        producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
+        intendedCarriers,
+        intendedReceivers,
+        wasteItems: [hazardousWasteItem]
+      }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('rejects a payload whose consignment note is invalid', () => {
+      const { valid, errors } = validateAjv({
+        producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
+        intendedCarriers,
+        intendedReceivers,
+        wasteItems,
+        consignmentNote: { code: 'INVALID_FORMAT' }
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'pattern',
+          instancePath: '/consignmentNote/code'
+        })
+      )
+    })
+  })
+
   describe('brokerOrDealer', () => {
     const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
 
     test('is optional', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems
@@ -397,6 +490,8 @@ describe('create-movement-request schema', () => {
     test('accepts a declared broker or dealer', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems,
@@ -410,12 +505,103 @@ describe('create-movement-request schema', () => {
     test('rejects a payload whose broker or dealer is invalid', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items }
       }
       expect(validateAjv(payload).valid).toBe(false)
+    })
+  })
+
+  // collectionSite's own rules are covered by collection-site.test.js — these
+  // confirm it and plannedCollectionDateTime are required, and that the $ref wiring
+  // is live.
+  describe.each([['plannedCollectionDateTime'], ['collectionSite']])(
+    '%s',
+    (field) => {
+      test('is required', () => {
+        const { [field]: excluded, ...payload } = validMovement
+        const { valid, errors } = validateAjv(payload)
+
+        expect(valid).toBe(false)
+        expect(errors).toContainEqual(
+          expect.objectContaining({
+            keyword: 'required',
+            instancePath: '',
+            params: { missingProperty: field }
+          })
+        )
+      })
+    }
+  )
+
+  describe('plannedCollectionDateTime', () => {
+    test.each([
+      ['2026-01-15T09:30:00Z'],
+      ['2026-01-15T09:30:00.123Z'],
+      ['2026-01-15T09:30:00+01:00']
+    ])('accepts the ISO 8601 date-time %j', (value) => {
+      const payload = { ...validMovement, plannedCollectionDateTime: value }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test.each([
+      ['2026-01-15'],
+      ['09:30:00'],
+      ['15/01/2026 09:30'],
+      ['2026-01-15T09:30:00'],
+      ['not-a-date'],
+      ['']
+    ])('rejects %j, which is not an ISO 8601 date-time', (value) => {
+      const { valid, errors } = validateAjv({
+        ...validMovement,
+        plannedCollectionDateTime: value
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'format',
+          instancePath: '/plannedCollectionDateTime'
+        })
+      )
+    })
+
+    test('rejects a value that is not a string', () => {
+      const { valid, errors } = validateAjv({
+        ...validMovement,
+        plannedCollectionDateTime: 1768469400000
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'type',
+          instancePath: '/plannedCollectionDateTime'
+        })
+      )
+    })
+  })
+
+  describe('collectionSite', () => {
+    test('rejects a payload whose collectionSite is invalid', () => {
+      const { address, ...invalidCollectionSite } = collectionSite
+      const { valid, errors } = validateAjv({
+        ...validMovement,
+        collectionSite: invalidCollectionSite
+      })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '/collectionSite',
+          params: { missingProperty: 'address' }
+        })
+      )
     })
   })
 
@@ -426,6 +612,8 @@ describe('create-movement-request schema', () => {
     test('is optional', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems
@@ -436,6 +624,8 @@ describe('create-movement-request schema', () => {
     test('accepts valid supportingReferences', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems,
@@ -454,6 +644,8 @@ describe('create-movement-request schema', () => {
     test('is optional', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems
@@ -464,6 +656,8 @@ describe('create-movement-request schema', () => {
     test('accepts valid specialHandlingRequirements', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems,
@@ -475,6 +669,8 @@ describe('create-movement-request schema', () => {
     test('rejects a payload whose specialHandlingRequirements is invalid', () => {
       const payload = {
         producer: householdProducer,
+        plannedCollectionDateTime,
+        collectionSite,
         intendedCarriers,
         intendedReceivers,
         wasteItems,

@@ -1,6 +1,8 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import * as delivery from '../../services/delivery.js'
+import { httpClients } from '../../common/helpers/http-client.js'
 import { config } from '../../config.js'
+import { createTestMongoDb } from '../../test/create-test-mongo-db.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
   requestBasicAuthTest1,
@@ -13,7 +15,9 @@ import {
 } from '../../test/data/organisation-headers.js'
 import {
   supportingReference,
-  carrier
+  carrier,
+  hazardousWasteItem,
+  wasteItem
 } from '../../schemas/beta-2/test-helpers.js'
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
@@ -43,6 +47,7 @@ jest.mock('../../common/helpers/http-client.js', () => ({
 
 describe('POST /beta-2/deliveries', () => {
   let server
+  let testMongo
   const movementId1 = '25HRA0B1'
   const movementId2 = '25HRA0B2'
   const url = '/beta-2/deliveries'
@@ -56,9 +61,13 @@ describe('POST /beta-2/deliveries', () => {
   }
 
   const expectedTypeBase =
-    'https://defra.github.io/digital-waste-tracking-api-docs/preview/problems/'
+    'https://defra.github.io/digital-waste-tracking-api-site/preview/problems/'
 
   beforeAll(async () => {
+    // A replica set, because deliveries are written in a transaction.
+    testMongo = await createTestMongoDb(true)
+    config.set('mongo.uri', testMongo.mongoUri)
+    config.set('mongo.readPreference', 'primary')
     config.set('orgApiCodes', base64EncodedOrgApiCodes)
     process.env.ACCESS_CRED_TEST1 = userBasicAuthTest1
 
@@ -68,10 +77,14 @@ describe('POST /beta-2/deliveries', () => {
 
   afterAll(async () => {
     await server.stop()
+    await testMongo.client.close()
+    await testMongo.replicaSet?.stop()
   })
 
   beforeEach(async () => {
     jest.clearAllMocks()
+    // Some tests stub the delivery service; the rest need the real one.
+    jest.spyOn(delivery, 'createDeliveryRecords').mockRestore()
     await server.db.collection('movements').deleteMany({})
     await server.db.collection('deliveries').deleteMany({})
   })
@@ -290,7 +303,7 @@ describe('POST /beta-2/deliveries', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      detail: 'No movement exists for movement ID(s): 25HRA0B2',
+      detail: 'Movement ID(s) not recognised: 25HRA0B2',
       instance: '/beta-2/deliveries',
       title: 'Bad Request',
       type: `${expectedTypeBase}bad-request`,
@@ -304,7 +317,7 @@ describe('POST /beta-2/deliveries', () => {
       .insertOne({ movementId: movementId1 })
 
     jest
-      .spyOn(delivery, 'createDeliveryRecord')
+      .spyOn(delivery, 'createDeliveryRecords')
       .mockRejectedValue(new Error('Database connection failed'))
 
     const { statusCode, result } = await server.inject({
@@ -345,9 +358,14 @@ describe('POST /beta-2/deliveries', () => {
     await server.db
       .collection('movements')
       .insertOne({ movementId: movementId1 })
-    jest.spyOn(delivery, 'createDeliveryId').mockResolvedValueOnce(42)
     // Stubbed so the bad id isn't rejected by the deliveries collection first.
-    jest.spyOn(delivery, 'createDeliveryRecord').mockResolvedValueOnce({})
+    jest.spyOn(delivery, 'createDeliveryRecords').mockResolvedValueOnce([
+      {
+        deliveryId: 42,
+        movementIds: [movementId1],
+        wasteType: 'NON_HAZARDOUS'
+      }
+    ])
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -362,6 +380,303 @@ describe('POST /beta-2/deliveries', () => {
       title: 'Internal Server Error',
       type: `${expectedTypeBase}internal-server-error`,
       requestId: traceId
+    })
+  })
+
+  describe('splits the movements by waste type', () => {
+    const mintedDeliveryId = '25KMT4Z9'
+    const nonHazardous = (...movementIds) => ({
+      deliveryId: mintedDeliveryId,
+      movementIds,
+      wasteType: 'NON_HAZARDOUS'
+    })
+    const hazardous = (movementId) => ({
+      deliveryId: movementId,
+      movementIds: [movementId],
+      wasteType: 'HAZARDOUS'
+    })
+
+    const seedMovements = (nonHazardousIds, hazardousIds) =>
+      server.db.collection('movements').insertMany([
+        ...nonHazardousIds.map((movementId) => ({
+          movementId,
+          wasteItems: [wasteItem]
+        })),
+        ...hazardousIds.map((movementId) => ({
+          movementId,
+          wasteItems: [hazardousWasteItem]
+        }))
+      ])
+
+    const findDeliveries = () =>
+      server.db
+        .collection('deliveries')
+        .find({}, { projection: { _id: 0, createdAt: 0 } })
+        .toArray()
+
+    it.each([
+      {
+        nonHazardousIds: ['261B23B4'],
+        hazardousIds: [],
+        submitted: ['261B23B4'],
+        expected: [nonHazardous('261B23B4')],
+        nextCalls: 1
+      },
+      {
+        nonHazardousIds: ['261B23B4', '262C34C5'],
+        hazardousIds: [],
+        submitted: ['261B23B4', '262C34C5'],
+        expected: [nonHazardous('261B23B4', '262C34C5')],
+        nextCalls: 1
+      },
+      {
+        nonHazardousIds: ['261B23B4'],
+        hazardousIds: ['269X8Y7Z'],
+        submitted: ['269X8Y7Z', '261B23B4'],
+        expected: [nonHazardous('261B23B4'), hazardous('269X8Y7Z')],
+        nextCalls: 1
+      },
+      {
+        nonHazardousIds: ['261B23B4', '262C34C5'],
+        hazardousIds: ['269X8Y7Z'],
+        submitted: ['261B23B4', '269X8Y7Z', '262C34C5'],
+        expected: [nonHazardous('261B23B4', '262C34C5'), hazardous('269X8Y7Z')],
+        nextCalls: 1
+      },
+      {
+        nonHazardousIds: ['261B23B4', '262C34C5'],
+        hazardousIds: ['269X8Y7Z', '268W7X6Y'],
+        submitted: ['269X8Y7Z', '261B23B4', '268W7X6Y', '262C34C5'],
+        expected: [
+          nonHazardous('261B23B4', '262C34C5'),
+          hazardous('269X8Y7Z'),
+          hazardous('268W7X6Y')
+        ],
+        nextCalls: 1
+      },
+      {
+        nonHazardousIds: [],
+        hazardousIds: ['269X8Y7Z', '268W7X6Y'],
+        submitted: ['269X8Y7Z', '268W7X6Y'],
+        expected: [hazardous('269X8Y7Z'), hazardous('268W7X6Y')],
+        nextCalls: 0
+      }
+    ])(
+      'non-hazardous $nonHazardousIds and hazardous $hazardousIds',
+      async ({
+        nonHazardousIds,
+        hazardousIds,
+        submitted,
+        expected,
+        nextCalls
+      }) => {
+        await seedMovements(nonHazardousIds, hazardousIds)
+
+        const { statusCode, result } = await server.inject({
+          method: 'POST',
+          url,
+          payload: { movementIds: submitted, carrier },
+          headers: tracedAuthHeaders
+        })
+
+        expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+        expect(result).toEqual({
+          data: { deliveries: expected },
+          validation: { warnings: [] }
+        })
+        expect(httpClients.wasteTracking.get).toHaveBeenCalledTimes(nextCalls)
+        expect(await findDeliveries()).toEqual(
+          expected.map((item) => ({
+            ...item,
+            orgId: forwardedOrganisationId
+          }))
+        )
+      }
+    )
+
+    it('treats a movement as hazardous when any one of its waste items declares hazardous properties', async () => {
+      await seedMovements(['261B23B4'], [])
+      await server.db.collection('movements').insertOne({
+        movementId: '269X8Y7Z',
+        wasteItems: [wasteItem, hazardousWasteItem]
+      })
+
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url,
+        payload: { movementIds: ['261B23B4', '269X8Y7Z'], carrier },
+        headers: tracedAuthHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+      expect(result.data.deliveries).toEqual([
+        nonHazardous('261B23B4'),
+        hazardous('269X8Y7Z')
+      ])
+    })
+
+    // The declaration decides, not the EWC codes.
+    describe('decides by the declared hazardous properties', () => {
+      const withDeclaration = (item, hazardous) => ({
+        ...item,
+        classification: { ...item.classification, hazardous }
+      })
+      const deliver = (movementIds) =>
+        server.inject({
+          method: 'POST',
+          url,
+          payload: { movementIds, carrier },
+          headers: tracedAuthHeaders
+        })
+
+      it('delivers a non-hazardous EWC code declared as having hazardous properties on its own', async () => {
+        await seedMovements(['261B23B4'], [])
+        await server.db.collection('movements').insertOne({
+          movementId: '269X8Y7Z',
+          wasteItems: [
+            withDeclaration(wasteItem, { isPresent: true, codes: ['HP_4'] })
+          ]
+        })
+
+        const { statusCode, result } = await deliver(['261B23B4', '269X8Y7Z'])
+
+        expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+        expect(result.data.deliveries).toEqual([
+          nonHazardous('261B23B4'),
+          hazardous('269X8Y7Z')
+        ])
+      })
+
+      it('delivers a hazardous EWC code declared as having no hazardous properties with the non-hazardous movements', async () => {
+        await seedMovements(['261B23B4'], [])
+        await server.db.collection('movements').insertOne({
+          movementId: '262C34C5',
+          wasteItems: [
+            withDeclaration(hazardousWasteItem, { isPresent: false })
+          ]
+        })
+
+        const { statusCode, result } = await deliver(['261B23B4', '262C34C5'])
+
+        expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+        expect(result.data.deliveries).toEqual([
+          nonHazardous('261B23B4', '262C34C5')
+        ])
+      })
+    })
+
+    // beta-1 movements, and beta-2 ones created before waste items were
+    // stored, have no wasteItems.
+    it('aggregates a movement stored without waste items as non-hazardous', async () => {
+      await seedMovements([], ['269X8Y7Z'])
+      await server.db
+        .collection('movements')
+        .insertOne({ movementId: '261B23B4' })
+
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url,
+        payload: { movementIds: ['269X8Y7Z', '261B23B4'], carrier },
+        headers: tracedAuthHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+      expect(result.data.deliveries).toEqual([
+        nonHazardous('261B23B4'),
+        hazardous('269X8Y7Z')
+      ])
+    })
+
+    it('delivers a movement ID submitted more than once only once', async () => {
+      await seedMovements(['261B23B4'], ['269X8Y7Z'])
+
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url,
+        payload: {
+          movementIds: ['261B23B4', '269X8Y7Z', '261B23B4', '269X8Y7Z'],
+          carrier
+        },
+        headers: tracedAuthHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+      expect(result.data.deliveries).toEqual([
+        nonHazardous('261B23B4'),
+        hazardous('269X8Y7Z')
+      ])
+      expect(await findDeliveries()).toHaveLength(2)
+    })
+
+    describe('rejects the request without minting or storing anything', () => {
+      beforeEach(() =>
+        seedMovements(['261B23B4', '262C34C5'], ['269X8Y7Z', '268W7X6Y'])
+      )
+
+      it.each([
+        {
+          description: 'movementIds is not provided',
+          payload: { carrier },
+          error: {
+            errorType: 'NotProvided',
+            message: "'movementIds' is required",
+            pointer: '/movementIds'
+          }
+        },
+        {
+          description: 'movementIds is an empty string',
+          payload: { movementIds: '', carrier },
+          error: {
+            errorType: 'InvalidType',
+            message: 'must be array',
+            pointer: '/movementIds'
+          }
+        },
+        {
+          description: 'movementIds is an empty list',
+          payload: { movementIds: [], carrier },
+          error: {
+            errorType: 'OutOfRange',
+            message: 'must NOT have fewer than 1 items',
+            pointer: '/movementIds'
+          }
+        }
+      ])('when $description', async ({ payload, error }) => {
+        const { statusCode, result } = await server.inject({
+          method: 'POST',
+          url,
+          payload,
+          headers: tracedAuthHeaders
+        })
+
+        expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+        expect(result.errors).toEqual([error])
+        expect(httpClients.wasteTracking.get).not.toHaveBeenCalled()
+        expect(await findDeliveries()).toEqual([])
+      })
+
+      it.each([
+        { submitted: ['26ZZZZZZ'], unrecognised: '26ZZZZZZ' },
+        { submitted: ['269ZZZZZ'], unrecognised: '269ZZZZZ' },
+        { submitted: ['261B23B4', '26ZZZZZZ'], unrecognised: '26ZZZZZZ' }
+      ])(
+        'when $submitted includes an unrecognised movement ID',
+        async ({ submitted, unrecognised }) => {
+          const { statusCode, result } = await server.inject({
+            method: 'POST',
+            url,
+            payload: { movementIds: submitted, carrier },
+            headers: tracedAuthHeaders
+          })
+
+          expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+          expect(result.detail).toEqual(
+            `Movement ID(s) not recognised: ${unrecognised}`
+          )
+          expect(httpClients.wasteTracking.get).not.toHaveBeenCalled()
+          expect(await findDeliveries()).toEqual([])
+        }
+      )
     })
   })
 })

@@ -13,6 +13,8 @@ import {
   jsonSchemaResponseValidatorFor
 } from '../../schemas/validate/hapi-validator.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
+import { wasteReferenceDataChecks } from '../../common/helpers/waste-reference-data-checks.js'
+import { withPayloadChecks } from '../../schemas/validate/payload-checks.js'
 
 const apiVersion = 'beta-2'
 const logger = createLogger({ apiVersion })
@@ -25,7 +27,10 @@ const createMovement = {
   options: {
     description: 'Create a new waste movement',
     validate: {
-      payload: validateRequest('creation/create-movement-request')
+      payload: withPayloadChecks(
+        validateRequest('creation/create-movement-request'),
+        wasteReferenceDataChecks
+      )
     },
     response: {
       status: { 201: validateResponse('creation/create-movement-response') }
@@ -38,7 +43,12 @@ const createMovement = {
       const movementId = await createMovementId()
 
       await backOff(
-        () => createMovementRecord(request.db, { movementId, orgId }),
+        () =>
+          createMovementRecord(request.db, {
+            movementId,
+            orgId,
+            wasteItems: request.payload.wasteItems
+          }),
         backoffOptions(createLogger)
       )
       const responseBody = {
