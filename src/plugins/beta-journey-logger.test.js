@@ -84,7 +84,7 @@ describe('betaJourneyLogger', () => {
         {
           fields: {
             event: { action: 'movement-created', outcome: 'success' },
-            transaction: { id: 'M1' }
+            'transaction.id': 'M1'
           },
           message: 'Beta-2 movement-created: success (movement M1)'
         }
@@ -100,7 +100,7 @@ describe('betaJourneyLogger', () => {
         {
           fields: {
             event: { action: 'collection-recorded', outcome: 'success' },
-            transaction: { id: 'M1' }
+            'transaction.id': 'M1'
           },
           message: 'Beta-2 collection-recorded: success (movement M1)'
         }
@@ -116,8 +116,8 @@ describe('betaJourneyLogger', () => {
         {
           fields: {
             event: { action: 'receipt-recorded', outcome: 'success' },
-            transaction: { id: 'M1' },
-            span: { id: 'D1' }
+            'transaction.id': 'M1',
+            'span.id': 'D1'
           },
           message: 'Beta-2 receipt-recorded: success (movement M1, delivery D1)'
         }
@@ -139,18 +139,18 @@ describe('betaJourneyLogger', () => {
       expect(loggedLines().map(({ fields }) => fields)).toEqual([
         {
           event: { action: 'delivery-recorded', outcome: 'success' },
-          transaction: { id: 'M1' },
-          span: { id: 'D1' }
+          'transaction.id': 'M1',
+          'span.id': 'D1'
         },
         {
           event: { action: 'delivery-recorded', outcome: 'success' },
-          transaction: { id: 'M2' },
-          span: { id: 'D1' }
+          'transaction.id': 'M2',
+          'span.id': 'D1'
         },
         {
           event: { action: 'delivery-recorded', outcome: 'success' },
-          transaction: { id: 'M3' },
-          span: { id: 'M3' }
+          'transaction.id': 'M3',
+          'span.id': 'M3'
         }
       ])
     })
@@ -167,7 +167,7 @@ describe('betaJourneyLogger', () => {
               action: 'undocumented-receipt-recorded',
               outcome: 'success'
             },
-            span: { id: 'D9' }
+            'span.id': 'D9'
           },
           message: 'Beta-2 undocumented-receipt-recorded: success (delivery D9)'
         }
@@ -195,7 +195,7 @@ describe('betaJourneyLogger', () => {
 
       expect(loggedLines()[0].fields).toEqual({
         event: { action: 'collection-recorded', outcome: 'failure' },
-        transaction: { id: 'M1' },
+        'transaction.id': 'M1',
         error: { code: '404', message: 'step failed' }
       })
     })
@@ -206,10 +206,9 @@ describe('betaJourneyLogger', () => {
         movementIds: ['M1', 'M2', 'M1', 42]
       })
 
-      expect(loggedLines().map(({ fields }) => fields.transaction.id)).toEqual([
-        'M1',
-        'M2'
-      ])
+      expect(
+        loggedLines().map(({ fields }) => fields['transaction.id'])
+      ).toEqual(['M1', 'M2'])
       expect(loggedLines()[0].fields.event.outcome).toEqual('failure')
     })
 
@@ -221,8 +220,8 @@ describe('betaJourneyLogger', () => {
       expect(findDeliveryMovementIds).toHaveBeenCalledWith(undefined, 'D1')
       expect(
         loggedLines().map(({ fields }) => [
-          fields.transaction.id,
-          fields.span.id,
+          fields['transaction.id'],
+          fields['span.id'],
           fields.event.outcome
         ])
       ).toEqual([
@@ -238,7 +237,7 @@ describe('betaJourneyLogger', () => {
 
       expect(loggedLines()[0].fields).toEqual({
         event: { action: 'receipt-recorded', outcome: 'failure' },
-        span: { id: 'D404' },
+        'span.id': 'D404',
         error: { code: '404', message: 'step failed' }
       })
     })
@@ -266,9 +265,9 @@ describe('betaJourneyLogger', () => {
       journey: [{ movementId: longId }, { movementId: 42 }]
     })
 
-    expect(loggedLines().map(({ fields }) => fields.transaction.id)).toEqual([
-      longId.slice(0, 256)
-    ])
+    expect(loggedLines().map(({ fields }) => fields['transaction.id'])).toEqual(
+      [longId.slice(0, 256)]
+    )
   })
 
   it('logs nothing for routes without a journey step', async () => {

@@ -77,6 +77,8 @@ const describeIds = ({ movementId, deliveryId }) => {
  * fields (cdp-documentation how-to/logging.md):
  * - transaction.id: the Movement ID (keyword-mapped, so dashboards filter on it)
  * - span.id: the Delivery ID (text only: searchable, not aggregatable)
+ * CDP expects these two as flattened keys ("transaction.id"), unlike the
+ * nested event and error objects; a nested transaction or span is dropped.
  * - event.action / event.outcome: the step and whether it succeeded
  * - error.code / error.message: the status and reason, on failure
  *
@@ -109,8 +111,8 @@ export const betaJourneyLogger = {
             logger.info(
               {
                 event: { action, outcome },
-                ...(movementId && { transaction: { id: movementId } }),
-                ...(deliveryId && { span: { id: deliveryId } }),
+                ...(movementId && { 'transaction.id': movementId }),
+                ...(deliveryId && { 'span.id': deliveryId }),
                 ...(failed && {
                   error: {
                     code: String(statusCode),
