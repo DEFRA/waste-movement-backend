@@ -13,10 +13,12 @@
       "description": "One or more Movement IDs delivered together at this delivery."
     },
     "carrier": {
-      "$ref": "../common/carrier.schema.json"
+      "$ref": "../common/carrier.schema.json",
+      "description": "The carrier that delivered the waste."
     },
     "supportingReferences": {
-      "$ref": "../common/supporting-references.schema.json"
+      "$ref": "../common/supporting-references.schema.json",
+      "description": "References that help identify the delivery, such as a PO or job number."
     }
   },
   "required": ["movementIds", "carrier"],

@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Weight",
   "description": "A weight of waste: the amount, its unit, and whether it is estimated or actual. All three are required.",
+  "examples": [{ "amount": 250.5, "unit": "KILOGRAMS", "isEstimate": false }],
   "type": "object",
   "properties": {
     "amount": {

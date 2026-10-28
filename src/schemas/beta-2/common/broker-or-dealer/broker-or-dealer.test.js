@@ -1,7 +1,7 @@
 import {
   brokerOrDealerEntry as brokerOrDealer,
   validatorFor
-} from '../test-helpers.js'
+} from '../../test-helpers.js'
 
 const validateAjv = validatorFor(
   'beta-2/common/broker-or-dealer/broker-or-dealer.schema.json'

@@ -2,6 +2,18 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Physical details",
   "description": "The physical form of a waste item, how it is contained, and its total weight. All four are required. Loose waste (containerType LOO) has a containerCount of 0; any other container type needs at least one container.",
+  "examples": [
+    {
+      "form": "SOLID",
+      "containerType": "DRU",
+      "containerCount": 4,
+      "totalWeight": {
+        "amount": 250.5,
+        "unit": "KILOGRAMS",
+        "isEstimate": false
+      }
+    }
+  ],
   "type": "object",
   "allOf": [
     {

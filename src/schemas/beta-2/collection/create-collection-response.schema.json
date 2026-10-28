@@ -11,7 +11,8 @@
       "examples": [null]
     },
     "validation": {
-      "$ref": "../common/validation.schema.json"
+      "$ref": "../common/validation.schema.json",
+      "description": "Data-quality feedback on the request."
     }
   },
   "additionalProperties": false

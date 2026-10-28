@@ -52,12 +52,12 @@
         },
         "authorisationNumber": {
           "$ref": "../authorisation-number.schema.json",
-          "description": "Producer environmental permit or exemption number, in a valid UK format. Mutually exclusive with reasonForNoAuthorisationNumber — exactly one of the two is required."
+          "description": "Producer environmental permit or exemption number, in a valid UK format. Exactly one of 'authorisationNumber' or 'reasonForNoAuthorisationNumber' is required."
         },
         "reasonForNoAuthorisationNumber": {
           "type": "string",
           "minLength": 1,
-          "description": "Reason no authorisationNumber is held. Free text for now — enum values TBC pending BA/policy input. Mutually exclusive with authorisationNumber — exactly one of the two is required."
+          "description": "Reason no authorisationNumber is held. Free text for now — enum values TBC pending BA/policy input. Exactly one of 'authorisationNumber' or 'reasonForNoAuthorisationNumber' is required."
         },
         "sicCode": {
           "type": "string",
@@ -65,10 +65,12 @@
           "description": "Five-digit Standard Industrial Classification code."
         },
         "contactDetails": {
-          "$ref": "../contact-details.schema.json"
+          "$ref": "../contact-details.schema.json",
+          "description": "How to contact the producer."
         },
         "address": {
-          "$ref": "../address.schema.json"
+          "$ref": "../address.schema.json",
+          "description": "The producer's address."
         }
       },
       "required": [
