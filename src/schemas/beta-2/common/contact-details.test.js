@@ -21,7 +21,28 @@ describe('contact-details schema', () => {
   })
 
   test('rejects an empty object (neither emailAddress nor phoneNumber)', () => {
-    expect(validateAjv({}).valid).toBe(false)
+    const { valid, errors } = validateAjv({})
+
+    expect(valid).toBe(false)
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        keyword: 'required',
+        params: { missingProperty: 'phoneNumber' }
+      })
+    )
+  })
+
+  // An anyOf of two requireds would report both as missing, which reads as
+  // "both are required". The if/else reports only phoneNumber.
+  test('reports only phoneNumber as missing when neither is provided', () => {
+    const { errors } = validateAjv({})
+
+    expect(errors).not.toContainEqual(
+      expect.objectContaining({
+        keyword: 'required',
+        params: { missingProperty: 'emailAddress' }
+      })
+    )
   })
 
   test('rejects a malformed emailAddress', () => {

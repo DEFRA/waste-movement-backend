@@ -24,9 +24,14 @@
       "description": "Contact phone number, in a valid format."
     }
   },
-  "anyOf": [
-    { "properties": { "emailAddress": {} }, "required": ["emailAddress"] },
-    { "properties": { "phoneNumber": {} }, "required": ["phoneNumber"] }
-  ],
+  "if": {
+    "properties": { "emailAddress": {} },
+    "required": ["emailAddress"]
+  },
+  "else": {
+    "properties": { "phoneNumber": {} },
+    "required": ["phoneNumber"],
+    "description": "Required when 'emailAddress' is not provided"
+  },
   "additionalProperties": false
 }

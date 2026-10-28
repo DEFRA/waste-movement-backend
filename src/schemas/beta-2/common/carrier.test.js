@@ -146,7 +146,13 @@ describe('Feature: Schema - declaring a carrier of the waste', () => {
       const { valid, errors } = validateAjv({ ...carrier, contactDetails: {} })
 
       expect(valid).toBe(false)
-      expect(errors).toContainEqual(invalid('anyOf', '/contactDetails'))
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '/contactDetails',
+          params: { missingProperty: 'phoneNumber' }
+        })
+      )
     })
 
     test('validation fails when contact details are omitted entirely', () => {
