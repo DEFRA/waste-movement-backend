@@ -1,0 +1,2429 @@
+<title>Waste Movement Schema Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: sidebar index + a pannable block-diagram canvas. Each object is a card of field rows; a row that holds more
+   structure wires out to its child card on the right. A details panel sits beside the canvas.
+   Teal = top-level schema / required, amber = conditional rules and decisions, violet = shared fragments. */
+:root {
+  --bg: #f1f5f3;
+  --surface: #ffffff;
+  --sunken: #e7eeea;
+  --grid: #dfe7e3;
+  --ink: #15211d;
+  --muted: #5a6a63;
+  --faint: #8a9a93;
+  --line: #d3ddd8;
+  --wire: #9fb1a9;
+  --accent: #0b6a5c;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcefe9;
+  --cond: #94560a;
+  --cond-soft: #fbf0dc;
+  --deny: #a8322a;
+  --frag: #5141b3;
+  --frag-soft: #ebe8fb;
+  --hit: #fff1a8;
+  --new: #1f5fbf;
+  --new-soft: #e2ecfb;
+  --mod: #a8326f;
+  --mod-soft: #f8e3ee;
+  --shadow: 0 1px 2px rgb(20 40 30 / 0.06), 0 4px 14px rgb(20 40 30 / 0.06);
+  --font-ui: "Schibsted Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --surface: #151d1a; --sunken: #1b2622; --grid: #1a2420; --ink: #e2ebe7; --muted: #9aaba3; --faint: #6d7e77;
+    --line: #2a3632; --wire: #4c5e57; --accent: #4cc3ad; --accent-ink: #062520; --accent-soft: #123630; --cond: #f0b55c; --cond-soft: #3a2a10;
+    --deny: #f08a80; --frag: #a99dff; --frag-soft: #262150; --hit: #5a4d0c; --new: #86b6ff; --new-soft: #17294a; --mod: #f291c4; --mod-soft: #3d1a2e; --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 14px rgb(0 0 0 / 0.25); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --surface: #151d1a; --sunken: #1b2622; --grid: #1a2420; --ink: #e2ebe7; --muted: #9aaba3; --faint: #6d7e77;
+  --line: #2a3632; --wire: #4c5e57; --accent: #4cc3ad; --accent-ink: #062520; --accent-soft: #123630; --cond: #f0b55c; --cond-soft: #3a2a10;
+  --deny: #f08a80; --frag: #a99dff; --frag-soft: #262150; --hit: #5a4d0c; --new: #86b6ff; --new-soft: #17294a; --mod: #f291c4; --mod-soft: #3d1a2e; --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 14px rgb(0 0 0 / 0.25); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-ui); margin: 0; }
+code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
+a { color: inherit; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+.shell { --side-w: 270px; display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); min-height: 100%; transition: grid-template-columns .2s ease; }
+.shell.side-closed { grid-template-columns: 0 minmax(0, 1fr); }
+.shell.resizing { transition: none; user-select: none; cursor: col-resize; }
+
+/* ---------- sidebar ---------- */
+/* The column holds the sidebar, its drag handle and the tab that opens and
+   closes it; the tab sticks out past the column's edge, so it stays put when
+   the sidebar is closed. */
+.side-col { position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; z-index: 20; min-width: 0; }
+.side { border-right: 1px solid var(--line); background: var(--surface); padding: 20px 14px 40px; height: 100%; overflow-y: auto; }
+.side-closed .side { visibility: hidden; }
+.side-resize { position: absolute; top: 0; right: -3px; width: 6px; height: 100%; cursor: col-resize; touch-action: none; }
+.side-resize::after { content: ""; position: absolute; inset: 0 2px; background: var(--accent); opacity: 0; transition: opacity .15s; }
+.side-resize:hover::after, .side-resize:focus-visible::after, .resizing .side-resize::after { opacity: 1; }
+.side-resize:focus-visible { outline: none; }
+.side-closed .side-resize { display: none; }
+.side-tab { position: absolute; top: 84px; left: 100%; display: grid; place-items: center; width: auto; height: 56px; padding: 0 12px; border: 1px solid var(--line); border-left: 0; border-radius: 0 8px 8px 0; background: var(--surface); color: var(--muted); cursor: pointer; box-shadow: 2px 1px 4px rgb(0 0 0 / 0.06); }
+.side-tab:hover { color: var(--ink); background: var(--sunken); }
+.side-tab .chev { width: 16px; height: 16px; border-left: 2.75px solid currentColor; border-bottom: 2.75px solid currentColor; border-radius: 2px; transform: translateX(3px) rotate(45deg); transition: transform .2s; }
+.side-closed .side-tab .chev { transform: translateX(-3px) rotate(-135deg); }
+.brand { padding: 0 8px 16px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+.brand b { display: block; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.brand span { color: var(--muted); font-size: 12px; }
+.site-search { margin: 0 0 12px; }
+.site-search .search { max-width: none; width: 100%; }
+.site-search kbd { font-family: var(--font-mono); font-size: 11px; color: var(--faint); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; line-height: 16px; }
+.search-panel { position: fixed; z-index: 30; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 14px 36px rgb(0 0 0 / 0.18); overflow-y: auto; padding: 6px; overscroll-behavior: contain; }
+.sr-group { display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 10px 8px 4px; }
+.sr-group span { font-weight: 500; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.sr { display: grid; gap: 2px; width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+.sr[aria-selected="true"] { background: var(--accent-soft); }
+.sr-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sr-name { font-family: var(--font-mono); font-weight: 600; font-size: 13px; }
+.sr-kind { font-family: var(--font-mono); font-size: 11px; color: var(--faint); }
+.sr-top .badge { font-size: 10px; line-height: 16px; padding: 0 6px; }
+.sr-path { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); word-break: break-all; }
+.sr-from { font-size: 11px; color: var(--frag); }
+.sr mark { background: var(--hit); color: inherit; border-radius: 2px; }
+.sr-more, .sr-empty, .sr-help { font-size: 12px; color: var(--faint); padding: 6px 8px; }
+.sr-help { border-top: 1px solid var(--line); margin-top: 4px; }
+.versions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
+.versions a { font-family: var(--font-mono); font-size: 11.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); text-decoration: none; }
+.versions a:hover { border-color: var(--faint); color: var(--ink); }
+.versions a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.side details { margin-bottom: 6px; }
+.side summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.side summary::-webkit-details-marker { display: none; }
+.side summary::before { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform .15s; }
+.side details[open] > summary::before { transform: rotate(45deg); }
+.side summary .count { margin-left: auto; font-weight: 500; letter-spacing: 0; }
+.nav-link { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; border-radius: var(--radius); cursor: pointer; text-decoration: none; }
+.nav-link:hover { background: var(--sunken); }
+.nav-link[aria-current="true"] { background: var(--accent-soft); }
+.nav-link .nl-main { min-width: 0; flex: 1; }
+.nav-link .nl-title { display: block; font-weight: 500; }
+.nav-link .nl-sub { display: block; color: var(--muted); font-family: var(--font-mono); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-overview { font-weight: 600; margin-bottom: 4px; }
+.dots { display: inline-flex; gap: 2px; flex: none; }
+.dots i { width: 6px; height: 6px; border-radius: 1px; background: var(--line); }
+.dots i.on { background: var(--frag); }
+.dots i.nested { background: transparent; box-shadow: inset 0 0 0 1.5px var(--frag); }
+
+/* ---------- main ---------- */
+.main { min-width: 0; padding: 24px clamp(16px, 3vw, 36px) 60px; padding-left: max(clamp(16px, 3vw, 36px), 56px); transition: padding-left .2s ease; }
+.page { max-width: 1080px; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: 24px; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em; margin: 4px 0; text-wrap: balance; }
+h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 4px; }
+.lede { color: var(--muted); max-width: 70ch; margin: 0; }
+.view-head { display: grid; gap: 4px; margin-bottom: 14px; }
+.back { justify-self: start; border: 0; background: none; padding: 2px 0; margin-bottom: 4px; color: var(--accent); font-size: 13px; font-weight: 500; cursor: pointer; }
+.back:hover { text-decoration: underline; }
+.back span { color: var(--muted); font-weight: 400; }
+.focusbar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin: -2px 0 10px; padding: 8px 12px; border-radius: 8px; background: var(--frag-soft); font-size: 13px; }
+.focusbar code { font-size: 12px; }
+.bh, .brow { user-select: none; }
+.endpoint { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+.endpoint .path { font-family: var(--font-mono); font-size: 18px; font-weight: 500; word-break: break-all; }
+.method { font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; padding: 2px 6px; border-radius: 4px; background: var(--accent); color: var(--accent-ink); flex: none; }
+.method.res { background: var(--sunken); color: var(--muted); }
+.statline { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: 13px; }
+.statline b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+.file { font-family: var(--font-mono); font-size: 12px; color: var(--faint); }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: none; padding: 6px 12px; cursor: pointer; font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg .zoom-level { padding: 6px 8px; min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 6px 10px; cursor: pointer; font-weight: 500; }
+.btn:hover { border-color: var(--faint); }
+.search { flex: 1 1 200px; min-width: 0; max-width: 360px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 0 10px; }
+.search input { border: 0; background: none; outline: none; padding: 7px 0; flex: 1; min-width: 0; font: inherit; color: var(--ink); }
+.search .hits { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 12px; align-items: center; }
+.legend .sw { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---------- canvas ---------- */
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 12px; height: max(520px, calc(100vh - 210px)); }
+.viewport { position: relative; overflow: auto; border: 1px solid var(--line); border-radius: 10px; cursor: grab;
+  background-color: var(--bg); background-image: radial-gradient(var(--grid) 1.2px, transparent 1.2px); background-size: 18px 18px; }
+.viewport.panning { cursor: grabbing; user-select: none; }
+.sizer { position: relative; }
+.plane { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+svg.wires { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+svg.wires path { fill: none; stroke: var(--wire); stroke-width: 1.6; }
+svg.wires path.optional { stroke-dasharray: 6 5; }
+svg.wires path.conditional { stroke: var(--cond); stroke-dasharray: 2 4; stroke-linecap: round; stroke-width: 2; }
+svg.wires path.option { stroke: var(--cond); }
+svg.wires circle { fill: var(--surface); stroke: var(--wire); stroke-width: 1.6; }
+
+.block { position: absolute; width: 300px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); cursor: default; }
+.block.many { box-shadow: 5px 5px 0 -1px var(--surface), 5px 5px 0 0 var(--line), var(--shadow); }
+.bh { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--line); cursor: pointer; border-radius: 8px 8px 0 0; }
+.bh:hover { background: var(--sunken); }
+.bh .bt { font-weight: 650; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bh .bx { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+.block.root { border-color: var(--accent); }
+.block.root .bh { background: var(--accent); color: var(--accent-ink); }
+.block.root .bh .bx { color: var(--accent-ink); opacity: 0.85; }
+.block.frag { border-color: color-mix(in srgb, var(--frag) 45%, var(--line)); }
+.block.frag .bh { background: var(--frag-soft); }
+.block.switch { border-color: var(--cond); }
+.block.switch .bh { background: var(--cond-soft); }
+.block.switch .bh .bt { white-space: normal; }
+.diamond { width: 11px; height: 11px; transform: rotate(45deg); border: 2px solid var(--cond); flex: none; border-radius: 1px; }
+.block.selected { outline: 2px solid var(--accent); outline-offset: 2px; }
+.block { transform-origin: 0 0; }
+.block.leaving { pointer-events: none; z-index: 0; }
+
+.rows { display: grid; padding: 4px 0; }
+.brow { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto auto 16px; align-items: center; gap: 8px; width: 100%; border: 0; background: none; text-align: left; padding: 5px 10px 5px 12px; cursor: pointer; position: relative; }
+.brow:hover { background: var(--sunken); }
+.brow .nm { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brow .ty { font-family: var(--font-mono); font-size: 11px; color: var(--faint); white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.brow .port { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; line-height: 1; font-weight: 600; color: var(--muted); box-shadow: inset 0 0 0 1.5px var(--wire); background: var(--surface); }
+.brow.open .port { background: var(--wire); color: var(--surface); }
+.brow.selected { background: var(--accent-soft); }
+.brow.hit { background: var(--hit); }
+.rule-links { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; z-index: 1; }
+.rule-links path { fill: none; stroke: var(--cond); stroke-width: 1.5; stroke-dasharray: 4 3; animation: rule-dash 0.6s linear infinite; }
+.rule-links circle { fill: var(--cond); }
+@keyframes rule-dash { to { stroke-dashoffset: -7; } }
+@media (prefers-reduced-motion: reduce) { .rule-links path { animation: none; } }
+.brow.lit { background: var(--cond-soft); box-shadow: inset 3px 0 0 var(--cond); }
+.brow.flash { animation: flash 1.8s ease-out; }
+@keyframes flash { 0%, 45% { background: var(--hit); } 100% { background: transparent; } }
+.mk { width: 9px; height: 9px; border-radius: 50%; justify-self: center; }
+.mk.required { background: var(--accent); }
+.mk.optional { box-shadow: inset 0 0 0 1.5px var(--faint); }
+.mk.conditional { border-radius: 1px; transform: rotate(45deg); background: var(--cond); width: 8px; height: 8px; }
+.mk.forbidden { width: auto; height: auto; line-height: 1; font-size: 11px; font-weight: 700; color: var(--deny); }
+.mk.forbidden::before { content: "✕"; }
+.brow.forbidden .nm { text-decoration: line-through; color: var(--faint); }
+.mk.option { border-radius: 2px; background: var(--frag); }
+.frag-tag { font-family: var(--font-mono); font-size: 10.5px; color: var(--frag); background: var(--frag-soft); padding: 0 5px; border-radius: 3px; margin-left: 6px; font-weight: 500; }
+
+.brow.chg-added { box-shadow: inset 3px 0 0 var(--new); }
+.brow.chg-changed { box-shadow: inset 3px 0 0 var(--mod); }
+.chg-tag { font-family: var(--font-ui); font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 0 5px; border-radius: 3px; vertical-align: 1px; white-space: nowrap; }
+.brow .chg-dot { margin: 0 3px; }
+.chg-tag.added { color: var(--new); background: var(--new-soft); }
+.chg-tag.changed { color: var(--mod); background: var(--mod-soft); }
+.chg-tag.removed { color: var(--deny); box-shadow: inset 0 0 0 1px var(--deny); }
+.chg-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--mod); margin-left: 7px; vertical-align: 1px; }
+.chg-note { display: grid; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--mod-soft); }
+.chg-note.added { background: var(--new-soft); }
+.chg-note .sub { color: var(--mod); }
+.chg-note.added .sub { color: var(--new); }
+.chg-diffs { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; margin: 0; font-size: 12.5px; }
+.chg-diffs dt { color: var(--muted); }
+.chg-diffs dd { margin: 0; display: grid; gap: 2px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chg-diffs del { color: var(--deny); text-decoration: line-through; text-decoration-thickness: 1px; }
+.chg-diffs ins { color: var(--ink); text-decoration: none; }
+.chg-diffs del::before { content: "− "; text-decoration: none; display: inline-block; }
+.chg-diffs ins::before { content: "+ "; color: var(--new); }
+.nav-link .chg-dot { flex: none; margin-left: 0; }
+.nav-changes .nl-count { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--mod); background: var(--mod-soft); border-radius: 999px; padding: 0 7px; }
+.changes { display: grid; gap: 12px; }
+.chg-item { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; box-shadow: var(--shadow); }
+.chg-item > summary, .chg-item > .chg-head { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 12px 14px; cursor: pointer; }
+.chg-item > summary::-webkit-details-marker { display: none; }
+.chg-item > .chg-head { cursor: default; }
+.chg-item .c-title { font-weight: 650; }
+.chg-item .file { color: var(--muted); }
+.chg-item .c-count { margin-left: auto; color: var(--muted); font-size: 12px; }
+.chg-fields { list-style: none; margin: 0; padding: 0 14px 12px; display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.chg-fields li { display: grid; gap: 6px; }
+.chg-fields .f-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.chg-fields .f-head .chg-tag { margin-left: 0; }
+.chg-fields .chg-diffs { padding-left: 12px; border-left: 2px solid var(--line); }
+.brules { border-top: 1px dashed var(--line); padding: 6px 10px 8px; display: grid; gap: 4px; }
+.brule { font-size: 12px; line-height: 1.4; padding: 4px 8px; border-radius: 4px; background: var(--cond-soft); display: grid; gap: 1px; cursor: default; transition: box-shadow 0.15s; }
+.brule:hover { box-shadow: inset 0 0 0 1.5px var(--cond); }
+.brule .rk { font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cond); }
+.brule code { font-size: 11px; }
+.bfoot { padding: 0 12px 8px; font-size: 11px; color: var(--faint); }
+
+/* ---------- details panel ---------- */
+.drawer { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow-y: auto; padding: 16px; display: grid; gap: 12px; align-content: start; }
+.drawer h3 { margin: 0; font-family: var(--font-mono); font-size: 16px; font-weight: 600; word-break: break-all; }
+.drawer p { margin: 0; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.badge { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; line-height: 18px; white-space: nowrap; }
+.badge.required { background: var(--accent-soft); color: var(--accent); }
+.badge.optional { color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+.badge.conditional { background: var(--cond-soft); color: var(--cond); }
+.badge.forbidden { color: var(--deny); box-shadow: inset 0 0 0 1px var(--deny); }
+.badge.plain { color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+.frag-pill { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 4px; background: var(--frag-soft); color: var(--frag); text-decoration: none; line-height: 18px; white-space: nowrap; text-transform: none; letter-spacing: 0; }
+.frag-pill::before { content: ""; width: 7px; height: 7px; border: 1.5px solid currentColor; border-radius: 2px; box-shadow: 2px 2px 0 -0.5px currentColor; }
+a.frag-pill:hover { text-decoration: underline; }
+.notes { margin: 0; padding: 8px 12px; list-style: none; background: var(--cond-soft); border-radius: var(--radius); display: grid; gap: 3px; }
+.notes li::before { content: "◆ "; color: var(--cond); font-size: 10px; }
+.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 12px; margin: 0; font-size: 13px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; min-width: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-family: var(--font-mono); font-size: 11.5px; padding: 1px 6px; border-radius: 4px; background: var(--sunken); }
+.pattern { display: block; font-family: var(--font-mono); font-size: 11px; background: var(--sunken); padding: 6px 8px; border-radius: 4px; white-space: pre-wrap; word-break: break-all; }
+.pattern.clamped { max-height: 3.2em; overflow: hidden; }
+.linkish { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0; font-size: 12px; text-decoration: underline; }
+.pathline code { word-break: break-all; }
+.hint { color: var(--muted); font-size: 13px; display: grid; gap: 10px; }
+.canvas-wrap { position: relative; min-width: 0; min-height: 0; display: grid; }
+.diagram-key { position: absolute; right: 18px; top: 12px; z-index: 4; max-width: calc(100% - 24px); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+.diagram-key > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-radius: 8px; }
+.diagram-key > summary::-webkit-details-marker { display: none; }
+.diagram-key > summary::after { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); margin-top: -3px; transition: transform .15s; }
+.diagram-key[open] > summary::after { transform: rotate(-135deg); margin-top: 3px; }
+.diagram-key[open] > summary { border-bottom: 1px solid var(--line); border-radius: 8px 8px 0 0; }
+.diagram-key > summary:hover { color: var(--ink); }
+.key { display: grid; gap: 6px; font-size: 12px; padding: 8px 12px 10px; }
+.key div { display: flex; align-items: center; gap: 8px; }
+.key .sym { flex: none; width: 76px; display: flex; justify-content: center; align-items: center; }
+.drawer .sub { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.uselist { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 12.5px; }
+.uselist a { font-family: var(--font-mono); color: var(--accent); word-break: break-all; }
+
+/* ---------- overview ---------- */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin: 18px 0 34px; }
+.card { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 14px; cursor: pointer; display: grid; gap: 6px; align-content: start; box-shadow: var(--shadow); }
+.card:hover { border-color: var(--accent); }
+.card .c-title { font-weight: 650; font-size: 15px; }
+.card .c-path { font-family: var(--font-mono); font-size: 12px; color: var(--muted); word-break: break-all; }
+.card .c-stats { display: flex; gap: 12px; font-size: 12px; color: var(--muted); }
+.card .c-stats b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.matrix-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table.matrix { border-collapse: collapse; width: 100%; font-size: 13px; }
+.matrix th, .matrix td { padding: 6px 10px; border-bottom: 1px solid var(--line); }
+.matrix thead th { font-size: 11.5px; font-weight: 600; color: var(--muted); vertical-align: bottom; text-align: center; min-width: 86px; line-height: 1.25; }
+.matrix thead th:first-child { text-align: left; }
+.matrix thead th.resp { color: var(--faint); }
+.matrix tbody tr { cursor: pointer; }
+.matrix tbody tr:hover { background: var(--sunken); }
+.matrix td.name { white-space: nowrap; }
+.matrix td.name b { font-weight: 550; }
+.matrix td.name .file { display: block; }
+.matrix td.cell { text-align: center; }
+.matrix td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.mark { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; }
+.mark.direct { background: var(--frag); }
+.mark.nested { box-shadow: inset 0 0 0 2px var(--frag); }
+.mark.none { background: var(--sunken); width: 6px; height: 6px; border-radius: 50%; }
+.matrix tbody tr:last-child td { border-bottom: 0; }
+.check { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); cursor: pointer; }
+.section { margin-top: 22px; display: grid; gap: 10px; }
+
+pre.json { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; font: 12.5px/1.55 var(--font-mono); }
+.json .k { color: var(--accent); }
+.json .s { color: var(--cond); }
+.json .n { color: var(--frag); }
+.json .b { color: var(--deny); }
+.harness { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.pane { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); display: grid; min-width: 0; }
+.pane-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.pane-head h2 { font-size: 13px; margin: 0 auto 0 0; }
+.pane-note { font-size: 12px; color: var(--muted); padding: 8px 12px 0; }
+.pane-note:empty { display: none; }
+.pane-sub { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; padding: 8px 12px 0; font-size: 12px; color: var(--muted); }
+.editor { font: 12.5px/1.6 var(--font-mono); border: 0; padding: 12px 14px; min-height: 360px; height: max(360px, calc(100vh - 360px)); resize: vertical; background: var(--surface); color: var(--ink); outline: none; tab-size: 2; white-space: pre; overflow: auto; width: 100%; }
+.editor:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 0 0 10px 10px; }
+.form-editor { height: max(360px, calc(100vh - 360px)); overflow: auto; padding: 10px 12px 16px; display: grid; gap: 2px; align-content: start; font-size: 13px; }
+.frow { display: grid; grid-template-columns: minmax(110px, 32%) minmax(0, 1fr) 22px; gap: 2px 10px; align-items: start; padding: 4px 0; }
+.frow.absent .flabel { color: var(--faint); }
+.flabel { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; padding-top: 5px; min-width: 0; }
+.flabel .fname, .fitem-head .fname { font: 500 12.5px var(--font-mono); word-break: break-all; }
+.flabel .badge { font-size: 10px; line-height: 16px; padding: 0 6px; }
+.fctl { min-width: 0; display: grid; gap: 3px; }
+.fctl input, .fctl select, .fctl textarea, .fgroup select, .fmore { width: 100%; font: 13px var(--font-ui); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.fctl textarea { resize: vertical; min-height: 3.2em; }
+.fctl textarea.fjson { font: 12px var(--font-mono); min-height: 4.5em; }
+.fctl textarea.fjson.bad { border-color: var(--cond); }
+.fctl input:focus-visible, .fctl select:focus-visible, .fctl textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
+.fhint { font-size: 11.5px; color: var(--faint); }
+.fconst { justify-self: start; padding: 4px 0; }
+.fnull { padding-top: 5px; }
+.ferrs { grid-column: 1 / -1; color: var(--deny); font-size: 12px; display: grid; gap: 2px; }
+.ferrs:empty { display: none; }
+.ferrs b { font: 600 11px var(--font-mono); }
+.has-err > .fctl input, .has-err > .fctl select, .has-err > .fctl textarea { border-color: var(--deny); }
+.fx { border: 0; background: none; color: var(--faint); font-size: 15px; line-height: 1; padding: 4px; cursor: pointer; border-radius: 4px; }
+.fx:hover { color: var(--deny); background: var(--sunken); }
+.fadd { justify-self: start; padding: 3px 10px; font-size: 12.5px; }
+.fgroup { border-left: 2px solid var(--line); margin: 4px 0 4px 2px; padding: 0 0 2px 10px; }
+.fgroup.has-err { border-left-color: var(--deny); }
+.fgroup > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; padding: 4px 0; }
+.fgroup > summary::-webkit-details-marker { display: none; }
+.fgroup > summary::before { content: ""; width: 6px; height: 6px; border-right: 1.5px solid var(--faint); border-bottom: 1.5px solid var(--faint); transform: rotate(-45deg); transition: transform .15s; }
+.fgroup[open] > summary::before { transform: rotate(45deg); }
+.fgroup > summary .flabel { padding-top: 0; }
+.fgroup > summary .ftype { font: 11px var(--font-mono); color: var(--faint); }
+.fgroup > summary .fx { margin-left: auto; }
+.fnotes { font-size: 11.5px; color: var(--cond); padding: 0 0 4px; }
+.fitem { border: 1px dashed var(--line); border-radius: 6px; padding: 4px 8px 6px; margin: 4px 0; }
+.fitem.has-err { border-color: var(--deny); }
+.fitem-head { display: flex; align-items: center; gap: 6px; }
+.fitem-tools { margin-left: auto; display: flex; gap: 2px; }
+.editor-status { padding: 6px 12px; border-top: 1px solid var(--line); font: 11.5px var(--font-mono); color: var(--muted); }
+.verdict { margin: 12px; padding: 12px 14px; border-radius: 8px; display: grid; gap: 4px; }
+.verdict b { font-size: 15px; }
+.verdict.ok { background: var(--accent-soft); }
+.verdict.ok b { color: var(--accent); }
+.verdict.bad { background: color-mix(in srgb, var(--deny) 12%, var(--surface)); }
+.verdict.bad b { color: var(--deny); }
+.verdict.json { background: var(--cond-soft); }
+.verdict.json b { color: var(--cond); }
+.verdict p { margin: 0; font-size: 13px; color: var(--muted); }
+.errs { list-style: none; margin: 0; padding: 0 12px 12px; display: grid; gap: 6px; }
+.err { display: grid; gap: 3px; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line); }
+.err-top { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.err .et { font: 600 11px var(--font-mono); color: var(--deny); }
+.err .ptr { font: 12px var(--font-mono); word-break: break-all; }
+.err .msg { font-size: 13px; }
+.err-actions { display: flex; gap: 14px; }
+.ex-head { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--ink); max-width: 100%; }
+.empty { color: var(--muted); padding: 12px 0; }
+.foot { margin-top: 40px; color: var(--faint); font-size: 12px; }
+
+@media (max-width: 1100px) {
+  .harness { grid-template-columns: minmax(0, 1fr); }
+  .editor { height: 50vh; }
+  .stage { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .viewport { height: 70vh; min-height: 420px; }
+  .drawer { max-height: none; }
+}
+@media (max-width: 600px) {
+  .frow { grid-template-columns: minmax(0, 1fr) 22px; }
+  .frow > .flabel { grid-column: 1 / -1; }
+}
+@media (max-width: 860px) {
+  .shell, .shell.side-closed { grid-template-columns: minmax(0, 1fr); }
+  .side-col { position: static; height: auto; }
+  .side-closed .side { visibility: visible; }
+  .side-resize, .side-tab { display: none; }
+  .side { height: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 14px 16px; }
+  .main { padding: 18px 16px 50px; }
+  h1 { font-size: 20px; }
+  .endpoint .path { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+</style>
+
+<div class="shell" id="shell">
+  <div class="side-col">
+    <aside class="side" id="side"></aside>
+    <div class="side-resize" id="side-resize" role="separator" aria-orientation="vertical" aria-controls="side" aria-label="Resize navigation" tabindex="0" title="Drag to resize. Double-click to reset."></div>
+    <button class="side-tab" id="side-tab" type="button" aria-controls="side"><span class="chev" aria-hidden="true"></span></button>
+  </div>
+  <main class="main" id="main"></main>
+</div>
+
+<script id="model" type="application/json">__MODEL__</script>
+<script>
+(() => {
+  const M = JSON.parse(document.getElementById('model').textContent)
+  const requests = M.roots.filter((r) => r.kind === 'request')
+  // A top-level schema by its own title ("Create movement request") and file,
+  // not by the API operation it serves.
+  const schemaName = (r) => r.title || r.label
+  const schemaFile = (file) => file.replace(/\.schema\.json$/, '')
+  const responses = M.roots.filter((r) => r.kind === 'response')
+  const rootById = Object.fromEntries(M.roots.map((r) => [r.id, r]))
+  const fragById = Object.fromEntries(M.fragments.map((f) => [f.id, f]))
+  const fragByFile = Object.fromEntries(M.fragments.map((f) => [f.file, f]))
+  const rootByFile = Object.fromEntries(M.roots.map((r) => [r.file, r]))
+
+  // ---------- What's changed (built with --since; see changes.js) ----------
+  // Each schema's and fragment's changes since the base commit, and per
+  // diagram, its field changes by path plus the rows with changes inside them.
+  const changes = M.changes || null
+  const rootChanges = new Map((changes?.roots || []).map((c) => [c.id, c]))
+  const fragChanges = new Map((changes?.fragments || []).map((c) => [c.file, c]))
+  const changeTotal = changes ? (changes.newVersion ? 0 : changes.roots.length + changes.fragments.length) : 0
+  const CHANGE_WORD = { added: 'New', changed: 'Changed', removed: 'Removed' }
+  const diagramChanges = (entry) => {
+    if (!entry || entry.status !== 'changed') return null
+    const byPath = new Map(entry.fields.map((f) => [f.path, f]))
+    const containers = new Set()
+    for (const f of entry.fields) {
+      for (let i = 1; i < f.path.length; i++) if ('.[<'.includes(f.path[i])) containers.add(f.path.slice(0, i))
+    }
+    // Removed fields have no row of their own; they're listed on their parent
+    // field's row ("a" for "a.b" and "a[].b", "a<X>" for "a<X>.b").
+    const parentRow = (path) => (/^(.+?)(?:\.[^.[<]+|<[^>]+>)$/.exec(path)?.[1] ?? '').replace(/\[\]$/, '')
+    const removedIn = (path) => entry.fields.filter((f) => f.status === 'removed' && parentRow(f.path) === path)
+    return { byPath, containers, removedIn }
+  }
+  const diffList = (diffs) => h('dl', { class: 'chg-diffs' }, diffs.map((d) => [
+    h('dt', {}, d.what),
+    h('dd', {}, d.before ? h('del', {}, d.before) : null, d.after ? h('ins', {}, d.after) : h('span', { class: 'file' }, '(none now)'))]))
+  const side = document.getElementById('side')
+  const main = document.getElementById('main')
+  const narrow = window.matchMedia('(max-width: 860px)').matches
+  const SVGNS = 'http://www.w3.org/2000/svg'
+
+  const store = {
+    get(k) { try { return localStorage.getItem('schema-explorer:' + k) } catch { return null } },
+    set(k, v) { try { localStorage.setItem('schema-explorer:' + k, v) } catch {} }
+  }
+
+  // ---------- helpers ----------
+  const h = (tag, attrs, ...kids) => {
+    const el = document.createElement(tag)
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v == null || v === false) continue
+      if (k === 'class') el.className = v
+      else if (k === 'html') el.innerHTML = v
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v)
+      else el.setAttribute(k, v === true ? '' : v)
+    }
+    for (const kid of kids.flat(Infinity)) if (kid != null && kid !== false) el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)))
+    return el
+  }
+  const s = (tag, attrs) => {
+    const el = document.createElementNS(SVGNS, tag)
+    for (const [k, v] of Object.entries(attrs || {})) el.setAttribute(k, v)
+    return el
+  }
+  const put = (el, ...kids) => el.replaceChildren(...kids.flat(Infinity).filter((k) => k != null && k !== false))
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+  const rich = (text) => h('span', { html: esc(text).replace(/`([^`]+)`/g, (_, x) => `<code data-ref="${x}">${x}</code>`) })
+  const fmt = (v) => (typeof v === 'string' ? `"${v}"` : JSON.stringify(v))
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
+  const displayPath = (p) => p.replace(/<([^>]+)>/g, ' ($1)')
+  const fragIdOf = (file) => (fragByFile[file] ? fragByFile[file].id : file.split('/').pop().replace('.schema.json', ''))
+  const isComplex = (n) => n.type === 'object' || n.type === 'variants' || n.type === 'array'
+  const endpointCount = (f) => new Set(f.occurrences.filter((o) => rootById[o.root].kind === 'request').map((o) => o.root)).size
+
+  const fragLink = (file) => {
+    const f = fragByFile[file]
+    const r = rootByFile[file]
+    return h('a', {
+      class: 'frag-pill', href: f ? '#f-' + f.id : '#' + (r ? r.id : ''), title: 'Open the shared fragment ' + file,
+      onclick: (e) => { e.preventDefault(); e.stopPropagation(); f ? go({ view: 'fragment', id: f.id }) : r && go({ view: 'root', id: r.id }) }
+    }, fragIdOf(file))
+  }
+
+  const typeLabel = (n) => {
+    if (n.type === 'array') return (n.items ? itemLabel(n.items) : 'any') + '[]'
+    if (n.type === 'variants') return 'one of ' + n.options.length
+    if (n.type === 'object') return n.title || 'object'
+    const c = n.constraints || {}
+    if ('const' in c) return fmt(c.const)
+    if (c.enum) return `enum(${c.enum.length})`
+    if (c.format) return c.format
+    return n.type
+  }
+  const itemLabel = (i) => (i.type === 'object' || i.type === 'variants' ? i.title || 'object' : typeLabel(i))
+
+  const range = (min, max, w) => {
+    if (min !== undefined && max !== undefined) return min === max ? `exactly ${plural(min, w)}` : `${min} to ${max} ${w}s`
+    if (min !== undefined) return `at least ${plural(min, w)}`
+    return `at most ${plural(max, w)}`
+  }
+  const multiplicity = (c = {}) => `×${c.minItems ?? 0}..${c.maxItems ?? 'n'}`
+
+  const selectText = (el) => {
+    try { const r = document.createRange(); r.selectNodeContents(el); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r) } catch {}
+  }
+
+  const facts = (n, path) => {
+    const dl = h('dl', { class: 'facts' })
+    const row = (k, v) => dl.append(h('dt', {}, k), h('dd', {}, v))
+    if (path) {
+      const p = displayPath(path)
+      const codeEl = h('code', {}, p)
+      row('Path', h('span', { class: 'pathline' }, codeEl, ' ', h('button', {
+        class: 'linkish', type: 'button',
+        onclick: (e) => {
+          const btn = e.currentTarget
+          const done = () => { btn.textContent = 'Copied'; setTimeout(() => (btn.textContent = 'Copy'), 1400) }
+          try { navigator.clipboard.writeText(p).then(done, () => selectText(codeEl)) } catch { selectText(codeEl) }
+        }
+      }, 'Copy')))
+    }
+    const c = n.constraints || {}
+    row('Type', h('code', {}, n.type === 'variants' ? 'object (one of ' + n.options.length + ')' : n.type === 'array' ? 'array of ' + (n.items ? itemLabel(n.items) : 'any') : n.type + (n.nullable ? ' | null' : '')))
+    if ('const' in c) row('Value', h('code', {}, fmt(c.const)))
+    if (c.enum) row('Allowed', h('span', { class: 'chips' }, c.enum.map((v) => h('span', { class: 'chip' }, String(v)))))
+    if (c.format) row('Format', h('code', {}, c.format))
+    if (c.minLength !== undefined || c.maxLength !== undefined) row('Length', range(c.minLength, c.maxLength, 'character'))
+    if (c.minimum !== undefined) row('Minimum', h('code', {}, '≥ ' + c.minimum))
+    if (c.exclusiveMinimum !== undefined) row('Minimum', h('code', {}, '> ' + c.exclusiveMinimum))
+    if (c.maximum !== undefined) row('Maximum', h('code', {}, '≤ ' + c.maximum))
+    if (c.minItems !== undefined || c.maxItems !== undefined) row('Items', range(c.minItems, c.maxItems, 'item'))
+    if (c.pattern) {
+      const long = c.pattern.length > 120
+      const el = h('code', { class: 'pattern' + (long ? ' clamped' : '') }, c.pattern)
+      row('Pattern', h('div', {}, el, long && h('button', { class: 'linkish', type: 'button', onclick: (e) => { el.classList.toggle('clamped'); e.currentTarget.textContent = el.classList.contains('clamped') ? 'Show full pattern' : 'Show less' } }, 'Show full pattern')))
+    }
+    if (n.type === 'array' && n.items && !isComplex(n.items)) {
+      const ic = n.items.constraints || {}
+      row('Each item', h('span', {}, h('code', {}, typeLabel(n.items)), ic.pattern ? [' matching ', h('code', { class: 'pattern' }, ic.pattern)] : ''))
+    }
+    return dl
+  }
+
+  // ---------- block diagram ----------
+  // A "spec" is one card on the canvas: an object's fields, or a decision between variants.
+  const childSpec = (node, path) => {
+    if (node.type === 'object' && node.fields.length) return { kind: 'object', node, path }
+    if (node.type === 'variants') return { kind: 'switch', node, path }
+    if (node.type === 'array' && node.items) {
+      const c = childSpec(node.items, path + '[]')
+      if (c) c.many = node.constraints || {}
+      return c
+    }
+    return null
+  }
+  const rowsOf = (spec) => {
+    if (spec.kind === 'switch') {
+      return spec.node.options.map((o) => {
+        const p = `${spec.path}<${o.label}>`
+        return { path: p, label: o.label, kind: 'option', option: o, req: 'option', child: { kind: 'object', node: o.node, path: p, variantOf: spec } }
+      })
+    }
+    return spec.node.fields.map((f) => {
+      const p = spec.path ? `${spec.path}.${f.name}` : f.name
+      return { path: p, label: f.name, kind: 'field', field: f, req: f.req, child: f.req === 'forbidden' ? null : childSpec(f.node, p) }
+    })
+  }
+  // Every block and row path, with the block paths that must be open to show it.
+  const indexSpec = (spec, chain, out) => {
+    for (const row of rowsOf(spec)) {
+      out.set(row.path, { chain: [...chain], kind: 'row', name: row.label.toLowerCase() })
+      if (row.child) {
+        out.set(row.child.path, { chain: [...chain, row.child.path], kind: 'block' })
+        indexSpec(row.child, [...chain, row.child.path], out)
+      }
+    }
+    return out
+  }
+
+  // saved: a snapshot() from an earlier visit (via Back), to redraw the view as it was.
+  const makeCanvas = (rootSpec, ctx, saved) => {
+    const index = indexSpec(rootSpec, [], new Map())
+    const defaults = () => new Set(rowsOf(rootSpec).filter((r) => r.child).map((r) => r.child.path))
+    let expanded = saved ? new Set(saved.expanded) : defaults()
+    let scale = saved?.scale || 1
+    let selectedPath = saved?.selected ?? null
+    let hits = new Set()
+
+    const svg = s('svg', { class: 'wires' })
+    const plane = h('div', { class: 'plane' })
+    plane.append(svg)
+    const sizer = h('div', { class: 'sizer' }, plane)
+    const viewport = h('div', { class: 'viewport', tabindex: '0', 'aria-label': 'Schema diagram. Drag to pan.' }, sizer)
+    const drawer = h('aside', { class: 'drawer', 'aria-live': 'polite' })
+    const zoomLabel = h('span', { class: 'zoom-level' }, '100%')
+    let contentW = 0, contentH = 0
+
+    const headerFor = (spec, isRoot) => {
+      if (isRoot) return ctx.rootHeader(spec)
+      if (spec.kind === 'switch') {
+        return [h('span', { class: 'diamond', 'aria-hidden': 'true' }),
+          h('span', { class: 'bt' }, spec.node.discriminator ? `Which ${spec.node.discriminator}?` : 'Which one?'),
+          h('span', { class: 'bx' }, plural(spec.node.options.length, 'option'))]
+      }
+      const n = spec.node
+      const title = spec.variantOf ? `${n.title || spec.path}` : n.title || spec.path.split(/[.<]/).pop().replace('[]', '')
+      return [h('span', { class: 'bt', title }, title),
+        spec.many ? h('span', { class: 'bx', title: 'Array: ' + range(spec.many.minItems, spec.many.maxItems, 'item') }, multiplicity(spec.many)) : n.fragment ? h('span', { class: 'bx' }, fragIdOf(n.fragment)) : null]
+    }
+
+    const blockEl = (spec, isRoot) => {
+      const n = spec.node
+      const cls = ['block', isRoot ? 'root' : '', spec.kind === 'switch' ? 'switch' : '', !isRoot && n.fragment && spec.kind !== 'switch' ? 'frag' : '', spec.many ? 'many' : '', selectedPath === spec.path && !isRoot ? 'selected' : ''].join(' ')
+      const el = h('div', { class: cls, 'data-block': spec.path })
+      el.append(h('div', {
+        class: 'bh', role: 'button', tabindex: '0',
+        title: isRoot ? null : 'Double-click to open this on its own',
+        onclick: (e) => e.detail < 2 && selectBlock(spec, isRoot),
+        onkeydown: (e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), selectBlock(spec, isRoot))
+      }, headerFor(spec, isRoot)))
+      // Double-click anywhere on a block to make it the parent.
+      if (!isRoot) el.addEventListener('dblclick', (e) => { if (!e.target.closest('a')) { e.preventDefault(); ctx.open(spec) } })
+      const rows = h('div', { class: 'rows' })
+      for (const row of rowsOf(spec)) {
+        const open = row.child && expanded.has(row.child.path)
+        const f = row.field
+        const frag = f && (f.node.fragment || (f.node.type === 'array' && f.node.items && f.node.items.fragment))
+        const chg = ctx.changes?.byPath.get(row.path)
+        const inside = !chg && ctx.changes?.containers.has(row.path)
+        const b = h('button', {
+          type: 'button',
+          class: ['brow', chg ? 'chg-' + chg.status : '', row.req === 'forbidden' ? 'forbidden' : '', row.child ? 'has-child' : '', open ? 'open' : '', hits.has(row.path) ? 'hit' : '', selectedPath === row.path ? 'selected' : ''].join(' '),
+          'data-row': row.path, 'data-name': row.label,
+          title: f && f.notes.length ? f.notes.join(' ').replace(/`/g, '') : null,
+          // The second click of a double-click opens the block; don't toggle twice.
+          onclick: (e) => e.detail < 2 && clickRow(row)
+        },
+        h('span', { class: 'mk ' + row.req, 'aria-label': row.req }),
+        h('span', { class: 'nm' }, row.label, frag && !row.child ? h('span', { class: 'frag-tag' }, fragIdOf(frag)) : null),
+        // Its own column, so a long name is shortened rather than the tag.
+        chg ? h('span', { class: 'chg-tag ' + chg.status, title: `${CHANGE_WORD[chg.status]} since ${changes.base}` }, chg.status === 'added' ? 'new' : 'changed')
+          : inside ? h('span', { class: 'chg-dot', title: `Something inside changed since ${changes.base}` }) : h('span', {}),
+        h('span', { class: 'ty' }, row.kind === 'option' ? (row.option.node.title || '') : typeLabel(f.node)),
+        row.child ? h('span', { class: 'port', 'aria-hidden': 'true' }, open ? '−' : '+') : h('span', {}))
+        rows.append(b)
+      }
+      el.append(rows)
+      if (n.rules && spec.kind !== 'switch') {
+        el.append(h('div', { class: 'brules' }, n.rules.map((r, i) => {
+          const strip = h('div', { class: 'brule' }, h('span', { class: 'rk' }, r.label),
+            r.text ? rich(r.text) : r.cases.map((c) => h('div', {}, rich(c.when), ' → ', c.effects.length ? c.effects.map((e, i) => [i ? '; ' : '', rich(e)]) : 'no further constraints')))
+          strip.addEventListener('mouseenter', () => hoverRule(el, i, true))
+          strip.addEventListener('mouseleave', () => hoverRule(el, i, false))
+          return strip
+        })))
+      }
+      if (n.closed && spec.kind === 'object') el.append(h('div', { class: 'bfoot' }, 'No other fields allowed'))
+      return el
+    }
+
+    // Hovering a rule lights the fields it mentions, with a dashed line down
+    // the block's left edge from each field to the rule, so the link shows
+    // even when the field is out of view.
+    const refsOf = (strip) => new Set([...strip.querySelectorAll('code[data-ref]')].map((c) => c.dataset.ref))
+    const rowsIn = (blockEl) => [...blockEl.querySelectorAll(':scope > .rows > .brow')]
+    const stripsIn = (blockEl) => [...blockEl.querySelectorAll(':scope > .brules > .brule')]
+    const SVGNS = 'http://www.w3.org/2000/svg'
+    // Each line leaves the field's left edge, runs down outside the block
+    // (each a step further out, so they don't overlap) and enters the rule.
+    const drawLinks = (blockEl, pairs) => {
+      blockEl.querySelector(':scope > .rule-links')?.remove()
+      if (!pairs.length || !blockEl.isConnected) return
+      const svg = document.createElementNS(SVGNS, 'svg')
+      svg.setAttribute('class', 'rule-links')
+      svg.setAttribute('aria-hidden', 'true')
+      pairs.forEach(([row, strip], i) => {
+        const y1 = row.offsetTop + row.offsetHeight / 2
+        const y2 = strip.offsetTop + Math.min(strip.offsetHeight / 2, 14)
+        const x = -12 - i * 7
+        const r = Math.min(8, Math.abs(y2 - y1) / 2)
+        const dir = y2 > y1 ? 1 : -1
+        const path = document.createElementNS(SVGNS, 'path')
+        path.setAttribute('d', `M 0 ${y1} H ${x + r} Q ${x} ${y1} ${x} ${y1 + dir * r} V ${y2 - dir * r} Q ${x} ${y2} ${x + r} ${y2} H 0`)
+        svg.append(path)
+        for (const y of [y1, y2]) {
+          const dot = document.createElementNS(SVGNS, 'circle')
+          dot.setAttribute('cx', 0); dot.setAttribute('cy', y); dot.setAttribute('r', 2.5)
+          svg.append(dot)
+        }
+      })
+      blockEl.append(svg)
+    }
+    const hoverRule = (blockEl, index, on) => {
+      const rows = rowsIn(blockEl)
+      const strip = on ? stripsIn(blockEl)[index] : null
+      const refs = strip ? refsOf(strip) : new Set()
+      const lit = rows.filter((r) => refs.has(r.dataset.name))
+      rows.forEach((r) => r.classList.toggle('lit', lit.includes(r)))
+      drawLinks(blockEl, lit.map((row) => [row, strip]))
+    }
+
+    const COLW = 300, GAPX = 84, GAPY = 20, PAD = 28
+    // Where each block was last drawn: path -> { x, y, parent, rowPath }.
+    // parent is the block it hangs from, rowPath the row in that block that
+    // opens it. Used to animate what changed between one draw and the next.
+    let layout = new Map()
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const GROW = { duration: 340, easing: 'cubic-bezier(.2,.8,.2,1)' }
+    const SHRINK = { duration: 240, easing: 'cubic-bezier(.4,0,.8,.4)' }
+    const STAGGER = 90
+
+    const draw = () => {
+      const previous = layout
+      const oldEls = new Map([...plane.querySelectorAll('.block:not(.leaving)')].map((el) => [el.dataset.block, el]))
+      svg.replaceChildren()
+      const build = (spec, isRoot, parent, rowPath) => {
+        const el = blockEl(spec, isRoot)
+        plane.append(el)
+        const b = { spec, el, kids: [], parent, rowPath }
+        for (const row of rowsOf(spec)) if (row.child && expanded.has(row.child.path)) b.kids.push({ row, block: build(row.child, false, spec.path, row.path) })
+        return b
+      }
+      const root = build(rootSpec, true, null, null)
+      let maxX = 0, maxY = 0
+      const next = new Map()
+      const place = (b, x, y) => {
+        b.el.style.left = x + 'px'
+        b.el.style.top = y + 'px'
+        b.x = x; b.y = y
+        next.set(b.spec.path, { x, y, parent: b.parent, rowPath: b.rowPath, b })
+        const height = b.el.offsetHeight
+        let cursor = y
+        for (const k of b.kids) {
+          const rowEl = b.el.querySelector(`[data-row="${CSS.escape(k.row.path)}"]`)
+          k.portY = y + rowEl.offsetTop + rowEl.offsetHeight / 2
+          const top = Math.max(cursor, k.portY - 19)
+          const used = place(k.block, x + COLW + GAPX, top)
+          cursor = top + used + GAPY
+        }
+        maxX = Math.max(maxX, x + COLW)
+        maxY = Math.max(maxY, y + height)
+        return Math.max(height, cursor - GAPY - y)
+      }
+      place(root, PAD, PAD)
+      const wires = new Map() // child path -> the wire's elements
+      const wire = (b) => {
+        for (const k of b.kids) {
+          const x1 = b.x + COLW, y1 = k.portY, x2 = k.block.x, y2 = k.block.y + 19
+          const mid = (x2 - x1) / 2
+          const cls = k.row.kind === 'option' ? 'option' : k.row.req
+          const path = s('path', { d: `M${x1} ${y1} C${x1 + mid} ${y1}, ${x2 - mid} ${y2}, ${x2} ${y2}`, class: cls })
+          const dot = s('circle', { cx: x2, cy: y2, r: 3.5 })
+          svg.append(path, dot)
+          wires.set(k.block.spec.path, [path, dot])
+          wire(k.block)
+        }
+      }
+      wire(root)
+      layout = next
+
+      // The port (the + on a row) a block grows out of or shrinks back into,
+      // in the new layout: the row in `parent` whose child is `path`.
+      const portOf = (parentPath, rowPath) => {
+        const p = next.get(parentPath)
+        const rowEl = p && p.b.el.querySelector(`[data-row="${CSS.escape(rowPath)}"]`)
+        return rowEl ? { x: p.x + COLW - 18, y: p.y + rowEl.offsetTop + rowEl.offsetHeight / 2 } : null
+      }
+      const animate = previous.size > 0 && !reducedMotion.matches
+
+      // Blocks that stay: swap in the new element, gliding from where it was.
+      // Blocks that go: keep the old element just long enough to shrink it into
+      // the port of the nearest block that stays.
+      for (const [path, el] of oldEls) {
+        const was = previous.get(path)
+        const now = next.get(path)
+        if (now) {
+          el.remove()
+          if (animate && was && (was.x !== now.x || was.y !== now.y)) {
+            now.b.el.animate([{ transform: `translate(${was.x - now.x}px, ${was.y - now.y}px)` }, { transform: 'none' }], GROW)
+          }
+          continue
+        }
+        let top = path
+        while (previous.get(top) && previous.get(top).parent !== null && !next.has(previous.get(top).parent)) top = previous.get(top).parent
+        const port = animate && previous.get(top) && portOf(previous.get(top).parent, previous.get(top).rowPath)
+        if (!port || !was) { el.remove(); continue }
+        el.classList.add('leaving')
+        el.removeAttribute('data-block')
+        el.querySelectorAll('[data-row]').forEach((r) => r.removeAttribute('data-row'))
+        el.animate([
+          { transform: 'none', opacity: 1 },
+          { transform: `translate(${port.x - was.x}px, ${port.y - was.y}px) scale(0.04)`, opacity: 0 }
+        ], SHRINK).finished.then(() => el.remove(), () => el.remove())
+      }
+
+      // Blocks that are new grow out of the port that opens them; a block whose
+      // parent is also new waits for it, so a chain unfolds a level at a time.
+      if (animate) {
+        const delays = new Map()
+        const delayOf = (path) => {
+          if (delays.has(path)) return delays.get(path)
+          const at = next.get(path)
+          const d = at.parent !== null && !previous.has(at.parent) ? delayOf(at.parent) + STAGGER : 0
+          delays.set(path, d)
+          return d
+        }
+        for (const [path, at] of next) {
+          if (previous.has(path)) continue
+          const port = portOf(at.parent, at.rowPath)
+          if (!port) continue
+          const delay = delayOf(path)
+          at.b.el.animate([
+            { transform: `translate(${port.x - at.x}px, ${port.y - at.y}px) scale(0.04)`, opacity: 0 },
+            { transform: 'none', opacity: 1 }
+          ], { ...GROW, delay, fill: 'backwards' })
+          for (const w of wires.get(path) || []) {
+            w.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: delay + GROW.duration * 0.45, fill: 'backwards' })
+          }
+        }
+      }
+
+      contentW = maxX + PAD
+      contentH = maxY + PAD
+      svg.setAttribute('width', contentW)
+      svg.setAttribute('height', contentH)
+      plane.style.width = contentW + 'px'
+      plane.style.height = contentH + 'px'
+      applyScale()
+    }
+
+    const applyScale = () => {
+      plane.style.transform = `scale(${scale})`
+      sizer.style.width = contentW * scale + 'px'
+      sizer.style.height = contentH * scale + 'px'
+      zoomLabel.textContent = Math.round(scale * 100) + '%'
+    }
+    const zoom = (next, anchor) => {
+      const old = scale
+      scale = Math.min(1.6, Math.max(0.3, next))
+      const ax = anchor ? anchor.x : viewport.clientWidth / 2
+      const ay = anchor ? anchor.y : viewport.clientHeight / 2
+      const cx = (viewport.scrollLeft + ax) / old, cy = (viewport.scrollTop + ay) / old
+      applyScale()
+      viewport.scrollLeft = cx * scale - ax
+      viewport.scrollTop = cy * scale - ay
+    }
+    const fit = () => {
+      zoom(Math.min(1, (viewport.clientWidth - 10) / contentW, Math.max(0.45, (viewport.clientHeight - 10) / contentH)))
+      viewport.scrollTo({ left: 0, top: 0 })
+    }
+
+    const scrollToEl = (el) => {
+      if (!el) return
+      const vr = viewport.getBoundingClientRect(), er = el.getBoundingClientRect()
+      viewport.scrollTo({
+        left: viewport.scrollLeft + er.left - vr.left - Math.max(24, (vr.width - er.width) / 3),
+        top: viewport.scrollTop + er.top - vr.top - vr.height / 3,
+        behavior: 'smooth'
+      })
+    }
+
+    const clickRow = (row) => {
+      selectedPath = row.path
+      if (row.child) {
+        if (expanded.has(row.child.path)) {
+          for (const p of [...expanded]) if (p === row.child.path || p.startsWith(row.child.path + '.') || p.startsWith(row.child.path + '[') || p.startsWith(row.child.path + '<')) expanded.delete(p)
+        } else expanded.add(row.child.path)
+      }
+      draw()
+      showRow(row)
+      if (row.child && expanded.has(row.child.path)) scrollToEl(plane.querySelector(`[data-block="${CSS.escape(row.child.path)}"]`))
+    }
+
+    const selectBlock = (spec, isRoot) => {
+      selectedPath = isRoot ? null : spec.path
+      draw()
+      if (isRoot) return showIntro()
+      const n = spec.node
+      put(drawer,
+        h('div', { class: 'eyebrow' }, spec.kind === 'switch' ? 'Decision' : spec.many ? 'Each item' : 'Object'),
+        h('h3', {}, spec.kind === 'switch' ? 'Which ' + (n.discriminator || 'variant') + '?' : n.title || displayPath(spec.path)),
+        h('div', { class: 'badges' }, n.fragment && fragLink(n.fragment), spec.many && h('span', { class: 'badge plain' }, range(spec.many.minItems, spec.many.maxItems, 'item'))),
+        n.description && h('p', {}, rich(n.description)),
+        spec.kind === 'switch' && h('p', { class: 'hint' }, 'Exactly one of these variants applies, picked by the value of ', h('code', {}, n.discriminator || '?'), '. Open a variant to see the fields it needs.'),
+        h('dl', { class: 'facts' }, h('dt', {}, 'Path'), h('dd', {}, h('code', {}, displayPath(spec.path)))),
+        usage(n.fragment))
+    }
+
+    const showRow = (row) => {
+      if (row.kind === 'option') {
+        const o = row.option
+        return put(drawer,
+          h('div', { class: 'eyebrow' }, 'Variant'),
+          h('h3', {}, o.label),
+          h('div', { class: 'badges' }, o.node.fragment && fragLink(o.node.fragment)),
+          o.node.description && h('p', {}, rich(o.node.description)),
+          h('dl', { class: 'facts' }, h('dt', {}, 'Path'), h('dd', {}, h('code', {}, displayPath(row.path)))),
+          usage(o.node.fragment))
+      }
+      const f = row.field, n = f.node
+      const frag = n.fragment || (n.type === 'array' && n.items && n.items.fragment)
+      put(drawer,
+        h('div', { class: 'eyebrow' }, 'Field'),
+        h('h3', {}, f.name),
+        h('div', { class: 'badges' },
+          h('span', { class: 'badge ' + f.req }, ({ required: 'Required', conditional: 'Conditional', forbidden: 'Not allowed' })[f.req] || 'Optional'),
+          n.nullable && h('span', { class: 'badge plain' }, 'nullable'),
+          n.fragment && fragLink(n.fragment),
+          n.type === 'array' && n.items && n.items.fragment && fragLink(n.items.fragment)),
+        changeNote(row.path),
+        n.description ? h('p', {}, rich(n.description)) : frag && fragByFile[frag] && fragByFile[frag].description && h('p', {}, rich(fragByFile[frag].description)),
+        f.notes.length > 0 && h('ul', { class: 'notes' }, f.notes.map((t) => h('li', {}, rich(t)))),
+        facts(n, row.path),
+        usage(frag))
+    }
+
+    // What changed at this row since the base commit, and what was removed
+    // from inside it.
+    const changeNote = (path) => {
+      if (!ctx.changes) return null
+      const c = ctx.changes.byPath.get(path)
+      const removed = ctx.changes.removedIn(path)
+      if (!c && !removed.length) return null
+      return h('div', { class: 'chg-note' + (c?.status === 'added' ? ' added' : '') },
+        c && h('div', { class: 'sub' }, `${c.status === 'added' ? 'New' : 'Changed'} since ${changes.base}`),
+        c?.status === 'added' && c.inside > 0 && h('span', {}, `With ${plural(c.inside, 'field')} inside it.`),
+        c?.diffs && diffList(c.diffs),
+        removed.length > 0 && [h('div', { class: 'sub', style: 'color:var(--deny)' }, `Removed from inside since ${changes.base}`),
+          h('div', { class: 'badges' }, removed.map((r) => h('code', {}, r.field)))])
+    }
+
+    const usage = (file) => {
+      const f = file && fragByFile[file]
+      if (!f) return null
+      const reqs = endpointCount(f)
+      return h('div', { class: 'hint' },
+        h('div', { class: 'sub' }, 'Shared fragment'),
+        h('span', {}, `${f.id} is used ${plural(f.occurrences.length, 'time')} across ${reqs} of ${requests.length} request schemas.`),
+        h('a', { href: '#f-' + f.id, class: 'linkish', onclick: (e) => { e.preventDefault(); go({ view: 'fragment', id: f.id }) } }, 'See everywhere it is used'))
+    }
+
+    const showIntro = () => {
+      put(drawer, ctx.intro())
+    }
+
+    // What Back needs to put this diagram back as the viewer left it.
+    const snapshot = () => ({ expanded: [...expanded], selected: selectedPath, scale, scrollLeft: viewport.scrollLeft, scrollTop: viewport.scrollTop })
+    // After the first draw: scroll back to where the viewer was and reselect
+    // their field. Returns false when there's nothing saved to restore.
+    const restoreView = () => {
+      if (!saved) return false
+      viewport.scrollLeft = saved.scrollLeft || 0
+      viewport.scrollTop = saved.scrollTop || 0
+      const row = selectedPath && findRow(selectedPath)
+      if (row) showRow(row)
+      return true
+    }
+
+    const reveal = (path, { flash = true, select = true } = {}) => {
+      const entry = index.get(path)
+      if (!entry) return
+      entry.chain.forEach((p) => expanded.add(p))
+      if (select) selectedPath = path
+      draw()
+      const el = plane.querySelector(`[data-row="${CSS.escape(path)}"]`) || plane.querySelector(`[data-block="${CSS.escape(path)}"]`)
+      if (el && flash && el.matches('.brow')) el.classList.add('flash')
+      if (el && el.matches('.block')) el.classList.add('selected')
+      requestAnimationFrame(() => scrollToEl(el))
+      if (select && el && el.matches('.brow')) {
+        const row = findRow(path)
+        if (row) showRow(row)
+      }
+    }
+    const findRow = (path) => {
+      const walk = (spec) => {
+        for (const r of rowsOf(spec)) {
+          if (r.path === path) return r
+          if (r.child && path.startsWith(r.child.path)) { const x = walk(r.child); if (x) return x }
+        }
+        return null
+      }
+      return walk(rootSpec)
+    }
+
+    // Marks every row whose field name contains q (from the site search),
+    // without opening anything: only the result that was chosen is revealed.
+    const highlight = (q) => {
+      hits = new Set()
+      if (q) for (const [p, e] of index) if (e.kind === 'row' && e.name.includes(q)) hits.add(p)
+      draw()
+    }
+
+    // Drag the background to pan; ctrl/cmd + wheel to zoom.
+    let pan = null
+    viewport.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || e.target.closest('.block')) return
+      pan = { x: e.clientX, y: e.clientY, l: viewport.scrollLeft, t: viewport.scrollTop }
+      viewport.classList.add('panning')
+      viewport.setPointerCapture(e.pointerId)
+    })
+    viewport.addEventListener('pointermove', (e) => {
+      if (!pan) return
+      viewport.scrollLeft = pan.l - (e.clientX - pan.x)
+      viewport.scrollTop = pan.t - (e.clientY - pan.y)
+    })
+    const endPan = () => { pan = null; viewport.classList.remove('panning') }
+    viewport.addEventListener('pointerup', endPan)
+    viewport.addEventListener('pointercancel', endPan)
+    viewport.addEventListener('wheel', (e) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      const r = viewport.getBoundingClientRect()
+      zoom(scale * (e.deltaY < 0 ? 1.1 : 0.9), { x: e.clientX - r.left, y: e.clientY - r.top })
+    }, { passive: false })
+
+    const controls = [
+      h('div', { class: 'seg', role: 'group', 'aria-label': 'Zoom' },
+        h('button', { type: 'button', 'aria-label': 'Zoom out', onclick: () => zoom(scale / 1.2) }, '−'),
+        zoomLabel,
+        h('button', { type: 'button', 'aria-label': 'Zoom in', onclick: () => zoom(scale * 1.2) }, '+')),
+      h('button', { class: 'btn', type: 'button', onclick: fit }, 'Fit'),
+      h('button', { class: 'btn', type: 'button', onclick: () => { for (const [p, e] of index) if (e.kind === 'block') expanded.add(p); draw(); fit() } }, 'Expand all'),
+      // Everything folds back into the top block; zoom and selection stay.
+      h('button', { class: 'btn', type: 'button', onclick: () => { expanded = new Set(); draw(); viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' }) } }, 'Collapse all'),
+      h('button', { class: 'btn', type: 'button', onclick: () => { expanded = defaults(); selectedPath = null; hits = new Set(); draw(); zoom(1); viewport.scrollTo({ left: 0, top: 0 }); showIntro() } }, 'Reset')
+    ]
+
+    const stage = h('div', { class: 'stage' }, h('div', { class: 'canvas-wrap' }, viewport, keyPanel(!!ctx.changes)), drawer)
+    return { stage, controls, draw, reveal, highlight, showIntro, snapshot, restoreView }
+  }
+
+  // The key sits in the diagram pane's top-right corner, open or closed as the viewer
+  // last left it (closed by default on narrow screens, where space is tight).
+  const keyPanel = (withChanges) => {
+    const line = (cls) => { const w = s('svg', { width: 40, height: 10, class: 'wires', style: 'position:static' }); w.append(s('path', { d: 'M1 5 L39 5', class: cls })); return w }
+    const item = (symbol, label) => h('div', {}, h('span', { class: 'sym' }, symbol), label)
+    const saved = store.get('key-open')
+    const panel = h('details', { class: 'diagram-key', open: saved ? saved === '1' : !narrow },
+      h('summary', {}, 'Key'),
+      h('div', { class: 'key' },
+        item(h('span', { class: 'mk required' }), 'Required field'),
+        item(h('span', { class: 'mk conditional' }), 'Conditional: depends on a rule'),
+        item(h('span', { class: 'mk optional' }), 'Optional field'),
+        item(h('span', { class: 'mk forbidden' }), 'Not allowed in this request'),
+        withChanges && [
+          item(h('span', { class: 'chg-tag added' }, 'new'), `Added since ${changes.base}`),
+          item(h('span', { class: 'chg-tag changed' }, 'changed'), `Changed since ${changes.base}`),
+          item(h('span', { class: 'chg-dot' }), 'Something inside changed')],
+        item(line(''), 'Leads to a required part'),
+        item(line('optional'), 'Leads to an optional part'),
+        item(line('conditional'), 'Leads to a conditional part'),
+        item(h('span', { class: 'diamond' }), 'A decision: one variant applies'),
+        item(h('span', { class: 'frag-pill' }, 'fragment'), 'A shared schema file')))
+    panel.addEventListener('toggle', () => store.set('key-open', panel.open ? '1' : '0'))
+    return panel
+  }
+
+  // ---------- site search: every field, endpoint and fragment in this version ----------
+  // One entry per place a field appears, so a field inside a shared fragment is
+  // listed once for each endpoint that uses it, plus once in the fragment itself.
+  const searchEntries = (() => {
+    const out = []
+    // name: the thing's own name. aliases: other names it goes by (an endpoint's
+    // URL, a fragment's title). path: where it sits. text: its description.
+    const add = (e) => out.push({
+      ...e,
+      hay: {
+        name: e.name.toLowerCase(),
+        aliases: (e.aliases || []).map((a) => a.toLowerCase()),
+        path: displayPath(e.path || '').toLowerCase(),
+        text: (e.text || '').toLowerCase()
+      }
+    })
+    const walk = (node, path, base, definedIn) => {
+      if (node.type === 'array' && node.items) return walk(node.items, path + '[]', base, node.items.fragment || definedIn)
+      if (node.type === 'variants') {
+        for (const o of node.options) {
+          const p = `${path}<${o.label}>`
+          add({ ...base, kind: 'variant', name: o.label, path: p, node: o.node, text: o.node.description, definedIn })
+          walk(o.node, p, base, o.node.fragment || definedIn)
+        }
+        return
+      }
+      if (node.type !== 'object') return
+      for (const f of node.fields) {
+        const p = path ? `${path}.${f.name}` : f.name
+        add({ ...base, kind: 'field', name: f.name, path: p, node: f.node, req: f.req, text: f.node.description, definedIn })
+        if (f.req !== 'forbidden') walk(f.node, p, base, f.node.fragment || definedIn)
+      }
+    }
+    M.roots.forEach((r, order) => {
+      const base = { group: r.kind, order, where: { view: 'root', id: r.id }, whereLabel: schemaName(r) }
+      add({ ...base, kind: 'schema', name: schemaName(r), path: '', aliases: [schemaFile(r.file)], text: r.tree.description })
+      walk(r.tree, '', base, null)
+    })
+    M.fragments.forEach((f, order) => {
+      const base = { group: 'fragment', order, where: { view: 'fragment', id: f.id }, whereLabel: f.id }
+      add({ ...base, kind: 'fragment', name: f.id, path: '', aliases: [f.title], text: f.description })
+      walk(f.tree, '', base, f.file)
+    })
+    return out
+  })()
+
+  // A field matches on its own name, never on the fields it sits inside:
+  // "wasteIt" finds wasteItems, not every field under it. A query with a dot or
+  // brackets is a path ("address.postcode"), matched against the end of the
+  // path, so it finds the field named last rather than everything below it.
+  // Lower is better; -1 is no match.
+  const isPathQuery = (q) => /[.[\]]/.test(q)
+  const rank = (e, q) => {
+    const { name, aliases, path } = e.hay
+    if (isPathQuery(q)) {
+      const at = path.lastIndexOf(q)
+      return at >= 0 && !/[.[(]/.test(path.slice(at + q.length)) ? 1 : -1
+    }
+    if (name === q) return 0
+    if (name.startsWith(q)) return 1
+    if (name.includes(q)) return 2
+    if (aliases.some((a) => a.includes(q))) return 3
+    return -1
+  }
+  // Only used when nothing matches by name.
+  const mentions = (e, q) => e.kind === 'field' && e.hay.text.includes(q)
+  const SEARCH_GROUPS = [['request', 'In request schemas'], ['fragment', 'In shared fragments'], ['response', 'In response schemas']]
+  const PER_GROUP = 30
+
+  const markText = (text, q) => {
+    const i = text.toLowerCase().indexOf(q)
+    if (!q || i < 0) return text
+    return h('span', {}, text.slice(0, i), h('mark', {}, text.slice(i, i + q.length)), text.slice(i + q.length))
+  }
+
+  const searchInput = h('input', {
+    id: 'site-search', type: 'search', autocomplete: 'off', spellcheck: 'false',
+    placeholder: 'Search fields, e.g. postcode', 'aria-label': 'Search every schema and fragment',
+    role: 'combobox', 'aria-expanded': 'false', 'aria-controls': 'search-results', 'aria-autocomplete': 'list'
+  })
+  const searchPanel = h('div', { class: 'search-panel', id: 'search-results', role: 'listbox', 'aria-label': 'Search results', hidden: true })
+  const siteSearch = h('div', { class: 'site-search' },
+    h('label', { class: 'search' }, searchInput, h('kbd', { title: 'Press / to search' }, '/')),
+    searchPanel)
+  let results = []
+  let active = 0
+  let searchTimer
+
+  const placePanel = () => {
+    const r = searchInput.closest('.search').getBoundingClientRect()
+    const left = Math.max(16, Math.min(r.left, window.innerWidth - 16 - 320))
+    searchPanel.style.left = left + 'px'
+    searchPanel.style.top = r.bottom + 6 + 'px'
+    searchPanel.style.width = Math.max(300, Math.min(580, window.innerWidth - left - 16)) + 'px'
+    searchPanel.style.maxHeight = Math.max(200, Math.min(560, window.innerHeight - r.bottom - 24)) + 'px'
+  }
+  const closeResults = () => {
+    searchPanel.hidden = true
+    searchInput.setAttribute('aria-expanded', 'false')
+    searchInput.removeAttribute('aria-activedescendant')
+  }
+  const setActive = (i) => {
+    if (!results.length) return
+    active = (i + results.length) % results.length
+    searchPanel.querySelectorAll('.sr').forEach((el, j) => el.setAttribute('aria-selected', j === active ? 'true' : 'false'))
+    const el = searchPanel.querySelector(`#sr-${active}`)
+    if (el) { el.scrollIntoView({ block: 'nearest' }); searchInput.setAttribute('aria-activedescendant', el.id) }
+  }
+  const openResult = (e) => {
+    const q = searchInput.value.trim().toLowerCase()
+    closeResults()
+    const deep = e.kind === 'field' || e.kind === 'variant'
+    go({ ...e.where, reveal: deep ? e.path : undefined, query: deep ? q : undefined })
+  }
+
+  const resultRow = (e, i, q) => {
+    const kind = e.kind === 'schema' ? `${e.group} schema` : e.kind === 'fragment' ? 'shared fragment' : e.kind === 'variant' ? 'variant' : typeLabel(e.node)
+    const where = e.kind === 'schema'
+      ? schemaFile(rootById[e.where.id].file)
+      : e.kind === 'fragment'
+        ? fragById[e.where.id].file
+        : [e.whereLabel, ' · ', markText(displayPath(e.path), q)]
+    return h('button', {
+      type: 'button', class: 'sr', role: 'option', id: `sr-${i}`, 'aria-selected': i === active ? 'true' : 'false',
+      onmousedown: (ev) => ev.preventDefault(), // keep focus in the box
+      onmousemove: () => active !== i && setActive(i),
+      onclick: () => openResult(e)
+    },
+    h('span', { class: 'sr-top' },
+      h('span', { class: 'sr-name' }, markText(e.name, q)),
+      h('span', { class: 'sr-kind' }, kind),
+      e.req && e.req !== 'option' && h('span', { class: 'badge ' + e.req }, ({ required: 'Required', conditional: 'Conditional', forbidden: 'Not allowed' })[e.req] || 'Optional')),
+    h('span', { class: 'sr-path' }, where),
+    e.definedIn && e.group !== 'fragment' && e.kind !== 'schema' && h('span', { class: 'sr-from' }, 'from shared fragment ', fragIdOf(e.definedIn)))
+  }
+
+  const runSearch = () => {
+    const q = searchInput.value.trim().toLowerCase()
+    if (!q) return closeResults()
+    const scored = []
+    for (const e of searchEntries) {
+      const r = rank(e, q)
+      if (r >= 0) scored.push([r, e])
+    }
+    const byName = scored.length > 0
+    if (!byName) for (const e of searchEntries) if (mentions(e, q)) scored.push([5, e])
+    scored.sort((a, b) => a[0] - b[0] || a[1].order - b[1].order || a[1].path.length - b[1].path.length)
+    results = []
+    const sections = []
+    for (const [group, label] of SEARCH_GROUPS) {
+      const all = scored.filter(([, e]) => e.group === group).map(([, e]) => e)
+      if (!all.length) continue
+      const shown = all.slice(0, PER_GROUP)
+      const rows = shown.map((e) => resultRow(e, results.push(e) - 1, q))
+      sections.push(h('div', { class: 'sr-group' }, label, h('span', {}, all.length)), rows,
+        all.length > shown.length && h('div', { class: 'sr-more' }, `${all.length - shown.length} more. Keep typing to narrow it down.`))
+    }
+    active = 0
+    put(searchPanel,
+      !byName && sections.length > 0 && h('div', { class: 'sr-empty' }, `No field is called “${searchInput.value.trim()}”. These fields mention it in their description:`),
+      sections.length ? sections : h('div', { class: 'sr-empty' }, `Nothing in ${M.api.version || 'this version'} matches “${searchInput.value.trim()}”.`),
+      sections.length > 0 && h('div', { class: 'sr-help' }, '↑ ↓ to move · Enter to open · Esc to close'))
+    placePanel()
+    searchPanel.hidden = false
+    searchInput.setAttribute('aria-expanded', 'true')
+    setActive(0)
+  }
+
+  searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 90) })
+  searchInput.addEventListener('focus', () => searchInput.value.trim() && runSearch())
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      if (searchPanel.hidden) return runSearch()
+      setActive(active + (e.key === 'ArrowDown' ? 1 : -1))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      clearTimeout(searchTimer)
+      if (searchPanel.hidden) runSearch()
+      if (results[active]) openResult(results[active])
+    } else if (e.key === 'Escape') {
+      if (!searchPanel.hidden) closeResults()
+      else { searchInput.value = ''; searchInput.blur() }
+    }
+  })
+  document.addEventListener('pointerdown', (e) => { if (!siteSearch.contains(e.target)) closeResults() })
+  document.addEventListener('keydown', (e) => {
+    const typing = e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]')
+    if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); setSideOpen(true); searchInput.focus(); searchInput.select() }
+  })
+  window.addEventListener('resize', () => !searchPanel.hidden && placePanel())
+
+  // ---------- sidebar: open and close with the tab, drag to resize ----------
+  // Both are remembered in this browser.
+  const shell = document.getElementById('shell')
+  const sideTab = document.getElementById('side-tab')
+  const sideResize = document.getElementById('side-resize')
+  const SIDE_DEFAULT = 270, SIDE_MIN = 200, SIDE_MAX = 560
+  const clampSide = (w) => Math.round(Math.max(SIDE_MIN, Math.min(SIDE_MAX, Math.min(w, window.innerWidth - 360))))
+  let sideWidth = clampSide(Number(store.get('side-width')) || SIDE_DEFAULT)
+  const setSideWidth = (w, { remember = true } = {}) => {
+    sideWidth = clampSide(w)
+    shell.style.setProperty('--side-w', sideWidth + 'px')
+    sideResize.setAttribute('aria-valuenow', sideWidth)
+    if (remember) store.set('side-width', sideWidth)
+  }
+  sideResize.setAttribute('aria-valuemin', SIDE_MIN)
+  sideResize.setAttribute('aria-valuemax', SIDE_MAX)
+  setSideWidth(sideWidth, { remember: false })
+  const setSideOpen = (open, { remember = true } = {}) => {
+    shell.classList.toggle('side-closed', !open)
+    side.inert = !open
+    sideTab.setAttribute('aria-expanded', open ? 'true' : 'false')
+    sideTab.setAttribute('aria-label', open ? 'Hide navigation' : 'Show navigation')
+    sideTab.title = open ? 'Hide navigation' : 'Show navigation'
+    if (remember) store.set('side-open', open ? '1' : '0')
+  }
+  setSideOpen(store.get('side-open') !== '0', { remember: false })
+  sideTab.addEventListener('click', () => setSideOpen(shell.classList.contains('side-closed')))
+
+  sideResize.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return
+    e.preventDefault()
+    sideResize.setPointerCapture(e.pointerId)
+    shell.classList.add('resizing')
+    const startX = e.clientX, startW = sideWidth
+    const move = (ev) => setSideWidth(startW + ev.clientX - startX, { remember: false })
+    const end = () => {
+      shell.classList.remove('resizing')
+      sideResize.removeEventListener('pointermove', move)
+      sideResize.removeEventListener('pointerup', end)
+      sideResize.removeEventListener('pointercancel', end)
+      store.set('side-width', sideWidth)
+    }
+    sideResize.addEventListener('pointermove', move)
+    sideResize.addEventListener('pointerup', end)
+    sideResize.addEventListener('pointercancel', end)
+  })
+  sideResize.addEventListener('dblclick', () => setSideWidth(SIDE_DEFAULT))
+  sideResize.addEventListener('keydown', (e) => {
+    const step = e.shiftKey ? 48 : 16
+    const next = { ArrowLeft: sideWidth - step, ArrowRight: sideWidth + step, Home: SIDE_MIN, End: SIDE_MAX }[e.key]
+    if (next === undefined) return
+    e.preventDefault()
+    setSideWidth(next)
+  })
+  side.addEventListener('scroll', () => !searchPanel.hidden && placePanel())
+
+  // ---------- views ----------
+  let state = { view: 'overview' }
+
+  // Every move is a browser history entry, so Back (the page's, the browser's
+  // or a swipe) returns to the previous view as it was left.
+  const hashFor = (st) => st.view === 'root' ? '#' + st.id : st.view === 'fragment' ? '#f-' + st.id : st.view === 'changes' ? '#changes' : location.pathname + location.search
+  // What a history entry keeps; a reveal or search highlight is a one-off.
+  const entryOf = (st) => { const { reveal, query, ...rest } = st; return rest }
+  const describe = (st) => {
+    const r = st.view === 'root' && rootById[st.id]
+    const base = r ? schemaName(r) : st.view === 'fragment' && fragById[st.id] ? st.id : st.view === 'changes' ? "What's changed" : 'Overview'
+    return st.focus ? `${base} › ${displayPath(st.focus)}` : base
+  }
+  const remember = () => {
+    if (currentCanvas && currentCanvas.stage.isConnected) state.canvas = currentCanvas.snapshot()
+    try { history.replaceState(entryOf(state), '', hashFor(state)) } catch {}
+  }
+  const go = (next) => {
+    remember()
+    state = { ...next, from: describe(state), depth: (state.depth || 0) + 1 }
+    try { history.pushState(entryOf(state), '', hashFor(state)) } catch {}
+    render()
+    window.scrollTo({ top: 0 })
+  }
+  const backLink = () => state.depth > 0 && h('button', { class: 'back', type: 'button', onclick: () => history.back() },
+    '← Back', state.from ? h('span', {}, ' to ', state.from) : null)
+
+  // Double-clicking a block makes it the parent. A shared fragment opens on its
+  // own page; any other block is shown on its own here, without its parent.
+  const openBlock = (where) => (spec) => {
+    const f = spec.node.fragment && fragByFile[spec.node.fragment]
+    if (f && !(where.view === 'fragment' && where.id === f.id)) return go({ view: 'fragment', id: f.id })
+    if (spec.path) go({ ...where, focus: spec.path })
+  }
+  // The block at `path` within a diagram, for showing it on its own.
+  const findSpec = (spec, path) => {
+    if (spec.path === path) return spec
+    for (const r of rowsOf(spec)) {
+      if (r.child && path.startsWith(r.child.path)) {
+        const found = findSpec(r.child, path)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  const blockTitle = (spec) => spec.kind === 'switch'
+    ? `Which ${spec.node.discriminator || 'one'}?`
+    : spec.node.title || displayPath(spec.path).split(/[.(]/).pop().replace('[]', '').trim()
+  const focusBar = (where, spec, wholeLabel) => h('div', { class: 'focusbar' },
+    h('span', {}, 'Showing ', h('code', {}, displayPath(spec.path)), ' on its own.'),
+    h('button', { class: 'linkish', type: 'button', onclick: () => go(where) }, `Show the whole ${wholeLabel}`))
+  const modeButtons = (mode) => h('div', { class: 'seg', role: 'group', 'aria-label': 'View' },
+    ['diagram', 'try'].map((m) => h('button', {
+      type: 'button', 'aria-pressed': mode === m ? 'true' : 'false',
+      onclick: () => { if (currentCanvas && currentCanvas.stage.isConnected) state.canvas = currentCanvas.snapshot(); state.mode = m; render() },
+      // Start fetching Try it's code as soon as it looks wanted.
+      onpointerenter: m === 'try' ? () => loadTryIt().catch(() => {}) : null,
+      onfocus: m === 'try' ? () => loadTryIt().catch(() => {}) : null
+    }, m === 'diagram' ? 'Diagram' : 'Try it')))
+
+  // A changed schema or fragment's mark in the sidebar, and its link to the
+  // changes view from its own page.
+  const navDot = (c) => c && h('span', { class: c.status === 'added' ? 'chg-tag added' : 'chg-dot', title: `${CHANGE_WORD[c.status]} since ${changes.base}` }, c.status === 'added' ? 'new' : null)
+  const changesLink = (c) => c && h('a', { href: '#changes', class: 'linkish', style: 'font-size:13px', onclick: (e) => { e.preventDefault(); go({ view: 'changes' }) } },
+    c.status === 'added' ? `New since ${changes.base}` : `${plural(c.fields.length, 'change')} since ${changes.base}`)
+
+  const renderSide = () => {
+    const link = (opts, ...kids) => h('a', { class: 'nav-link ' + (opts.cls || ''), href: opts.href, 'aria-current': opts.current ? 'true' : 'false', onclick: (e) => { e.preventDefault(); opts.go() } }, kids)
+    const usesByRoot = (f) => requests.map((r) => {
+      const occ = f.occurrences.filter((o) => o.root === r.id)
+      return occ.length ? (occ.some((o) => o.direct) ? 'on' : 'nested') : ''
+    })
+    const group = (key, label, count, items, openByDefault) => {
+      const saved = store.get('group:' + key)
+      const d = h('details', { open: saved ? saved === '1' : openByDefault }, h('summary', {}, label, h('span', { class: 'count' }, count)), items)
+      d.addEventListener('toggle', () => store.set('group:' + key, d.open ? '1' : '0'))
+      return d
+    }
+    const sorted = [...M.fragments].sort((a, b) => endpointCount(b) - endpointCount(a) || b.occurrences.length - a.occurrences.length || a.id.localeCompare(b.id))
+    put(side,
+      h('div', { class: 'brand' }, h('b', {}, 'Schema Explorer'), h('span', {}, `JSON Schemas · ${M.api.version || ''}`),
+        M.versions && M.versions.length > 1 && h('nav', { class: 'versions', 'aria-label': 'Schema version' }, M.versions.map((v) =>
+          // Carry the current view across, e.g. #createMovement; a view the other version lacks falls back to its overview.
+          h('a', { href: v.href, 'aria-current': v.current ? 'page' : null, onclick: (e) => { if (v.current) { e.preventDefault(); return } e.currentTarget.href = v.href + location.hash } }, v.version)))),
+      siteSearch,
+      link({ href: '#', current: state.view === 'overview', go: () => go({ view: 'overview' }), cls: 'nav-overview' }, 'Overview'),
+      changes && link({ href: '#changes', current: state.view === 'changes', go: () => go({ view: 'changes' }), cls: 'nav-overview nav-changes' },
+        "What's changed", h('span', { class: 'nl-count' }, changes.newVersion ? 'new' : changeTotal)),
+      group('requests', 'Request schemas', requests.length, requests.map((r) => link({ href: '#' + r.id, current: state.view === 'root' && state.id === r.id, go: () => go({ view: 'root', id: r.id }) },
+        h('span', { class: 'nl-main' }, h('span', { class: 'nl-title' }, schemaName(r)), h('span', { class: 'nl-sub' }, schemaFile(r.file))), navDot(rootChanges.get(r.id)))), true),
+      group('responses', 'Response schemas', responses.length, responses.map((r) => link({ href: '#' + r.id, current: state.view === 'root' && state.id === r.id, go: () => go({ view: 'root', id: r.id }) },
+        h('span', { class: 'nl-main' }, h('span', { class: 'nl-title' }, schemaName(r)), h('span', { class: 'nl-sub' }, schemaFile(r.file))), navDot(rootChanges.get(r.id)))), false),
+      group('fragments', 'Shared fragments', M.fragments.length, sorted.map((f) => link({ href: '#f-' + f.id, current: state.view === 'fragment' && state.id === f.id, go: () => go({ view: 'fragment', id: f.id }) },
+        h('span', { class: 'nl-main' }, h('span', { class: 'nl-title mono', style: 'font-size:12.5px' }, f.id), h('span', { class: 'nl-sub' }, plural(f.occurrences.length, 'use'))),
+        navDot(fragChanges.get(f.file)),
+        h('span', { class: 'dots', title: 'Request schemas that use it: filled = directly, outlined = inside another fragment' }, usesByRoot(f).map((c) => h('i', { class: c }))))), !narrow)
+    )
+  }
+
+  const renderOverview = () => {
+    const showResp = store.get('matrix-responses') === '1'
+    const cols = showResp ? [...requests, ...responses] : requests
+    const rows = [...M.fragments]
+      .filter((f) => f.occurrences.some((o) => cols.includes(rootById[o.root])))
+      .sort((a, b) => endpointCount(b) - endpointCount(a) || b.occurrences.length - a.occurrences.length || a.id.localeCompare(b.id))
+    const date = new Date(M.generatedAt)
+    const table = h('table', { class: 'matrix' },
+      h('thead', {}, h('tr', {}, h('th', {}, 'Fragment'), cols.map((r) => h('th', { class: r.kind === 'response' ? 'resp' : '', title: r.file }, schemaName(r))), h('th', {}, 'Uses'))),
+      h('tbody', {}, rows.map((f) => h('tr', { onclick: () => go({ view: 'fragment', id: f.id }) },
+        h('td', { class: 'name' }, h('b', { class: 'mono' }, f.id), h('span', { class: 'file' }, f.title)),
+        cols.map((r) => {
+          const occ = f.occurrences.filter((o) => o.root === r.id)
+          const kind = occ.length ? (occ.some((o) => o.direct) ? 'direct' : 'nested') : 'none'
+          const tip = occ.length ? `${f.id} in ${schemaName(r)}:\n` + occ.map((o) => displayPath(o.path) + (o.via ? `  (inside ${o.via})` : '')).join('\n') : ''
+          return h('td', { class: 'cell', title: tip || null }, h('span', { class: 'mark ' + kind, 'aria-label': kind === 'none' ? 'not used' : kind === 'direct' ? 'used directly' : 'used inside another fragment' }), occ.length > 1 ? h('span', { class: 'file', style: 'margin-left:4px' }, '×' + occ.length) : null)
+        }),
+        h('td', { class: 'num' }, f.occurrences.filter((o) => cols.includes(rootById[o.root])).length)))))
+
+    put(main, h('div', { class: 'page' },
+      h('header', { class: 'view-head' },
+        backLink(),
+        h('div', { class: 'eyebrow' }, `${M.api.version} · ${M.schemaDir}`),
+        h('h1', {}, `JSON Schemas · ${M.api.version}`),
+        h('p', { class: 'lede' }, `${requests.length} request schemas built from ${M.fragments.length} shared fragments. Open a schema to explore it as a diagram, down to every field, rule and branch. Open a fragment to see everywhere it is used.`)),
+      h('div', { class: 'cards' }, requests.map((r) => h('button', { class: 'card', type: 'button', onclick: () => go({ view: 'root', id: r.id }) },
+        h('span', { class: 'c-title' }, schemaName(r)),
+        h('span', { class: 'c-path' }, schemaFile(r.file)),
+        h('span', { class: 'c-stats' }, h('span', {}, h('b', {}, r.stats.fields), ' fields'), h('span', {}, h('b', {}, r.stats.fragments), ' fragments'), h('span', {}, h('b', {}, r.stats.rules), ' rules'))))),
+      h('section', { class: 'section' },
+        h('div', {}, h('h2', {}, 'Where fragments are shared'), h('p', { class: 'lede' }, 'Each row is a schema file under common/. A filled square means the schema uses it as one of its own fields. An outlined square means it arrives inside another fragment. Hover a cell for the exact paths.')),
+        h('div', { class: 'legend' },
+          h('span', { class: 'sw' }, h('span', { class: 'mark direct' }), 'used directly'),
+          h('span', { class: 'sw' }, h('span', { class: 'mark nested' }), 'inside another fragment'),
+          h('label', { class: 'check' }, h('input', { type: 'checkbox', id: 'show-responses', checked: showResp || null, onchange: (e) => { store.set('matrix-responses', e.target.checked ? '1' : '0'); renderOverview() } }), 'Include responses')),
+        h('div', { class: 'matrix-wrap' }, table)),
+      h('p', { class: 'foot' }, `Generated ${date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}${M.commit ? ' from commit ' + M.commit : ''}.`)))
+  }
+
+  // Every schema and fragment that changed since the base commit, each with
+  // its field changes, linked to their place in the diagram.
+  const renderChanges = () => {
+    const head = h('header', { class: 'view-head' },
+      backLink(),
+      h('div', { class: 'eyebrow' }, `${M.api.version} · since ${changes.base}`),
+      h('h1', {}, "What's changed"),
+      h('p', { class: 'lede' }, changes.newVersion
+        ? `${M.api.version} is new: it isn't in ${changes.base}.`
+        : changeTotal
+          ? `Compared with the same schemas at ${changes.base}. A field counts as changed when anything shown for it changed: its type, whether it's required, its rules, allowed values, format, limits, description or the fragment it uses. Fields added or removed with everything inside them are listed once.`
+          : `No schema changes since ${changes.base}.`))
+    const fieldItem = (c, where) => h('li', {},
+      h('div', { class: 'f-head' },
+        h('span', { class: 'chg-tag ' + c.status }, CHANGE_WORD[c.status]),
+        where && c.status !== 'removed' && c.path
+          ? h('a', { href: hashFor(where), class: 'mono', onclick: (e) => { e.preventDefault(); go({ ...where, reveal: c.path }) } }, displayPath(c.path))
+          : h('code', {}, c.path ? displayPath(c.path) : '(the schema itself)'),
+        c.status === 'added' && c.required && h('span', { class: 'file' }, c.required.toLowerCase()),
+        c.inside > 0 && h('span', { class: 'file' }, `with ${plural(c.inside, 'field')} inside`)),
+      c.diffs && diffList(c.diffs))
+    const itemOf = (c, where, title, sub) => {
+      const tag = h('span', { class: 'chg-tag ' + c.status }, CHANGE_WORD[c.status])
+      const name = where && c.status !== 'removed'
+        ? h('a', { href: hashFor(where), class: 'c-title', onclick: (e) => { e.preventDefault(); go(where) } }, title)
+        : h('span', { class: 'c-title' }, title)
+      if (c.status !== 'changed') return h('div', { class: 'chg-item' }, h('div', { class: 'chg-head' }, tag, name, h('span', { class: 'file' }, sub)))
+      return h('details', { class: 'chg-item', open: true },
+        h('summary', {}, tag, name, h('span', { class: 'file' }, sub), h('span', { class: 'c-count' }, plural(c.fields.length, 'change'))),
+        h('ul', { class: 'chg-fields' }, c.fields.map((f) => fieldItem(f, where))))
+    }
+    const section = (title, items) => items.length > 0 && h('section', { class: 'section' }, h('h2', {}, title), h('div', { class: 'changes' }, items))
+    const rootItems = (kind) => changes.roots.filter((c) => c.kind === kind).map((c) =>
+      itemOf(c, rootById[c.id] && { view: 'root', id: c.id }, c.title, c.file))
+    put(main, h('div', { class: 'page' }, head,
+      section('Request schemas', rootItems('request')),
+      section('Response schemas', rootItems('response')),
+      section('Shared fragments', changes.fragments.map((c) => {
+        const f = fragByFile[c.file]
+        return itemOf(c, f && { view: 'fragment', id: f.id }, c.title, c.file)
+      }))))
+  }
+
+  const rootSpecFor = (tree) => {
+    if (tree.type === 'array' && tree.items) return childSpec(tree, '') || null
+    return childSpec(tree, '')
+  }
+
+  const renderRoot = (r) => {
+    const mode = state.mode || 'diagram'
+    const head = h('header', { class: 'view-head' },
+      backLink(),
+      h('div', { class: 'eyebrow' }, r.kind === 'request' ? 'Request schema' : 'Response schema'),
+      h('h1', {}, schemaName(r)),
+      h('div', { class: 'statline' },
+        h('span', {}, h('b', {}, r.stats.fields), ' fields'),
+        h('span', {}, h('b', {}, r.stats.fragments), ' shared fragments'),
+        h('span', {}, h('b', {}, r.stats.rules), ' rules'),
+        h('span', { class: 'file' }, r.file),
+        changesLink(rootChanges.get(r.id))))
+    const modeSeg = modeButtons(mode)
+
+    if (mode === 'try') {
+      // A focused block is tested on its own (checked in context; see harness).
+      const tryWhere = { view: 'root', id: r.id }
+      const whole = rootSpecFor(r.tree)
+      const focused = state.focus && whole && findSpec(whole, state.focus)
+      return put(main, head, h('div', { class: 'toolbar' }, modeSeg),
+        focused && focusBar(tryWhere, focused, r.kind === 'request' ? 'request' : 'response'),
+        withTryIt(() => harness({ file: r.file, examples: r.examples, kind: r.kind, where: tryWhere, label: focused ? blockTitle(focused) : schemaName(r), focus: focused || null })))
+    }
+
+    const where = { view: 'root', id: r.id }
+    const whole = rootSpecFor(r.tree)
+    if (!whole) return put(main, head, h('p', { class: 'empty' }, 'This schema has no fields to draw.'))
+    const focused = state.focus && findSpec(whole, state.focus)
+    const spec = focused || whole
+    const canvas = makeCanvas(spec, {
+      rootHeader: () => focused
+        ? [h('span', { class: 'bt' }, blockTitle(focused)), h('span', { class: 'bx' }, 'on its own')]
+        : [h('span', { class: 'bt' }, schemaName(r)), h('span', { class: 'bx' }, r.kind)],
+      intro: () => h('div', { class: 'hint' },
+        h('div', { class: 'eyebrow' }, r.kind === 'request' ? 'Request schema' : 'Response schema'),
+        h('p', {}, r.tree.description ? rich(r.tree.description) : r.title),
+        h('p', {}, 'Select a field to see its rules and constraints. Select a row with a + to open what is inside it. Double-click a block to open it on its own. Drag the background to move around.')),
+      open: openBlock(where),
+      changes: diagramChanges(rootChanges.get(r.id))
+    }, state.canvas)
+    currentCanvas = canvas
+    put(main, head, h('div', { class: 'toolbar' }, modeSeg, canvas.controls), focused && focusBar(where, focused, r.kind === 'request' ? 'request' : 'response'), canvas.stage)
+    canvas.draw()
+    if (!canvas.restoreView()) canvas.showIntro()
+    arrive(canvas)
+  }
+  let currentCanvas = null
+
+  // Coming from a search result or a "where it appears" link: highlight the
+  // other matches on this diagram, then open the way to the chosen one.
+  const arrive = (canvas) => {
+    const { reveal, query } = state
+    delete state.reveal
+    delete state.query
+    if (query) canvas.highlight(query)
+    if (reveal) requestAnimationFrame(() => canvas.reveal(reveal))
+  }
+
+  // ---------- Try it: check JSON against the schema ----------
+  // Its code is a separate file (M.tryIt, written by the generator), loaded the
+  // first time Try it is opened or pointed at, so the diagrams don't wait for
+  // it. It sets:
+  // - window.schemaValidators: the schemas compiled ahead of time (ajv, with
+  //   the same options and formats as src/schemas/validate);
+  // - window.schemaErrors: error types, pointers and messages (errors.js);
+  // - window.schemaChecks: the checks a route runs after the schema
+  //   (checks/routes.js: reference data, rules across fields, dates not in the
+  //   future), from the API's own code, for versions that have any;
+  // - or for the legacy (Joi) version, window.legacyCheck.
+  let tryItLoading = null
+  const loadTryIt = () => tryItLoading ??= new Promise((resolve, reject) => {
+    if (!M.tryIt) return resolve()
+    const script = document.createElement('script')
+    script.src = M.tryIt
+    script.onload = resolve
+    // Let a later attempt try again.
+    script.onerror = () => { tryItLoading = null; script.remove(); reject(new Error('Try it failed to load')) }
+    document.head.append(script)
+  })
+  // Try it's view: a moment's "Loading" the first time, then the editor.
+  const withTryIt = (build) => {
+    if (window.schemaValidators || window.legacyCheck) return build()
+    const slot = h('p', { class: 'empty', 'aria-live': 'polite' }, 'Loading Try it…')
+    loadTryIt().then(
+      () => slot.isConnected && slot.replaceWith(build()),
+      () => { slot.textContent = 'Try it couldn\'t be loaded. Check your connection and select Try it again.' })
+    return slot
+  }
+  const runChecks = (file, value, details) => window.schemaChecks && M.checks
+    ? window.schemaChecks.runChecks(M.checks.version, file, value, details)
+    : details
+
+  // A checker for one schema file: value -> { valid, errors }. JSON Schema
+  // versions use the compiled validators, errors.js and the route's checks;
+  // the legacy (Joi) version uses its bundled routes' own check
+  // (window.legacyCheck).
+  const checkerFor = (file) => {
+    if (window.legacyCheck) return (value) => window.legacyCheck(file, value)
+    const validate = window.schemaValidators && M.validators && window.schemaValidators[M.validators[file]]
+    if (!validate) return null
+    return (value) => {
+      const { toDetails, fromDetails } = window.schemaErrors
+      const details = runChecks(file, value, validate(value) ? [] : toDetails(validate.errors || []))
+      return { valid: details.length === 0, errors: fromDetails(details) }
+    }
+  }
+
+  // Where each value sits in the JSON text, keyed by its pointer segments
+  // joined with "/" ("" for the whole document), for jumping from an error to
+  // the editor. Only called on text that parsed.
+  const spansOf = (text) => {
+    const spans = new Map()
+    let i = 0
+    const ws = () => { while (i < text.length && /\s/.test(text[i])) i++ }
+    const str = () => {
+      const from = i++
+      while (i < text.length && text[i] !== '"') i += text[i] === '\\' ? 2 : 1
+      i++
+      return JSON.parse(text.slice(from, i))
+    }
+    const value = (path, keyAt) => {
+      ws()
+      const start = keyAt ?? i
+      if (text[i] === '{') {
+        i++; ws()
+        if (text[i] === '}') i++
+        else for (;;) { ws(); const at = i; const key = str(); ws(); i++; value([...path, key], at); ws(); if (text[i++] !== ',') break }
+      } else if (text[i] === '[') {
+        i++; ws()
+        let n = 0
+        if (text[i] === ']') i++
+        else for (;;) { value([...path, String(n++)]); ws(); if (text[i++] !== ',') break }
+      } else if (text[i] === '"') str()
+      else while (i < text.length && !/[\s,\]}]/.test(text[i])) i++
+      spans.set(path.join('/'), { start, end: i })
+    }
+    try { value([]) } catch {}
+    return spans
+  }
+
+  // A pointer as an explorer path: /wasteItems/0/physicalDetails/form becomes
+  // wasteItems[].physicalDetails.form.
+  const pointerToPath = (pointer) => pointer.split('/').slice(1)
+    .reduce((parts, seg) => /^\d+$/.test(seg) ? [...parts.slice(0, -1), (parts.at(-1) || '') + '[]'] : [...parts, seg], [])
+    .join('.')
+
+  // The diagram row for an error's pointer, climbing to the nearest field the
+  // schema has (an unknown extra field has no row of its own).
+  const diagramPathFor = (where, pointer) => {
+    const rows = searchEntries.filter((e) => e.where.view === where.view && e.where.id === where.id && (e.kind === 'field' || e.kind === 'variant'))
+    let path = pointerToPath(pointer)
+    while (path) {
+      const match = rows.find((e) => e.path.replace(/<[^>]+>/g, '') === path)
+      if (match) return match.path
+      path = path.replace(/(\.|^)[^.]*$/, '').replace(/\[\]$/, '')
+    }
+    return null
+  }
+
+  // ---------- made-up values for examples ----------
+  // Varies an example's data while keeping its scenario: names, addresses,
+  // emails and phone numbers are made up; codes and IDs keep their shape with
+  // new digits (CBDU123456 -> CBDU804213), so they still match their pattern;
+  // amounts and counts move within their limits. Anything with a fixed set of
+  // values (enums, consts, booleans) and free text such as reasons is kept, as
+  // those are what make the example the scenario it is.
+  const FAKE = {
+    names: ['Acme', 'Northgate', 'Riverside', 'Greenfield', 'Harbour', 'Oakwood', 'Summit', 'Kestrel', 'Brightwater', 'Ironbridge', 'Meadowbank', 'Castleview', 'Westfield', 'Heron'],
+    trades: ['Recycling', 'Waste Services', 'Haulage', 'Logistics', 'Environmental', 'Metals', 'Plastics', 'Organics', 'Transport', 'Skip Hire', 'Resource Management'],
+    forms: ['Ltd', 'Ltd', 'Ltd', 'plc', 'LLP'],
+    towns: ['Ashford', 'Barnsley', 'Carlisle', 'Derby', 'Exeter', 'Falkirk', 'Gloucester', 'Harrogate', 'Ipswich', 'Kendal', 'Lincoln', 'Newport', 'Omagh', 'Perth', 'Swindon', 'Wrexham'],
+    sites: ['Transfer Station', 'Recycling Centre', 'Materials Recovery Facility', 'Treatment Works', 'Depot', 'Energy Recovery Facility'],
+    streets: ['Mill Lane', 'Station Road', 'Quarry Way', 'Riverside Drive', 'Industrial Estate Road', 'Canal Street', 'Forge Lane', 'Wharf Road', 'Brewery Lane'],
+    areas: ['B', 'BS', 'CF', 'DE', 'EX', 'GL', 'HU', 'LS', 'M', 'NE', 'NG', 'OX', 'PL', 'S', 'SN', 'YO']
+  }
+  const randomOf = (xs) => xs[Math.floor(Math.random() * xs.length)]
+  const randomInt = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1))
+  const digit = () => String(randomInt(0, 9))
+  const letters = (n, from = 'ABCDEFGHJKLMNPRSTUVWXY') => Array.from({ length: n }, () => randomOf(from)).join('')
+  const slug = (t) => (t || '').toLowerCase().replace(/\b(ltd|plc|llp)\b/g, '').replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '')
+  // New digits, same letters and punctuation; the first digit of a phone
+  // number stays, so 01… and 07… keep their meaning.
+  const rerollDigits = (text, keepFirst) => text.replace(/\d/g, (d, i) => keepFirst && i === text.search(/\d/) ? d : digit())
+  const fake = {
+    organisationName: () => `${randomOf(FAKE.names)} ${randomOf(FAKE.trades)} ${randomOf(FAKE.forms)}`,
+    siteName: () => `${randomOf(FAKE.towns)} ${randomOf(FAKE.sites)}`,
+    fullAddress: () => `${randomInt(1, 120)} ${randomOf(FAKE.streets)}, ${randomOf(FAKE.towns)}`,
+    phoneNumber: () => randomOf(['01', '07']) + Array.from({ length: 9 }, digit).join(''),
+    vehicleRegistration: () => `${letters(2)}${digit()}${digit()} ${letters(3)}`,
+    // UK postcodes are made up; an Eircode keeps its shape.
+    postcode: (was) => /^[A-Z]\d{2} ?[A-Z0-9]{4}$/i.test(was) ? rerollDigits(was) : `${randomOf(FAKE.areas)}${randomInt(1, 9)} ${digit()}${letters(2, 'ABDEFGHJLNPQRSTUWXYZ')}`
+  }
+  // EWC codes are looked up in reference data, so new digits would make an
+  // unrecognised code.
+  const KEEP_TEXT = new Set(['reason', 'reasonForNoRegistrationNumber', 'reasonForNoAuthorisationNumber', 'otherMeansOfTransport', 'specialHandlingRequirements', 'message', 'pointer', 'ewcCodes'])
+
+  // The schema node for `key` inside `node`, following a oneOf to the variant
+  // the value is (by its discriminator).
+  const fieldNode = (node, value, key) => {
+    if (!node) return undefined
+    if (node.type === 'variants') {
+      const option = node.options.find((o) => o.label === String(value?.[node.discriminator])) || node.options[0]
+      return fieldNode(option.node, value, key)
+    }
+    return node.fields?.find((f) => f.name === key)?.node
+  }
+
+  const vary = (value, node, key, ctx) => {
+    if (Array.isArray(value)) return value.map((v) => vary(v, node?.type === 'array' ? node.items : undefined, key, ctx))
+    if (value && typeof value === 'object') {
+      const out = {}
+      const inner = { ...ctx }
+      for (const k of Object.keys(value)) {
+        out[k] = vary(value[k], fieldNode(node, value, k), k, inner)
+        if (k === 'organisationName' || k === 'siteName') inner.who = out[k]
+      }
+      return out
+    }
+    const c = node?.constraints || {}
+    if (value === null || typeof value === 'boolean' || 'const' in c || c.enum) return value
+    if (typeof value === 'number') {
+      if (value === 0) return 0
+      const n = value * (0.4 + Math.random() * 1.6)
+      const floor = c.minimum ?? (c.exclusiveMinimum !== undefined ? c.exclusiveMinimum + (Number.isInteger(value) ? 1 : 0.1) : 0)
+      return Math.max(floor, Number.isInteger(value) ? Math.max(1, Math.round(n)) : Math.round(n * 10) / 10 || 0.1)
+    }
+    // A date-time with new digits is rarely a real one, or one in the past.
+    if (typeof value !== 'string' || KEEP_TEXT.has(key) || c.format === 'date-time') return value
+    if (key === 'emailAddress') return `${slug(ctx.who) || randomOf(['info', 'office', 'waste', 'operations'])}@example.com`
+    if (fake[key]) return fake[key](value)
+    // Codes and IDs (anything with a pattern or digits in it): new digits.
+    if (c.pattern || c.format === 'uuid' || /\d/.test(value)) return rerollDigits(value)
+    return value
+  }
+
+  // A made-up version of an example that is still valid if the example was.
+  const madeUp = (value, tree, check) => {
+    const wasValid = check(value)?.valid
+    for (let tries = 0; tries < 8; tries++) {
+      const next = vary(value, tree, null, {})
+      if (!wasValid || check(next)?.valid) return next
+    }
+    return value
+  }
+
+  // Names a schema's unnamed examples by what sets each apart, so the menu says
+  // "meansOfTransport: Rail" or "with reasonForNoAuthorisationNumber" rather
+  // than "Example 2". In order of preference: fields with a fixed set of values
+  // (enums, consts, booleans) that differ; which optional fields are present;
+  // the same again one level down; then the shortest value that differs.
+  const exampleNames = (values, tree) => {
+    if (values.length === 1) return ['Example']
+    const isScalar = (v) => v === null || ['string', 'number', 'boolean'].includes(typeof v)
+    const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v)
+    const short = (v) => { const t = typeof v === 'string' ? v : JSON.stringify(v); return t.length > 28 ? t.slice(0, 27) + '…' : t }
+    const join = (ks, word) => ks.slice(0, 2).join(` ${word} `) + (ks.length > 2 ? ` ${word} more` : '')
+
+    if (values.every(isScalar)) return values.map(short)
+    if (values.every(Array.isArray)) {
+      const sizes = values.map((v) => plural(v.length, 'item'))
+      if (new Set(sizes).size === values.length) return sizes
+      const inner = exampleNames(values.map((v) => v[0]), tree?.items)
+      return sizes.map((size, i) => `${size}, first ${inner[i]}`)
+    }
+    if (!values.every(isObj)) return values.map((v, i) => `Example ${i + 1}`)
+
+    const fieldsOf = (t) => t?.type === 'variants' ? t.options.flatMap((o) => o.node.fields || []) : t?.fields || []
+    const fields = fieldsOf(tree)
+    const fixed = new Set(fields.filter((f) => f.node.constraints?.enum || 'const' in (f.node.constraints || {}) || f.node.type === 'boolean').map((f) => f.name))
+    const keys = [...new Set(values.flatMap(Object.keys))]
+    const differs = (k) => new Set(values.map((v) => JSON.stringify(v[k]))).size > 1
+    const unique = (names) => new Set(names).size === names.length
+
+    // 1. Differing fixed-value fields.
+    let names = values.map((v) => keys.filter((k) => fixed.has(k) && differs(k) && isScalar(v[k])).slice(0, 2).map((k) => `${k}: ${short(v[k])}`).join(', '))
+    if (names.every(Boolean) && unique(names)) return names
+    // 2. Which optional fields each one has.
+    const some = keys.filter((k) => !values.every((v) => k in v))
+    const presence = values.map((v) => {
+      const has = some.filter((k) => k in v)
+      const lacks = some.filter((k) => !(k in v))
+      return has.length ? `with ${join(has, 'and')}` : lacks.length ? `without ${join(lacks, 'or')}` : ''
+    })
+    names = names.map((n, i) => n || presence[i])
+    if (names.every(Boolean) && unique(names)) return names
+    // 3. One level down: the first object or list field that differs.
+    const nested = keys.find((k) => differs(k) && values.every((v) => v[k] && typeof v[k] === 'object'))
+    if (nested) {
+      const sub = fields.find((f) => f.name === nested)?.node
+      const inner = exampleNames(values.map((v) => v[nested]), sub?.type === 'array' ? sub : sub)
+      names = names.map((n, i) => (n ? n + ', ' : '') + inner[i])
+      if (unique(names)) return names
+    }
+    // 4. The shortest scalar value that tells them apart.
+    const scalarKey = keys.filter((k) => differs(k) && values.every((v) => isScalar(v[k]))).sort((a, b) => Math.max(...values.map((v) => String(v[a]).length)) - Math.max(...values.map((v) => String(v[b]).length)))[0]
+    if (scalarKey) names = names.map((n, i) => (n ? n + ', ' : '') + `${scalarKey}: ${short(values[i][scalarKey])}`)
+    return unique(names) ? names : names.map((n, i) => `${n || 'Example'} (${i + 1})`)
+  }
+
+  // ---------- Try it: the form view ----------
+  // The same payload as a form scoped to the schema: each field's control
+  // follows its type (text, a text area for longer text, number, a select for
+  // fixed values or true/false), objects are collapsible groups with optional
+  // fields added on demand, variants are a select, and arrays have add, remove
+  // and reorder. Every change is written back as JSON, so the JSON stays the
+  // one source of truth and checking is the same in both views.
+  const LONG_TEXT = 20
+  const formEditor = ({ tree, onChange }) => {
+    const el = h('div', { class: 'form-editor', hidden: true, role: 'group', 'aria-label': 'Form' })
+    let value
+    let lastErrors = []
+
+    const getAt = (path) => path.reduce((v, k) => (v == null ? undefined : v[k]), value)
+    const setAt = (path, v) => {
+      if (!path.length) { value = v; return }
+      getAt(path.slice(0, -1))[path.at(-1)] = v
+    }
+    const removeAt = (path) => {
+      if (!path.length) { value = undefined; return }
+      const parent = getAt(path.slice(0, -1))
+      const key = path.at(-1)
+      if (Array.isArray(parent)) parent.splice(key, 1)
+      else delete parent[key]
+    }
+    const pointerOf = (path) => '/' + path.join('/')
+    const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v)
+    // A value change: write it back without redrawing (keeps focus).
+    const changed = () => onChange(value)
+    // A change of shape (add, remove, reorder, switch variant): redraw too.
+    const reshaped = () => { draw(); onChange(value) }
+
+    const constOf = (option, discriminator) => option.node.fields?.find((f) => f.name === discriminator)?.node.constraints?.const ?? option.label
+    // A variant's fixed values (e.g. wasteSource: "Household"), set when it's chosen.
+    const fixedOf = (option) => Object.fromEntries((option.node.fields || []).filter((f) => 'const' in (f.node.constraints || {})).map((f) => [f.name, f.node.constraints.const]))
+    // The variant a value is: by its discriminator when there is one, otherwise
+    // the best fit (no clash with a fixed value, most fields in common).
+    const variantOf = (node, v) => {
+      if (!isObj(v)) return null
+      if (node.discriminator) return node.options.find((o) => v[node.discriminator] === constOf(o, node.discriminator)) || null
+      let best = null
+      let bestScore = -Infinity
+      for (const o of node.options) {
+        const fixed = fixedOf(o)
+        if (Object.entries(fixed).some(([k, c]) => k in v && v[k] !== c)) continue
+        const names = new Set((o.node.fields || []).map((f) => f.name))
+        const keys = Object.keys(v)
+        const score = keys.filter((k) => names.has(k)).length - keys.filter((k) => !names.has(k)).length + Object.keys(fixed).filter((k) => k in v).length
+        if (score > bestScore) { best = o; bestScore = score }
+      }
+      return best
+    }
+    const defaultFor = (node) => {
+      const c = node?.constraints || {}
+      if ('const' in c) return c.const
+      if (!node) return ''
+      if (node.type === 'object') return {}
+      if (node.type === 'variants') return node.discriminator ? { [node.discriminator]: constOf(node.options[0], node.discriminator) } : { ...fixedOf(node.options[0]) }
+      if (node.type === 'array') return []
+      if (node.type === 'boolean') return false
+      if (node.type === 'integer' || node.type === 'number') return c.minimum ?? (c.exclusiveMinimum !== undefined ? c.exclusiveMinimum + 1 : 0)
+      if (c.enum) return c.enum[0]
+      return ''
+    }
+
+    const hintFor = (node) => {
+      const c = node?.constraints || {}
+      const parts = []
+      if (c.format) parts.push(c.format)
+      if (c.pattern) parts.push('must match a pattern')
+      if (c.minLength !== undefined || c.maxLength !== undefined) parts.push(range(c.minLength, c.maxLength, 'character'))
+      if (c.minimum !== undefined) parts.push(`≥ ${c.minimum}`)
+      if (c.exclusiveMinimum !== undefined) parts.push(`> ${c.exclusiveMinimum}`)
+      if (c.maximum !== undefined) parts.push(`≤ ${c.maximum}`)
+      if (c.minItems !== undefined || c.maxItems !== undefined) parts.push(range(c.minItems, c.maxItems, 'item'))
+      return parts.join(' · ')
+    }
+    const badgeFor = (req) => req && h('span', { class: 'badge ' + req }, ({ required: 'Required', conditional: 'Conditional', forbidden: 'Not allowed', optional: 'Optional' })[req])
+
+    // A control for a single value at `path`.
+    const scalar = (node, path) => {
+      const v = getAt(path)
+      const c = node?.constraints || {}
+      const id = 'f' + pointerOf(path).replace(/[^A-Za-z0-9]/g, '_')
+      const typeOk = v === undefined || (node?.type === 'string' && typeof v === 'string') ||
+        ((node?.type === 'integer' || node?.type === 'number') && typeof v === 'number') ||
+        (node?.type === 'boolean' && typeof v === 'boolean') || ('const' in c) || c.enum
+      if (v === null) {
+        return h('span', { class: 'fnull' }, h('code', {}, 'null'), ' ',
+          h('button', { class: 'linkish', type: 'button', onclick: () => { setAt(path, defaultFor(node)); reshaped() } }, 'Set a value'))
+      }
+      if ('const' in c) return h('code', { class: 'fconst' }, fmt(c.const))
+      if (c.enum || node?.type === 'boolean') {
+        const options = c.enum || [true, false]
+        const select = h('select', { id },
+          !options.some((o) => o === v) && h('option', { value: '' }, v === undefined ? 'Choose…' : `${fmt(v)} (not allowed)`),
+          options.map((o, i) => h('option', { value: String(i), selected: o === v || null }, String(o))))
+        select.addEventListener('change', () => { if (select.value !== '') { setAt(path, options[Number(select.value)]); changed() } })
+        return select
+      }
+      if (!typeOk || !node || node.type === 'any' || node.type === 'object') {
+        // Anything else (a value of the wrong type, or no clear type): edit it as JSON.
+        const area = h('textarea', { id, class: 'fjson', spellcheck: 'false' })
+        area.value = v === undefined ? '' : JSON.stringify(v, null, 2)
+        area.addEventListener('input', () => {
+          try { setAt(path, JSON.parse(area.value)); area.classList.remove('bad'); changed() } catch { area.classList.add('bad') }
+        })
+        return area
+      }
+      if (node.type === 'integer' || node.type === 'number') {
+        const input = h('input', { id, type: 'number', step: node.type === 'integer' ? '1' : 'any', min: c.minimum ?? null, max: c.maximum ?? null })
+        input.value = v ?? ''
+        input.addEventListener('input', () => {
+          if (input.value === '') removeAt(path)
+          else setAt(path, Number(input.value))
+          changed()
+        })
+        return input
+      }
+      // Text: a text area once it is longer than LONG_TEXT, or when the field allows much more.
+      const long = (typeof v === 'string' && v.length > LONG_TEXT) || (c.maxLength ?? 0) > 100
+      const input = long
+        ? h('textarea', { id, rows: '2', maxlength: c.maxLength ?? null })
+        : h('input', { id, type: c.format === 'email' ? 'email' : 'text', maxlength: c.maxLength ?? null, spellcheck: 'false' })
+      input.value = v ?? ''
+      input.addEventListener('input', () => { setAt(path, input.value); changed() })
+      if (!long) input.addEventListener('blur', () => { if (input.value.length > LONG_TEXT) reshaped() })
+      return input
+    }
+
+    const removeButton = (path, what) => h('button', { class: 'fx', type: 'button', title: `Remove ${what}`, 'aria-label': `Remove ${what}`, onclick: () => { removeAt(path); reshaped() } }, '×')
+
+    // A field row, or a collapsible group for a field that holds more fields.
+    const fieldRow = (name, node, path, req, depth, notes) => {
+      const pointer = pointerOf(path)
+      const present = getAt(path) !== undefined
+      const complex = node && (node.type === 'object' || node.type === 'array' || node.type === 'variants')
+      const label = h('span', { class: 'flabel', title: node?.description || null }, h('span', { class: 'fname' }, name), badgeFor(req))
+      if (!present) {
+        return h('div', { class: 'frow absent', 'data-pointer': pointer },
+          label,
+          h('div', { class: 'fctl' }, h('button', { class: 'btn fadd', type: 'button', onclick: () => { setAt(path, defaultFor(node)); reshaped() } }, `+ Add ${name}`)),
+          h('span', {}), h('div', { class: 'ferrs' }))
+      }
+      if (complex && typeof getAt(path) === 'object' && getAt(path) !== null) {
+        return h('details', { class: 'fgroup', open: depth < 2 || null, 'data-pointer': pointer },
+          h('summary', {}, label, h('span', { class: 'ftype' }, typeLabel(node)), removeButton(path, name)),
+          h('div', { class: 'ferrs' }),
+          notes?.length > 0 && h('div', { class: 'fnotes' }, notes.map((n) => h('div', {}, rich(n)))),
+          body(node, path, depth + 1))
+      }
+      const hint = hintFor(node)
+      return h('div', { class: 'frow', 'data-pointer': pointer },
+        label,
+        h('div', { class: 'fctl' }, scalar(node, path), (hint || notes?.length > 0) && h('div', { class: 'fhint' }, hint, notes?.length > 0 && h('span', {}, hint ? ' · ' : '', rich(notes[0])))),
+        removeButton(path, name),
+        h('div', { class: 'ferrs' }))
+    }
+
+    // skip: a field already set by the variant select (its discriminator).
+    const objectBody = (node, path, depth, skip) => {
+      const v = getAt(path)
+      const known = new Set(node.fields.map((f) => f.name))
+      const rows = []
+      const optional = []
+      for (const f of node.fields) {
+        if (f.name === skip) continue
+        const present = v[f.name] !== undefined
+        if (!present && (f.req === 'optional' || f.req === 'forbidden')) { if (f.req === 'optional') optional.push(f); continue }
+        rows.push(fieldRow(f.name, f.node, [...path, f.name], f.req, depth, f.notes))
+      }
+      // Fields the schema doesn't have: shown so they can be seen and removed.
+      for (const k of Object.keys(v)) if (!known.has(k)) rows.push(fieldRow(k, null, [...path, k], 'forbidden', depth))
+      if (optional.length) {
+        const add = h('select', { class: 'fmore', 'aria-label': 'Add an optional field' },
+          h('option', { value: '' }, `+ Add an optional field (${optional.length})`),
+          optional.map((f) => h('option', { value: f.name }, f.name)))
+        add.addEventListener('change', () => {
+          const f = optional.find((o) => o.name === add.value)
+          if (f) { setAt([...path, f.name], defaultFor(f.node)); reshaped() }
+        })
+        rows.push(h('div', { class: 'frow' }, h('span', {}), h('div', { class: 'fctl' }, add)))
+      }
+      return rows
+    }
+
+    const body = (node, path, depth) => {
+      const v = getAt(path)
+      if (node.type === 'variants') {
+        const disc = node.discriminator
+        const current = variantOf(node, v)
+        const select = h('select', { 'aria-label': disc ? `Choose ${disc}` : 'Choose a variant' },
+          !current && h('option', { value: '' }, 'Choose…'),
+          node.options.map((o, i) => h('option', { value: String(i), selected: o === current || null }, o.label)))
+        select.addEventListener('change', () => {
+          const o = node.options[Number(select.value)]
+          if (!o) return
+          // Keep the fields the new variant also has.
+          const keep = new Set((o.node.fields || []).map((f) => f.name))
+          const fixed = disc ? { [disc]: constOf(o, disc) } : fixedOf(o)
+          const next = { ...fixed }
+          if (isObj(v)) for (const [k, val] of Object.entries(v)) if (keep.has(k) && !(k in fixed)) next[k] = val
+          setAt(path, next)
+          reshaped()
+        })
+        return [h('div', { class: 'frow' }, h('span', { class: 'flabel' }, disc ? h('code', {}, disc) : 'Variant'), h('div', { class: 'fctl' }, select)),
+          current && isObj(v) ? objectBody(current.node, path, depth, disc) : null]
+      }
+      if (node.type === 'array') {
+        const items = Array.isArray(v) ? v : []
+        const itemNode = node.items
+        const out = items.map((_, i) => {
+          const itemPath = [...path, i]
+          const move = (to) => { const list = getAt(path); const [item] = list.splice(i, 1); list.splice(to, 0, item); reshaped() }
+          const itemComplex = itemNode && (itemNode.type === 'object' || itemNode.type === 'variants' || itemNode.type === 'array') && items[i] !== null && typeof items[i] === 'object'
+          return h('div', { class: 'fitem', 'data-pointer': pointerOf(itemPath) },
+            h('div', { class: 'fitem-head' },
+              h('span', { class: 'fname' }, `#${i + 1}`),
+              h('span', { class: 'fitem-tools' },
+                i > 0 && h('button', { class: 'fx', type: 'button', title: 'Move up', 'aria-label': `Move item ${i + 1} up`, onclick: () => move(i - 1) }, '↑'),
+                i < items.length - 1 && h('button', { class: 'fx', type: 'button', title: 'Move down', 'aria-label': `Move item ${i + 1} down`, onclick: () => move(i + 1) }, '↓'),
+                removeButton(itemPath, `item ${i + 1}`))),
+            h('div', { class: 'ferrs' }),
+            itemComplex ? body(itemNode, itemPath, depth + 1) : h('div', { class: 'fctl' }, scalar(itemNode, itemPath)))
+        })
+        const c = node.constraints || {}
+        out.push(h('div', { class: 'frow' }, h('span', {}), h('div', { class: 'fctl' },
+          h('button', { class: 'btn fadd', type: 'button', disabled: c.maxItems !== undefined && items.length >= c.maxItems ? true : null,
+            onclick: () => { if (!Array.isArray(getAt(path))) setAt(path, []); getAt(path).push(defaultFor(itemNode)); reshaped() } }, '+ Add item'),
+          c.minItems ? h('span', { class: 'fhint' }, ` at least ${plural(c.minItems, 'item')}`) : null)))
+        return out
+      }
+      if (node.type === 'object') return isObj(v) ? objectBody(node, path, depth) : [h('div', { class: 'fctl' }, scalar(null, path))]
+      return [h('div', { class: 'fctl' }, scalar(node, path))]
+    }
+
+    const draw = () => {
+      const complexRoot = tree && (tree.type === 'object' || tree.type === 'array' || tree.type === 'variants') && value !== null && typeof value === 'object'
+      put(el,
+        h('div', { class: 'ferrs root', 'data-pointer': '/' }),
+        complexRoot ? body(tree, [], 0) : h('div', { class: 'frow', 'data-pointer': '/' }, h('span', { class: 'flabel' }, 'Value'), h('div', { class: 'fctl' }, scalar(tree, [])), h('span', {}), h('div', { class: 'ferrs' })))
+      showErrors(lastErrors)
+    }
+
+    // Each error next to its field, or the nearest one shown.
+    const showErrors = (errors) => {
+      lastErrors = errors
+      el.querySelectorAll('.ferrs').forEach((e) => e.replaceChildren())
+      el.querySelectorAll('.has-err').forEach((e) => e.classList.remove('has-err'))
+      for (const e of errors) {
+        const segs = (e.pointer || '/').split('/').slice(1).filter(Boolean)
+        let target = null
+        for (let k = segs.length; k >= 0 && !target; k--) target = el.querySelector(`[data-pointer="${CSS.escape('/' + segs.slice(0, k).join('/'))}"]`)
+        if (!target) continue
+        target.classList.add('has-err')
+        const slot = target.querySelector(':scope > .ferrs') || target.querySelector('.ferrs')
+        slot?.append(h('div', {}, h('b', {}, e.errorType), ' ', e.message))
+      }
+    }
+
+    const focus = (pointer) => {
+      const segs = pointer.split('/').slice(1).filter(Boolean)
+      let target = null
+      for (let k = segs.length; k >= 0 && !target; k--) target = el.querySelector(`[data-pointer="${CSS.escape('/' + segs.slice(0, k).join('/'))}"]`)
+      if (!target) return
+      for (let a = target; a && a !== el; a = a.parentElement) if (a.tagName === 'DETAILS') a.open = true
+      target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      target.querySelector('input, select, textarea, button')?.focus({ preventScroll: true })
+    }
+
+    return {
+      el,
+      render: (v) => { value = structuredClone(v); draw() },
+      showErrors,
+      focus
+    }
+  }
+
+  // focus: a block shown on its own (double-click). Only that part is edited;
+  // to check it, it's put back into the schema's first example and the whole
+  // payload is checked as usual, so rules that look at other fields still
+  // apply, and only the errors inside the block are shown, relative to it.
+  const harness = ({ file, examples, kind, where, label, focus }) => {
+    const wholeChecker = checkerFor(file)
+    if (!wholeChecker) return h('p', { class: 'empty' }, 'Validation isn\'t available for this schema.')
+
+    // "movement.wasteItems[].pops" -> ['movement', 'wasteItems', 0, 'pops'].
+    const concrete = focus
+      ? focus.path.replace(/<[^>]+>/g, '').split('.').filter(Boolean).flatMap((part) => {
+        const [name, ...arrays] = part.split('[]')
+        return [...(name ? [name] : []), ...arrays.map(() => 0)]
+      })
+      : []
+    const base = '/' + concrete.join('/')
+    const pick = (value) => concrete.reduce((v, k) => (v == null ? undefined : v[k]), value)
+    const firstExample = !examples ? undefined : Array.isArray(examples) ? examples[0] : Object.values(examples)[0]?.value
+    const inContext = (part) => {
+      const whole = firstExample === undefined ? {} : structuredClone(firstExample)
+      let node = whole
+      concrete.forEach((key, i) => {
+        if (i === concrete.length - 1) return
+        if (node[key] == null || typeof node[key] !== 'object') node[key] = typeof concrete[i + 1] === 'number' ? [] : {}
+        node = node[key]
+      })
+      if (part === undefined) delete node[concrete.at(-1)]
+      else node[concrete.at(-1)] = part
+      return whole
+    }
+    const checker = !focus ? wholeChecker : (part) => {
+      const outcome = wholeChecker(inContext(part))
+      const inside = outcome.errors
+        .filter((e) => e.pointer === base || (e.pointer || '').startsWith(base + '/'))
+        .map((e) => ({ ...e, fullPointer: e.pointer, pointer: e.pointer.slice(base.length) || '/' }))
+      return { valid: inside.length === 0, errors: inside }
+    }
+
+    const tree = focus ? focus.node : fragByFile[file]?.tree || rootByFile[file]?.tree
+    if (focus && examples) {
+      // The focused part of each example.
+      examples = Array.isArray(examples)
+        ? examples.map(pick).filter((v) => v !== undefined)
+        : Object.fromEntries(Object.entries(examples).map(([k, ex]) => [k, { ...ex, value: pick(ex.value) }]).filter(([, ex]) => ex.value !== undefined))
+    }
+    const entries = !examples ? [] : Array.isArray(examples)
+      ? exampleNames(examples, tree).map((name, i) => [name, { value: examples[i] }])
+      : Object.entries(examples)
+    const starters = [...entries.map(([name, ex]) => ({ name, summary: ex.summary, value: ex.value })),
+      { name: 'Empty', summary: 'Start from nothing', value: (focus || kind === 'fragment') && !isComplex(tree || {}) ? '' : tree?.type === 'array' ? [] : {} }]
+    const draftKey = `draft:${M.api.version}:${file}${focus ? '#' + focus.path : ''}`
+    const draft = store.get(draftKey)
+    // On by default: each example loads with made-up values.
+    let varyValues = store.get('vary') !== '0'
+    const textOf = (st) => JSON.stringify(varyValues && st.value !== '' ? madeUp(st.value, tree, checker) : st.value, null, 2)
+
+    const editor = h('textarea', { class: 'editor', id: 'try-editor', spellcheck: 'false', autocomplete: 'off', autocapitalize: 'off', 'aria-label': `JSON to check against ${label}` })
+    editor.value = draft ?? textOf(starters[0])
+    const status = h('div', { class: 'editor-status' })
+    const result = h('div', { 'aria-live': 'polite' })
+    const caption = h('span', { class: 'pane-note' })
+
+    // JSON or form: two views of the same payload, the JSON being the truth.
+    let inputMode = 'json'
+    let timer
+    const form = formEditor({
+      tree,
+      onChange: (value) => {
+        editor.value = value === undefined ? '' : JSON.stringify(value, null, 2)
+        clearTimeout(timer)
+        timer = setTimeout(() => { store.set(draftKey, editor.value); check() }, 150)
+      }
+    })
+    const modeButtons = {}
+    const setInputMode = (mode, { remember = true } = {}) => {
+      if (mode === 'form') {
+        let value
+        try { value = editor.value.trim() === '' ? undefined : JSON.parse(editor.value) } catch {
+          status.textContent = 'Fix the JSON before switching to the form'
+          return
+        }
+        form.render(value)
+        check()
+      }
+      inputMode = mode
+      editor.hidden = mode === 'form'
+      form.el.hidden = mode !== 'form'
+      formatButton.hidden = mode === 'form'
+      for (const [m, b] of Object.entries(modeButtons)) b.setAttribute('aria-pressed', m === mode ? 'true' : 'false')
+      if (remember) store.set('try-input', mode)
+    }
+    // After the JSON changes from outside the form (an example, new values).
+    const refreshForm = () => {
+      if (inputMode !== 'form') return
+      try { form.render(editor.value.trim() === '' ? undefined : JSON.parse(editor.value)) } catch { setInputMode('json', { remember: false }) }
+    }
+
+    const select = h('select', { id: 'try-start', 'aria-label': 'Load an example' },
+      h('option', { value: '' }, draft ? 'Your edits' : 'Load…'),
+      starters.map((st, i) => h('option', { value: i }, st.name)))
+    select.addEventListener('change', () => {
+      const st = starters[Number(select.value)]
+      if (!st) return
+      editor.value = textOf(st)
+      caption.textContent = st.summary || ''
+      store.set(draftKey, editor.value)
+      refreshForm()
+      check()
+      if (inputMode === 'json') editor.focus()
+    })
+
+    const jumpTo = (pointer) => {
+      if (inputMode === 'form') return form.focus(pointer)
+      const spans = spansOf(editor.value)
+      const segs = pointer.split('/').slice(1)
+      let span = null
+      for (let k = segs.length; k >= 0 && !span; k--) span = spans.get(segs.slice(0, k).join('/'))
+      if (!span) return
+      // Select just the first line of the value: the key, or the opening brace.
+      const lineEnd = editor.value.indexOf('\n', span.start)
+      const end = lineEnd > span.start && lineEnd < span.end ? lineEnd : span.end
+      editor.focus()
+      editor.setSelectionRange(span.start, end)
+      const line = editor.value.slice(0, span.start).split('\n').length - 1
+      const lineHeight = parseFloat(getComputedStyle(editor).lineHeight) || 20
+      editor.scrollTop = Math.max(0, line * lineHeight - editor.clientHeight / 3)
+    }
+
+    // Whether the route also runs checks a schema can't say (reference data,
+    // dates not in the future…).
+    const routeChecks = (M.checks?.files || []).includes(file)
+    const subject = focus ? `This ${label} is valid.`
+      : kind === 'request' && routeChecks ? 'This body is valid against the request schema and the API\'s other checks.'
+      : kind === 'request' ? 'This body is valid against the request schema.'
+      : kind === 'response' ? 'This body is valid against the response schema.'
+        : `This is a valid ${label}.`
+
+    const check = () => {
+      let value
+      try {
+        value = JSON.parse(editor.value)
+      } catch (err) {
+        status.textContent = 'Not valid JSON'
+        form.showErrors([])
+        put(result, h('div', { class: 'verdict json' },
+          h('b', {}, 'Not valid JSON'),
+          h('p', {}, err.message)))
+        return
+      }
+      status.textContent = 'JSON ok'
+      const outcome = checker(value)
+      form.showErrors(outcome.valid ? [] : outcome.errors)
+      if (outcome.valid) {
+        put(result, h('div', { class: 'verdict ok' },
+          h('b', {}, '✓ Valid'),
+          h('p', {}, subject)))
+        return
+      }
+      const errors = outcome.errors
+      const detail = `${errors.length} validation error${errors.length === 1 ? '' : 's'} occurred`
+      put(result,
+        h('div', { class: 'verdict bad' },
+          h('b', {}, detail),
+          kind === 'fragment' && h('p', {}, 'Inside a request, each pointer starts with the path to the field that holds this fragment.'),
+          focus && h('p', {}, h('span', {}, 'Pointers are relative to '), h('code', {}, displayPath(focus.path)), '.')),
+        h('ul', { class: 'errs' }, errors.map((e) => {
+          const diagramPath = diagramPathFor(where, e.fullPointer ?? e.pointer)
+          return h('li', { class: 'err' },
+            h('div', { class: 'err-top' }, h('span', { class: 'et' }, e.errorType), h('span', { class: 'ptr' }, e.pointer || '/')),
+            h('div', { class: 'msg' }, e.message),
+            h('div', { class: 'err-actions' },
+              h('button', { class: 'linkish', type: 'button', onclick: () => jumpTo(e.pointer) }, 'Show in editor'),
+              diagramPath && h('button', { class: 'linkish', type: 'button', onclick: () => go({ ...where, reveal: diagramPath }) }, 'Show in diagram')))
+        })))
+    }
+
+    editor.addEventListener('input', () => {
+      clearTimeout(timer)
+      timer = setTimeout(() => { store.set(draftKey, editor.value); check() }, 200)
+    })
+    // Tab indents (two spaces) instead of leaving the editor.
+    editor.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab' || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return
+      e.preventDefault()
+      editor.setRangeText('  ', editor.selectionStart, editor.selectionEnd, 'end')
+      editor.dispatchEvent(new Event('input'))
+    })
+
+    const format = () => {
+      try {
+        editor.value = JSON.stringify(JSON.parse(editor.value), null, 2)
+        store.set(draftKey, editor.value)
+        check()
+      } catch {}
+    }
+    // Fresh made-up values for whatever is in the editor, keeping its shape.
+    const newValues = () => {
+      let value
+      try { value = JSON.parse(editor.value) } catch { status.textContent = 'Fix the JSON first, then ask for new values'; return }
+      editor.value = JSON.stringify(madeUp(value, tree, checker), null, 2)
+      store.set(draftKey, editor.value)
+      refreshForm()
+      check()
+    }
+    const varyToggle = h('input', { type: 'checkbox', id: 'try-vary', checked: varyValues || null })
+    varyToggle.addEventListener('change', () => { varyValues = varyToggle.checked; store.set('vary', varyValues ? '1' : '0') })
+    const formatButton = h('button', { class: 'btn', type: 'button', onclick: format }, 'Format')
+    const inputToggle = h('div', { class: 'seg', role: 'group', 'aria-label': 'Edit as' },
+      ['form', 'json'].map((m) => (modeButtons[m] = h('button', { type: 'button', 'aria-pressed': m === 'json' ? 'true' : 'false', onclick: () => setInputMode(m) }, m === 'json' ? 'JSON' : 'Form'))))
+    check()
+    // The form by default; JSON if the viewer last chose it.
+    if (store.get('try-input') !== 'json') setInputMode('form', { remember: false })
+    return h('div', { class: 'harness' },
+      h('section', { class: 'pane' },
+        h('div', { class: 'pane-head' }, h('h2', {}, label),
+          inputToggle,
+          select,
+          h('button', { class: 'btn', type: 'button', onclick: newValues, title: 'Make up new names, addresses, IDs and amounts, keeping the scenario' }, 'New values'),
+          formatButton),
+        h('div', { class: 'pane-sub' },
+          h('label', { class: 'check' }, varyToggle, 'Made-up values when loading an example'),
+          h('span', {}, 'Codes and choices that set the scenario stay as written.')),
+        focus && h('p', { class: 'pane-note' }, 'Only this part is edited here. It\'s checked inside the first example, so rules that depend on other fields still apply.'),
+        caption,
+        editor, form.el, status),
+      h('section', { class: 'pane' },
+        h('div', { class: 'pane-head' }, h('h2', {}, 'Result'), h('span', { class: 'file' }, 'checked as you type')),
+        result,
+        routeChecks && h('p', { class: 'pane-note', style: 'padding:0 12px' }, 'Also runs the checks the API makes after the schema, such as codes against the reference data and dates not being in the future. The dates are compared with this device\'s clock.'),
+        h('p', { class: 'pane-note', style: 'padding:0 12px 12px' }, draft ? 'Your edits are kept in this browser. Load an example to start again.' : 'Edits are kept in this browser, so you can come back to them.')))
+  }
+
+  const highlight = (value) => {
+    return esc(JSON.stringify(value, null, 2)).replace(/(&quot;(?:[^&]|&(?!quot;))*?&quot;)(\s*:)?|\b(true|false|null)\b|(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)/g, (m, str, colon, lit, num) => {
+      if (str) return colon ? `<span class="k">${str}</span>${colon}` : `<span class="s">${str}</span>`
+      if (lit) return `<span class="b">${lit}</span>`
+      return `<span class="n">${num}</span>`
+    })
+  }
+
+  const renderFragment = (f) => {
+    const byRoot = new Map()
+    for (const o of f.occurrences) byRoot.set(o.root, [...(byRoot.get(o.root) || []), o])
+    const order = [...requests, ...responses].filter((r) => byRoot.has(r.id))
+    const t = f.tree
+    const head = h('header', { class: 'view-head' },
+      backLink(),
+      h('div', { class: 'eyebrow' }, 'Shared fragment'),
+      h('h1', {}, f.title),
+      h('div', { class: 'file' }, f.file),
+      f.description && h('p', { class: 'lede' }, rich(f.description)),
+      h('div', { class: 'statline' },
+        h('span', {}, 'Used ', h('b', {}, f.occurrences.length), f.occurrences.length === 1 ? ' time' : ' times'),
+        h('span', {}, 'in ', h('b', {}, endpointCount(f)), ` of ${requests.length} request schemas`),
+        changesLink(fragChanges.get(f.file))))
+
+    const usedIn = h('div', { class: 'hint' },
+      h('div', { class: 'sub' }, 'Where it appears'),
+      order.map((r) => h('div', {},
+        h('div', {}, h('b', {}, schemaName(r))),
+        h('ul', { class: 'uselist' }, byRoot.get(r.id).map((o) => h('li', {},
+          h('a', { href: '#' + r.id, onclick: (e) => { e.preventDefault(); go({ view: 'root', id: r.id, reveal: o.path }) } }, displayPath(o.path)),
+          o.via ? h('span', { class: 'file' }, '  inside ' + o.via) : null))))),
+      f.parents.length ? [h('div', { class: 'sub' }, 'Referenced directly by'),
+        h('div', { class: 'badges' }, f.parents.map((p) => p.fragment
+          ? h('a', { class: 'frag-pill', href: '#f-' + p.fragment, onclick: (e) => { e.preventDefault(); go({ view: 'fragment', id: p.fragment }) } }, p.fragment)
+          : h('a', { class: 'badge plain', href: '#' + p.root, style: 'text-decoration:none', onclick: (e) => { e.preventDefault(); go({ view: 'root', id: p.root }) } }, schemaName(rootById[p.root]))))] : null)
+
+    const mode = state.mode || 'diagram'
+    const tryIt = (focused) => withTryIt(() => harness({ file: f.file, examples: f.examples, kind: 'fragment', where: { view: 'fragment', id: f.id }, label: focused ? blockTitle(focused) : f.title, focus: focused || null }))
+    const spec = rootSpecFor(t)
+    if (!spec) {
+      // A single value (a pattern, a code list): its rules beside a tester.
+      return put(main, h('div', { class: 'page' }, head,
+        h('div', { class: 'stage', style: 'height:auto' }, h('div', { class: 'drawer' }, h('div', { class: 'sub' }, 'Rules'), facts(t, null)), h('div', { class: 'drawer' }, usedIn)),
+        h('section', { class: 'section' }, h('h2', {}, 'Try it'), tryIt())))
+    }
+    const modeSeg = modeButtons(mode)
+    if (mode === 'try') {
+      const focusedTry = state.focus && findSpec(spec, state.focus)
+      return put(main, head, h('div', { class: 'toolbar' }, modeSeg), focusedTry && focusBar({ view: 'fragment', id: f.id }, focusedTry, 'fragment'), tryIt(focusedTry))
+    }
+    const where = { view: 'fragment', id: f.id }
+    const focused = state.focus && findSpec(spec, state.focus)
+    const canvas = makeCanvas(focused || spec, {
+      rootHeader: () => focused
+        ? [h('span', { class: 'bt' }, blockTitle(focused)), h('span', { class: 'bx' }, 'on its own')]
+        : [h('span', { class: 'bt' }, f.title), h('span', { class: 'bx' }, f.id)],
+      intro: () => usedIn,
+      open: openBlock(where),
+      changes: diagramChanges(fragChanges.get(f.file))
+    }, state.canvas)
+    currentCanvas = canvas
+    put(main, head, h('div', { class: 'toolbar' }, modeSeg, canvas.controls), focused && focusBar(where, focused, 'fragment'), canvas.stage)
+    canvas.draw()
+    if (!canvas.restoreView()) canvas.showIntro()
+    arrive(canvas)
+  }
+
+  const render = () => {
+    renderSide()
+    if (state.view === 'root' && rootById[state.id]) renderRoot(rootById[state.id])
+    else if (state.view === 'fragment' && fragById[state.id]) renderFragment(fragById[state.id])
+    else if (state.view === 'changes' && changes) renderChanges()
+    else { state = { view: 'overview', depth: state.depth || 0, from: state.from }; renderOverview() }
+    // A saved view is applied once; from here the live diagram is the truth.
+    delete state.canvas
+    try { history.replaceState(entryOf(state), '', hashFor(state)) } catch {}
+  }
+
+  const fromHash = () => {
+    const hsh = decodeURIComponent(location.hash.slice(1))
+    if (hsh.startsWith('f-') && fragById[hsh.slice(2)]) return { view: 'fragment', id: hsh.slice(2) }
+    if (rootById[hsh]) return { view: 'root', id: hsh }
+    if (hsh === 'changes' && changes) return { view: 'changes' }
+    return { view: 'overview' }
+  }
+  // Back and Forward (and an edited #link, which arrives with no saved state).
+  window.addEventListener('popstate', (e) => { state = e.state ? { ...e.state } : { ...fromHash(), depth: 0 }; render() })
+  state = { ...fromHash(), depth: 0 }
+  render()
+  // Fonts change row heights, so re-lay out once they arrive.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => currentCanvas && currentCanvas.stage.isConnected && currentCanvas.draw())
+})()
+</script>

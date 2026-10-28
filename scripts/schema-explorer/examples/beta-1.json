@@ -1,0 +1,41 @@
+{
+  "common/delivery-item.schema.json": [
+    {
+      "deliveryId": "25KMT4Z9",
+      "movementIds": ["25HRA0B2", "25HRA0B3"],
+      "wasteType": "NON_HAZARDOUS"
+    },
+    {
+      "deliveryId": "25KMT4ZA",
+      "movementIds": ["25HRA0B4"],
+      "wasteType": "HAZARDOUS"
+    }
+  ],
+  "common/issue.schema.json": [
+    {
+      "pointer": "/apiCode",
+      "errorType": "NotProvided",
+      "message": "\"apiCode\" is required"
+    },
+    {
+      "pointer": "/reason",
+      "errorType": "OutOfRange",
+      "message": "must NOT have fewer than 1 characters"
+    }
+  ],
+  "common/validation.schema.json": [
+    {
+      "warnings": []
+    },
+    {
+      "warnings": [
+        {
+          "pointer": "/apiCode",
+          "errorType": "NotProvided",
+          "message": "\"apiCode\" is required"
+        }
+      ]
+    }
+  ],
+  "common/waste-type.schema.json": ["HAZARDOUS"]
+}
