@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Producer",
-  "description": "The organisation or party the waste originates from. Required fields vary by wasteSource — see the variants below. For Commercial and Municipal, contactDetails is required (with at least one of emailAddress or phoneNumber within it), and exactly one of authorisationNumber or reasonForNoAuthorisationNumber must be provided; not applicable for Household, where contactDetails and the rest remain forbidden.",
+  "description": "The organisation or party the waste originates from. Required fields vary by wasteSource — see the variants below. For COMMERCIAL and MUNICIPAL, contactDetails is required (with at least one of emailAddress or phoneNumber within it), and exactly one of authorisationNumber or reasonForNoAuthorisationNumber must be provided; not applicable for HOUSEHOLD, where contactDetails and the rest remain forbidden.",
   "examples": [
     {
       "wasteSource": "COMMERCIAL",

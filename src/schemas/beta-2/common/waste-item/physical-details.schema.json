@@ -17,7 +17,7 @@
         "properties": {
           "containerCount": {
             "const": 0,
-            "description": "Must be 0 when the waste is loose (containerType LOO)."
+            "description": "Must be 0 when 'containerType' is 'LOO'"
           }
         }
       },
@@ -26,7 +26,7 @@
           "containerCount": {
             "type": "integer",
             "minimum": 1,
-            "description": "Must be at least 1 unless the waste is loose (containerType LOO)."
+            "description": "Must be at least 1 unless 'containerType' is 'LOO'"
           }
         }
       }
