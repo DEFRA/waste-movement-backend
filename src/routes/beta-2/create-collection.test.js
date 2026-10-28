@@ -36,12 +36,12 @@ describe('collection Route Tests version: beta-2', () => {
   const endpointVersion = 'beta-2'
   const errorMessage = 'Database connection failed'
   const traceId = 'created-trace-id-123'
-  const dutyOfCareConfirmed = true
+  const isDutyOfCareConfirmed = true
   const goodPayload = {
     carrier,
     actualCollectionDateTime,
     collectionSite,
-    dutyOfCareConfirmed
+    isDutyOfCareConfirmed
   }
   const goodMovementId = '25HRA0B2'
 
@@ -89,7 +89,7 @@ describe('collection Route Tests version: beta-2', () => {
       carrier,
       actualCollectionDateTime,
       collectionSite,
-      dutyOfCareConfirmed,
+      isDutyOfCareConfirmed,
       brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] }
     }
     const getMovementRecordSpy = jest
@@ -119,7 +119,7 @@ describe('collection Route Tests version: beta-2', () => {
       carrier,
       actualCollectionDateTime,
       collectionSite,
-      dutyOfCareConfirmed,
+      isDutyOfCareConfirmed,
       brokerOrDealer: { isPresent: true }
     }
     const getMovementRecordSpy = jest.spyOn(
@@ -154,7 +154,7 @@ describe('collection Route Tests version: beta-2', () => {
       carrier,
       actualCollectionDateTime,
       collectionSite,
-      dutyOfCareConfirmed,
+      isDutyOfCareConfirmed,
       brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
     }
     const getMovementRecordSpy = jest.spyOn(
@@ -189,7 +189,7 @@ describe('collection Route Tests version: beta-2', () => {
       carrier,
       actualCollectionDateTime,
       collectionSite,
-      dutyOfCareConfirmed,
+      isDutyOfCareConfirmed,
       supportingReferences: [supportingReference]
     }
     const getMovementRecordSpy = jest
@@ -219,7 +219,7 @@ describe('collection Route Tests version: beta-2', () => {
       carrier,
       actualCollectionDateTime,
       collectionSite,
-      dutyOfCareConfirmed,
+      isDutyOfCareConfirmed,
       supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
     }
     const getMovementRecordSpy = jest.spyOn(
@@ -255,7 +255,7 @@ describe('collection Route Tests version: beta-2', () => {
       carrier,
       actualCollectionDateTime,
       collectionSite,
-      dutyOfCareConfirmed,
+      isDutyOfCareConfirmed,
       specialHandlingRequirements: 'Handle with care and keep upright.'
     }
     const getMovementRecordSpy = jest
@@ -282,7 +282,7 @@ describe('collection Route Tests version: beta-2', () => {
 
   it('returns an error when specialHandlingRequirements is too long', async () => {
     const invalidPayload = {
-      dutyOfCareConfirmed,
+      isDutyOfCareConfirmed,
       specialHandlingRequirements: 'A'.repeat(501)
     }
     const getMovementRecordSpy = jest.spyOn(
@@ -366,7 +366,7 @@ describe('collection Route Tests version: beta-2', () => {
     const invalidPayload = {
       actualCollectionDateTime,
       collectionSite,
-      dutyOfCareConfirmed
+      isDutyOfCareConfirmed
     }
     const getMovementRecordSpy = jest.spyOn(
       movementService,
@@ -436,7 +436,7 @@ describe('collection Route Tests version: beta-2', () => {
   it('returns an error when apiCode is sent in the body', async () => {
     const invalidPayload = {
       apiCode: apiCode1,
-      dutyOfCareConfirmed,
+      isDutyOfCareConfirmed,
       carrier,
       actualCollectionDateTime,
       collectionSite
@@ -501,8 +501,8 @@ describe('collection Route Tests version: beta-2', () => {
       errors: [
         {
           errorType: 'NotProvided',
-          message: "'dutyOfCareConfirmed' is required",
-          pointer: '/dutyOfCareConfirmed'
+          message: "'isDutyOfCareConfirmed' is required",
+          pointer: '/isDutyOfCareConfirmed'
         }
       ],
       instance: url,

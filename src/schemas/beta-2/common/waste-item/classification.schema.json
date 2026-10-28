@@ -30,7 +30,7 @@
         "isPresent": true,
         "codes": ["HP_6", "HP_14"],
         "componentsSource": "PROVIDED_WITH_WASTE",
-        "componentsNotApplicable": false,
+        "isComponentsNotApplicable": false,
         "components": [
           {
             "name": "Mercury",

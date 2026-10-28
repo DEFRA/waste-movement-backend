@@ -139,6 +139,24 @@ function findEnumValues(node, pointer = '') {
   ]
 }
 
+/** JSON pointers to every boolean property whose name doesn't start with `is`. */
+function findMisnamedBooleans(node, pointer = '') {
+  if (!node || typeof node !== 'object') {
+    return []
+  }
+  const misnamed = Object.entries(node.properties ?? {})
+    .filter(
+      ([name, value]) => value?.type === 'boolean' && !/^is[A-Z]/.test(name)
+    )
+    .map(([name]) => `${pointer}/properties/${name}`)
+  return [
+    ...misnamed,
+    ...Object.entries(node).flatMap(([key, value]) =>
+      findMisnamedBooleans(value, `${pointer}/${key}`)
+    )
+  ]
+}
+
 const screamingSnake = /^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$/
 
 // errorType's values (NotProvided, BusinessRuleViolation, …) are
@@ -219,6 +237,14 @@ describe('schema conventions', () => {
           !enumCasingExceptions.has(`${id}#${pointer}`)
       )
       expect(miscased).toEqual([])
+    }
+  )
+
+  // A true/false field reads as a question: isPresent, isEstimate.
+  test.each(beta2Schemas)(
+    '%s starts every boolean field name with is',
+    (_, schema) => {
+      expect(findMisnamedBooleans(schema)).toEqual([])
     }
   )
 

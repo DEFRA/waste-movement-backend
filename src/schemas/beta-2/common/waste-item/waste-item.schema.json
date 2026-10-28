@@ -46,7 +46,7 @@
           "isPresent": true,
           "codes": ["HP_14"],
           "componentsSource": "GUIDANCE",
-          "componentsNotApplicable": true
+          "isComponentsNotApplicable": true
         }
       },
       "physicalDetails": {

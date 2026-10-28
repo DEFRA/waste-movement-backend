@@ -1475,7 +1475,7 @@ describe('POST /beta-2/receipts', () => {
         await expectCreated(
           withHazardousProperties({
             ...withoutComponents,
-            componentsNotApplicable: true
+            isComponentsNotApplicable: true
           })
         )
       })
@@ -1493,7 +1493,7 @@ describe('POST /beta-2/receipts', () => {
           [
             notAllowed('codes'),
             notAllowed('componentsSource'),
-            notAllowed('componentsNotApplicable'),
+            notAllowed('isComponentsNotApplicable'),
             notAllowed('components')
           ]
         )
@@ -1506,7 +1506,7 @@ describe('POST /beta-2/receipts', () => {
         await expectRejected(withHazardousProperties(withoutComponents), [
           {
             errorType: 'NotProvided',
-            message: "Required when 'componentsNotApplicable' is false",
+            message: "Required when 'isComponentsNotApplicable' is false",
             pointer: componentsPointer
           }
         ])
@@ -1529,12 +1529,12 @@ describe('POST /beta-2/receipts', () => {
         await expectRejected(
           withHazardousProperties({
             ...hazardousPresent,
-            componentsNotApplicable: true
+            isComponentsNotApplicable: true
           }),
           [
             {
               errorType: 'NotAllowed',
-              message: "Not allowed when 'componentsNotApplicable' is true",
+              message: "Not allowed when 'isComponentsNotApplicable' is true",
               pointer: componentsPointer
             }
           ]

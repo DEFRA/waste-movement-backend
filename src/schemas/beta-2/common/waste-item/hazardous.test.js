@@ -63,10 +63,10 @@ describe('Feature: Schema - declaring hazardous properties', () => {
   })
 
   describe('Scenario: No hazardous components need reporting', () => {
-    test('accepts componentsNotApplicable true, with a source and no components', () => {
+    test('accepts isComponentsNotApplicable true, with a source and no components', () => {
       const { components, ...withoutComponents } = hazardousPresent
       expect(
-        validateAjv({ ...withoutComponents, componentsNotApplicable: true })
+        validateAjv({ ...withoutComponents, isComponentsNotApplicable: true })
           .valid
       ).toBe(true)
     })
@@ -125,7 +125,7 @@ describe('Feature: Schema - declaring hazardous properties', () => {
         }),
         expect.objectContaining({
           keyword: 'not',
-          instancePath: '/componentsNotApplicable'
+          instancePath: '/isComponentsNotApplicable'
         }),
         expect.objectContaining({
           keyword: 'not',
@@ -162,7 +162,7 @@ describe('Feature: Schema - declaring hazardous properties', () => {
     test('rejects the components as not permitted', () => {
       const { valid, errors } = validateAjv({
         ...hazardousPresent,
-        componentsNotApplicable: true
+        isComponentsNotApplicable: true
       })
 
       expect(valid).toBe(false)
@@ -174,7 +174,7 @@ describe('Feature: Schema - declaring hazardous properties', () => {
 
   describe('Scenario Outline: Whether components are not applicable is missing or invalid', () => {
     test('rejects it not being provided, as required', () => {
-      const { componentsNotApplicable, ...withoutNotApplicable } =
+      const { isComponentsNotApplicable, ...withoutNotApplicable } =
         hazardousPresent
       const { valid, errors } = validateAjv(withoutNotApplicable)
 
@@ -182,7 +182,7 @@ describe('Feature: Schema - declaring hazardous properties', () => {
       expect(specificErrors(errors)).toEqual([
         expect.objectContaining({
           keyword: 'required',
-          params: { missingProperty: 'componentsNotApplicable' }
+          params: { missingProperty: 'isComponentsNotApplicable' }
         })
       ])
     })
@@ -191,17 +191,17 @@ describe('Feature: Schema - declaring hazardous properties', () => {
     // a value that isn't true or false.
     test.each(['Maybe', 'Unknown'])(
       'rejects %p as not true or false',
-      (componentsNotApplicable) => {
+      (isComponentsNotApplicable) => {
         const { valid, errors } = validateAjv({
           ...hazardousPresent,
-          componentsNotApplicable
+          isComponentsNotApplicable
         })
 
         expect(valid).toBe(false)
         expect(specificErrors(errors)).toEqual([
           expect.objectContaining({
             keyword: 'type',
-            instancePath: '/componentsNotApplicable'
+            instancePath: '/isComponentsNotApplicable'
           })
         ])
       }
@@ -300,7 +300,7 @@ describe('Feature: Schema - declaring hazardous properties', () => {
     test('rejects a source that is not provided when components are not applicable', () => {
       const { componentsSource, components, ...rest } = hazardousPresent
       expectRejected(
-        { ...rest, componentsNotApplicable: true },
+        { ...rest, isComponentsNotApplicable: true },
         {
           keyword: 'required',
           params: { missingProperty: 'componentsSource' }
@@ -373,7 +373,7 @@ describe('Feature: Schema - declaring hazardous properties', () => {
         }),
         expect.objectContaining({
           keyword: 'required',
-          params: { missingProperty: 'componentsNotApplicable' }
+          params: { missingProperty: 'isComponentsNotApplicable' }
         })
       ])
     })

@@ -27,7 +27,7 @@
           "phoneNumber": "01234567890"
         }
       },
-      "dutyOfCareConfirmed": true,
+      "isDutyOfCareConfirmed": true,
       "brokerOrDealer": {
         "isPresent": true,
         "items": [
@@ -86,7 +86,7 @@
           "phoneNumber": "01234567890"
         }
       },
-      "dutyOfCareConfirmed": true
+      "isDutyOfCareConfirmed": true
     }
   }
 }
