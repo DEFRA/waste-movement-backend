@@ -31,7 +31,7 @@ export const deliveryExists = async (db, deliveryId) => {
 
 /**
  * Finds the Movement IDs delivered under the given delivery id. Reads every
- * record with that id, as a resubmitted hazardous movement has more than one
+ * record with that id, as a resubmitted hazardous Movement has more than one
  * (see createDeliveryRecords).
  *
  * @param {import('mongodb').Db} db
@@ -89,8 +89,8 @@ export const createDeliveryRecord = async (db, delivery) => {
  * caller can safely retry.
  *
  * NOTE: the `deliveries` collection has no indexes, so nothing stops the same
- * data being stored twice: a movement submitted in a second delivery gets a
- * second record, and a resubmitted hazardous movement produces two records
+ * data being stored twice: a Movement submitted in a second delivery gets a
+ * second record, and a resubmitted hazardous Movement produces two records
  * with the same `deliveryId` (its Movement ID). To be addressed, e.g. with a
  * unique index on `deliveryId`, once the database layer is defined.
  *

@@ -29,7 +29,7 @@ const recordDelivery = {
   options: {
     description: 'Record a delivery',
     notes:
-      'Records a delivery event and returns one delivery for all non-hazardous movements, plus one per hazardous movement.',
+      'Records a delivery event and returns one Delivery for all non-hazardous Movements, plus one per hazardous Movement.',
     app: { journeyStep: 'delivery-recorded' },
     validate: {
       payload: validateRequest('delivery/record-delivery-request')
@@ -98,8 +98,8 @@ const recordDelivery = {
 }
 
 /**
- * Groups the submitted movements into deliveries: one minted delivery for all
- * the non-hazardous movements, then one delivery per hazardous movement whose
+ * Groups the submitted movements into deliveries: one minted Delivery for all
+ * the non-hazardous movements, then one Delivery per hazardous movement whose
  * Delivery ID is its own Movement ID. A movement is hazardous when any of its
  * waste items declares hazardous properties; one stored without waste items
  * (beta-1, or created before they were stored) is treated as non-hazardous.

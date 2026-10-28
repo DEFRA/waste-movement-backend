@@ -7,7 +7,7 @@
   "properties": {
     "data": {
       "type": "object",
-      "description": "The deliveries recorded by the request.",
+      "description": "The Deliveries recorded by the request.",
       "required": ["deliveries"],
       "properties": {
         "deliveries": {
@@ -15,7 +15,7 @@
           "items": {
             "$ref": "delivery-item.schema.json"
           },
-          "description": "One delivery covering all non-hazardous movements, plus one delivery per hazardous movement whose Delivery ID is its Movement ID."
+          "description": "One Delivery covering all non-hazardous Movements, plus one Delivery per hazardous Movement whose Delivery ID is its Movement ID."
         }
       },
       "additionalProperties": false

@@ -379,7 +379,7 @@
       "post": {
         "tags": ["Delivery"],
         "summary": "Record a delivery",
-        "description": "Records a delivery event. All the non-hazardous movements share one new Delivery ID; each hazardous movement gets its own delivery, whose Delivery ID is its Movement ID.",
+        "description": "Records a delivery event. All the non-hazardous Movements share one new Delivery ID; each hazardous Movement gets its own Delivery, whose Delivery ID is its Movement ID.",
         "operationId": "recordDelivery",
         "requestBody": {
           "required": true,
@@ -401,7 +401,7 @@
         },
         "responses": {
           "201": {
-            "description": "Delivery recorded. Body carries the recorded deliveries — the non-hazardous one first, then one per hazardous movement in the order submitted — and any validation warnings.",
+            "description": "Delivery recorded. Body carries the recorded Deliveries — the non-hazardous one first, then one per hazardous Movement in the order submitted — and any validation warnings.",
             "headers": {
               "x-request-id": {
                 "$ref": "#/components/headers/RequestId"
@@ -448,7 +448,7 @@
       "post": {
         "tags": ["Receipt"],
         "summary": "Record receipt of undocumented waste",
-        "description": "Fallback for recording receipt with no prior delivery, e.g. waste received with no movement trail. Not linked to any movement; `reasonForNoDeliveryId` must explain why. The server creates an empty delivery behind the scenes and returns its `deliveryId`, so the receipt stays addressable.",
+        "description": "Fallback for recording receipt with no prior Delivery, e.g. waste received with no movement trail. Not linked to any Movement; `reasonForNoDeliveryId` must explain why. The server creates an empty Delivery behind the scenes and returns its `deliveryId`, so the receipt stays addressable.",
         "operationId": "recordReceiptUndocumented",
         "requestBody": {
           "required": true,
@@ -467,7 +467,7 @@
         },
         "responses": {
           "201": {
-            "description": "Receipt recorded against a server-created empty delivery. Body carries the new Delivery ID and any validation warnings.",
+            "description": "Receipt recorded against a server-created empty Delivery. Body carries the new Delivery ID and any validation warnings.",
             "headers": {
               "x-request-id": {
                 "$ref": "#/components/headers/RequestId"
