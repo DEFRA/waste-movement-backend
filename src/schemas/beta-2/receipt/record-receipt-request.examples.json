@@ -6,7 +6,7 @@
       "carrier": {
         "organisationName": "Carrier Demo Ltd",
         "registrationNumber": "CBDU123456",
-        "meansOfTransport": "Road",
+        "meansOfTransport": "ROAD",
         "vehicleRegistration": "AB12 CDE",
         "contactDetails": {
           "emailAddress": "carrier@example.com",
@@ -68,7 +68,7 @@
       },
       "supportingReferences": [
         {
-          "label": "Weighbridge Number",
+          "label": "WEIGHBRIDGE_NUMBER",
           "reference": "WB-0042"
         }
       ]

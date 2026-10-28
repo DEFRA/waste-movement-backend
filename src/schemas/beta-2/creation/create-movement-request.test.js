@@ -58,9 +58,9 @@ describe('create-movement-request schema', () => {
   })
 
   test.each([
-    ['Household', householdProducer],
-    ['Commercial', commercialProducer],
-    ['Municipal', municipalProducer]
+    ['HOUSEHOLD', householdProducer],
+    ['COMMERCIAL', commercialProducer],
+    ['MUNICIPAL', municipalProducer]
   ])('accepts a valid %s producer', (_wasteSource, producer) => {
     const payload = {
       producer,

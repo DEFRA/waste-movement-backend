@@ -19,11 +19,11 @@ export const contactDetails = {
 }
 
 export const householdProducer = {
-  wasteSource: 'Household'
+  wasteSource: 'HOUSEHOLD'
 }
 
 export const commercialProducer = {
-  wasteSource: 'Commercial',
+  wasteSource: 'COMMERCIAL',
   organisationName: 'ACME Waste Producers Ltd',
   authorisationNumber: 'EAS/P/123456',
   address,
@@ -32,7 +32,7 @@ export const commercialProducer = {
 }
 
 export const municipalProducer = {
-  wasteSource: 'Municipal',
+  wasteSource: 'MUNICIPAL',
   organisationName: 'Test Council',
   reasonForNoAuthorisationNumber: 'TBC',
   address: {
@@ -74,7 +74,7 @@ export const receiver = {
 export const carrier = {
   organisationName: 'Carrier Demo Ltd',
   registrationNumber: 'CBDU123456',
-  meansOfTransport: 'Road',
+  meansOfTransport: 'ROAD',
   vehicleRegistration: 'AB12 CDE',
   contactDetails: {
     emailAddress: 'carrier@example.com',
@@ -104,7 +104,7 @@ export const collectionSite = {
 }
 
 export const supportingReference = {
-  label: 'PO Number',
+  label: 'PO_NUMBER',
   reference: 'PO-123456'
 }
 

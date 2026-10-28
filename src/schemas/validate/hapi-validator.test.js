@@ -18,7 +18,7 @@ const schemaId = 'beta-2/common/producer/producer-household.schema.json'
 
 describe('jsonSchemaRequestValidator', () => {
   test('returns the value unchanged when it is valid', () => {
-    const value = { wasteSource: 'Household' }
+    const value = { wasteSource: 'HOUSEHOLD' }
 
     expect(jsonSchemaRequestValidator(schemaId)(value)).toBe(value)
   })
@@ -102,7 +102,7 @@ describe('jsonSchemaRequestValidator', () => {
     const carrierId = 'beta-2/common/carrier.schema.json'
     const carrier = {
       organisationName: 'Carrier Ltd',
-      meansOfTransport: 'Rail',
+      meansOfTransport: 'RAIL',
       registrationNumber: 'CBDU123456',
       contactDetails: { emailAddress: 'carrier@example.com' }
     }
@@ -110,10 +110,10 @@ describe('jsonSchemaRequestValidator', () => {
     test.each([
       {
         rule: 'if/then',
-        value: { ...carrier, meansOfTransport: 'Road' },
+        value: { ...carrier, meansOfTransport: 'ROAD' },
         expected: [
           {
-            message: "Required when 'meansOfTransport' is 'Road'",
+            message: "Required when 'meansOfTransport' is 'ROAD'",
             path: ['vehicleRegistration'],
             type: 'NotProvided'
           }
@@ -124,7 +124,7 @@ describe('jsonSchemaRequestValidator', () => {
         value: { ...carrier, vehicleRegistration: 'AB12 CDE' },
         expected: [
           {
-            message: "Not allowed unless 'meansOfTransport' is 'Road'",
+            message: "Not allowed unless 'meansOfTransport' is 'ROAD'",
             path: ['vehicleRegistration'],
             type: 'NotAllowed'
           }
@@ -209,7 +209,7 @@ describe('jsonSchemaRequestValidator', () => {
         value: [{ label: 'Purchase order', reference: 'PO-48213' }],
         expected: {
           message:
-            "must be one of: 'Weighbridge Number', 'PO Number', 'Job Number', 'Invoice Number', 'Waste Ticket Number', 'Other'",
+            "must be one of: 'WEIGHBRIDGE_NUMBER', 'PO_NUMBER', 'JOB_NUMBER', 'INVOICE_NUMBER', 'WASTE_TICKET_NUMBER', 'OTHER'",
           path: ['0', 'label'],
           type: 'InvalidValue'
         }
@@ -219,7 +219,7 @@ describe('jsonSchemaRequestValidator', () => {
         id: 'beta-2/common/carrier.schema.json',
         value: {
           organisationName: 'Carrier Ltd',
-          meansOfTransport: 'Rail',
+          meansOfTransport: 'RAIL',
           contactDetails: { emailAddress: 'carrier@example.com' }
         },
         expected: {
@@ -236,7 +236,7 @@ describe('jsonSchemaRequestValidator', () => {
   test('nests the path for an error inside a sub-object', () => {
     const id = 'beta-2/common/producer/producer-commercial.schema.json'
     const [detail] = getDetails(id, {
-      wasteSource: 'Commercial',
+      wasteSource: 'COMMERCIAL',
       organisationName: 'ACME',
       sicCode: '38110',
       contactDetails: { emailAddress: 'a@b.com' },
@@ -256,7 +256,7 @@ describe('jsonSchemaRequestValidatorFor', () => {
     const validate = jsonSchemaRequestValidatorFor('beta-2')(
       'common/producer/producer-household'
     )
-    const value = { wasteSource: 'Household' }
+    const value = { wasteSource: 'HOUSEHOLD' }
 
     expect(validate(value)).toBe(value)
   })

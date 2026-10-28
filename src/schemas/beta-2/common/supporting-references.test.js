@@ -6,12 +6,12 @@ const validateAjv = validatorFor(
 
 describe('Feature: Recording supporting references', () => {
   const recognisedLabels = [
-    'Weighbridge Number',
-    'PO Number',
-    'Job Number',
-    'Invoice Number',
-    'Waste Ticket Number',
-    'Other'
+    'WEIGHBRIDGE_NUMBER',
+    'PO_NUMBER',
+    'JOB_NUMBER',
+    'INVOICE_NUMBER',
+    'WASTE_TICKET_NUMBER',
+    'OTHER'
   ]
 
   const supportingReferences = [supportingReference]

@@ -101,7 +101,7 @@ describe('Feature: Schema - declaring a carrier of the waste', () => {
       expect(
         validateAjv({
           ...carrier,
-          meansOfTransport: 'Road',
+          meansOfTransport: 'ROAD',
           vehicleRegistration: 'AB12 CDE'
         }).valid
       ).toBe(true)
@@ -121,7 +121,7 @@ describe('Feature: Schema - declaring a carrier of the waste', () => {
     test('validation passes when a description of the means of transport is submitted', () => {
       const payload = {
         ...withoutField('vehicleRegistration'),
-        meansOfTransport: 'Other',
+        meansOfTransport: 'OTHER',
         otherMeansOfTransport: 'Horse and cart'
       }
 
@@ -133,7 +133,7 @@ describe('Feature: Schema - declaring a carrier of the waste', () => {
     test('validation fails and a description of the means of transport is reported as required', () => {
       const { valid, errors } = validateAjv({
         ...withoutField('vehicleRegistration'),
-        meansOfTransport: 'Other'
+        meansOfTransport: 'OTHER'
       })
 
       expect(valid).toBe(false)
@@ -201,14 +201,14 @@ describe('Feature: Schema - declaring a carrier of the waste', () => {
     test.each([
       [
         'a vehicle registration when transporting by rail',
-        { ...carrier, meansOfTransport: 'Rail' },
+        { ...carrier, meansOfTransport: 'RAIL' },
         '/vehicleRegistration'
       ],
       [
         'a vehicle registration when transporting by other means',
         {
           ...carrier,
-          meansOfTransport: 'Other',
+          meansOfTransport: 'OTHER',
           otherMeansOfTransport: 'Horse and cart'
         },
         '/vehicleRegistration'

@@ -55,11 +55,11 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
   // phoneNumber provided) are covered by contact-details.test.js — this just
   // confirms producer requires the field at all.
   describe('Scenario: Commercial or Municipal producer omits contactDetails', () => {
-    test.each(['Commercial', 'Municipal'])(
+    test.each(['COMMERCIAL', 'MUNICIPAL'])(
       'the payload is rejected for a %s producer when contactDetails is missing',
       (wasteSource) => {
         const base =
-          wasteSource === 'Commercial' ? commercialProducer : municipalProducer
+          wasteSource === 'COMMERCIAL' ? commercialProducer : municipalProducer
         const { contactDetails, ...payload } = base
         expect(validateAjv(payload).valid).toBe(false)
       }
@@ -73,11 +73,11 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
   // rejected when submitted as part of a producer — not a re-test of every
   // format edge case.
   describe('Scenario: Commercial or Municipal producer has an invalid nested field', () => {
-    test.each(['Commercial', 'Municipal'])(
+    test.each(['COMMERCIAL', 'MUNICIPAL'])(
       'the payload is rejected for a %s producer when contactDetails has neither emailAddress nor phoneNumber',
       (wasteSource) => {
         const base =
-          wasteSource === 'Commercial' ? commercialProducer : municipalProducer
+          wasteSource === 'COMMERCIAL' ? commercialProducer : municipalProducer
         const payload = { ...base, contactDetails: {} }
         expect(validateAjv(payload).valid).toBe(false)
       }
@@ -115,11 +115,11 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
   })
 
   describe('Scenario: Commercial or Municipal producer provides neither authorisationNumber nor a reason', () => {
-    test.each(['Commercial', 'Municipal'])(
+    test.each(['COMMERCIAL', 'MUNICIPAL'])(
       'the payload is rejected for a %s producer when neither authorisationNumber nor reasonForNoAuthorisationNumber is provided',
       (wasteSource) => {
         const base =
-          wasteSource === 'Commercial' ? commercialProducer : municipalProducer
+          wasteSource === 'COMMERCIAL' ? commercialProducer : municipalProducer
         const {
           authorisationNumber,
           reasonForNoAuthorisationNumber,
@@ -131,11 +131,11 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
   })
 
   describe('Scenario: Commercial or Municipal producer provides both authorisationNumber and a reason', () => {
-    test.each(['Commercial', 'Municipal'])(
+    test.each(['COMMERCIAL', 'MUNICIPAL'])(
       'the payload is rejected for a %s producer when both authorisationNumber and reasonForNoAuthorisationNumber are provided',
       (wasteSource) => {
         const base =
-          wasteSource === 'Commercial' ? commercialProducer : municipalProducer
+          wasteSource === 'COMMERCIAL' ? commercialProducer : municipalProducer
         const payload = {
           ...base,
           authorisationNumber: 'EAS/P/123456',
@@ -147,11 +147,11 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
   })
 
   describe('Scenario: sicCode is not five digits', () => {
-    test.each(['Commercial', 'Municipal'])(
+    test.each(['COMMERCIAL', 'MUNICIPAL'])(
       'the payload is rejected for a %s producer with a malformed sicCode',
       (wasteSource) => {
         const base =
-          wasteSource === 'Commercial' ? commercialProducer : municipalProducer
+          wasteSource === 'COMMERCIAL' ? commercialProducer : municipalProducer
         const payload = { ...base, sicCode: '123' }
         expect(validateAjv(payload).valid).toBe(false)
       }
@@ -168,8 +168,8 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
       expect(validateAjv(commercialProducer).valid).toBe(true)
     })
 
-    test('rejects wasteSource given in lower/upper mismatched case', () => {
-      const payload = { ...commercialProducer, wasteSource: 'COMMERCIAL' }
+    test('rejects wasteSource given in title case', () => {
+      const payload = { ...commercialProducer, wasteSource: 'Commercial' }
       expect(validateAjv(payload).valid).toBe(false)
     })
 

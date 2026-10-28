@@ -57,7 +57,7 @@ describe('movement Route Tests version: beta-2', () => {
   const errorMessage = 'Database connection failed'
   const traceId = 'created-trace-id-123'
   const producer = {
-    wasteSource: 'Household'
+    wasteSource: 'HOUSEHOLD'
   }
   const intendedCarriers = [carrier]
   const intendedReceivers = [receiver]
@@ -72,7 +72,7 @@ describe('movement Route Tests version: beta-2', () => {
   }
 
   const commercialProducer = {
-    wasteSource: 'Commercial',
+    wasteSource: 'COMMERCIAL',
     organisationName: 'ACME Waste Producers Ltd',
     authorisationNumber: 'EAS/P/123456',
     address: {
@@ -87,7 +87,7 @@ describe('movement Route Tests version: beta-2', () => {
   }
 
   const municipalProducer = {
-    wasteSource: 'Municipal',
+    wasteSource: 'MUNICIPAL',
     organisationName: 'Test Council',
     reasonForNoAuthorisationNumber: 'TBC',
     address: {
@@ -146,8 +146,8 @@ describe('movement Route Tests version: beta-2', () => {
   })
 
   it.each([
-    ['Commercial', commercialProducer],
-    ['Municipal', municipalProducer]
+    ['COMMERCIAL', commercialProducer],
+    ['MUNICIPAL', municipalProducer]
   ])('creates a movement for a %s producer', async (_wasteSource, prod) => {
     const payload = {
       producer: prod,

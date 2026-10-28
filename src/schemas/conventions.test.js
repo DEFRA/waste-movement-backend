@@ -119,6 +119,35 @@ function findConditionMessages(node, pointer = '') {
   ]
 }
 
+/** [pointer, value] for every string `enum` / `const` value, field names aside. */
+function findEnumValues(node, pointer = '') {
+  if (!node || typeof node !== 'object') {
+    return []
+  }
+  const values = [
+    ...(Array.isArray(node.enum) ? node.enum : []),
+    ...('const' in node ? [node.const] : [])
+  ]
+    .filter((value) => typeof value === 'string')
+    .map((value) => [pointer, value])
+  return [
+    ...values,
+    ...Object.entries(node)
+      // A `propertyNames` enum lists field names, which are camelCase.
+      .filter(([key]) => key !== 'propertyNames')
+      .flatMap(([key, value]) => findEnumValues(value, `${pointer}/${key}`))
+  ]
+}
+
+const screamingSnake = /^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$/
+
+// errorType's values (NotProvided, BusinessRuleViolation, …) are
+// waste-movement-utils' validation error categories, which the legacy routes
+// return too, so they keep their casing.
+const enumCasingExceptions = new Set([
+  'beta-2/common/issue.schema.json#/properties/errorType'
+])
+
 const readAll = (suffix) =>
   collectFiles(schemaRoot, suffix).map((file) => [
     path.relative(schemaRoot, file),
@@ -171,6 +200,25 @@ describe('schema conventions', () => {
         ([, message]) => message.endsWith('.') || message.includes('"')
       )
       expect(malformed).toEqual([])
+    }
+  )
+
+  // One casing for every enum value, so callers never have to guess whether
+  // it's 'Road', 'road' or 'ROAD'. Upper-case codes (DRU, HP_1, R13) fit too.
+  const beta2Schemas = schemaFiles.filter(([file]) =>
+    file.startsWith(`beta-2${path.sep}`)
+  )
+
+  test.each(beta2Schemas)(
+    '%s uses SCREAMING_SNAKE for every enum value',
+    (file, schema) => {
+      const id = schemaIdFor(file)
+      const miscased = findEnumValues(schema).filter(
+        ([pointer, value]) =>
+          !screamingSnake.test(value) &&
+          !enumCasingExceptions.has(`${id}#${pointer}`)
+      )
+      expect(miscased).toEqual([])
     }
   )
 
