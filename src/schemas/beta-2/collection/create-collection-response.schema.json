@@ -6,10 +6,9 @@
   "required": ["data", "validation"],
   "properties": {
     "data": {
-      "type": ["object", "null"],
+      "type": "null",
       "description": "No resource id is returned for a collection event; always null.",
-      "examples": [null],
-      "additionalProperties": false
+      "examples": [null]
     },
     "validation": {
       "$ref": "../common/validation.schema.json"
