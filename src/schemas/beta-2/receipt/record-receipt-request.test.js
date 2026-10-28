@@ -79,8 +79,8 @@ describe('record-receipt-request schema', () => {
     )
   })
 
-  // Whether it's in the future depends on when the request arrives, so that's
-  // checked by receipt-date-time-checks.js, not the schema.
+  // The format rules are covered by common/receipt-date-time.test.js — these
+  // confirm it's required and that the $ref wiring is live.
   describe('receiptDateTime', () => {
     const validPayload = {
       receiptDateTime,
@@ -104,51 +104,16 @@ describe('record-receipt-request schema', () => {
       )
     })
 
-    test.each([
-      ['2026-10-14T09:30:00Z'],
-      ['2026-10-14T09:30:00.123Z'],
-      ['2026-10-14T09:30:00+01:00']
-    ])('accepts the ISO 8601 date-time %j', (value) => {
-      expect(
-        validateAjv({ ...validPayload, receiptDateTime: value }).valid
-      ).toBe(true)
-    })
-
-    test.each([
-      ['14/10/2026'],
-      ['2026-13-01T10:00:00Z'],
-      ['Yesterday'],
-      ['2026-10-14'],
-      ['2026-10-14T09:30:00'],
-      ['']
-    ])(
-      'rejects %j, which is not an ISO 8601 date-time with a timezone',
-      (value) => {
-        const { valid, errors } = validateAjv({
-          ...validPayload,
-          receiptDateTime: value
-        })
-
-        expect(valid).toBe(false)
-        expect(errors).toContainEqual(
-          expect.objectContaining({
-            keyword: 'format',
-            instancePath: '/receiptDateTime'
-          })
-        )
-      }
-    )
-
-    test('rejects a value that is not a string', () => {
+    test('applies the receipt-date-time rules', () => {
       const { valid, errors } = validateAjv({
         ...validPayload,
-        receiptDateTime: 1792056600000
+        receiptDateTime: '14/10/2026'
       })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
         expect.objectContaining({
-          keyword: 'type',
+          keyword: 'format',
           instancePath: '/receiptDateTime'
         })
       )
