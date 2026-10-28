@@ -32,22 +32,6 @@ Its **Try it** runs the routes' real Joi schemas in the browser: `legacy/check.j
 routes), and `legacy/bundle.js` bundles it with esbuild. Errors therefore come back in the legacy API's format,
 `{ key, errorType, message }`. The examples come from the utils package's own valid test payload.
 
-It also writes a spreadsheet for each version (e.g. `beta-2-schemas.xlsx`), which that version's page links
-to. The spreadsheet has these tabs:
-
-- **About**: version, commit and how to read the file.
-- **Endpoints**: the request bodies, with field, fragment and rule counts.
-- **Usage**: which request bodies use each fragment, directly or nested inside another fragment.
-- **Fragments**: every shared fragment, what references it and every path where it appears.
-- **One tab per request body**: every field path, fully expanded through fragments.
-- **One tab per fragment**: the fragment's own fields.
-
-Field tabs have the same columns: path, field, type, required, conditions and rules, allowed values,
-format or pattern, min, max, description, the fragment the field uses and the fragment it is defined in.
-
-To get a Google Sheet, upload the `.xlsx` to Google Drive and open it with Google Sheets (or turn on
-"Convert uploads" in Drive settings). All tabs come across.
-
 Everything is generated from the schema files alone, so it can't drift from them. Within a version, every
 `*-request.schema.json` and `*-response.schema.json` is a top-level schema, and everything they reference is
 a shared fragment. No OpenAPI spec is read. Each top-level schema's page is named after its file, e.g.
@@ -65,7 +49,7 @@ with the same version at that ref, e.g. `main`:
   inside it. Selecting a changed field shows what changed, and what was removed from inside it.
 - The sidebar marks changed schemas and fragments, and each one's page links to its changes.
 
-A field counts as changed when anything the page or spreadsheet shows for it changed: its type, whether
+A field counts as changed when anything the page shows for it changed: its type, whether
 it's required, its conditions and rules, allowed values, format or pattern, limits, description or the
 fragment it uses. A field added or removed with everything inside it is listed once, with a count of the
 fields inside. A renamed schema file shows as one removed and one added. The legacy (ReceiptOfWaste)
@@ -81,8 +65,7 @@ npm run docs:schemas -- --since main
 
 ```sh
 npm run docs:schemas
-open .schema-explorer/index.html                     # opens the latest version
-open .schema-explorer/beta-2/beta-2-schemas.xlsx     # a version's spreadsheet
+open .schema-explorer/index.html    # opens the latest version
 ```
 
 This writes:
@@ -91,28 +74,24 @@ This writes:
 .schema-explorer/
   index.html                  sends visitors to the latest version, keeping any #link
   beta-1/index.html           beta-1's diagram
-  beta-1/beta-1-schemas.xlsx  beta-1's spreadsheet
   beta-2/index.html
-  beta-2/beta-2-schemas.xlsx
+  legacy/index.html           the ReceiptOfWaste (legacy) routes
 ```
 
 The generator uses the repo's own `ajv` and `ajv-formats` to compile the validators for **Try it**, and
 `esbuild` (a dev dependency) for the legacy bundle, so run `npm ci` first. To point it at other schemas:
 
 ```sh
-node scripts/schema-explorer/build.js <schemas> <outDir> --standalone [--xlsx]
+node scripts/schema-explorer/build.js <schemas> <outDir> --standalone
 ```
 
 `schemas` is either a folder of versions, whose `beta-N` subfolders are the versions (`src/schemas`), or a
 single version's folder (`src/schemas/beta-2`). Versions are sorted by number, and the last one is the
 latest.
 
-`--xlsx` also writes `<version>-schemas.xlsx` beside each page. Set `SITE_URL` to the site's base address to
-record each version's published page on its About tab.
-
 ## Publishing
 
-`.github/workflows/schema-explorer.yml` rebuilds every version's page and spreadsheet and deploys them to
+`.github/workflows/schema-explorer.yml` rebuilds every version's page and deploys them to
 GitHub Pages on every push to `main` that touches `src/schemas/**` or this folder. It can also be run by
 hand from the Actions tab. A new `beta-N` folder is picked up with no changes here.
 
@@ -125,8 +104,8 @@ The pull request check (`.github/workflows/check-pull-request.yml`) builds the e
 
 ## Files
 
-- `build.js` is the command line: it finds the versions and writes each one's page and spreadsheet.
-- `model.js` reads one version's schemas and normalises them into the tree the page and spreadsheet use.
+- `build.js` is the command line: it finds the versions and writes each one's page.
+- `model.js` reads one version's schemas and normalises them into the tree the page uses.
 - `template.html` holds the page's styles and script. The generator replaces `__MODEL__` with the data.
 - `validators.js` compiles a version's schemas into standalone validation code for **Try it**. Keep its
   ajv options in step with `src/schemas/validate/index.js`.
@@ -151,8 +130,7 @@ The pull request check (`.github/workflows/check-pull-request.yml`) builds the e
   **Try it**.
 - `legacy.test.js` checks the legacy page's bundle reports exactly what `legacy/check.js` does unbundled
   against the real modules, for every example and every way of breaking each field.
+- `fields.js` describes each field as text (type, required, rules, limits…), for `changes.js` to compare.
 - `changes.js` compares a version's model with an earlier build of it for **What's changed**, and writes the
   Markdown summary. `changes.test.js` checks it finds known edits to a copy of beta-2.
 - `test-cases.js` makes the broken payloads the tests use.
-- `spreadsheet.js` turns the same data into spreadsheet tabs.
-- `xlsx.js` writes the `.xlsx` file. It has no dependencies (an `.xlsx` is a zip of XML).

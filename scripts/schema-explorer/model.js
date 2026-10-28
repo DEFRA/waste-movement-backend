@@ -296,7 +296,7 @@ const applyOverrides = (node, overrides) => {
  * @param {{ extraExamples?: Record<string, unknown[]> }} [options]
  *   extraExamples: more examples for fragments, by file, kept with the
  *   explorer rather than in the schemas (see examples/)
- * @returns {object} the model the page and the spreadsheet are built from
+ * @returns {object} the model the page is built from
  */
 export const buildModel = (schemaDir, { extraExamples = {} } = {}) => {
   const cache = new Map()

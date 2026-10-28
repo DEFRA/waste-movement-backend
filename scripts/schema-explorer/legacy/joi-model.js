@@ -1,5 +1,5 @@
 // Builds the explorer's model for the legacy (Joi) routes, the same shape
-// model.js builds from JSON Schema, so the diagram, search and spreadsheet work
+// model.js builds from JSON Schema, so the diagram and search work
 // unchanged. Joi describes itself (schema.describe()); this reads that:
 // - keys, items, types and limits (min, max, pattern, valid, email…),
 // - .when() as conditions on the field ("Required when … is …"),

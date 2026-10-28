@@ -12,7 +12,7 @@
     "docker:dev": "NODE_ENV=development npm run server:watch",
     "dev": "NODE_ENV=development npm run server:watch",
     "dev:debug": "NODE_ENV=development npm run server:debug",
-    "docs:schemas": "node scripts/schema-explorer/build.js src/schemas .schema-explorer --standalone --xlsx --legacy",
+    "docs:schemas": "node scripts/schema-explorer/build.js src/schemas .schema-explorer --standalone --legacy",
     "test:schema-explorer": "node --test \"scripts/schema-explorer/*.test.js\"",
     "format": "prettier --write \"**/*.{cjs,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{cjs,js,json,md}\"",

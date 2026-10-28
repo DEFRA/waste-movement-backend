@@ -1,7 +1,8 @@
 name: Schema Explorer
 
-# Rebuilds the schema explorer (a page and a spreadsheet for every beta-* version under src/schemas)
-# and publishes it to GitHub Pages whenever the schemas (or the generator) change on main.
+# Rebuilds the schema explorer (a page for every beta-* version under src/schemas, and one for the
+# legacy ReceiptOfWaste routes) and publishes it to GitHub Pages whenever the schemas (or the
+# generator) change on main.
 
 on:
   push:
@@ -37,7 +38,6 @@ jobs:
           cache: npm
 
       - name: Configure Pages
-        id: pages
         uses: actions/configure-pages@v5
 
       # The "Try it" view embeds validators compiled with the API's own ajv and
@@ -50,11 +50,8 @@ jobs:
       - name: Check the explorer validates like the API
         run: npm run test:schema-explorer
 
-      # Writes each version's page and the spreadsheet (.xlsx) it links to.
-      - name: Generate pages and spreadsheets
+      - name: Generate pages
         run: npm run docs:schemas
-        env:
-          SITE_URL: ${{ steps.pages.outputs.base_url }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

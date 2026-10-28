@@ -4,7 +4,7 @@
 // with $ref fragments resolved and oneOf / anyOf / if-then-else turned into
 // plain rules. The model itself is built by model.js.
 //
-// Usage: node scripts/schema-explorer/build.js [schemas] [outDir] [--standalone] [--xlsx] [--legacy]
+// Usage: node scripts/schema-explorer/build.js [schemas] [outDir] [--standalone] [--legacy]
 //          [--since <git ref>] [--changes-md <file>]
 //   schemas       a folder of versions (its beta-N subfolders, e.g.
 //                 src/schemas/beta-1 and src/schemas/beta-2), or one version's
@@ -16,9 +16,6 @@
 //                 <outDir>/index.html sends visitors to the latest version.
 //   --standalone  write complete HTML documents (for GitHub Pages); without it
 //                 each page is a body for hosts that add their own <head>
-//   --xlsx        also write a spreadsheet (<version>-schemas.xlsx) beside each
-//                 page, with one tab per request body and per fragment, and link
-//                 to it from the page. SITE_URL, if set, is noted in the file.
 //   --legacy      also add a "legacy" version, before the others, for the
 //                 Joi-validated receive and bulk-receive routes (legacy/)
 //   --since <ref> compare every beta version with the same schemas at a git
@@ -35,7 +32,6 @@ import { execFileSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { buildModel } from './model.js'
-import { buildSpreadsheet } from './spreadsheet.js'
 import { buildValidators } from './validators.js'
 import { buildLegacyBundle } from './legacy/bundle.js'
 import { buildChecksBundle } from './checks/bundle.js'
@@ -46,7 +42,6 @@ import { compareModels, changesMarkdown } from './changes.js'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const args = process.argv.slice(2)
 const standalone = args.includes('--standalone')
-const xlsx = args.includes('--xlsx')
 const legacy = args.includes('--legacy')
 const VALUE_FLAGS = ['--since', '--changes-md']
 const valueOf = (flag) =>
@@ -114,8 +109,7 @@ if (legacy) {
   })
 }
 
-// The name each version is shown under (the switcher, headings, spreadsheet
-// file), by folder. A version not listed keeps its own name. The folders, and
+// The name each version is shown under (the switcher and headings), by folder. A version not listed keeps its own name. The folders, and
 // so the URLs, don't change.
 const VERSION_NAMES = {
   legacy: 'ReceiptOfWaste'
@@ -308,18 +302,6 @@ for (const { slug, model, validators, bundle } of versions) {
     href: `../${v.slug}/index.html`,
     current: v.slug === slug
   }))
-
-  if (xlsx) {
-    model.spreadsheet = `${(model.api.version ?? slug).replace(/[^\w.-]+/g, '-')}-schemas.xlsx`
-    const file = path.join(dir, model.spreadsheet)
-    const siteUrl = process.env.SITE_URL
-      ? `${process.env.SITE_URL.replace(/\/$/, '')}/${slug}/`
-      : undefined
-    fs.writeFileSync(file, buildSpreadsheet(model, { siteUrl }))
-    console.log(
-      `Schema spreadsheet (${slug}): ${model.roots.filter((r) => r.kind === 'request').length} request tabs, ${model.fragments.length} fragment tabs -> ${path.relative(process.cwd(), file)}`
-    )
-  }
 
   // The "Try it" view validates with the same compiled schemas as the API, or
   // for legacy, the same Joi schemas.

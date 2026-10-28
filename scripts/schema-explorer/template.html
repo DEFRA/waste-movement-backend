@@ -79,7 +79,6 @@ button { font: inherit; color: inherit; }
 .brand { padding: 0 8px 16px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
 .brand b { display: block; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
 .brand span { color: var(--muted); font-size: 12px; }
-.brand .download { display: block; margin-top: 8px; font-size: 12.5px; font-weight: 500; color: var(--accent); }
 .site-search { margin: 0 0 12px; }
 .site-search .search { max-width: none; width: 100%; }
 .site-search kbd { font-family: var(--font-mono); font-size: 11px; color: var(--faint); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; line-height: 16px; }
@@ -1422,8 +1421,7 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
       h('div', { class: 'brand' }, h('b', {}, 'Schema Explorer'), h('span', {}, `JSON Schemas · ${M.api.version || ''}`),
         M.versions && M.versions.length > 1 && h('nav', { class: 'versions', 'aria-label': 'Schema version' }, M.versions.map((v) =>
           // Carry the current view across, e.g. #createMovement; a view the other version lacks falls back to its overview.
-          h('a', { href: v.href, 'aria-current': v.current ? 'page' : null, onclick: (e) => { if (v.current) { e.preventDefault(); return } e.currentTarget.href = v.href + location.hash } }, v.version))),
-        M.spreadsheet && h('a', { class: 'download', href: M.spreadsheet, download: M.spreadsheet }, 'Download as spreadsheet')),
+          h('a', { href: v.href, 'aria-current': v.current ? 'page' : null, onclick: (e) => { if (v.current) { e.preventDefault(); return } e.currentTarget.href = v.href + location.hash } }, v.version)))),
       siteSearch,
       link({ href: '#', current: state.view === 'overview', go: () => go({ view: 'overview' }), cls: 'nav-overview' }, 'Overview'),
       changes && link({ href: '#changes', current: state.view === 'changes', go: () => go({ view: 'changes' }), cls: 'nav-overview nav-changes' },
@@ -1463,8 +1461,7 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
         backLink(),
         h('div', { class: 'eyebrow' }, `${M.api.version} · ${M.schemaDir}`),
         h('h1', {}, `JSON Schemas · ${M.api.version}`),
-        h('p', { class: 'lede' }, `${requests.length} request schemas built from ${M.fragments.length} shared fragments. Open a schema to explore it as a diagram, down to every field, rule and branch. Open a fragment to see everywhere it is used.`),
-        M.spreadsheet && h('p', { class: 'lede' }, 'The same information is available as a ', h('a', { href: M.spreadsheet, download: M.spreadsheet }, 'spreadsheet (.xlsx)'), ', with one tab per request schema and per fragment. Import it into Google Drive to get a Google Sheet.')),
+        h('p', { class: 'lede' }, `${requests.length} request schemas built from ${M.fragments.length} shared fragments. Open a schema to explore it as a diagram, down to every field, rule and branch. Open a fragment to see everywhere it is used.`)),
       h('div', { class: 'cards' }, requests.map((r) => h('button', { class: 'card', type: 'button', onclick: () => go({ view: 'root', id: r.id }) },
         h('span', { class: 'c-title' }, schemaName(r)),
         h('span', { class: 'c-path' }, schemaFile(r.file)),

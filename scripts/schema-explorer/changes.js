@@ -2,13 +2,12 @@
 // commit (e.g. main) for the "What's changed" view: which top-level schemas and
 // shared fragments were added, removed or changed, and in each, which fields.
 //
-// Fields are compared by path, on the text the spreadsheet shows for them
-// (spreadsheet.js fieldEntries), so a change counts when it would change what a
-// reader sees: type, required, conditions and rules, allowed values, format,
+// Fields are compared by path, on the text that describes them (fields.js), so
+// a change counts when it would change what a reader sees: type, required, conditions and rules, allowed values, format,
 // limits, description or the fragment it uses. A field added or removed with
 // everything inside it is listed once, with how many fields came with it.
 
-import { fieldEntries, valueEntry } from './spreadsheet.js'
+import { fieldEntries, valueEntry } from './fields.js'
 
 const COMPARED = [
   ['type', 'Type'],
