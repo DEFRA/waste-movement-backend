@@ -184,6 +184,16 @@
   "common/waste-item/waste-items.schema.json": [
     [
       {
+        "classification": {
+          "wasteDescription": "Mixed municipal waste",
+          "ewcCodes": ["200301"],
+          "pops": {
+            "isPresent": false
+          },
+          "hazardous": {
+            "isPresent": false
+          }
+        },
         "physicalDetails": {
           "form": "SOLID",
           "containerType": "DRU",
@@ -198,6 +208,16 @@
     ],
     [
       {
+        "classification": {
+          "wasteDescription": "Mixed municipal waste",
+          "ewcCodes": ["200301"],
+          "pops": {
+            "isPresent": false
+          },
+          "hazardous": {
+            "isPresent": false
+          }
+        },
         "physicalDetails": {
           "form": "SOLID",
           "containerType": "DRU",
@@ -210,6 +230,32 @@
         }
       },
       {
+        "classification": {
+          "wasteDescription": "Fluorescent tubes",
+          "ewcCodes": ["200121"],
+          "pops": {
+            "isPresent": true,
+            "componentsSource": "GUIDANCE",
+            "components": [
+              {
+                "code": "PFOS",
+                "threshold": "LESS_THAN"
+              }
+            ]
+          },
+          "hazardous": {
+            "isPresent": true,
+            "codes": ["HP_6", "HP_14"],
+            "componentsSource": "PROVIDED_WITH_WASTE",
+            "componentsNotApplicable": false,
+            "components": [
+              {
+                "name": "Mercury",
+                "threshold": "EQUAL_TO"
+              }
+            ]
+          }
+        },
         "physicalDetails": {
           "form": "MIXED",
           "containerType": "LOO",

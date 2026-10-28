@@ -52,10 +52,26 @@ a { color: inherit; }
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
 
-.shell { display: grid; grid-template-columns: 270px minmax(0, 1fr); min-height: 100%; }
+.shell { --side-w: 270px; display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); min-height: 100%; transition: grid-template-columns .2s ease; }
+.shell.side-closed { grid-template-columns: 0 minmax(0, 1fr); }
+.shell.resizing { transition: none; user-select: none; cursor: col-resize; }
 
 /* ---------- sidebar ---------- */
-.side { border-right: 1px solid var(--line); background: var(--surface); padding: 20px 14px 40px; position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; overflow-y: auto; }
+/* The column holds the sidebar, its drag handle and the tab that opens and
+   closes it; the tab sticks out past the column's edge, so it stays put when
+   the sidebar is closed. */
+.side-col { position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; z-index: 20; min-width: 0; }
+.side { border-right: 1px solid var(--line); background: var(--surface); padding: 20px 14px 40px; height: 100%; overflow-y: auto; }
+.side-closed .side { visibility: hidden; }
+.side-resize { position: absolute; top: 0; right: -3px; width: 6px; height: 100%; cursor: col-resize; touch-action: none; }
+.side-resize::after { content: ""; position: absolute; inset: 0 2px; background: var(--accent); opacity: 0; transition: opacity .15s; }
+.side-resize:hover::after, .side-resize:focus-visible::after, .resizing .side-resize::after { opacity: 1; }
+.side-resize:focus-visible { outline: none; }
+.side-closed .side-resize { display: none; }
+.side-tab { position: absolute; top: 84px; left: 100%; display: grid; place-items: center; width: auto; height: 56px; padding: 0 12px; border: 1px solid var(--line); border-left: 0; border-radius: 0 8px 8px 0; background: var(--surface); color: var(--muted); cursor: pointer; box-shadow: 2px 1px 4px rgb(0 0 0 / 0.06); }
+.side-tab:hover { color: var(--ink); background: var(--sunken); }
+.side-tab .chev { width: 16px; height: 16px; border-left: 2.75px solid currentColor; border-bottom: 2.75px solid currentColor; border-radius: 2px; transform: translateX(3px) rotate(45deg); transition: transform .2s; }
+.side-closed .side-tab .chev { transform: translateX(-3px) rotate(-135deg); }
 .brand { padding: 0 8px 16px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
 .brand b { display: block; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
 .brand span { color: var(--muted); font-size: 12px; }
@@ -100,7 +116,7 @@ button { font: inherit; color: inherit; }
 .dots i.nested { background: transparent; box-shadow: inset 0 0 0 1.5px var(--frag); }
 
 /* ---------- main ---------- */
-.main { min-width: 0; padding: 24px clamp(16px, 3vw, 36px) 60px; }
+.main { min-width: 0; padding: 24px clamp(16px, 3vw, 36px) 60px; padding-left: max(clamp(16px, 3vw, 36px), 56px); transition: padding-left .2s ease; }
 .page { max-width: 1080px; }
 .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
 h1 { font-size: 24px; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em; margin: 4px 0; text-wrap: balance; }
@@ -176,7 +192,12 @@ svg.wires circle { fill: var(--surface); stroke: var(--wire); stroke-width: 1.6;
 .brow.open .port { background: var(--wire); color: var(--surface); }
 .brow.selected { background: var(--accent-soft); }
 .brow.hit { background: var(--hit); }
-.brow.lit { background: var(--cond-soft); }
+.rule-links { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; z-index: 1; }
+.rule-links path { fill: none; stroke: var(--cond); stroke-width: 1.5; stroke-dasharray: 4 3; animation: rule-dash 0.6s linear infinite; }
+.rule-links circle { fill: var(--cond); }
+@keyframes rule-dash { to { stroke-dashoffset: -7; } }
+@media (prefers-reduced-motion: reduce) { .rule-links path { animation: none; } }
+.brow.lit { background: var(--cond-soft); box-shadow: inset 3px 0 0 var(--cond); }
 .brow.flash { animation: flash 1.8s ease-out; }
 @keyframes flash { 0%, 45% { background: var(--hit); } 100% { background: transparent; } }
 .mk { width: 9px; height: 9px; border-radius: 50%; justify-self: center; }
@@ -190,7 +211,8 @@ svg.wires circle { fill: var(--surface); stroke: var(--wire); stroke-width: 1.6;
 .frag-tag { font-family: var(--font-mono); font-size: 10.5px; color: var(--frag); background: var(--frag-soft); padding: 0 5px; border-radius: 3px; margin-left: 6px; font-weight: 500; }
 
 .brules { border-top: 1px dashed var(--line); padding: 6px 10px 8px; display: grid; gap: 4px; }
-.brule { font-size: 12px; line-height: 1.4; padding: 4px 8px; border-radius: 4px; background: var(--cond-soft); display: grid; gap: 1px; cursor: default; }
+.brule { font-size: 12px; line-height: 1.4; padding: 4px 8px; border-radius: 4px; background: var(--cond-soft); display: grid; gap: 1px; cursor: default; transition: box-shadow 0.15s; }
+.brule:hover { box-shadow: inset 0 0 0 1.5px var(--cond); }
 .brule .rk { font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cond); }
 .brule code { font-size: 11px; }
 .bfoot { padding: 0 12px 8px; font-size: 11px; color: var(--faint); }
@@ -222,11 +244,11 @@ a.frag-pill:hover { text-decoration: underline; }
 .pathline code { word-break: break-all; }
 .hint { color: var(--muted); font-size: 13px; display: grid; gap: 10px; }
 .canvas-wrap { position: relative; min-width: 0; min-height: 0; display: grid; }
-.diagram-key { position: absolute; left: 12px; bottom: 18px; z-index: 4; max-width: calc(100% - 24px); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+.diagram-key { position: absolute; right: 18px; top: 12px; z-index: 4; max-width: calc(100% - 24px); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
 .diagram-key > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-radius: 8px; }
 .diagram-key > summary::-webkit-details-marker { display: none; }
-.diagram-key > summary::after { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-135deg); margin-top: 3px; transition: transform .15s; }
-.diagram-key[open] > summary::after { transform: rotate(45deg); margin-top: -3px; }
+.diagram-key > summary::after { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); margin-top: -3px; transition: transform .15s; }
+.diagram-key[open] > summary::after { transform: rotate(-135deg); margin-top: 3px; }
 .diagram-key[open] > summary { border-bottom: 1px solid var(--line); border-radius: 8px 8px 0 0; }
 .diagram-key > summary:hover { color: var(--ink); }
 .key { display: grid; gap: 6px; font-size: 12px; padding: 8px 12px 10px; }
@@ -349,8 +371,11 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
   .frow > .flabel { grid-column: 1 / -1; }
 }
 @media (max-width: 860px) {
-  .shell { grid-template-columns: minmax(0, 1fr); }
-  .side { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 14px 16px; }
+  .shell, .shell.side-closed { grid-template-columns: minmax(0, 1fr); }
+  .side-col { position: static; height: auto; }
+  .side-closed .side { visibility: visible; }
+  .side-resize, .side-tab { display: none; }
+  .side { height: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 14px 16px; }
   .main { padding: 18px 16px 50px; }
   h1 { font-size: 20px; }
   .endpoint .path { font-size: 15px; }
@@ -360,8 +385,12 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
 }
 </style>
 
-<div class="shell">
-  <aside class="side" id="side"></aside>
+<div class="shell" id="shell">
+  <div class="side-col">
+    <aside class="side" id="side"></aside>
+    <div class="side-resize" id="side-resize" role="separator" aria-orientation="vertical" aria-controls="side" aria-label="Resize navigation" tabindex="0" title="Drag to resize. Double-click to reset."></div>
+    <button class="side-tab" id="side-tab" type="button" aria-controls="side"><span class="chev" aria-hidden="true"></span></button>
+  </div>
   <main class="main" id="main"></main>
 </div>
 
@@ -588,11 +617,11 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
       }
       el.append(rows)
       if (n.rules && spec.kind !== 'switch') {
-        el.append(h('div', { class: 'brules' }, n.rules.map((r) => {
+        el.append(h('div', { class: 'brules' }, n.rules.map((r, i) => {
           const strip = h('div', { class: 'brule' }, h('span', { class: 'rk' }, r.label),
             r.text ? rich(r.text) : r.cases.map((c) => h('div', {}, rich(c.when), ' → ', c.effects.length ? c.effects.map((e, i) => [i ? '; ' : '', rich(e)]) : 'no further constraints')))
-          strip.addEventListener('mouseenter', () => light(el, strip, true))
-          strip.addEventListener('mouseleave', () => light(el, strip, false))
+          strip.addEventListener('mouseenter', () => hoverRule(el, i, true))
+          strip.addEventListener('mouseleave', () => hoverRule(el, i, false))
           return strip
         })))
       }
@@ -600,9 +629,45 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
       return el
     }
 
-    const light = (blockEl, strip, on) => {
-      const names = new Set([...strip.querySelectorAll('code[data-ref]')].map((c) => c.dataset.ref))
-      blockEl.querySelectorAll(':scope > .rows > .brow').forEach((r) => r.classList.toggle('lit', on && names.has(r.dataset.name)))
+    // Hovering a rule lights the fields it mentions, with a dashed line down
+    // the block's left edge from each field to the rule, so the link shows
+    // even when the field is out of view.
+    const refsOf = (strip) => new Set([...strip.querySelectorAll('code[data-ref]')].map((c) => c.dataset.ref))
+    const rowsIn = (blockEl) => [...blockEl.querySelectorAll(':scope > .rows > .brow')]
+    const stripsIn = (blockEl) => [...blockEl.querySelectorAll(':scope > .brules > .brule')]
+    const SVGNS = 'http://www.w3.org/2000/svg'
+    // Each line leaves the field's left edge, runs down outside the block
+    // (each a step further out, so they don't overlap) and enters the rule.
+    const drawLinks = (blockEl, pairs) => {
+      blockEl.querySelector(':scope > .rule-links')?.remove()
+      if (!pairs.length || !blockEl.isConnected) return
+      const svg = document.createElementNS(SVGNS, 'svg')
+      svg.setAttribute('class', 'rule-links')
+      svg.setAttribute('aria-hidden', 'true')
+      pairs.forEach(([row, strip], i) => {
+        const y1 = row.offsetTop + row.offsetHeight / 2
+        const y2 = strip.offsetTop + Math.min(strip.offsetHeight / 2, 14)
+        const x = -12 - i * 7
+        const r = Math.min(8, Math.abs(y2 - y1) / 2)
+        const dir = y2 > y1 ? 1 : -1
+        const path = document.createElementNS(SVGNS, 'path')
+        path.setAttribute('d', `M 0 ${y1} H ${x + r} Q ${x} ${y1} ${x} ${y1 + dir * r} V ${y2 - dir * r} Q ${x} ${y2} ${x + r} ${y2} H 0`)
+        svg.append(path)
+        for (const y of [y1, y2]) {
+          const dot = document.createElementNS(SVGNS, 'circle')
+          dot.setAttribute('cx', 0); dot.setAttribute('cy', y); dot.setAttribute('r', 2.5)
+          svg.append(dot)
+        }
+      })
+      blockEl.append(svg)
+    }
+    const hoverRule = (blockEl, index, on) => {
+      const rows = rowsIn(blockEl)
+      const strip = on ? stripsIn(blockEl)[index] : null
+      const refs = strip ? refsOf(strip) : new Set()
+      const lit = rows.filter((r) => refs.has(r.dataset.name))
+      rows.forEach((r) => r.classList.toggle('lit', lit.includes(r)))
+      drawLinks(blockEl, lit.map((row) => [row, strip]))
     }
 
     const COLW = 300, GAPX = 84, GAPY = 20, PAD = 28
@@ -919,7 +984,7 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
     return { stage, controls, draw, reveal, highlight, showIntro, snapshot, restoreView }
   }
 
-  // The key sits in the diagram pane's corner, open or closed as the viewer
+  // The key sits in the diagram pane's top-right corner, open or closed as the viewer
   // last left it (closed by default on narrow screens, where space is tight).
   const keyPanel = () => {
     const line = (cls) => { const w = s('svg', { width: 40, height: 10, class: 'wires', style: 'position:static' }); w.append(s('path', { d: 'M1 5 L39 5', class: cls })); return w }
@@ -1129,9 +1194,64 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
   document.addEventListener('pointerdown', (e) => { if (!siteSearch.contains(e.target)) closeResults() })
   document.addEventListener('keydown', (e) => {
     const typing = e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]')
-    if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); searchInput.focus(); searchInput.select() }
+    if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); setSideOpen(true); searchInput.focus(); searchInput.select() }
   })
   window.addEventListener('resize', () => !searchPanel.hidden && placePanel())
+
+  // ---------- sidebar: open and close with the tab, drag to resize ----------
+  // Both are remembered in this browser.
+  const shell = document.getElementById('shell')
+  const sideTab = document.getElementById('side-tab')
+  const sideResize = document.getElementById('side-resize')
+  const SIDE_DEFAULT = 270, SIDE_MIN = 200, SIDE_MAX = 560
+  const clampSide = (w) => Math.round(Math.max(SIDE_MIN, Math.min(SIDE_MAX, Math.min(w, window.innerWidth - 360))))
+  let sideWidth = clampSide(Number(store.get('side-width')) || SIDE_DEFAULT)
+  const setSideWidth = (w, { remember = true } = {}) => {
+    sideWidth = clampSide(w)
+    shell.style.setProperty('--side-w', sideWidth + 'px')
+    sideResize.setAttribute('aria-valuenow', sideWidth)
+    if (remember) store.set('side-width', sideWidth)
+  }
+  sideResize.setAttribute('aria-valuemin', SIDE_MIN)
+  sideResize.setAttribute('aria-valuemax', SIDE_MAX)
+  setSideWidth(sideWidth, { remember: false })
+  const setSideOpen = (open, { remember = true } = {}) => {
+    shell.classList.toggle('side-closed', !open)
+    side.inert = !open
+    sideTab.setAttribute('aria-expanded', open ? 'true' : 'false')
+    sideTab.setAttribute('aria-label', open ? 'Hide navigation' : 'Show navigation')
+    sideTab.title = open ? 'Hide navigation' : 'Show navigation'
+    if (remember) store.set('side-open', open ? '1' : '0')
+  }
+  setSideOpen(store.get('side-open') !== '0', { remember: false })
+  sideTab.addEventListener('click', () => setSideOpen(shell.classList.contains('side-closed')))
+
+  sideResize.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return
+    e.preventDefault()
+    sideResize.setPointerCapture(e.pointerId)
+    shell.classList.add('resizing')
+    const startX = e.clientX, startW = sideWidth
+    const move = (ev) => setSideWidth(startW + ev.clientX - startX, { remember: false })
+    const end = () => {
+      shell.classList.remove('resizing')
+      sideResize.removeEventListener('pointermove', move)
+      sideResize.removeEventListener('pointerup', end)
+      sideResize.removeEventListener('pointercancel', end)
+      store.set('side-width', sideWidth)
+    }
+    sideResize.addEventListener('pointermove', move)
+    sideResize.addEventListener('pointerup', end)
+    sideResize.addEventListener('pointercancel', end)
+  })
+  sideResize.addEventListener('dblclick', () => setSideWidth(SIDE_DEFAULT))
+  sideResize.addEventListener('keydown', (e) => {
+    const step = e.shiftKey ? 48 : 16
+    const next = { ArrowLeft: sideWidth - step, ArrowRight: sideWidth + step, Home: SIDE_MIN, End: SIDE_MAX }[e.key]
+    if (next === undefined) return
+    e.preventDefault()
+    setSideWidth(next)
+  })
   side.addEventListener('scroll', () => !searchPanel.hidden && placePanel())
 
   // ---------- views ----------
@@ -1328,16 +1448,26 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
   // options and formats as src/schemas/validate), embedded by the generator as
   // window.schemaValidators.
   // Error types, pointers and messages: errors.js, inlined by the generator.
-  const toApiErrors = window.schemaErrors?.toApiErrors
+  const { toDetails, fromDetails } = window.schemaErrors || {}
+  // The checks a route runs after the schema (checks/routes.js: reference
+  // data, rules across fields, dates not in the future), bundled from the
+  // API's own code as window.schemaChecks, for versions that have any.
+  const runChecks = window.schemaChecks && M.checks
+    ? (file, value, details) => window.schemaChecks.runChecks(M.checks.version, file, value, details)
+    : (file, value, details) => details
 
   // A checker for one schema file: value -> { valid, errors }. JSON Schema
-  // versions use the compiled validators and errors.js; the legacy (Joi)
-  // version uses its bundled routes' own check (window.legacyCheck).
+  // versions use the compiled validators, errors.js and the route's checks;
+  // the legacy (Joi) version uses its bundled routes' own check
+  // (window.legacyCheck).
   const checkerFor = (file) => {
     if (window.legacyCheck) return (value) => window.legacyCheck(file, value)
     const validate = window.schemaValidators && M.validators && window.schemaValidators[M.validators[file]]
     if (!validate) return null
-    return (value) => validate(value) ? { valid: true, errors: [] } : { valid: false, errors: toApiErrors(validate.errors || []) }
+    return (value) => {
+      const details = runChecks(file, value, validate(value) ? [] : toDetails(validate.errors || []))
+      return { valid: details.length === 0, errors: fromDetails(details) }
+    }
   }
 
   // Where each value sits in the JSON text, keyed by its pointer segments
@@ -1425,7 +1555,9 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
     // UK postcodes are made up; an Eircode keeps its shape.
     postcode: (was) => /^[A-Z]\d{2} ?[A-Z0-9]{4}$/i.test(was) ? rerollDigits(was) : `${randomOf(FAKE.areas)}${randomInt(1, 9)} ${digit()}${letters(2, 'ABDEFGHJLNPQRSTUWXYZ')}`
   }
-  const KEEP_TEXT = new Set(['reason', 'reasonForNoRegistrationNumber', 'reasonForNoAuthorisationNumber', 'otherMeansOfTransport', 'specialHandlingRequirements', 'message', 'pointer'])
+  // EWC codes are looked up in reference data, so new digits would make an
+  // unrecognised code.
+  const KEEP_TEXT = new Set(['reason', 'reasonForNoRegistrationNumber', 'reasonForNoAuthorisationNumber', 'otherMeansOfTransport', 'specialHandlingRequirements', 'message', 'pointer', 'ewcCodes'])
 
   // The schema node for `key` inside `node`, following a oneOf to the variant
   // the value is (by its discriminator).
@@ -1457,7 +1589,8 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
       const floor = c.minimum ?? (c.exclusiveMinimum !== undefined ? c.exclusiveMinimum + (Number.isInteger(value) ? 1 : 0.1) : 0)
       return Math.max(floor, Number.isInteger(value) ? Math.max(1, Math.round(n)) : Math.round(n * 10) / 10 || 0.1)
     }
-    if (typeof value !== 'string' || KEEP_TEXT.has(key)) return value
+    // A date-time with new digits is rarely a real one, or one in the past.
+    if (typeof value !== 'string' || KEEP_TEXT.has(key) || c.format === 'date-time') return value
     if (key === 'emailAddress') return `${slug(ctx.who) || randomOf(['info', 'office', 'waste', 'operations'])}@example.com`
     if (fake[key]) return fake[key](value)
     // Codes and IDs (anything with a pattern or digits in it): new digits.
@@ -1935,7 +2068,11 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
       editor.scrollTop = Math.max(0, line * lineHeight - editor.clientHeight / 3)
     }
 
+    // Whether the route also runs checks a schema can't say (reference data,
+    // dates not in the future…).
+    const routeChecks = (M.checks?.files || []).includes(file)
     const subject = focus ? `This ${label} is valid.`
+      : kind === 'request' && routeChecks ? 'This body is valid against the request schema and the API\'s other checks.'
       : kind === 'request' ? 'This body is valid against the request schema.'
       : kind === 'response' ? 'This body is valid against the response schema.'
         : `This is a valid ${label}.`
@@ -2011,9 +2148,10 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
     varyToggle.addEventListener('change', () => { varyValues = varyToggle.checked; store.set('vary', varyValues ? '1' : '0') })
     const formatButton = h('button', { class: 'btn', type: 'button', onclick: format }, 'Format')
     const inputToggle = h('div', { class: 'seg', role: 'group', 'aria-label': 'Edit as' },
-      ['json', 'form'].map((m) => (modeButtons[m] = h('button', { type: 'button', 'aria-pressed': m === 'json' ? 'true' : 'false', onclick: () => setInputMode(m) }, m === 'json' ? 'JSON' : 'Form'))))
+      ['form', 'json'].map((m) => (modeButtons[m] = h('button', { type: 'button', 'aria-pressed': m === 'json' ? 'true' : 'false', onclick: () => setInputMode(m) }, m === 'json' ? 'JSON' : 'Form'))))
     check()
-    if (store.get('try-input') === 'form') setInputMode('form', { remember: false })
+    // The form by default; JSON if the viewer last chose it.
+    if (store.get('try-input') !== 'json') setInputMode('form', { remember: false })
     return h('div', { class: 'harness' },
       h('section', { class: 'pane' },
         h('div', { class: 'pane-head' }, h('h2', {}, label),
@@ -2030,6 +2168,7 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
       h('section', { class: 'pane' },
         h('div', { class: 'pane-head' }, h('h2', {}, 'Result'), h('span', { class: 'file' }, 'checked as you type')),
         result,
+        routeChecks && h('p', { class: 'pane-note', style: 'padding:0 12px' }, 'Also runs the checks the API makes after the schema, such as codes against the reference data and dates not being in the future. The dates are compared with this device\'s clock.'),
         h('p', { class: 'pane-note', style: 'padding:0 12px 12px' }, draft ? 'Your edits are kept in this browser. Load an example to start again.' : 'Edits are kept in this browser, so you can come back to them.')))
   }
 

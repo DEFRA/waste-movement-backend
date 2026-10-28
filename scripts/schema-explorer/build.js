@@ -23,11 +23,14 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { buildModel } from './model.js'
 import { buildSpreadsheet } from './spreadsheet.js'
 import { buildValidators } from './validators.js'
 import { buildLegacyBundle } from './legacy/bundle.js'
+import { buildChecksBundle } from './checks/bundle.js'
+import { checkedFiles } from './checks/routes.js'
 import { buildLegacyModel } from './legacy/joi-model.js'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
@@ -95,7 +98,53 @@ if (legacy) {
     bundle: await buildLegacyBundle()
   })
 }
+
+// The name each version is shown under (the switcher, headings, spreadsheet
+// file), by folder. A version not listed keeps its own name. The folders, and
+// so the URLs, don't change.
+const VERSION_NAMES = {
+  legacy: 'ReceiptOfWaste'
+}
+// The name each top-level schema is shown under, in the order the navigation
+// lists them, by file name without "-request" / "-response", so a request and
+// its response share a name. Schemas not listed keep their own title and come
+// after these.
+const ROOT_NAMES = {
+  'create-movement': 'Creation',
+  'create-collection': 'Collection',
+  'record-delivery': 'Delivery',
+  'record-receipt': 'Receipt',
+  'record-receipt-undocumented': 'Receipt (undocumented)',
+  // beta-1's name for the undocumented receipt.
+  'record-receipt-without-delivery': 'Receipt (undocumented)'
+}
+const rootKey = (r) => r.id.replace(/-(request|response)$/, '')
+const rootOrder = (r) => {
+  const i = Object.keys(ROOT_NAMES).indexOf(rootKey(r))
+  return i === -1 ? Infinity : i
+}
+
+for (const { slug, model } of versions) {
+  if (VERSION_NAMES[slug]) model.api.version = VERSION_NAMES[slug]
+  for (const r of model.roots) {
+    const name = ROOT_NAMES[rootKey(r)]
+    if (name) r.title = r.label = name
+  }
+  // Stable, so schemas not listed keep their order.
+  model.roots.sort((a, b) => rootOrder(a) - rootOrder(b))
+}
 const latest = versions.at(-1)
+
+// The order versions are listed in: beta-N newest first, then anything else
+// (the legacy ReceiptOfWaste routes) last.
+const betaNumber = (v) => Number(/^beta-(\d+)$/.exec(v.slug)?.[1] ?? -1)
+const listed = [...versions].sort((a, b) => betaNumber(b) - betaNumber(a))
+
+// The checks some routes run after the schema (checks/routes.js), bundled once
+// and embedded only in the versions that have any.
+const checksBundle = versions.some((v) => checkedFiles(v.slug).length)
+  ? await buildChecksBundle()
+  : ''
 
 const toDocument = (body, head = '') => {
   if (!standalone) return body
@@ -117,9 +166,18 @@ ${split > 0 ? body.slice(split) : body}
 
 const template = fs.readFileSync(path.join(here, 'template.html'), 'utf8')
 
-// ajv's standalone code is CommonJS and needs one runtime helper; give it both
-// in the browser. ucs2length is ajv's string length in Unicode code points.
+// ajv's standalone code is CommonJS and needs a few runtime modules; give it
+// both in the browser. ucs2length is ajv's string length in Unicode code
+// points. Function formats such as date-time are read from ajv-formats' own
+// formats module, which has no imports, so it is embedded as it is.
+const require = createRequire(import.meta.url)
+const commonJsModule = (name) => `(() => {
+    const exports = {}
+    ${fs.readFileSync(require.resolve(name), 'utf8')}
+    return exports
+  })()`
 const RUNTIME = {
+  'ajv-formats/dist/formats': commonJsModule('ajv-formats/dist/formats'),
   'ajv/dist/runtime/ucs2length': `{ default: (str) => {
     let length = 0
     for (let pos = 0; pos < str.length; length++) {
@@ -151,15 +209,18 @@ const browserValidators = (code) => {
 // errors.js turns ajv's errors into the page's error list. It's a plain module
 // (so errors.test.js can import it); the page gets it as window.schemaErrors.
 const errorsSource = fs.readFileSync(path.join(here, 'errors.js'), 'utf8')
+const errorsExports = [...errorsSource.matchAll(/^export const (\w+)/gm)].map(
+  (m) => m[1]
+)
 if (
-  (errorsSource.match(/^export /gm) || []).length !== 1 ||
+  (errorsSource.match(/^export /gm) || []).length !== errorsExports.length ||
   /^import /m.test(errorsSource)
 ) {
-  throw new Error('errors.js must have no imports and export only toApiErrors')
+  throw new Error('errors.js must have no imports and export only consts')
 }
 const browserErrors = `window.schemaErrors = (() => {
-${errorsSource.replace(/^export const toApiErrors/m, 'const toApiErrors').replace(/<\//g, '<\\/')}
-  return { toApiErrors }
+${errorsSource.replace(/^export const/gm, 'const').replace(/<\//g, '<\\/')}
+  return { ${errorsExports.join(', ')} }
 })()`
 
 for (const { slug, model, validators, bundle } of versions) {
@@ -167,7 +228,7 @@ for (const { slug, model, validators, bundle } of versions) {
   fs.mkdirSync(dir, { recursive: true })
 
   // Lets the page switch between versions; links are relative to this page.
-  model.versions = versions.map((v) => ({
+  model.versions = listed.map((v) => ({
     version: v.model.api.version ?? v.slug,
     href: `../${v.slug}/index.html`,
     current: v.slug === slug
@@ -188,10 +249,16 @@ for (const { slug, model, validators, bundle } of versions) {
   // The "Try it" view validates with the same compiled schemas as the API, or
   // for legacy, the same Joi schemas.
   if (validators) model.validators = validators.ids
+  const checks = checkedFiles(slug).length ? checksBundle : ''
+  if (checks) model.checks = { version: slug, files: checkedFiles(slug) }
 
   const page = template
     .split('__ERRORS__')
-    .join(bundle ? '' : browserErrors)
+    .join(
+      bundle
+        ? ''
+        : browserErrors + (checks && `\n${checks.replace(/<\//g, '<\\/')}`)
+    )
     .split('__VALIDATORS__')
     .join(
       bundle
@@ -212,7 +279,7 @@ const target = `${latest.slug}/index.html`
 fs.writeFileSync(
   path.join(outDir, 'index.html'),
   toDocument(
-    `<p>Opening <a href="${target}">${latest.model.api.version ?? latest.slug}</a>. All versions: ${versions
+    `<p>Opening <a href="${target}">${latest.model.api.version ?? latest.slug}</a>. All versions: ${listed
       .map(
         (v) =>
           `<a href="${v.slug}/index.html">${v.model.api.version ?? v.slug}</a>`

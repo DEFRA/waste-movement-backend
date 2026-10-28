@@ -93,13 +93,17 @@ const condProps = (s) =>
   Object.entries(s.sets)
     .filter(([, c]) => 'const' in c)
     .map(([k]) => k)
+// A field the condition only requires, with no value, is a check that it's given.
 const conditionText = (s) =>
-  condProps(s)
-    .map(
+  [
+    ...condProps(s).map(
       (k) =>
         `${code(k)} is ${fmt(s.sets[k].const)}${s.requires.includes(k) ? '' : ' or absent'}`
-    )
-    .join(' and ')
+    ),
+    ...s.requires
+      .filter((k) => !condProps(s).includes(k))
+      .map((k) => `${code(k)} is provided`)
+  ].join(' and ')
 
 const effectsByProp = (s, skip = []) => {
   const m = new Map()

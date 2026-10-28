@@ -69,10 +69,12 @@ const toMessage = (e) => {
 }
 
 /**
+ * The errors as hapi-validator.js reports them, before any of the route's
+ * payload checks (checks/routes.js) run.
  * @param {object[]} ajvErrors errors from a validator compiled with `verbose`
- * @returns {{ errorType: string, pointer: string, message: string }[]}
+ * @returns {{ message: string, path: string[], type: string }[]}
  */
-export const toApiErrors = (ajvErrors) =>
+export const toDetails = (ajvErrors) =>
   ajvErrors
     // Drop an if / oneOf / anyOf summary when a more specific error explains it.
     .filter(
@@ -104,8 +106,21 @@ export const toApiErrors = (ajvErrors) =>
       (d, i, all) =>
         all.findIndex((x) => JSON.stringify(x) === JSON.stringify(d)) === i
     )
-    .map((d) => ({
-      message: d.message,
-      pointer: '/' + d.path.join('/'),
-      errorType: d.type
-    }))
+
+/**
+ * The `errors` list of the API's 400 response.
+ * @param {{ message: string, path: string[], type: string }[]} details
+ * @returns {{ errorType: string, pointer: string, message: string }[]}
+ */
+export const fromDetails = (details) =>
+  details.map((d) => ({
+    message: d.message,
+    pointer: '/' + d.path.join('/'),
+    errorType: d.type
+  }))
+
+/**
+ * @param {object[]} ajvErrors errors from a validator compiled with `verbose`
+ * @returns {{ errorType: string, pointer: string, message: string }[]}
+ */
+export const toApiErrors = (ajvErrors) => fromDetails(toDetails(ajvErrors))

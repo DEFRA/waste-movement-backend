@@ -39,7 +39,7 @@ export const buildValidators = (schemaDir) => {
     verbose: true,
     code: { source: true }
   })
-  addFormats(ajv, ['email', 'uuid'])
+  addFormats(ajv, ['date-time', 'email', 'uuid'])
 
   const files = collectSchemaFiles(schemaDir)
   for (const file of files) {

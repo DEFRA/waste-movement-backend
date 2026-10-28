@@ -9,13 +9,16 @@ Every endpoint and fragment page also has a **Try it** view: an editor, pre-fill
 examples, that checks the JSON as you type. It uses the API's own compiled schemas (the same ajv, options
 and formats as `src/schemas/validate/index.js`) and reduces the errors the way
 `src/schemas/validate/hapi-validator.js` does. So a request body gets the same `errorType`, `pointer` and
-`message` list as the API's 400 response. Each error links to its place in the editor and in the diagram.
-Only the body is checked, not headers, path IDs or checks against stored data. Edits are kept in the
-viewer's browser.
+`message` list as the API's 400 response. A request body also gets the checks its route runs after the
+schema (`withPayloadChecks`): EWC and POP codes against the reference data, the consignment note rule for
+hazardous waste, and date-times not being empty or in the future (against the viewer's clock). These are
+the API's own functions, bundled for the browser. Each error links to its place in the editor and in the
+diagram. Only the body is checked, not headers, path IDs or checks against stored data. Edits are kept in
+the viewer's browser.
 
 ### Legacy (Joi) routes
 
-`--legacy` (on in `npm run docs:schemas`) adds a **legacy** version, listed before `beta-1`, for the routes
+`--legacy` (on in `npm run docs:schemas`) adds a **legacy** version (shown as **ReceiptOfWaste**; see `VERSION_NAMES` in `build.js`), listed after the beta versions (newest first), for the routes
 that still validate with Joi: receive a movement (`POST`/`PUT /movements/{wasteTrackingId}/receive`) and bulk
 receive (`POST`/`PUT /bulk/{bulkId}/movements/receive`). There are no JSON Schema files for these, so
 `legacy/joi-model.js` reads each Joi schema's own description (`schema.describe()`) into the same model:
@@ -107,11 +110,17 @@ the generator fails the PR. A new `beta-N` folder is picked up with no changes h
   each example as written, then with each field removed, emptied, given the wrong type or an unknown value,
   and with extra fields. It fails if `validators.js` or `errors.js` drift from `src/schemas/validate/`. Run it
   with `npm run test:schema-explorer`. The PR check and the Pages workflow both run it.
+- `checks/routes.js` lists each beta route's request schema and the payload checks it runs after it,
+  importing the checks from `src/`. `checks/bundle.js` bundles them, with the utils reference data they use,
+  into the pages of versions that have any.
+- `checks.test.js` runs every beta route's real payload validation against the page's (schema, errors and
+  checks bundle), on each example, every way of breaking each field, unrecognised EWC codes and future
+  date-times. It fails if a route is missing from `checks/routes.js` or its checks differ.
 - `legacy/schemas.js` lists the legacy route schemas and the utils schemas shown as their fragments.
   `legacy/joi-model.js` turns them into the model; `legacy/check.js` and `legacy/bundle.js` are the legacy
   **Try it**.
 - `legacy.test.js` checks the legacy page's bundle reports exactly what `legacy/check.js` does unbundled
   against the real modules, for every example and every way of breaking each field.
-- `test-cases.js` makes the broken payloads both tests use.
+- `test-cases.js` makes the broken payloads the tests use.
 - `spreadsheet.js` turns the same data into spreadsheet tabs.
 - `xlsx.js` writes the `.xlsx` file. It has no dependencies (an `.xlsx` is a zip of XML).
