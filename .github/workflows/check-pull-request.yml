@@ -32,8 +32,26 @@ jobs:
           npm run lint
           npm test
           npm run test:integration
-          npm run docs:schemas
           npm run test:schema-explorer
+
+      # The schema explorer for this PR, with a "What's changed" view comparing
+      # its schemas with the base branch's. The changes are also written to the
+      # run's summary, and the site is attached to the run: download the
+      # schema-explorer artifact, unzip it and open index.html.
+      - name: Build schema explorer with changes since the base branch
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags --depth=1 origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+          npm run docs:schemas -- --since "origin/${BASE_REF}" --changes-md schema-changes.md
+          cat schema-changes.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Attach schema explorer to the run
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-explorer
+          path: .schema-explorer
+          retention-days: 14
 
       - name: Test Docker Image Build
         run: |

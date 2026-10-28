@@ -99,9 +99,14 @@ const FIELD_COLUMNS = [
   { header: 'Defined in', width: 24 }
 ]
 
-// One row per field (and per variant), depth-first, every fragment expanded.
-const fieldRows = (rootNode, rootDefinedIn) => {
-  const rows = []
+/**
+ * One entry per field (and per variant), depth-first, every fragment expanded,
+ * with the text the spreadsheet shows for it. Paths are the model's ("a.b[]",
+ * "a<Variant>"). Rules on the top-level object come first, with path ''.
+ * changes.js compares these between two builds.
+ */
+export const fieldEntries = (rootNode, rootDefinedIn) => {
+  const entries = []
   const row = ({
     path,
     field,
@@ -113,20 +118,21 @@ const fieldRows = (rootNode, rootDefinedIn) => {
     uses,
     definedIn
   }) =>
-    rows.push([
-      displayPath(path),
-      { value: field, style: STYLE.indent(depth) },
-      typeText(node),
+    entries.push({
+      path,
+      field,
+      depth,
+      type: typeText(node),
       required,
       rules,
-      allowed(node),
-      formatText(node),
-      limits(node).min,
-      limits(node).max,
-      plain(description),
-      uses ? fragmentId(uses) : '',
-      definedIn ? fragmentId(definedIn) : ''
-    ])
+      allowed: allowed(node),
+      format: formatText(node),
+      min: limits(node).min,
+      max: limits(node).max,
+      description: plain(description),
+      uses: uses ? fragmentId(uses) : '',
+      definedIn: definedIn ? fragmentId(definedIn) : ''
+    })
 
   // Object-level rules belong to the row of the field that holds the object.
   const objectRules = (node) => (node.rules ?? []).map(ruleText)
@@ -198,24 +204,51 @@ const fieldRows = (rootNode, rootDefinedIn) => {
   // Rules on the top-level object have no field row to sit on.
   const top = objectOf(rootNode)
   if (top.rules?.length) {
-    rows.push([
-      '',
-      { value: '(rules on the whole object)', style: STYLE.indent(0) },
-      '',
-      '',
-      objectRules(top).join('\n'),
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      rootDefinedIn ? fragmentId(rootDefinedIn) : ''
-    ])
+    entries.push({
+      path: '',
+      field: '(rules on the whole object)',
+      depth: 0,
+      type: '',
+      required: '',
+      rules: objectRules(top).join('\n'),
+      allowed: '',
+      format: '',
+      min: '',
+      max: '',
+      description: '',
+      uses: '',
+      definedIn: rootDefinedIn ? fragmentId(rootDefinedIn) : ''
+    })
   }
   walk(rootNode, '', 0, rootDefinedIn)
-  return rows
+  return entries
 }
+
+/** What a single value (a primitive fragment) is, in the same terms. */
+export const valueEntry = (node) => ({
+  type: typeText(node),
+  allowed: allowed(node),
+  format: formatText(node),
+  min: limits(node).min,
+  max: limits(node).max,
+  description: plain(node.description)
+})
+
+const fieldRows = (rootNode, rootDefinedIn) =>
+  fieldEntries(rootNode, rootDefinedIn).map((e) => [
+    displayPath(e.path),
+    { value: e.field, style: STYLE.indent(e.depth) },
+    e.type,
+    e.required,
+    e.rules,
+    e.allowed,
+    e.format,
+    e.min,
+    e.max,
+    e.description,
+    e.uses,
+    e.definedIn
+  ])
 
 // A primitive fragment (e.g. registration-number) has no fields: one row for itself.
 const primitiveRow = (fragment) => {

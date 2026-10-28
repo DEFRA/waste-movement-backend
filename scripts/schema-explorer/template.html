@@ -25,6 +25,10 @@
   --frag: #5141b3;
   --frag-soft: #ebe8fb;
   --hit: #fff1a8;
+  --new: #1f5fbf;
+  --new-soft: #e2ecfb;
+  --mod: #a8326f;
+  --mod-soft: #f8e3ee;
   --shadow: 0 1px 2px rgb(20 40 30 / 0.06), 0 4px 14px rgb(20 40 30 / 0.06);
   --font-ui: "Schibsted Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -34,13 +38,13 @@
   :root:not([data-theme="light"]) {
     --bg: #0e1412; --surface: #151d1a; --sunken: #1b2622; --grid: #1a2420; --ink: #e2ebe7; --muted: #9aaba3; --faint: #6d7e77;
     --line: #2a3632; --wire: #4c5e57; --accent: #4cc3ad; --accent-ink: #062520; --accent-soft: #123630; --cond: #f0b55c; --cond-soft: #3a2a10;
-    --deny: #f08a80; --frag: #a99dff; --frag-soft: #262150; --hit: #5a4d0c; --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 14px rgb(0 0 0 / 0.25); color-scheme: dark;
+    --deny: #f08a80; --frag: #a99dff; --frag-soft: #262150; --hit: #5a4d0c; --new: #86b6ff; --new-soft: #17294a; --mod: #f291c4; --mod-soft: #3d1a2e; --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 14px rgb(0 0 0 / 0.25); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0e1412; --surface: #151d1a; --sunken: #1b2622; --grid: #1a2420; --ink: #e2ebe7; --muted: #9aaba3; --faint: #6d7e77;
   --line: #2a3632; --wire: #4c5e57; --accent: #4cc3ad; --accent-ink: #062520; --accent-soft: #123630; --cond: #f0b55c; --cond-soft: #3a2a10;
-  --deny: #f08a80; --frag: #a99dff; --frag-soft: #262150; --hit: #5a4d0c; --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 14px rgb(0 0 0 / 0.25); color-scheme: dark;
+  --deny: #f08a80; --frag: #a99dff; --frag-soft: #262150; --hit: #5a4d0c; --new: #86b6ff; --new-soft: #17294a; --mod: #f291c4; --mod-soft: #3d1a2e; --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 14px rgb(0 0 0 / 0.25); color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -184,7 +188,7 @@ svg.wires circle { fill: var(--surface); stroke: var(--wire); stroke-width: 1.6;
 .block.leaving { pointer-events: none; z-index: 0; }
 
 .rows { display: grid; padding: 4px 0; }
-.brow { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto 16px; align-items: center; gap: 8px; width: 100%; border: 0; background: none; text-align: left; padding: 5px 10px 5px 12px; cursor: pointer; position: relative; }
+.brow { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto auto 16px; align-items: center; gap: 8px; width: 100%; border: 0; background: none; text-align: left; padding: 5px 10px 5px 12px; cursor: pointer; position: relative; }
 .brow:hover { background: var(--sunken); }
 .brow .nm { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .brow .ty { font-family: var(--font-mono); font-size: 11px; color: var(--faint); white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
@@ -210,6 +214,40 @@ svg.wires circle { fill: var(--surface); stroke: var(--wire); stroke-width: 1.6;
 .mk.option { border-radius: 2px; background: var(--frag); }
 .frag-tag { font-family: var(--font-mono); font-size: 10.5px; color: var(--frag); background: var(--frag-soft); padding: 0 5px; border-radius: 3px; margin-left: 6px; font-weight: 500; }
 
+.brow.chg-added { box-shadow: inset 3px 0 0 var(--new); }
+.brow.chg-changed { box-shadow: inset 3px 0 0 var(--mod); }
+.chg-tag { font-family: var(--font-ui); font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 0 5px; border-radius: 3px; vertical-align: 1px; white-space: nowrap; }
+.brow .chg-dot { margin: 0 3px; }
+.chg-tag.added { color: var(--new); background: var(--new-soft); }
+.chg-tag.changed { color: var(--mod); background: var(--mod-soft); }
+.chg-tag.removed { color: var(--deny); box-shadow: inset 0 0 0 1px var(--deny); }
+.chg-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--mod); margin-left: 7px; vertical-align: 1px; }
+.chg-note { display: grid; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--mod-soft); }
+.chg-note.added { background: var(--new-soft); }
+.chg-note .sub { color: var(--mod); }
+.chg-note.added .sub { color: var(--new); }
+.chg-diffs { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; margin: 0; font-size: 12.5px; }
+.chg-diffs dt { color: var(--muted); }
+.chg-diffs dd { margin: 0; display: grid; gap: 2px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chg-diffs del { color: var(--deny); text-decoration: line-through; text-decoration-thickness: 1px; }
+.chg-diffs ins { color: var(--ink); text-decoration: none; }
+.chg-diffs del::before { content: "− "; text-decoration: none; display: inline-block; }
+.chg-diffs ins::before { content: "+ "; color: var(--new); }
+.nav-link .chg-dot { flex: none; margin-left: 0; }
+.nav-changes .nl-count { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--mod); background: var(--mod-soft); border-radius: 999px; padding: 0 7px; }
+.changes { display: grid; gap: 12px; }
+.chg-item { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; box-shadow: var(--shadow); }
+.chg-item > summary, .chg-item > .chg-head { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 12px 14px; cursor: pointer; }
+.chg-item > summary::-webkit-details-marker { display: none; }
+.chg-item > .chg-head { cursor: default; }
+.chg-item .c-title { font-weight: 650; }
+.chg-item .file { color: var(--muted); }
+.chg-item .c-count { margin-left: auto; color: var(--muted); font-size: 12px; }
+.chg-fields { list-style: none; margin: 0; padding: 0 14px 12px; display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.chg-fields li { display: grid; gap: 6px; }
+.chg-fields .f-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.chg-fields .f-head .chg-tag { margin-left: 0; }
+.chg-fields .chg-diffs { padding-left: 12px; border-left: 2px solid var(--line); }
 .brules { border-top: 1px dashed var(--line); padding: 6px 10px 8px; display: grid; gap: 4px; }
 .brule { font-size: 12px; line-height: 1.4; padding: 4px 8px; border-radius: 4px; background: var(--cond-soft); display: grid; gap: 1px; cursor: default; transition: box-shadow 0.15s; }
 .brule:hover { box-shadow: inset 0 0 0 1.5px var(--cond); }
@@ -410,6 +448,31 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
   const fragById = Object.fromEntries(M.fragments.map((f) => [f.id, f]))
   const fragByFile = Object.fromEntries(M.fragments.map((f) => [f.file, f]))
   const rootByFile = Object.fromEntries(M.roots.map((r) => [r.file, r]))
+
+  // ---------- What's changed (built with --since; see changes.js) ----------
+  // Each schema's and fragment's changes since the base commit, and per
+  // diagram, its field changes by path plus the rows with changes inside them.
+  const changes = M.changes || null
+  const rootChanges = new Map((changes?.roots || []).map((c) => [c.id, c]))
+  const fragChanges = new Map((changes?.fragments || []).map((c) => [c.file, c]))
+  const changeTotal = changes ? (changes.newVersion ? 0 : changes.roots.length + changes.fragments.length) : 0
+  const CHANGE_WORD = { added: 'New', changed: 'Changed', removed: 'Removed' }
+  const diagramChanges = (entry) => {
+    if (!entry || entry.status !== 'changed') return null
+    const byPath = new Map(entry.fields.map((f) => [f.path, f]))
+    const containers = new Set()
+    for (const f of entry.fields) {
+      for (let i = 1; i < f.path.length; i++) if ('.[<'.includes(f.path[i])) containers.add(f.path.slice(0, i))
+    }
+    // Removed fields have no row of their own; they're listed on their parent
+    // field's row ("a" for "a.b" and "a[].b", "a<X>" for "a<X>.b").
+    const parentRow = (path) => (/^(.+?)(?:\.[^.[<]+|<[^>]+>)$/.exec(path)?.[1] ?? '').replace(/\[\]$/, '')
+    const removedIn = (path) => entry.fields.filter((f) => f.status === 'removed' && parentRow(f.path) === path)
+    return { byPath, containers, removedIn }
+  }
+  const diffList = (diffs) => h('dl', { class: 'chg-diffs' }, diffs.map((d) => [
+    h('dt', {}, d.what),
+    h('dd', {}, d.before ? h('del', {}, d.before) : null, d.after ? h('ins', {}, d.after) : h('span', { class: 'file' }, '(none now)'))]))
   const side = document.getElementById('side')
   const main = document.getElementById('main')
   const narrow = window.matchMedia('(max-width: 860px)').matches
@@ -601,9 +664,11 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
         const open = row.child && expanded.has(row.child.path)
         const f = row.field
         const frag = f && (f.node.fragment || (f.node.type === 'array' && f.node.items && f.node.items.fragment))
+        const chg = ctx.changes?.byPath.get(row.path)
+        const inside = !chg && ctx.changes?.containers.has(row.path)
         const b = h('button', {
           type: 'button',
-          class: ['brow', row.req === 'forbidden' ? 'forbidden' : '', row.child ? 'has-child' : '', open ? 'open' : '', hits.has(row.path) ? 'hit' : '', selectedPath === row.path ? 'selected' : ''].join(' '),
+          class: ['brow', chg ? 'chg-' + chg.status : '', row.req === 'forbidden' ? 'forbidden' : '', row.child ? 'has-child' : '', open ? 'open' : '', hits.has(row.path) ? 'hit' : '', selectedPath === row.path ? 'selected' : ''].join(' '),
           'data-row': row.path, 'data-name': row.label,
           title: f && f.notes.length ? f.notes.join(' ').replace(/`/g, '') : null,
           // The second click of a double-click opens the block; don't toggle twice.
@@ -611,6 +676,9 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
         },
         h('span', { class: 'mk ' + row.req, 'aria-label': row.req }),
         h('span', { class: 'nm' }, row.label, frag && !row.child ? h('span', { class: 'frag-tag' }, fragIdOf(frag)) : null),
+        // Its own column, so a long name is shortened rather than the tag.
+        chg ? h('span', { class: 'chg-tag ' + chg.status, title: `${CHANGE_WORD[chg.status]} since ${changes.base}` }, chg.status === 'added' ? 'new' : 'changed')
+          : inside ? h('span', { class: 'chg-dot', title: `Something inside changed since ${changes.base}` }) : h('span', {}),
         h('span', { class: 'ty' }, row.kind === 'option' ? (row.option.node.title || '') : typeLabel(f.node)),
         row.child ? h('span', { class: 'port', 'aria-hidden': 'true' }, open ? '−' : '+') : h('span', {}))
         rows.append(b)
@@ -878,10 +946,26 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
           n.nullable && h('span', { class: 'badge plain' }, 'nullable'),
           n.fragment && fragLink(n.fragment),
           n.type === 'array' && n.items && n.items.fragment && fragLink(n.items.fragment)),
+        changeNote(row.path),
         n.description ? h('p', {}, rich(n.description)) : frag && fragByFile[frag] && fragByFile[frag].description && h('p', {}, rich(fragByFile[frag].description)),
         f.notes.length > 0 && h('ul', { class: 'notes' }, f.notes.map((t) => h('li', {}, rich(t)))),
         facts(n, row.path),
         usage(frag))
+    }
+
+    // What changed at this row since the base commit, and what was removed
+    // from inside it.
+    const changeNote = (path) => {
+      if (!ctx.changes) return null
+      const c = ctx.changes.byPath.get(path)
+      const removed = ctx.changes.removedIn(path)
+      if (!c && !removed.length) return null
+      return h('div', { class: 'chg-note' + (c?.status === 'added' ? ' added' : '') },
+        c && h('div', { class: 'sub' }, `${c.status === 'added' ? 'New' : 'Changed'} since ${changes.base}`),
+        c?.status === 'added' && c.inside > 0 && h('span', {}, `With ${plural(c.inside, 'field')} inside it.`),
+        c?.diffs && diffList(c.diffs),
+        removed.length > 0 && [h('div', { class: 'sub', style: 'color:var(--deny)' }, `Removed from inside since ${changes.base}`),
+          h('div', { class: 'badges' }, removed.map((r) => h('code', {}, r.field)))])
     }
 
     const usage = (file) => {
@@ -980,13 +1064,13 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
       h('button', { class: 'btn', type: 'button', onclick: () => { expanded = defaults(); selectedPath = null; hits = new Set(); draw(); zoom(1); viewport.scrollTo({ left: 0, top: 0 }); showIntro() } }, 'Reset')
     ]
 
-    const stage = h('div', { class: 'stage' }, h('div', { class: 'canvas-wrap' }, viewport, keyPanel()), drawer)
+    const stage = h('div', { class: 'stage' }, h('div', { class: 'canvas-wrap' }, viewport, keyPanel(!!ctx.changes)), drawer)
     return { stage, controls, draw, reveal, highlight, showIntro, snapshot, restoreView }
   }
 
   // The key sits in the diagram pane's top-right corner, open or closed as the viewer
   // last left it (closed by default on narrow screens, where space is tight).
-  const keyPanel = () => {
+  const keyPanel = (withChanges) => {
     const line = (cls) => { const w = s('svg', { width: 40, height: 10, class: 'wires', style: 'position:static' }); w.append(s('path', { d: 'M1 5 L39 5', class: cls })); return w }
     const item = (symbol, label) => h('div', {}, h('span', { class: 'sym' }, symbol), label)
     const saved = store.get('key-open')
@@ -997,6 +1081,10 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
         item(h('span', { class: 'mk conditional' }), 'Conditional: depends on a rule'),
         item(h('span', { class: 'mk optional' }), 'Optional field'),
         item(h('span', { class: 'mk forbidden' }), 'Not allowed in this request'),
+        withChanges && [
+          item(h('span', { class: 'chg-tag added' }, 'new'), `Added since ${changes.base}`),
+          item(h('span', { class: 'chg-tag changed' }, 'changed'), `Changed since ${changes.base}`),
+          item(h('span', { class: 'chg-dot' }), 'Something inside changed')],
         item(line(''), 'Leads to a required part'),
         item(line('optional'), 'Leads to an optional part'),
         item(line('conditional'), 'Leads to a conditional part'),
@@ -1259,12 +1347,12 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
 
   // Every move is a browser history entry, so Back (the page's, the browser's
   // or a swipe) returns to the previous view as it was left.
-  const hashFor = (st) => st.view === 'root' ? '#' + st.id : st.view === 'fragment' ? '#f-' + st.id : location.pathname + location.search
+  const hashFor = (st) => st.view === 'root' ? '#' + st.id : st.view === 'fragment' ? '#f-' + st.id : st.view === 'changes' ? '#changes' : location.pathname + location.search
   // What a history entry keeps; a reveal or search highlight is a one-off.
   const entryOf = (st) => { const { reveal, query, ...rest } = st; return rest }
   const describe = (st) => {
     const r = st.view === 'root' && rootById[st.id]
-    const base = r ? schemaName(r) : st.view === 'fragment' && fragById[st.id] ? st.id : 'Overview'
+    const base = r ? schemaName(r) : st.view === 'fragment' && fragById[st.id] ? st.id : st.view === 'changes' ? "What's changed" : 'Overview'
     return st.focus ? `${base} › ${displayPath(st.focus)}` : base
   }
   const remember = () => {
@@ -1311,6 +1399,12 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
       onclick: () => { if (currentCanvas && currentCanvas.stage.isConnected) state.canvas = currentCanvas.snapshot(); state.mode = m; render() }
     }, m === 'diagram' ? 'Diagram' : 'Try it')))
 
+  // A changed schema or fragment's mark in the sidebar, and its link to the
+  // changes view from its own page.
+  const navDot = (c) => c && h('span', { class: c.status === 'added' ? 'chg-tag added' : 'chg-dot', title: `${CHANGE_WORD[c.status]} since ${changes.base}` }, c.status === 'added' ? 'new' : null)
+  const changesLink = (c) => c && h('a', { href: '#changes', class: 'linkish', style: 'font-size:13px', onclick: (e) => { e.preventDefault(); go({ view: 'changes' }) } },
+    c.status === 'added' ? `New since ${changes.base}` : `${plural(c.fields.length, 'change')} since ${changes.base}`)
+
   const renderSide = () => {
     const link = (opts, ...kids) => h('a', { class: 'nav-link ' + (opts.cls || ''), href: opts.href, 'aria-current': opts.current ? 'true' : 'false', onclick: (e) => { e.preventDefault(); opts.go() } }, kids)
     const usesByRoot = (f) => requests.map((r) => {
@@ -1332,12 +1426,15 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
         M.spreadsheet && h('a', { class: 'download', href: M.spreadsheet, download: M.spreadsheet }, 'Download as spreadsheet')),
       siteSearch,
       link({ href: '#', current: state.view === 'overview', go: () => go({ view: 'overview' }), cls: 'nav-overview' }, 'Overview'),
+      changes && link({ href: '#changes', current: state.view === 'changes', go: () => go({ view: 'changes' }), cls: 'nav-overview nav-changes' },
+        "What's changed", h('span', { class: 'nl-count' }, changes.newVersion ? 'new' : changeTotal)),
       group('requests', 'Request schemas', requests.length, requests.map((r) => link({ href: '#' + r.id, current: state.view === 'root' && state.id === r.id, go: () => go({ view: 'root', id: r.id }) },
-        h('span', { class: 'nl-main' }, h('span', { class: 'nl-title' }, schemaName(r)), h('span', { class: 'nl-sub' }, schemaFile(r.file))))), true),
+        h('span', { class: 'nl-main' }, h('span', { class: 'nl-title' }, schemaName(r)), h('span', { class: 'nl-sub' }, schemaFile(r.file))), navDot(rootChanges.get(r.id)))), true),
       group('responses', 'Response schemas', responses.length, responses.map((r) => link({ href: '#' + r.id, current: state.view === 'root' && state.id === r.id, go: () => go({ view: 'root', id: r.id }) },
-        h('span', { class: 'nl-main' }, h('span', { class: 'nl-title' }, schemaName(r)), h('span', { class: 'nl-sub' }, schemaFile(r.file))))), false),
+        h('span', { class: 'nl-main' }, h('span', { class: 'nl-title' }, schemaName(r)), h('span', { class: 'nl-sub' }, schemaFile(r.file))), navDot(rootChanges.get(r.id)))), false),
       group('fragments', 'Shared fragments', M.fragments.length, sorted.map((f) => link({ href: '#f-' + f.id, current: state.view === 'fragment' && state.id === f.id, go: () => go({ view: 'fragment', id: f.id }) },
         h('span', { class: 'nl-main' }, h('span', { class: 'nl-title mono', style: 'font-size:12.5px' }, f.id), h('span', { class: 'nl-sub' }, plural(f.occurrences.length, 'use'))),
+        navDot(fragChanges.get(f.file)),
         h('span', { class: 'dots', title: 'Request schemas that use it: filled = directly, outlined = inside another fragment' }, usesByRoot(f).map((c) => h('i', { class: c }))))), !narrow)
     )
   }
@@ -1382,6 +1479,49 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
       h('p', { class: 'foot' }, `Generated ${date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}${M.commit ? ' from commit ' + M.commit : ''}.`)))
   }
 
+  // Every schema and fragment that changed since the base commit, each with
+  // its field changes, linked to their place in the diagram.
+  const renderChanges = () => {
+    const head = h('header', { class: 'view-head' },
+      backLink(),
+      h('div', { class: 'eyebrow' }, `${M.api.version} · since ${changes.base}`),
+      h('h1', {}, "What's changed"),
+      h('p', { class: 'lede' }, changes.newVersion
+        ? `${M.api.version} is new: it isn't in ${changes.base}.`
+        : changeTotal
+          ? `Compared with the same schemas at ${changes.base}. A field counts as changed when anything shown for it changed: its type, whether it's required, its rules, allowed values, format, limits, description or the fragment it uses. Fields added or removed with everything inside them are listed once.`
+          : `No schema changes since ${changes.base}.`))
+    const fieldItem = (c, where) => h('li', {},
+      h('div', { class: 'f-head' },
+        h('span', { class: 'chg-tag ' + c.status }, CHANGE_WORD[c.status]),
+        where && c.status !== 'removed' && c.path
+          ? h('a', { href: hashFor(where), class: 'mono', onclick: (e) => { e.preventDefault(); go({ ...where, reveal: c.path }) } }, displayPath(c.path))
+          : h('code', {}, c.path ? displayPath(c.path) : '(the schema itself)'),
+        c.status === 'added' && c.required && h('span', { class: 'file' }, c.required.toLowerCase()),
+        c.inside > 0 && h('span', { class: 'file' }, `with ${plural(c.inside, 'field')} inside`)),
+      c.diffs && diffList(c.diffs))
+    const itemOf = (c, where, title, sub) => {
+      const tag = h('span', { class: 'chg-tag ' + c.status }, CHANGE_WORD[c.status])
+      const name = where && c.status !== 'removed'
+        ? h('a', { href: hashFor(where), class: 'c-title', onclick: (e) => { e.preventDefault(); go(where) } }, title)
+        : h('span', { class: 'c-title' }, title)
+      if (c.status !== 'changed') return h('div', { class: 'chg-item' }, h('div', { class: 'chg-head' }, tag, name, h('span', { class: 'file' }, sub)))
+      return h('details', { class: 'chg-item', open: true },
+        h('summary', {}, tag, name, h('span', { class: 'file' }, sub), h('span', { class: 'c-count' }, plural(c.fields.length, 'change'))),
+        h('ul', { class: 'chg-fields' }, c.fields.map((f) => fieldItem(f, where))))
+    }
+    const section = (title, items) => items.length > 0 && h('section', { class: 'section' }, h('h2', {}, title), h('div', { class: 'changes' }, items))
+    const rootItems = (kind) => changes.roots.filter((c) => c.kind === kind).map((c) =>
+      itemOf(c, rootById[c.id] && { view: 'root', id: c.id }, c.title, c.file))
+    put(main, h('div', { class: 'page' }, head,
+      section('Request schemas', rootItems('request')),
+      section('Response schemas', rootItems('response')),
+      section('Shared fragments', changes.fragments.map((c) => {
+        const f = fragByFile[c.file]
+        return itemOf(c, f && { view: 'fragment', id: f.id }, c.title, c.file)
+      }))))
+  }
+
   const rootSpecFor = (tree) => {
     if (tree.type === 'array' && tree.items) return childSpec(tree, '') || null
     return childSpec(tree, '')
@@ -1397,7 +1537,8 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
         h('span', {}, h('b', {}, r.stats.fields), ' fields'),
         h('span', {}, h('b', {}, r.stats.fragments), ' shared fragments'),
         h('span', {}, h('b', {}, r.stats.rules), ' rules'),
-        h('span', { class: 'file' }, r.file)))
+        h('span', { class: 'file' }, r.file),
+        changesLink(rootChanges.get(r.id))))
     const modeSeg = modeButtons(mode)
 
     if (mode === 'try') {
@@ -1423,7 +1564,8 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
         h('div', { class: 'eyebrow' }, r.kind === 'request' ? 'Request schema' : 'Response schema'),
         h('p', {}, r.tree.description ? rich(r.tree.description) : r.title),
         h('p', {}, 'Select a field to see its rules and constraints. Select a row with a + to open what is inside it. Double-click a block to open it on its own. Drag the background to move around.')),
-      open: openBlock(where)
+      open: openBlock(where),
+      changes: diagramChanges(rootChanges.get(r.id))
     }, state.canvas)
     currentCanvas = canvas
     put(main, head, h('div', { class: 'toolbar' }, modeSeg, canvas.controls), focused && focusBar(where, focused, r.kind === 'request' ? 'request' : 'response'), canvas.stage)
@@ -2193,7 +2335,8 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
       f.description && h('p', { class: 'lede' }, rich(f.description)),
       h('div', { class: 'statline' },
         h('span', {}, 'Used ', h('b', {}, f.occurrences.length), f.occurrences.length === 1 ? ' time' : ' times'),
-        h('span', {}, 'in ', h('b', {}, endpointCount(f)), ` of ${requests.length} request schemas`)))
+        h('span', {}, 'in ', h('b', {}, endpointCount(f)), ` of ${requests.length} request schemas`),
+        changesLink(fragChanges.get(f.file))))
 
     const usedIn = h('div', { class: 'hint' },
       h('div', { class: 'sub' }, 'Where it appears'),
@@ -2228,7 +2371,8 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
         ? [h('span', { class: 'bt' }, blockTitle(focused)), h('span', { class: 'bx' }, 'on its own')]
         : [h('span', { class: 'bt' }, f.title), h('span', { class: 'bx' }, f.id)],
       intro: () => usedIn,
-      open: openBlock(where)
+      open: openBlock(where),
+      changes: diagramChanges(fragChanges.get(f.file))
     }, state.canvas)
     currentCanvas = canvas
     put(main, head, h('div', { class: 'toolbar' }, modeSeg, canvas.controls), focused && focusBar(where, focused, 'fragment'), canvas.stage)
@@ -2241,6 +2385,7 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
     renderSide()
     if (state.view === 'root' && rootById[state.id]) renderRoot(rootById[state.id])
     else if (state.view === 'fragment' && fragById[state.id]) renderFragment(fragById[state.id])
+    else if (state.view === 'changes' && changes) renderChanges()
     else { state = { view: 'overview', depth: state.depth || 0, from: state.from }; renderOverview() }
     // A saved view is applied once; from here the live diagram is the truth.
     delete state.canvas
@@ -2251,6 +2396,7 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
     const hsh = decodeURIComponent(location.hash.slice(1))
     if (hsh.startsWith('f-') && fragById[hsh.slice(2)]) return { view: 'fragment', id: hsh.slice(2) }
     if (rootById[hsh]) return { view: 'root', id: hsh }
+    if (hsh === 'changes' && changes) return { view: 'changes' }
     return { view: 'overview' }
   }
   // Back and Forward (and an edited #link, which arrives with no saved state).

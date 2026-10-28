@@ -53,6 +53,30 @@ Everything is generated from the schema files alone, so it can't drift from them
 a shared fragment. No OpenAPI spec is read. Each top-level schema's page is named after its file, e.g.
 `beta-2/index.html#create-movement-request`.
 
+### What's changed
+
+Built with `--since <git ref>`, each beta version also gets a **What's changed** view comparing its schemas
+with the same version at that ref, e.g. `main`:
+
+- **What's changed**, under Overview in the sidebar, lists every request schema, response schema and shared
+  fragment that was added, removed or changed. Each changed one lists its fields, with what changed (before
+  and after) and a link to the field in the diagram.
+- In the diagrams, changed rows have a **new** or **changed** tag, and a dot marks a row with changes
+  inside it. Selecting a changed field shows what changed, and what was removed from inside it.
+- The sidebar marks changed schemas and fragments, and each one's page links to its changes.
+
+A field counts as changed when anything the page or spreadsheet shows for it changed: its type, whether
+it's required, its conditions and rules, allowed values, format or pattern, limits, description or the
+fragment it uses. A field added or removed with everything inside it is listed once, with a count of the
+fields inside. A renamed schema file shows as one removed and one added. The legacy (ReceiptOfWaste)
+version isn't compared.
+
+To see what your branch changes:
+
+```sh
+npm run docs:schemas -- --since main
+```
+
 ## Build it locally
 
 ```sh
@@ -90,8 +114,14 @@ record each version's published page on its About tab.
 
 `.github/workflows/schema-explorer.yml` rebuilds every version's page and spreadsheet and deploys them to
 GitHub Pages on every push to `main` that touches `src/schemas/**` or this folder. It can also be run by
-hand from the Actions tab. The pull request check runs `npm run docs:schemas`, so a schema change that breaks
-the generator fails the PR. A new `beta-N` folder is picked up with no changes here.
+hand from the Actions tab. A new `beta-N` folder is picked up with no changes here.
+
+The pull request check (`.github/workflows/check-pull-request.yml`) builds the explorer with
+`--since origin/<base branch>`, so a schema change that breaks the generator fails the PR. It also:
+
+- writes the changes to the run's summary page (`--changes-md`), and
+- attaches the built site to the run as the `schema-explorer` artifact for 14 days. Download it from the
+  run's page, unzip it and open `index.html`; the pages work straight from the files.
 
 ## Files
 
@@ -121,6 +151,8 @@ the generator fails the PR. A new `beta-N` folder is picked up with no changes h
   **Try it**.
 - `legacy.test.js` checks the legacy page's bundle reports exactly what `legacy/check.js` does unbundled
   against the real modules, for every example and every way of breaking each field.
+- `changes.js` compares a version's model with an earlier build of it for **What's changed**, and writes the
+  Markdown summary. `changes.test.js` checks it finds known edits to a copy of beta-2.
 - `test-cases.js` makes the broken payloads the tests use.
 - `spreadsheet.js` turns the same data into spreadsheet tabs.
 - `xlsx.js` writes the `.xlsx` file. It has no dependencies (an `.xlsx` is a zip of XML).

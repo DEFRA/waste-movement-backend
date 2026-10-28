@@ -5,6 +5,7 @@
 // plain rules. The model itself is built by model.js.
 //
 // Usage: node scripts/schema-explorer/build.js [schemas] [outDir] [--standalone] [--xlsx] [--legacy]
+//          [--since <git ref>] [--changes-md <file>]
 //   schemas       a folder of versions (its beta-N subfolders, e.g.
 //                 src/schemas/beta-1 and src/schemas/beta-2), or one version's
 //                 folder (default src/schemas). Within a version, every
@@ -20,9 +21,17 @@
 //                 to it from the page. SITE_URL, if set, is noted in the file.
 //   --legacy      also add a "legacy" version, before the others, for the
 //                 Joi-validated receive and bulk-receive routes (legacy/)
+//   --since <ref> compare every beta version with the same schemas at a git
+//                 ref (e.g. origin/main) and add a "What's changed" view
+//                 (changes.js). The legacy version isn't compared.
+//   --changes-md <file>
+//                 with --since, also write the changes as Markdown, e.g. for a
+//                 CI job summary
 
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
+import { execFileSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { buildModel } from './model.js'
@@ -32,14 +41,20 @@ import { buildLegacyBundle } from './legacy/bundle.js'
 import { buildChecksBundle } from './checks/bundle.js'
 import { checkedFiles } from './checks/routes.js'
 import { buildLegacyModel } from './legacy/joi-model.js'
+import { compareModels, changesMarkdown } from './changes.js'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const args = process.argv.slice(2)
 const standalone = args.includes('--standalone')
 const xlsx = args.includes('--xlsx')
 const legacy = args.includes('--legacy')
+const VALUE_FLAGS = ['--since', '--changes-md']
+const valueOf = (flag) =>
+  args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined
+const since = valueOf('--since')
+const changesMd = valueOf('--changes-md')
 const [schemasArg = 'src/schemas', outArg = '.schema-explorer'] = args.filter(
-  (a) => !a.startsWith('--')
+  (a, i) => !a.startsWith('--') && !VALUE_FLAGS.includes(args[i - 1])
 )
 const schemasRoot = path.resolve(schemasArg)
 const outDir = path.resolve(outArg)
@@ -124,8 +139,7 @@ const rootOrder = (r) => {
   return i === -1 ? Infinity : i
 }
 
-for (const { slug, model } of versions) {
-  if (VERSION_NAMES[slug]) model.api.version = VERSION_NAMES[slug]
+const nameRoots = (model) => {
   for (const r of model.roots) {
     const name = ROOT_NAMES[rootKey(r)]
     if (name) r.title = r.label = name
@@ -133,7 +147,68 @@ for (const { slug, model } of versions) {
   // Stable, so schemas not listed keep their order.
   model.roots.sort((a, b) => rootOrder(a) - rootOrder(b))
 }
+for (const { slug, model } of versions) {
+  if (VERSION_NAMES[slug]) model.api.version = VERSION_NAMES[slug]
+  nameRoots(model)
+}
 const latest = versions.at(-1)
+
+// --since: the schemas folder as it is at that ref, from git, in a temporary
+// folder, and a label for it like "origin/main (1a2b3c4)".
+const git = (...gitArgs) =>
+  execFileSync('git', gitArgs, {
+    cwd: schemasRoot,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    maxBuffer: 1 << 28
+  })
+const baseSchemas = (ref) => {
+  const top = git('rev-parse', '--show-toplevel').toString().trim()
+  const rel = path.relative(top, schemasRoot).split(path.sep).join('/')
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'schema-explorer-base-'))
+  const short = git('rev-parse', '--short', ref).toString().trim()
+  const label = short.startsWith(ref) ? short : `${ref} (${short})`
+  try {
+    execFileSync('tar', ['-x', '-C', tmp], {
+      input: execFileSync('git', ['archive', '--format=tar', ref, '--', rel], {
+        cwd: top,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        maxBuffer: 1 << 28
+      })
+    })
+  } catch {
+    // The folder isn't there at that ref: everything in it is new.
+    return { dir: null, label }
+  }
+  return { dir: path.join(tmp, rel), label }
+}
+if (since) {
+  const base = baseSchemas(since)
+  for (const v of versions.filter((x) => x.dir)) {
+    const dir =
+      base.dir && (subfolders.length ? path.join(base.dir, v.slug) : base.dir)
+    let before = null
+    if (dir && fs.existsSync(dir)) {
+      before = buildModel(dir)
+      nameRoots(before)
+    }
+    v.model.changes = compareModels(before, v.model, base.label)
+  }
+  if (changesMd) {
+    fs.writeFileSync(
+      changesMd,
+      changesMarkdown(
+        versions
+          .filter((v) => v.model.changes)
+          .map((v) => ({
+            slug: v.slug,
+            name: v.model.api.version ?? v.slug,
+            changes: v.model.changes
+          })),
+        { siteUrl: process.env.SITE_URL }
+      )
+    )
+  }
+}
 
 // The order versions are listed in: beta-N newest first, then anything else
 // (the legacy ReceiptOfWaste routes) last.
