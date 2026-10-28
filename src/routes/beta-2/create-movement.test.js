@@ -1173,26 +1173,13 @@ describe('movement Route Tests version: beta-2', () => {
       })
     })
 
-    describe("Scenario Outline: A Movement isn't created when hazardous waste has neither a consignment code nor a reason", () => {
+    describe("Scenario: A Movement isn't created when hazardous waste has neither a consignment code nor a reason", () => {
       it('rejects a code and a reason that are not provided, saying a reason is required', async () => {
         await expectRejected(
           withWasteItems([hazardousWasteItem], { consignmentNote: {} }),
           [reasonRequired]
         )
       })
-
-      it.each([
-        ['""', { code: '', reasonForNoCode: '' }],
-        ['null', { code: null, reasonForNoCode: null }]
-      ])(
-        'rejects a code and a reason of %s, saying a reason is required',
-        async (_, note) => {
-          await expectRejected(
-            withWasteItems([hazardousWasteItem], { consignmentNote: note }),
-            [reasonRequired]
-          )
-        }
-      )
 
       it('rejects a movement with no consignment note at all, saying a code or a reason is required', async () => {
         await expectRejected(withWasteItems([hazardousWasteItem]), [
@@ -1210,6 +1197,29 @@ describe('movement Route Tests version: beta-2', () => {
           [reasonRequired]
         )
       })
+    })
+
+    describe("Scenario Outline: A Movement isn't created when the reason for no consignment code is null or empty", () => {
+      it.each([
+        ['""', '', 'OutOfRange', 'must NOT have fewer than 1 characters'],
+        ['null', null, 'InvalidType', 'must be string']
+      ])(
+        'rejects a reason of %s rather than reading it as not provided',
+        async (_, reasonForNoCode, errorType, message) => {
+          await expectRejected(
+            withWasteItems([hazardousWasteItem], {
+              consignmentNote: { reasonForNoCode }
+            }),
+            [
+              {
+                errorType,
+                message,
+                pointer: '/consignmentNote/reasonForNoCode'
+              }
+            ]
+          )
+        }
+      )
     })
 
     describe("Scenario Outline: A Movement isn't created when the consignment code is invalid", () => {

@@ -115,6 +115,10 @@ and code, which is confusing for what is really an optional number.
 accepted `null` and `""` as not provided, and beta-2 dropped that: `amount` is a plain
 `"type": "number"`, and `null`, `""` or `"0.5"` is rejected with `must be number`.
 
+This is about optional fields. A response with nothing to return sends `"data": null`, and its
+schema says so with `"type": "null"` (Collection, which mints no ID), not a `["object", "null"]`
+list.
+
 ### Enum values are `SCREAMING_SNAKE`
 
 Every value in an `enum`, or in a `const` that picks one of them, is upper case with words

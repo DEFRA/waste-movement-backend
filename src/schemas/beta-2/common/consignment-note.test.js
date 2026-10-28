@@ -34,33 +34,31 @@ describe('Feature: Schema - declaring a consignment note', () => {
     })
   })
 
-  // null, "" and leaving the field out all mean "not provided", so none of
-  // them is checked against the format or counts as giving both fields.
-  describe('Scenario: A null or empty field is treated as not provided', () => {
-    test.each([null, ''])('accepts a code of %p', (code) => {
-      expect(validateAjv({ code }).valid).toBe(true)
+  // An optional field is left out when there's no value (see the schemas
+  // README), so null and "" are rejected rather than read as "not provided".
+  describe('Scenario: A null or empty field is rejected', () => {
+    test.each([
+      [null, 'type'],
+      ['', 'pattern']
+    ])('rejects a code of %p', (code, keyword) => {
+      const { valid, errors } = validateAjv({ code })
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({ keyword, instancePath: '/code' })
+      )
     })
 
-    test.each([null, ''])('accepts a reason of %p', (reasonForNoCode) => {
-      expect(validateAjv({ reasonForNoCode }).valid).toBe(true)
-    })
+    test.each([
+      [null, 'type'],
+      ['', 'minLength']
+    ])('rejects a reason of %p', (reasonForNoCode, keyword) => {
+      const { valid, errors } = validateAjv({ reasonForNoCode })
 
-    test.each([null, ''])(
-      'accepts a reason of %p alongside a code',
-      (reasonForNoCode) => {
-        expect(
-          validateAjv({ code: 'CJTILE/A0001', reasonForNoCode }).valid
-        ).toBe(true)
-      }
-    )
-
-    test.each([null, ''])('accepts a reason alongside a code of %p', (code) => {
-      expect(
-        validateAjv({
-          code,
-          reasonForNoCode: 'Carrier did not provide a consignment note'
-        }).valid
-      ).toBe(true)
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({ keyword, instancePath: '/reasonForNoCode' })
+      )
     })
 
     test('accepts an empty consignment note', () => {
