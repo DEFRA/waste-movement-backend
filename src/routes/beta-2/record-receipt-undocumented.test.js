@@ -769,20 +769,13 @@ describe('POST /beta-2/receipts', () => {
       })
     })
 
-    describe("Scenario Outline: A Receipt isn't created when hazardous waste has neither a consignment code nor a reason", () => {
-      it.each([
-        ['(not provided)', {}],
-        ['""', { code: '', reasonForNoCode: '' }],
-        ['null', { code: null, reasonForNoCode: null }]
-      ])(
-        'rejects a code and a reason of %s, saying a reason is required',
-        async (_, note) => {
-          await expectRejected(
-            withWasteItems([hazardousItem], { consignmentNote: note }),
-            [reasonRequired]
-          )
-        }
-      )
+    describe("Scenario: A Receipt isn't created when hazardous waste has neither a consignment code nor a reason", () => {
+      it('rejects a code and a reason that are not provided, saying a reason is required', async () => {
+        await expectRejected(
+          withWasteItems([hazardousItem], { consignmentNote: {} }),
+          [reasonRequired]
+        )
+      })
 
       it('rejects a receipt with no consignment note at all, saying a code or a reason is required', async () => {
         await expectRejected(withWasteItems([hazardousItem]), [
@@ -800,6 +793,29 @@ describe('POST /beta-2/receipts', () => {
           [reasonRequired]
         )
       })
+    })
+
+    describe("Scenario Outline: A Receipt isn't created when the reason for no consignment code is null or empty", () => {
+      it.each([
+        ['""', '', 'OutOfRange', 'must NOT have fewer than 1 characters'],
+        ['null', null, 'InvalidType', 'must be string']
+      ])(
+        'rejects a reason of %s rather than reading it as not provided',
+        async (_, reasonForNoCode, errorType, message) => {
+          await expectRejected(
+            withWasteItems([hazardousItem], {
+              consignmentNote: { reasonForNoCode }
+            }),
+            [
+              {
+                errorType,
+                message,
+                pointer: '/consignmentNote/reasonForNoCode'
+              }
+            ]
+          )
+        }
+      )
     })
 
     describe("Scenario Outline: A Receipt isn't created when the consignment code is invalid", () => {

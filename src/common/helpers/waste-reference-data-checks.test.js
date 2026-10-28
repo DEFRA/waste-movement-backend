@@ -234,13 +234,9 @@ describe('findMissingConsignmentNote', () => {
     ).toEqual([])
   })
 
-  test.each([
-    ['neither field', {}],
-    ['both empty', { code: '', reasonForNoCode: '' }],
-    ['both null', { code: null, reasonForNoCode: null }]
-  ])('requires a reason when the note has %s', (_, consignmentNote) => {
+  test('requires a reason when the note has neither field', () => {
     expect(
-      findMissingConsignmentNote({ ...hazardous, consignmentNote })
+      findMissingConsignmentNote({ ...hazardous, consignmentNote: {} })
     ).toEqual([reasonRequired])
   })
 
@@ -248,7 +244,11 @@ describe('findMissingConsignmentNote', () => {
     ['a code', { code: 'CJTILE/A0001' }],
     ['a code in the wrong format, which the schema reports', { code: 'X' }],
     ['a reason', { reasonForNoCode: 'No note given' }],
-    ['a reason and a null code', { code: null, reasonForNoCode: 'No note' }]
+    ['both empty, which the schema reports', { code: '', reasonForNoCode: '' }],
+    [
+      'both null, which the schema reports',
+      { code: null, reasonForNoCode: null }
+    ]
   ])('is satisfied by %s', (_, consignmentNote) => {
     expect(
       findMissingConsignmentNote({ ...hazardous, consignmentNote })

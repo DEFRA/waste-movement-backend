@@ -81,17 +81,13 @@ export const findUnrecognisedPopCodes = (payload) =>
       : []
   })
 
-// null, "" and leaving a field out all mean it isn't provided.
-const isProvided = (value) =>
-  value !== undefined && value !== null && value !== ''
-
 const isObject = (value) =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
 // Hazardous waste needs a consignment note with a code or, failing that, a
-// reason for having none. A code in the wrong format still counts as given:
-// the schema reports its format. A consignmentNote that isn't an object is
-// also left to the schema.
+// reason for having none. A field that is there counts as given, whatever its
+// value: the schema reports a code in the wrong format, an empty reason or a
+// null. A consignmentNote that isn't an object is also left to the schema.
 export const findMissingConsignmentNote = (payload) => {
   const note = payload?.consignmentNote
 
@@ -110,8 +106,8 @@ export const findMissingConsignmentNote = (payload) => {
   }
   if (
     !isObject(note) ||
-    isProvided(note.code) ||
-    isProvided(note.reasonForNoCode)
+    note.code !== undefined ||
+    note.reasonForNoCode !== undefined
   ) {
     return []
   }
