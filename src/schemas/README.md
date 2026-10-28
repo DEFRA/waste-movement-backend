@@ -7,8 +7,7 @@ the business-rules list we share with regulators — is generated from it rather
 again by hand.
 
 This document is for people changing these schemas: why the conventions are what they are, and
-what to do when you add or change one. For how the wiring actually works, read `validate/` — it
-is two short files.
+what to do when you add or change one. For how the wiring actually works, read `validate/`.
 
 ## The conventions, and why
 
@@ -33,7 +32,7 @@ conversion step in between.
 **OpenAPI 3.0 can't express what these schemas need.** `const` and `propertyNames` are what
 encode rules like "Household forbids these fields" and "exactly one of `authorisationNumber` /
 `reasonForNoAuthorisationNumber`" (with the `if`/`then`/`else` described under
-[Conditional rules](#conditional-rules-ifthenelse-not-oneof)). A 3.0 spec would
+[Conditional rules](#conditional-rules-ifthenelse-not-oneof-or-anyof)). A 3.0 spec would
 describe a looser contract than the one actually enforced. 3.1 is required, not preferred.
 
 The legacy (unversioned) routes are described separately, by `openapi.json` at the root of this
@@ -68,8 +67,8 @@ So the path is the identity, rather than being restated inside the file and chec
 
 All validation lives inside the file — `pattern`, `enum`, `const`, `required`,
 `propertyNames`. No custom formats, no helper functions, no import from `waste-movement-utils`.
-Only the standard `email` and `uuid` formats are used, because every JSON Schema consumer
-already understands them.
+Only standard formats are used, because every JSON Schema consumer already understands them:
+`email` and `date-time` in beta-2, `uuid` in beta-1.
 
 This is what makes a schema shareable: a file with a custom `format: "postcode"` in it is
 meaningless to anyone who doesn't also have our validator wired up. So postcode, phone number,
@@ -98,10 +97,10 @@ OpenAPI Viewer for macOS — can't decode a boolean where they expect a schema o
 the **whole** published spec, since it `$ref`s these files. `{ "not": {} }` validates
 identically, so no payload is accepted or rejected differently, and `validate/hapi-validator.js`
 maps its `not` error to `NotAllowed` with the field's pointer, as callers already get. Its
-description is the error message — see [Conditional rules](#conditional-rules-ifthenelse-not-oneof).
+description is the error message — see [Conditional rules](#conditional-rules-ifthenelse-not-oneof-or-anyof).
 
-`"additionalProperties": false` is the exception and stays: it's how a whole payload is closed,
-and those tools accept a boolean there. `conventions.test.js` fails on any other boolean
+`"additionalProperties": false` is the exception and stays: it's how an object is closed, and
+those tools accept a boolean there. `conventions.test.js` fails on any other boolean
 subschema.
 
 ### Optional means left out, not `null` or `""`
@@ -146,7 +145,24 @@ Two kinds of value are exempt:
 `SCREAMING_SNAKE`. beta-1 isn't checked, but already follows it (`HAZARDOUS`, `NON_HAZARDOUS`),
 apart from its own copy of `errorType`.
 
-### Conditional rules: `if`/`then`/`else`, not `oneOf`
+### Field names
+
+Field names are camelCase, and follow four rules so the same kind of field reads the same way
+everywhere:
+
+- **Noun first for siblings.** When fields beside each other qualify the same noun, the noun
+  comes first, so they sort together: `<noun>`, `<noun>Source`, `<noun>Description`. This only
+  applies to siblings; a lone `totalWeight` stays as it is. The `reasonForNo<Identifier>`
+  fields are the exception: see
+  [below](#a-number-or-why-there-isnt-one-reasonfornoidentifier).
+- **Event times are `<event>DateTime`.** The event already says it happened, so there's no
+  `actual` prefix. A time that hasn't happened yet keeps its qualifier:
+  `planned<Event>DateTime`.
+- **True/false fields start with `is`**: `isPresent`, `isEstimate`, `is<Condition>`.
+- **Singular or plural matches the data.** An array has a plural name; an object or a single
+  value has a singular one. "Details" is a collective noun, so an object can be `<noun>Details`.
+
+### Conditional rules: `if`/`then`/`else`, not `oneOf` or `anyOf`
 
 A rule that depends on another field — "exactly one of `registrationNumber` /
 `reasonForNoRegistrationNumber`", "`items` only when `isPresent` is true" — is an
@@ -177,11 +193,33 @@ caller never meant ("must be equal to constant" on an `isPresent: true` that's p
 fine). An `if` only ever evaluates the branch that applies, so the caller gets one error about
 what they actually sent.
 
+`anyOf` has the same problem. "At least one of `emailAddress` / `phoneNumber`" written as an
+`anyOf` of two `required`s reports both as required when neither is sent, which reads as "both
+are required". Write it as an `if` on the first field, with the second required in the `else`:
+
+```json
+"if": {
+  "properties": { "emailAddress": {} },
+  "required": ["emailAddress"]
+},
+"else": {
+  "properties": { "phoneNumber": {} },
+  "required": ["phoneNumber"],
+  "description": "Required when 'emailAddress' is not provided"
+}
+```
+
 **The description of a `then`, an `else` or a `not` is the error message**, word for word, and
 the error's `pointer` names the field — so write it as the condition: "Required when …",
 "Not allowed when …". `validate/hapi-validator.js` uses it for any error raised directly by
 that subschema; `conventions.test.js` fails if one that can reject has no description (a
 `then`/`else` holding only `properties` raises nothing itself, so it's exempt).
+
+That applies only to an error the `then`, `else` or `not` raises itself. A value rule on a field
+inside a branch, such as `physical-details`' `containerCount` (`const: 0` when `containerType`
+is `'LOO'`, `minimum: 1` otherwise), is reported with the validator's own message
+(`must be equal to constant`, `must be >= 1`). A description there documents the rule but never
+reaches the caller.
 
 Word it like the validator's own messages (`'receiver' is required`, `must be one of: 'ROAD',
 'RAIL'`): **field names and literal values in single quotes, no closing full stop** — "Required
@@ -193,7 +231,54 @@ The empty `"registrationNumber": {}` declarations are for ajv's strict mode, whi
 `required` naming a property the same subschema doesn't declare.
 
 `oneOf` is still right for a genuine choice between variants — `producer.schema.json`'s
-Household / Commercial / Municipal — where code generators turn it into a union type.
+Household / Commercial / Municipal — where code generators turn it into a union type. `anyOf`
+has no such use here.
+
+### "Is there one?": an `isPresent` object
+
+When a payload says whether something applies, it's an object with a boolean `isPresent`. Its
+other fields are required or allowed only when `isPresent` is `true`, and each is
+`{ "not": {} }` otherwise:
+
+```json
+{ "isPresent": false }
+
+{ "isPresent": true, "…": "the details" }
+```
+
+An `if` on `isPresent` with a `then` and an `else` expresses this, as under
+[Conditional rules](#conditional-rules-ifthenelse-not-oneof-or-anyof).
+
+Making the object and its `isPresent` required means the caller always answers, and
+`{ "isPresent": false }` records "checked, none". Leaving them optional means a caller who sends
+nothing is read as "none".
+
+### "A number, or why there isn't one": `reasonForNo<Identifier>`
+
+When a caller may not have an identifier, the schema has the identifier and a
+`reasonForNo<Identifier>` beside it, and exactly one of the two is required. It's the
+`if`/`then`/`else` under [Conditional rules](#conditional-rules-ifthenelse-not-oneof-or-anyof):
+the `then` forbids the reason when the identifier is given, and the `else` requires it when the
+identifier isn't.
+
+Both properties' descriptions end with the same sentence: "Exactly one of '<identifier>' or
+'reasonForNo<Identifier>' is required."
+
+When "exactly one" depends on another resource, the schema enforces only "not both", and a
+[payload check](#rules-a-schema-cant-say-payload-checks) enforces the rest.
+
+### Rules a schema can't say: payload checks
+
+Some rules can't be written in a JSON Schema: they need reference data too long to inline (the
+EWC and POP code lists in `waste-movement-utils`), or they span resources (a consignment note is
+required when any waste item is hazardous). These are **payload checks**: functions
+`(payload, details) => details` that a route passes to `withPayloadChecks`
+(`validate/payload-checks.js`) along with its schema validator. They run after the schema,
+whether or not it passed, and add their errors in the same detail shape to the same 400, so the
+caller sees every problem at once.
+
+The schema still checks what it can (an EWC code is six digits); a check adds only what the
+schema can't. The beta-2 checks are in `common/helpers/waste-reference-data-checks.js`.
 
 ### Granular: one small file per resource
 
@@ -202,7 +287,7 @@ its own file; a resource with variants gets a file per variant, tied together wi
 
 ```
 producer.schema.json             the choice between the three variants
-producer-base.schema.json        fields all three share
+producer-base.schema.json        fields all three share (none yet)
 producer-household.schema.json
 producer-commercial.schema.json
 producer-municipal.schema.json
@@ -215,6 +300,24 @@ deliberately moving away from.
 
 Give every schema and every property a `description`. It's prose next to the rule it describes,
 and it's what generated documentation is built from.
+
+### Closing a schema built from others
+
+`"additionalProperties": false` rejects any field not listed in the `properties` right beside
+it. It doesn't see fields listed inside an `allOf` branch or a `$ref`, so two shapes are closed
+differently:
+
+- **A schema built with `allOf`** — the producer variants, which combine `producer-base` with
+  their own fields — lists its allowed field names in `"propertyNames": { "enum": [...] }` at its
+  root instead. `additionalProperties: false` there would see no fields at all and reject a
+  valid producer.
+- **An overlay** — a `$ref` to a shared resource plus an extra rule for one endpoint — isn't
+  closed at all, because the resource it refers to already is. Creation's `wasteItems` refers to
+  `waste-items.schema.json` and adds `treatments: { "not": {} }`, since a movement can't record
+  treatments yet. Closing the overlay would reject every other waste item field.
+
+Prefer an overlay to copying a shared resource just to change one rule: the rule stays in one
+place, and the endpoint's difference is visible where it's used.
 
 ### Examples: named, beside the body they illustrate
 
@@ -280,27 +383,25 @@ line, the schema is changed until the test passes. A rule that has been agreed s
 because removing it breaks a named test. **Don't add a schema without a test, and don't change a
 schema's rules without touching its test.**
 
-### Response schemas: 201 only, `data` only
+### Response schemas
 
 Each beta route also validates its **201** body, via Hapi's `options.response.status[201]`
 pointed at the route's `<route>-response.schema.json` (`jsonSchemaResponseValidatorFor` in `validate/`). As with
 requests, these files are the source of truth: `beta-2/openapi.json` `$refs` them rather than
 defining responses itself, so the published contract and the runtime check are the same file.
 
-- **`data` only.** The spec's `validation` envelope (`warnings` of `issue`s) is **not
-  modelled** — whether responses keep it is undecided, and it may be removed. Routes still
-  return `validation: { warnings: [] }`; it passes as an unmodelled property. Don't add it to a
-  response schema until that's decided.
+- **`data` and `validation`.** Both are required. `validation` is
+  `common/validation.schema.json`: a `warnings` list of `issue`s, empty when there are none.
 - **201 only.** Error responses are Boom errors, which Hapi doesn't validate, and they are
   problem details, not a modelled body.
 - **A mismatch is a 500**, with the generic internal-server-error problem details — no ajv
   internals reach the client. The validator logs `{ schemaId, errors }` at error level first, so
   the failure is alertable. The write has already happened by then: a mismatch is a contract
   bug for tests to catch, not a normal path.
-- **No `additionalProperties`.** Response objects are left open: extra fields pass, missing /
-  wrongly-typed / out-of-enum fields fail. Unlike request payloads, don't add
-  `"additionalProperties": false` to a response schema — closing one means any field the service
-  adds becomes a 500 until the schema catches up.
+- **Closed, like requests.** Every beta-2 object, in a response or a request, has
+  `"additionalProperties": false`. A field the service starts returning has to be added to the
+  schema in the same change, or the route returns a 500. That's deliberate: the published
+  contract can't drift from the response. beta-1's responses are still open.
 - **beta-1 is self-contained.** Its response files inline the ids, `wasteType` and
   `deliveryItem` as `$defs` rather than `$ref`-ing `beta-2/common/`, so changing beta-2 can't
   change beta-1's contract.
@@ -323,7 +424,8 @@ mistyped example name fails there rather than on the published page.
 
 ```
 src/schemas/
-  validate/          loads every *.schema.json and adapts it to a Hapi route validator
+  validate/          loads every *.schema.json, adapts it to a Hapi route validator, and runs
+                     payload checks after it
   openapi.json       hand-maintained Swagger 2.0 spec for the legacy (unversioned) routes
   openapi.test.js    checks openapi.json against the legacy routes' Joi validation
   openapi-betas.test.js  resolves every beta-*/openapi.json and validates it as OpenAPI 3.1
@@ -331,8 +433,7 @@ src/schemas/
                      delivery-id-params (tests in beta-1.test.js), and openapi.json
   beta-2/
     openapi.json     the published spec — $refs everything below
-    common/          shared resources — address, contact-details, producer/, broker-or-dealer/,
-                     and the ids and wasteType that responses are built from
+    common/          resources used by more than one endpoint
     creation/        create-movement-request / -response (each with its .examples.json)
     collection/      create-collection-request / -response, and the movementId path params
     delivery/        record-delivery-request / -response, and delivery-item
@@ -352,14 +453,16 @@ converted off Joi so both versions run one mechanism, not because it's where mod
 ## Making a change
 
 **Changing a rule** — edit the `.schema.json`, update or add the named case in its `.test.js`.
-If the rule is about one field, it belongs in the schema. If it spans two resources or two
-endpoints, it doesn't — that stays in service code. A schema describes one resource.
+If the rule is about one resource, it belongs in the schema. If it needs reference data or spans
+resources, it's a [payload check](#rules-a-schema-cant-say-payload-checks). If it needs stored
+data (the movement exists, its current state), it stays in service code.
 
 **Adding a resource** — create `beta-2/<category>/<name>.schema.json` with the 2020-12 `$schema`,
 no `$id`, a `title` and `description`, a `description` on every property, and
-`"additionalProperties": false` if it's a whole payload. Add `<name>.test.js` beside it. There's
-no registration step — the loader walks the directory, and the file's path becomes the key routes
-validate against.
+`"additionalProperties": false` on every object (see
+[Closing a schema built from others](#closing-a-schema-built-from-others) for the exceptions).
+Add `<name>.test.js` beside it. There's no registration step — the loader walks the directory,
+and the file's path becomes the key routes validate against.
 
 **Adding a route** — add `<category>/<route>-request.schema.json` and
 `<category>/<route>-response.schema.json`, named after the new route file, each with its test
