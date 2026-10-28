@@ -4,10 +4,12 @@
 //
 // '@defra/waste-movement-utils' is pointed at only the modules the checks use:
 // the package's index also exports test helpers (Mongo, uuid…).
+// Its EWC code list is swapped for the codes alone (../ewc-codes.js).
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build } from 'esbuild'
+import { ewcCodesPlugin } from '../ewc-codes.js'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const utilsSrc = path.resolve(
@@ -54,7 +56,7 @@ export const buildChecksBundle = async () => {
     target: 'es2020',
     minify: true,
     legalComments: 'none',
-    plugins: [shims],
+    plugins: [shims, ewcCodesPlugin],
     logLevel: 'silent'
   })
   return `${result.outputFiles[0].text}\nwindow.schemaChecks = schemaChecksBundle`

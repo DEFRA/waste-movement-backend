@@ -16,6 +16,11 @@ the API's own functions, bundled for the browser. Each error links to its place 
 diagram. Only the body is checked, not headers, path IDs or checks against stored data. Edits are kept in
 the viewer's browser.
 
+Try it's code (the compiled validators, error handling and checks, over half of a version's code) is a
+separate `try-it.js` beside each page, loaded the first time Try it is opened or pointed at, so the diagrams
+don't wait for it. The EWC code list the checks use is bundled as the codes alone (`ewc-codes.js`), not the
+utils package's full list with descriptions.
+
 ### Legacy (Joi) routes
 
 `--legacy` (on in `npm run docs:schemas`) adds a **legacy** version (shown as **ReceiptOfWaste**; see `VERSION_NAMES` in `build.js`), listed after the beta versions (newest first), for the routes
@@ -74,8 +79,11 @@ This writes:
 .schema-explorer/
   index.html                  sends visitors to the latest version, keeping any #link
   beta-1/index.html           beta-1's diagram
+  beta-1/try-it.js            beta-1's Try it, loaded when it's opened
   beta-2/index.html
+  beta-2/try-it.js
   legacy/index.html           the ReceiptOfWaste (legacy) routes
+  legacy/try-it.js
 ```
 
 The generator uses the repo's own `ajv` and `ajv-formats` to compile the validators for **Try it**, and
@@ -130,6 +138,8 @@ The pull request check (`.github/workflows/check-pull-request.yml`) builds the e
   **Try it**.
 - `legacy.test.js` checks the legacy page's bundle reports exactly what `legacy/check.js` does unbundled
   against the real modules, for every example and every way of breaking each field.
+- `ewc-codes.js` swaps the utils package's EWC code list for the codes alone in both bundles (the checks
+  and legacy). `ewc-codes.test.js` checks it answers exactly as the real one for every code.
 - `fields.js` describes each field as text (type, required, rules, limits…), for `changes.js` to compare.
 - `changes.js` compares a version's model with an earlier build of it for **What's changed**, and writes the
   Markdown summary. `changes.test.js` checks it finds known edits to a copy of beta-2.

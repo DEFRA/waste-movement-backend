@@ -432,8 +432,6 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
 </div>
 
 <script id="model" type="application/json">__MODEL__</script>
-<script>__VALIDATORS__</script>
-<script>__ERRORS__</script>
 <script>
 (() => {
   const M = JSON.parse(document.getElementById('model').textContent)
@@ -1395,7 +1393,10 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
   const modeButtons = (mode) => h('div', { class: 'seg', role: 'group', 'aria-label': 'View' },
     ['diagram', 'try'].map((m) => h('button', {
       type: 'button', 'aria-pressed': mode === m ? 'true' : 'false',
-      onclick: () => { if (currentCanvas && currentCanvas.stage.isConnected) state.canvas = currentCanvas.snapshot(); state.mode = m; render() }
+      onclick: () => { if (currentCanvas && currentCanvas.stage.isConnected) state.canvas = currentCanvas.snapshot(); state.mode = m; render() },
+      // Start fetching Try it's code as soon as it looks wanted.
+      onpointerenter: m === 'try' ? () => loadTryIt().catch(() => {}) : null,
+      onfocus: m === 'try' ? () => loadTryIt().catch(() => {}) : null
     }, m === 'diagram' ? 'Diagram' : 'Try it')))
 
   // A changed schema or fragment's mark in the sidebar, and its link to the
@@ -1545,7 +1546,7 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
       const focused = state.focus && whole && findSpec(whole, state.focus)
       return put(main, head, h('div', { class: 'toolbar' }, modeSeg),
         focused && focusBar(tryWhere, focused, r.kind === 'request' ? 'request' : 'response'),
-        harness({ file: r.file, examples: r.examples, kind: r.kind, where: tryWhere, label: focused ? blockTitle(focused) : schemaName(r), focus: focused || null }))
+        withTryIt(() => harness({ file: r.file, examples: r.examples, kind: r.kind, where: tryWhere, label: focused ? blockTitle(focused) : schemaName(r), focus: focused || null })))
     }
 
     const where = { view: 'root', id: r.id }
@@ -1583,17 +1584,38 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
   }
 
   // ---------- Try it: check JSON against the schema ----------
-  // The validators are the schemas compiled ahead of time (ajv, with the same
-  // options and formats as src/schemas/validate), embedded by the generator as
-  // window.schemaValidators.
-  // Error types, pointers and messages: errors.js, inlined by the generator.
-  const { toDetails, fromDetails } = window.schemaErrors || {}
-  // The checks a route runs after the schema (checks/routes.js: reference
-  // data, rules across fields, dates not in the future), bundled from the
-  // API's own code as window.schemaChecks, for versions that have any.
-  const runChecks = window.schemaChecks && M.checks
-    ? (file, value, details) => window.schemaChecks.runChecks(M.checks.version, file, value, details)
-    : (file, value, details) => details
+  // Its code is a separate file (M.tryIt, written by the generator), loaded the
+  // first time Try it is opened or pointed at, so the diagrams don't wait for
+  // it. It sets:
+  // - window.schemaValidators: the schemas compiled ahead of time (ajv, with
+  //   the same options and formats as src/schemas/validate);
+  // - window.schemaErrors: error types, pointers and messages (errors.js);
+  // - window.schemaChecks: the checks a route runs after the schema
+  //   (checks/routes.js: reference data, rules across fields, dates not in the
+  //   future), from the API's own code, for versions that have any;
+  // - or for the legacy (Joi) version, window.legacyCheck.
+  let tryItLoading = null
+  const loadTryIt = () => tryItLoading ??= new Promise((resolve, reject) => {
+    if (!M.tryIt) return resolve()
+    const script = document.createElement('script')
+    script.src = M.tryIt
+    script.onload = resolve
+    // Let a later attempt try again.
+    script.onerror = () => { tryItLoading = null; script.remove(); reject(new Error('Try it failed to load')) }
+    document.head.append(script)
+  })
+  // Try it's view: a moment's "Loading" the first time, then the editor.
+  const withTryIt = (build) => {
+    if (window.schemaValidators || window.legacyCheck) return build()
+    const slot = h('p', { class: 'empty', 'aria-live': 'polite' }, 'Loading Try it…')
+    loadTryIt().then(
+      () => slot.isConnected && slot.replaceWith(build()),
+      () => { slot.textContent = 'Try it couldn\'t be loaded. Check your connection and select Try it again.' })
+    return slot
+  }
+  const runChecks = (file, value, details) => window.schemaChecks && M.checks
+    ? window.schemaChecks.runChecks(M.checks.version, file, value, details)
+    : details
 
   // A checker for one schema file: value -> { valid, errors }. JSON Schema
   // versions use the compiled validators, errors.js and the route's checks;
@@ -1604,6 +1626,7 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
     const validate = window.schemaValidators && M.validators && window.schemaValidators[M.validators[file]]
     if (!validate) return null
     return (value) => {
+      const { toDetails, fromDetails } = window.schemaErrors
       const details = runChecks(file, value, validate(value) ? [] : toDetails(validate.errors || []))
       return { valid: details.length === 0, errors: fromDetails(details) }
     }
@@ -2348,7 +2371,7 @@ select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-
           : h('a', { class: 'badge plain', href: '#' + p.root, style: 'text-decoration:none', onclick: (e) => { e.preventDefault(); go({ view: 'root', id: p.root }) } }, schemaName(rootById[p.root]))))] : null)
 
     const mode = state.mode || 'diagram'
-    const tryIt = (focused) => harness({ file: f.file, examples: f.examples, kind: 'fragment', where: { view: 'fragment', id: f.id }, label: focused ? blockTitle(focused) : f.title, focus: focused || null })
+    const tryIt = (focused) => withTryIt(() => harness({ file: f.file, examples: f.examples, kind: 'fragment', where: { view: 'fragment', id: f.id }, label: focused ? blockTitle(focused) : f.title, focus: focused || null }))
     const spec = rootSpecFor(t)
     if (!spec) {
       // A single value (a pattern, a code list): its rules beside a tester.

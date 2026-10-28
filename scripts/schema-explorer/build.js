@@ -29,6 +29,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { buildModel } from './model.js'
@@ -270,7 +271,7 @@ const browserValidators = (code) => {
   const runtime = { ${needed.map((name) => `${JSON.stringify(name)}: ${RUNTIME[name]}`).join(',\n')} }
   const require = (name) => runtime[name]
   const exports = {}
-  ${code.replace(/<\//g, '<\\/')}
+  ${code}
   return exports
 })()`
 }
@@ -288,7 +289,7 @@ if (
   throw new Error('errors.js must have no imports and export only consts')
 }
 const browserErrors = `window.schemaErrors = (() => {
-${errorsSource.replace(/^export const/gm, 'const').replace(/<\//g, '<\\/')}
+${errorsSource.replace(/^export const/gm, 'const')}
   return { ${errorsExports.join(', ')} }
 })()`
 
@@ -309,19 +310,18 @@ for (const { slug, model, validators, bundle } of versions) {
   const checks = checkedFiles(slug).length ? checksBundle : ''
   if (checks) model.checks = { version: slug, files: checkedFiles(slug) }
 
+  // Everything "Try it" needs is a file of its own (over half of a version's
+  // code), which the page loads the first time it's opened. The ?v= hash makes
+  // a browser fetch the new file when it changes. Legacy has its Joi bundle.
+  const tryIt =
+    bundle ||
+    [browserValidators(validators.code), browserErrors, checks]
+      .filter(Boolean)
+      .join('\n')
+  fs.writeFileSync(path.join(dir, 'try-it.js'), tryIt)
+  model.tryIt = `try-it.js?v=${createHash('sha256').update(tryIt).digest('hex').slice(0, 10)}`
+
   const page = template
-    .split('__ERRORS__')
-    .join(
-      bundle
-        ? ''
-        : browserErrors + (checks && `\n${checks.replace(/<\//g, '<\\/')}`)
-    )
-    .split('__VALIDATORS__')
-    .join(
-      bundle
-        ? bundle.replace(/<\//g, '<\\/')
-        : browserValidators(validators.code)
-    )
     .split('__MODEL__')
     .join(JSON.stringify(model).replace(/</g, '\\u003c'))
   const file = path.join(dir, 'index.html')

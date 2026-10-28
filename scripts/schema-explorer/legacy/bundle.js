@@ -7,10 +7,12 @@
 //   helpers (Mongo, uuid…), so only the modules these routes use are bundled.
 // - src/config.js (convict, process.env): replaced by the values it has when
 //   the page is built, e.g. bulk.recordLimit.
+// - the utils EWC code list: swapped for the codes alone (../ewc-codes.js).
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build } from 'esbuild'
+import { ewcCodesPlugin } from '../ewc-codes.js'
 import { config } from '../../../src/config.js'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
@@ -81,7 +83,7 @@ export const buildLegacyBundle = async () => {
     target: 'es2020',
     minify: true,
     legalComments: 'none',
-    plugins: [shims],
+    plugins: [shims, ewcCodesPlugin],
     logLevel: 'silent'
   })
   return `${result.outputFiles[0].text}\nwindow.legacyCheck = legacyExplorer.check`
