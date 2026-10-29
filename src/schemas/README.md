@@ -233,7 +233,7 @@ The empty `"registrationNumber": {}` declarations are for ajv's strict mode, whi
 
 `oneOf` is still right for a genuine choice between variants — `producer.schema.json`'s
 Household / Commercial / Municipal — where code generators turn it into a union type. `anyOf`
-has no such use here.
+has no such use here, and `conventions.test.js` fails on any `anyOf`.
 
 ### "Is there one?": an `isPresent` object
 

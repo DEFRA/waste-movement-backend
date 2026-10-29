@@ -119,6 +119,19 @@ function findConditionMessages(node, pointer = '') {
   ]
 }
 
+/** JSON pointers to every `anyOf`. */
+function findAnyOfs(node, pointer = '') {
+  if (!node || typeof node !== 'object') {
+    return []
+  }
+  return [
+    ...('anyOf' in node ? [`${pointer}/anyOf`] : []),
+    ...Object.entries(node).flatMap(([key, value]) =>
+      findAnyOfs(value, `${pointer}/${key}`)
+    )
+  ]
+}
+
 /** [pointer, value] for every string `enum` / `const` value, field names aside. */
 function findEnumValues(node, pointer = '') {
   if (!node || typeof node !== 'object') {
@@ -220,6 +233,14 @@ describe('schema conventions', () => {
       expect(malformed).toEqual([])
     }
   )
+
+  // A failed anyOf reports every branch's errors: "at least one of
+  // emailAddress / phoneNumber" as an anyOf of two requireds says both are
+  // required. An if on the first field, with the second required in the
+  // else, reports only the one the caller is missing.
+  test.each(schemaFiles)('%s uses no anyOf', (_, schema) => {
+    expect(findAnyOfs(schema)).toEqual([])
+  })
 
   // One casing for every enum value, so callers never have to guess whether
   // it's 'Road', 'road' or 'ROAD'. Upper-case codes (DRU, HP_1, R13) fit too.

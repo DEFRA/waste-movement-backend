@@ -142,16 +142,11 @@ describe('jsonSchemaRequestValidator', () => {
         ]
       },
       {
-        rule: 'anyOf',
+        rule: 'if/else for at least one of two fields',
         value: { ...carrier, contactDetails: {} },
         expected: [
           {
-            message: "'emailAddress' is required",
-            path: ['contactDetails', 'emailAddress'],
-            type: 'NotProvided'
-          },
-          {
-            message: "'phoneNumber' is required",
+            message: "Required when 'emailAddress' is not provided",
             path: ['contactDetails', 'phoneNumber'],
             type: 'NotProvided'
           }
