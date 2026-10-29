@@ -161,8 +161,13 @@ everywhere:
   `planned<Event>DateTime`.
 - **True/false fields start with `is`**: `isPresent`, `isEstimate`, `is<Condition>`.
   `conventions.test.js` fails on any beta-2 boolean property that doesn't.
-- **Singular or plural matches the data.** An array has a plural name; an object or a single
-  value has a singular one. "Details" is a collective noun, so an object can be `<noun>Details`.
+- **Singular or plural matches the data.** An array has a plural name (`wasteItems`,
+  `intendedCarriers`, `supportingReferences`, `codes`); an object or a single value has a
+  singular one (`carrier`, `producer`, `consignmentNote`), so a caller can tell from the name
+  alone whether to send a list. A collective noun counts as singular: `contactDetails` and
+  `physicalDetails` are objects. There are two exceptions. `brokerOrDealer` is an
+  `{ isPresent, items }` wrapper that can hold several, but it keeps its singular name.
+  `specialHandlingRequirements` is one block of free text, but it keeps its plural name.
 
 ### Conditional rules: `if`/`then`/`else`, not `oneOf` or `anyOf`
 
