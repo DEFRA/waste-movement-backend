@@ -5,7 +5,8 @@
   "type": "object",
   "properties": {
     "producer": {
-      "$ref": "../common/producer/producer.schema.json"
+      "$ref": "../common/producer/producer.schema.json",
+      "description": "The producer of the waste. wasteSource picks which fields apply."
     },
     "plannedCollectionDateTime": {
       "type": "string",
@@ -13,7 +14,8 @@
       "description": "The planned collection time, as an ISO 8601 date-time. The actual time is recorded by the Collection event."
     },
     "collectionSite": {
-      "$ref": "../common/collection-site.schema.json"
+      "$ref": "../common/collection-site.schema.json",
+      "description": "The place the waste will be collected from."
     },
     "intendedCarriers": {
       "type": "array",
@@ -33,6 +35,7 @@
     },
     "wasteItems": {
       "$ref": "../common/waste-item/waste-items.schema.json",
+      "description": "The items of waste in the movement. At least one is required. Treatments are not accepted when creating a movement.",
       "type": "array",
       "items": {
         "type": "object",
@@ -45,13 +48,16 @@
       }
     },
     "brokerOrDealer": {
-      "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json"
+      "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json",
+      "description": "Any broker or dealer involved in the movement."
     },
     "supportingReferences": {
-      "$ref": "../common/supporting-references.schema.json"
+      "$ref": "../common/supporting-references.schema.json",
+      "description": "References that help identify the movement, such as a PO or job number."
     },
     "specialHandlingRequirements": {
-      "$ref": "../common/special-handling-requirements.schema.json"
+      "$ref": "../common/special-handling-requirements.schema.json",
+      "description": "Handling instructions for the waste. Leave out when there are none."
     },
     "consignmentNote": {
       "$ref": "../common/consignment-note.schema.json",

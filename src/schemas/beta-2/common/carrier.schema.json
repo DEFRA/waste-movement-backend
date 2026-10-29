@@ -2,6 +2,22 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Carrier",
   "description": "A single waste carrier. organisationName, meansOfTransport and contactDetails are required, and exactly one of registrationNumber or reasonForNoRegistrationNumber must be provided. vehicleRegistration is required for ROAD and otherMeansOfTransport for OTHER; each is forbidden otherwise. address is optional.",
+  "examples": [
+    {
+      "organisationName": "Carrier Demo Ltd",
+      "registrationNumber": "CBDU123456",
+      "meansOfTransport": "ROAD",
+      "vehicleRegistration": "AB12 CDE",
+      "contactDetails": {
+        "emailAddress": "carrier@example.com",
+        "phoneNumber": "01234567890"
+      },
+      "address": {
+        "fullAddress": "4 Carrier Lane, Test City",
+        "postcode": "TE1 4CR"
+      }
+    }
+  ],
   "type": "object",
   "allOf": [
     {
@@ -82,12 +98,12 @@
     },
     "registrationNumber": {
       "$ref": "registration-number.schema.json",
-      "description": "Waste carrier registration number, in a valid UK home-nation format (England and NRW CBDU/CBDL, SEPA WCR/SCO/SEA/SNO/SWE and PCT, NI ROC UT/LT). Mutually exclusive with reasonForNoRegistrationNumber — exactly one of the two is required."
+      "description": "Waste carrier registration number, in a valid UK home-nation format (England and NRW CBDU/CBDL, SEPA WCR/SCO/SEA/SNO/SWE and PCT, NI ROC UT/LT). Exactly one of 'registrationNumber' or 'reasonForNoRegistrationNumber' is required."
     },
     "reasonForNoRegistrationNumber": {
       "type": "string",
       "enum": ["ON_SITE", "HOUSEHOLD", "ONE_OFF", "MARINE"],
-      "description": "Why the carrier has no registration number. Mutually exclusive with registrationNumber — exactly one of the two is required."
+      "description": "Why the carrier has no registration number. Exactly one of 'registrationNumber' or 'reasonForNoRegistrationNumber' is required."
     },
     "meansOfTransport": {
       "type": "string",
@@ -113,10 +129,12 @@
       "description": "Description of the means of transport. Required when meansOfTransport is OTHER; forbidden otherwise."
     },
     "contactDetails": {
-      "$ref": "contact-details.schema.json"
+      "$ref": "contact-details.schema.json",
+      "description": "How to contact the carrier."
     },
     "address": {
-      "$ref": "address.schema.json"
+      "$ref": "address.schema.json",
+      "description": "The carrier's address."
     }
   },
   "required": ["organisationName", "meansOfTransport", "contactDetails"],

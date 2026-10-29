@@ -11,13 +11,15 @@
       "required": ["movementId"],
       "properties": {
         "movementId": {
-          "$ref": "../common/movement-id.schema.json"
+          "$ref": "../common/movement-id.schema.json",
+          "description": "The Movement ID minted for the new movement."
         }
       },
       "additionalProperties": false
     },
     "validation": {
-      "$ref": "../common/validation.schema.json"
+      "$ref": "../common/validation.schema.json",
+      "description": "Data-quality feedback on the request."
     }
   },
   "additionalProperties": false

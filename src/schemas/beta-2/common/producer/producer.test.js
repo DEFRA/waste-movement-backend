@@ -3,7 +3,7 @@ import {
   householdProducer,
   municipalProducer,
   validatorFor
-} from '../test-helpers.js'
+} from '../../test-helpers.js'
 
 const validateAjv = validatorFor('beta-2/common/producer/producer.schema.json')
 

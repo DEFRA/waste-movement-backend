@@ -13,16 +13,20 @@
       ]
     },
     "receiptDateTime": {
-      "$ref": "../common/receipt-date-time.schema.json"
+      "$ref": "../common/receipt-date-time.schema.json",
+      "description": "When the waste was received at the receiver's site."
     },
     "carrier": {
-      "$ref": "../common/carrier.schema.json"
+      "$ref": "../common/carrier.schema.json",
+      "description": "The carrier that delivered the waste."
     },
     "receiver": {
-      "$ref": "../common/receiver/receiver.schema.json"
+      "$ref": "../common/receiver/receiver.schema.json",
+      "description": "The receiver that received the waste."
     },
     "wasteItems": {
       "$ref": "../common/waste-item/waste-items.schema.json",
+      "description": "The items of waste received. At least one is required, and every item needs at least one treatment.",
       "type": "array",
       "items": {
         "type": "object",
@@ -35,10 +39,12 @@
       }
     },
     "brokerOrDealer": {
-      "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json"
+      "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json",
+      "description": "Any broker or dealer involved in the movement."
     },
     "supportingReferences": {
-      "$ref": "../common/supporting-references.schema.json"
+      "$ref": "../common/supporting-references.schema.json",
+      "description": "References that help identify the receipt, such as a PO or job number."
     },
     "consignmentNote": {
       "$ref": "../common/consignment-note.schema.json",

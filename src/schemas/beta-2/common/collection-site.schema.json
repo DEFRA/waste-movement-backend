@@ -17,10 +17,12 @@
   "type": "object",
   "properties": {
     "address": {
-      "$ref": "address.schema.json"
+      "$ref": "address.schema.json",
+      "description": "The address of the collection site."
     },
     "contactDetails": {
-      "$ref": "contact-details.schema.json"
+      "$ref": "contact-details.schema.json",
+      "description": "How to contact someone at the collection site."
     }
   },
   "required": ["address", "contactDetails"],

@@ -279,7 +279,8 @@ whether or not it passed, and add their errors in the same detail shape to the s
 caller sees every problem at once.
 
 The schema still checks what it can (an EWC code is six digits); a check adds only what the
-schema can't. The beta-2 checks are in `common/helpers/waste-reference-data-checks.js`.
+schema can't. Checks live with the service code, not in this folder, since they aren't schemas:
+the route file's `withPayloadChecks` call names the checks that route runs.
 
 ### Granular: one small file per resource
 
@@ -353,7 +354,8 @@ name rather than by position also means reordering can't silently swap which pay
 
 Path params (`-params`) and shared resources have no body of their own, so they keep a root-level
 `examples` array, which `conventions.test.js` also checks. Swagger UI renders only its first entry,
-so put the fullest example first.
+so put the fullest example first. The one exception is a base schema with no fields of its own
+(`producer-base`), which has nothing to show.
 
 ### Whole bodies are named after their route
 
@@ -383,6 +385,10 @@ This is where a requirement lands: a ticket says what should happen, the test sa
 line, the schema is changed until the test passes. A rule that has been agreed stays agreed,
 because removing it breaks a named test. **Don't add a schema without a test, and don't change a
 schema's rules without touching its test.**
+
+The test sits beside the schema, as `<name>.test.js`. A resource split across files in its own
+folder (`producer/`, `broker-or-dealer/`) is tested as a whole: one `<folder>.test.js` in that
+folder covers the variants and entries, through the schema that ties them together.
 
 ### Response schemas
 

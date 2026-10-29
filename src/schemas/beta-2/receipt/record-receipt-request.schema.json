@@ -5,13 +5,16 @@
   "type": "object",
   "properties": {
     "receiptDateTime": {
-      "$ref": "../common/receipt-date-time.schema.json"
+      "$ref": "../common/receipt-date-time.schema.json",
+      "description": "When the waste was received at the receiver's site."
     },
     "carrier": {
-      "$ref": "../common/carrier.schema.json"
+      "$ref": "../common/carrier.schema.json",
+      "description": "The carrier that delivered the waste."
     },
     "receiver": {
-      "$ref": "../common/receiver/receiver.schema.json"
+      "$ref": "../common/receiver/receiver.schema.json",
+      "description": "The receiver that received the waste."
     },
     "physicalDetails": {
       "$ref": "../common/waste-item/physical-details.schema.json",
@@ -22,10 +25,12 @@
       "description": "The disposal or recovery operations applied to the waste received. At least one is required."
     },
     "brokerOrDealer": {
-      "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json"
+      "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json",
+      "description": "Any broker or dealer involved in the movement."
     },
     "supportingReferences": {
-      "$ref": "../common/supporting-references.schema.json"
+      "$ref": "../common/supporting-references.schema.json",
+      "description": "References that help identify the receipt, such as a PO or job number."
     }
   },
   "required": [

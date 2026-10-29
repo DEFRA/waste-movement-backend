@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Treatment",
-  "description": "A disposal or recovery operation applied to the waste, and the weight of waste it applies to. Both are required. disposalOrRecoveryCode mirrors DISPOSAL_OR_RECOVERY_CODES from @defra/waste-movement-utils.",
+  "description": "A disposal or recovery operation applied to the waste, and the weight of waste it applies to. Both are required.",
   "examples": [
     {
       "disposalOrRecoveryCode": "R3",
