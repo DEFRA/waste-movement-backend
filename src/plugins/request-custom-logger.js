@@ -12,6 +12,12 @@ const asyncLocalStorage = new AsyncLocalStorage()
 const CLIENT_NAME_HEADER = 'x-dwt-client-name'
 
 /**
+ * Header the external API uses to forward the name of the organisation it
+ * resolved for the apiCode on beta routes, URI-encoded.
+ */
+const ORGANISATION_NAME_HEADER = 'x-dwt-organisation-name'
+
+/**
  * Return's the request's client id, if set else null.
  * @return {string|null}
  */
@@ -24,6 +30,8 @@ const getClientName = () =>
  */
 const getOrganisationId = () =>
   asyncLocalStorage.getStore()?.get('organisationId')
+const getOrganisationName = () =>
+  asyncLocalStorage.getStore()?.get('organisationName') ?? null
 
 /**
  * Wrap a request cycle in an asyncLocalStorage run call. This allows the
@@ -37,7 +45,7 @@ function wrapCycle(request, cycle, store) {
   request[cycle] = () => asyncLocalStorage.run(store, requestCycle)
 }
 
-const decodeClientName = (value) => {
+const decodeHeader = (value) => {
   try {
     return value ? decodeURIComponent(value) : undefined
   } catch {
@@ -71,14 +79,19 @@ const requestCustomLogger = {
 
         // Beta routes only, so RoW logging is unchanged:
         // - the client name the external API forwards, logged with tenant.id
+        // - the organisation name it forwards, logged with event.reference
         // - _postCycle (onPreResponse, e.g. "Request error") and _finalize
         //   (hapi-pino's "request completed" line) also see the store
         if (isBetaRoute(request)) {
-          const clientName = decodeClientName(
-            request.headers[CLIENT_NAME_HEADER]
-          )
+          const clientName = decodeHeader(request.headers[CLIENT_NAME_HEADER])
           if (clientName) {
             store.set('clientName', clientName)
+          }
+          const organisationName = decodeHeader(
+            request.headers[ORGANISATION_NAME_HEADER]
+          )
+          if (organisationName) {
+            store.set('organisationName', organisationName)
           }
           wrapCycle(request, '_postCycle', store)
           wrapCycle(request, '_finalize', store)
@@ -136,5 +149,7 @@ export {
   getClientId,
   getClientName,
   getOrganisationId,
-  CLIENT_NAME_HEADER
+  getOrganisationName,
+  CLIENT_NAME_HEADER,
+  ORGANISATION_NAME_HEADER
 }

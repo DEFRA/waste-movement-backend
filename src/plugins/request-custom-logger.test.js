@@ -2,9 +2,11 @@ import Hapi from '@hapi/hapi'
 import { config } from '../config.js'
 import {
   CLIENT_NAME_HEADER,
+  ORGANISATION_NAME_HEADER,
   getClientId,
   getClientName,
   getOrganisationId,
+  getOrganisationName,
   requestCustomLogger
 } from './request-custom-logger.js'
 import {
@@ -37,7 +39,8 @@ describe('requestCustomLogger', () => {
     const handler = () => ({
       organisationId: getOrganisationId() ?? null,
       clientId: getClientId() ?? null,
-      clientName: getClientName() ?? null
+      clientName: getClientName() ?? null,
+      organisationName: getOrganisationName()
     })
 
     server.route({ method: 'POST', path: '/test', handler })
@@ -108,6 +111,37 @@ describe('requestCustomLogger', () => {
       const { result } = await inject({ movement: { apiCode: 'unknown' } })
 
       expect(result.organisationId).toBeNull()
+    })
+  })
+
+  describe('organisation name', () => {
+    const injectAt = (url, headers) =>
+      server.inject({ method: 'POST', url, payload: {}, headers })
+
+    it('stores the organisation name forwarded by the external API on beta routes, decoded', async () => {
+      const { result } = await injectAt('/beta-1/test', {
+        ...organisationHeaders,
+        [ORGANISATION_NAME_HEADER]: encodeURIComponent('Débora & Co Waste')
+      })
+
+      expect(result.organisationId).toEqual(forwardedOrganisationId)
+      expect(result.organisationName).toEqual('Débora & Co Waste')
+    })
+
+    it('ignores a malformed organisation name header', async () => {
+      const { result } = await injectAt('/beta-1/test', {
+        [ORGANISATION_NAME_HEADER]: '%E0%A4%A'
+      })
+
+      expect(result.organisationName).toBeNull()
+    })
+
+    it('ignores the organisation name header on receipt of waste routes (unchanged)', async () => {
+      const { result } = await injectAt('/test', {
+        [ORGANISATION_NAME_HEADER]: 'Acme%20Ltd'
+      })
+
+      expect(result.organisationName).toBeNull()
     })
   })
 

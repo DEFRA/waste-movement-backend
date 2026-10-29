@@ -4,7 +4,8 @@ import { getTraceId } from '@defra/hapi-tracing'
 import {
   getClientId,
   getClientName,
-  getOrganisationId
+  getOrganisationId,
+  getOrganisationName
 } from '../../../plugins/request-custom-logger.js'
 
 const logConfig = config.get('log')
@@ -34,6 +35,7 @@ export const loggerOptions = {
   mixin() {
     const traceId = getTraceId()
     const organisationId = getOrganisationId()
+    const organisationName = getOrganisationName()
     const clientId = getClientId()
     const clientName = getClientName()
 
@@ -42,7 +44,10 @@ export const loggerOptions = {
         trace: { id: traceId }
       }),
       ...(organisationId && {
-        event: { reference: organisationId }
+        event: {
+          reference: organisationId,
+          ...(organisationName && { reason: organisationName })
+        }
       }),
       ...((clientId || clientName) && {
         tenant: {
