@@ -53,7 +53,7 @@
               "isPresent": true,
               "codes": ["HP_6", "HP_14"],
               "componentsSource": "OWN_TESTING",
-              "componentsNotApplicable": false,
+              "isComponentsNotApplicable": false,
               "components": [
                 {
                   "name": "Mercury",

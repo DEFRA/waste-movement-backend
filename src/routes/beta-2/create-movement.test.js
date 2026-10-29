@@ -1508,7 +1508,7 @@ describe('movement Route Tests version: beta-2', () => {
         await expectCreated(
           withHazardousProperties({
             ...withoutComponents,
-            componentsNotApplicable: true
+            isComponentsNotApplicable: true
           })
         )
       })
@@ -1526,7 +1526,7 @@ describe('movement Route Tests version: beta-2', () => {
           [
             notAllowed('codes'),
             notAllowed('componentsSource'),
-            notAllowed('componentsNotApplicable'),
+            notAllowed('isComponentsNotApplicable'),
             notAllowed('components')
           ]
         )
@@ -1539,7 +1539,7 @@ describe('movement Route Tests version: beta-2', () => {
         await expectRejected(withHazardousProperties(withoutComponents), [
           {
             errorType: 'NotProvided',
-            message: "Required when 'componentsNotApplicable' is false",
+            message: "Required when 'isComponentsNotApplicable' is false",
             pointer: componentsPointer
           }
         ])
@@ -1562,12 +1562,12 @@ describe('movement Route Tests version: beta-2', () => {
         await expectRejected(
           withHazardousProperties({
             ...hazardousPresent,
-            componentsNotApplicable: true
+            isComponentsNotApplicable: true
           }),
           [
             {
               errorType: 'NotAllowed',
-              message: "Not allowed when 'componentsNotApplicable' is true",
+              message: "Not allowed when 'isComponentsNotApplicable' is true",
               pointer: componentsPointer
             }
           ]

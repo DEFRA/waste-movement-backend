@@ -18,7 +18,7 @@
     "brokerOrDealer": {
       "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json"
     },
-    "dutyOfCareConfirmed": {
+    "isDutyOfCareConfirmed": {
       "type": "boolean",
       "description": "Carrier confirms they have inspected the waste, that it is as described, and that they are content to transport it."
     },
@@ -31,7 +31,7 @@
   },
   "required": [
     "carrier",
-    "dutyOfCareConfirmed",
+    "isDutyOfCareConfirmed",
     "actualCollectionDateTime",
     "collectionSite"
   ],

@@ -151,7 +151,7 @@ export const hazardousPresent = {
   isPresent: true,
   codes: ['HP_4'],
   componentsSource: 'OWN_TESTING',
-  componentsNotApplicable: false,
+  isComponentsNotApplicable: false,
   components: [hazardousComponent]
 }
 

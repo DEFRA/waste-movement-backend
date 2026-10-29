@@ -14,21 +14,21 @@ const validateAjv = validatorFor(
 
 describe('create-collection-request schema: beta-2', () => {
   const brokerOrDealer = { isPresent: true, items: [brokerOrDealerEntry] }
-  const dutyOfCareConfirmed = true
+  const isDutyOfCareConfirmed = true
   const validCollection = {
     carrier,
     actualCollectionDateTime,
     collectionSite,
-    dutyOfCareConfirmed
+    isDutyOfCareConfirmed
   }
 
-  test('accepts a payload with a carrier and dutyOfCareConfirmed', () => {
+  test('accepts a payload with a carrier and isDutyOfCareConfirmed', () => {
     expect(
       validateAjv({
         carrier,
         actualCollectionDateTime,
         collectionSite,
-        dutyOfCareConfirmed
+        isDutyOfCareConfirmed
       }).valid
     ).toBe(true)
   })
@@ -43,7 +43,7 @@ describe('create-collection-request schema: beta-2', () => {
       carrier,
       actualCollectionDateTime,
       collectionSite,
-      dutyOfCareConfirmed,
+      isDutyOfCareConfirmed,
       extra: 'not allowed'
     }
     expect(validateAjv(payload).valid).toBe(false)
@@ -72,7 +72,7 @@ describe('create-collection-request schema: beta-2', () => {
           carrier,
           actualCollectionDateTime,
           collectionSite,
-          dutyOfCareConfirmed
+          isDutyOfCareConfirmed
         }).valid
       ).toBe(true)
     })
@@ -80,7 +80,7 @@ describe('create-collection-request schema: beta-2', () => {
     test('rejects a list of carriers', () => {
       const { valid, errors } = validateAjv({
         carrier: [carrier],
-        dutyOfCareConfirmed
+        isDutyOfCareConfirmed
       })
 
       expect(valid).toBe(false)
@@ -114,7 +114,7 @@ describe('create-collection-request schema: beta-2', () => {
             carrier,
             actualCollectionDateTime,
             collectionSite,
-            dutyOfCareConfirmed
+            isDutyOfCareConfirmed
           }).valid
         ).toBe(true)
       })
@@ -133,7 +133,7 @@ describe('create-collection-request schema: beta-2', () => {
           expect.objectContaining({
             keyword: 'required',
             instancePath: '',
-            params: { missingProperty: 'dutyOfCareConfirmed' }
+            params: { missingProperty: 'isDutyOfCareConfirmed' }
           })
         )
       })
@@ -146,7 +146,7 @@ describe('create-collection-request schema: beta-2', () => {
             carrier,
             actualCollectionDateTime,
             collectionSite,
-            dutyOfCareConfirmed: false
+            isDutyOfCareConfirmed: false
           }).valid
         ).toBe(true)
       })
@@ -158,14 +158,14 @@ describe('create-collection-request schema: beta-2', () => {
             carrier,
             actualCollectionDateTime,
             collectionSite,
-            dutyOfCareConfirmed: value
+            isDutyOfCareConfirmed: value
           })
 
           expect(valid).toBe(false)
           expect(errors).toContainEqual(
             expect.objectContaining({
               keyword: 'type',
-              instancePath: '/dutyOfCareConfirmed'
+              instancePath: '/isDutyOfCareConfirmed'
             })
           )
         }
@@ -269,7 +269,7 @@ describe('create-collection-request schema: beta-2', () => {
         actualCollectionDateTime,
         collectionSite,
         supportingReferences: [supportingReference],
-        dutyOfCareConfirmed
+        isDutyOfCareConfirmed
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -280,7 +280,7 @@ describe('create-collection-request schema: beta-2', () => {
         actualCollectionDateTime,
         collectionSite,
         brokerOrDealer,
-        dutyOfCareConfirmed
+        isDutyOfCareConfirmed
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -293,7 +293,7 @@ describe('create-collection-request schema: beta-2', () => {
         actualCollectionDateTime,
         collectionSite,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items },
-        dutyOfCareConfirmed
+        isDutyOfCareConfirmed
       }
       expect(validateAjv(payload).valid).toBe(false)
     })
@@ -309,7 +309,7 @@ describe('create-collection-request schema: beta-2', () => {
         actualCollectionDateTime,
         collectionSite,
         brokerOrDealer,
-        dutyOfCareConfirmed
+        isDutyOfCareConfirmed
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -320,7 +320,7 @@ describe('create-collection-request schema: beta-2', () => {
         actualCollectionDateTime,
         collectionSite,
         supportingReferences: [supportingReference],
-        dutyOfCareConfirmed
+        isDutyOfCareConfirmed
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -336,7 +336,7 @@ describe('create-collection-request schema: beta-2', () => {
         actualCollectionDateTime,
         collectionSite,
         brokerOrDealer,
-        dutyOfCareConfirmed
+        isDutyOfCareConfirmed
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -347,7 +347,7 @@ describe('create-collection-request schema: beta-2', () => {
         actualCollectionDateTime,
         collectionSite,
         specialHandlingRequirements: 'Handle with care and keep upright.',
-        dutyOfCareConfirmed
+        isDutyOfCareConfirmed
       }
       expect(validateAjv(payload).valid).toBe(true)
     })

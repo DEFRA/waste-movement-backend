@@ -159,6 +159,7 @@ everywhere:
   `actual` prefix. A time that hasn't happened yet keeps its qualifier:
   `planned<Event>DateTime`.
 - **True/false fields start with `is`**: `isPresent`, `isEstimate`, `is<Condition>`.
+  `conventions.test.js` fails on any beta-2 boolean property that doesn't.
 - **Singular or plural matches the data.** An array has a plural name; an object or a single
   value has a singular one. "Details" is a collective noun, so an object can be `<noun>Details`.
 

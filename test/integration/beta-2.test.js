@@ -46,7 +46,7 @@ describe('beta-2', () => {
     intendedReceivers,
     wasteItems
   }
-  const dutyOfCareConfirmed = true
+  const isDutyOfCareConfirmed = true
 
   beforeAll(async () => {
     wasteTrackingStub = createWasteTrackingStub()
@@ -232,7 +232,7 @@ describe('beta-2', () => {
           carrier,
           actualCollectionDateTime,
           collectionSite,
-          dutyOfCareConfirmed
+          isDutyOfCareConfirmed
         }
       }
     )
@@ -268,7 +268,7 @@ describe('beta-2', () => {
           carrier,
           actualCollectionDateTime,
           collectionSite,
-          dutyOfCareConfirmed,
+          isDutyOfCareConfirmed,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -505,7 +505,7 @@ describe('beta-2', () => {
           carrier,
           actualCollectionDateTime,
           collectionSite,
-          dutyOfCareConfirmed,
+          isDutyOfCareConfirmed,
           specialHandlingRequirements: 'Handle with care and keep upright.'
         }
       }
@@ -617,7 +617,7 @@ describe('beta-2', () => {
           carrier,
           actualCollectionDateTime,
           collectionSite,
-          dutyOfCareConfirmed
+          isDutyOfCareConfirmed
         }
       })
 
@@ -641,7 +641,7 @@ describe('beta-2', () => {
           carrier,
           actualCollectionDateTime,
           collectionSite,
-          dutyOfCareConfirmed
+          isDutyOfCareConfirmed
         }
       })
 
@@ -696,8 +696,8 @@ describe('beta-2', () => {
       expect(response.body.errors).toEqual([
         {
           errorType: 'NotProvided',
-          message: "'dutyOfCareConfirmed' is required",
-          pointer: '/dutyOfCareConfirmed'
+          message: "'isDutyOfCareConfirmed' is required",
+          pointer: '/isDutyOfCareConfirmed'
         }
       ])
     })
@@ -712,7 +712,7 @@ describe('beta-2', () => {
           carrier,
           actualCollectionDateTime,
           collectionSite,
-          dutyOfCareConfirmed,
+          isDutyOfCareConfirmed,
           brokerOrDealer: { isPresent: true }
         }
       })
@@ -741,7 +741,7 @@ describe('beta-2', () => {
           carrier,
           actualCollectionDateTime,
           collectionSite,
-          dutyOfCareConfirmed,
+          isDutyOfCareConfirmed,
           brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
         }
       })
@@ -770,7 +770,7 @@ describe('beta-2', () => {
           carrier,
           actualCollectionDateTime,
           collectionSite,
-          dutyOfCareConfirmed,
+          isDutyOfCareConfirmed,
           supportingReferences: [
             { ...supportingReference, label: 'Not A Label' }
           ]
