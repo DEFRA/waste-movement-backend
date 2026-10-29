@@ -186,6 +186,38 @@ function findFreeText(node, pointer = '') {
   ]
 }
 
+/**
+ * JSON pointers to every enum property with an `OTHER` value that has no
+ * `other<Field>` beside it, required when it's `OTHER` and forbidden otherwise.
+ */
+function findOtherWithoutFreeText(node, pointer = '') {
+  if (!node || typeof node !== 'object') {
+    return []
+  }
+  const conditions = [node, ...(node.allOf ?? [])].filter((s) => s.if)
+  const hasOtherField = (field, otherField) =>
+    otherField in (node.properties ?? {}) &&
+    conditions.some(
+      (s) =>
+        s.if.properties?.[field]?.const === 'OTHER' &&
+        s.then?.required?.includes(otherField) &&
+        'not' in (s.else?.properties?.[otherField] ?? {})
+    )
+  const missing = Object.entries(node.properties ?? {})
+    .filter(([, value]) => value?.enum?.includes('OTHER'))
+    .filter(
+      ([field]) =>
+        !hasOtherField(field, `other${field[0].toUpperCase()}${field.slice(1)}`)
+    )
+    .map(([field]) => `${pointer}/properties/${field}`)
+  return [
+    ...missing,
+    ...Object.entries(node).flatMap(([key, value]) =>
+      findOtherWithoutFreeText(value, `${pointer}/${key}`)
+    )
+  ]
+}
+
 const screamingSnake = /^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$/
 
 // Short text and long text, and the email address limit: see "Free text has
@@ -316,6 +348,16 @@ describe('schema conventions', () => {
         }
       )
       expect(unlimited).toEqual([])
+    }
+  )
+
+  // An OTHER with nowhere to say what it is records nothing, so every enum
+  // with one has an other<Field> beside it: required when the enum is OTHER,
+  // not allowed otherwise.
+  test.each(beta2Schemas)(
+    '%s has an other<Field> for every enum with an OTHER value',
+    (_, schema) => {
+      expect(findOtherWithoutFreeText(schema)).toEqual([])
     }
   )
 

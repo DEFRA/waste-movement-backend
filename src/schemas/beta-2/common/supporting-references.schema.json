@@ -11,6 +11,11 @@
       {
         "label": "JOB_NUMBER",
         "reference": "CARRIER-JOB-001"
+      },
+      {
+        "label": "OTHER",
+        "otherLabel": "Skip hire number",
+        "reference": "SKIP-4471"
       }
     ]
   ],
@@ -18,6 +23,29 @@
   "minItems": 1,
   "items": {
     "type": "object",
+    "if": {
+      "properties": {
+        "label": {
+          "const": "OTHER"
+        }
+      },
+      "required": ["label"]
+    },
+    "then": {
+      "properties": {
+        "otherLabel": {}
+      },
+      "required": ["otherLabel"],
+      "description": "Required when 'label' is 'OTHER'"
+    },
+    "else": {
+      "properties": {
+        "otherLabel": {
+          "not": {},
+          "description": "Not allowed unless 'label' is 'OTHER'"
+        }
+      }
+    },
     "properties": {
       "reference": {
         "type": "string",
@@ -36,6 +64,12 @@
           "OTHER"
         ],
         "description": "Label identifying the reference type."
+      },
+      "otherLabel": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "What kind of reference it is. Required when label is OTHER; forbidden otherwise."
       }
     },
     "required": ["reference", "label"],

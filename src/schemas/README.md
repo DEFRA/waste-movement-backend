@@ -340,7 +340,9 @@ enum's value:
 
 `<Field>` is the enum field's name, so the pair reads together: `meansOfTransport` /
 `otherMeansOfTransport`. Every enum with an `OTHER` value has one; an `OTHER` with nowhere to
-say what it is records nothing.
+say what it is records nothing. `conventions.test.js` fails on a beta-2 enum with an `OTHER`
+value that has no `other<Field>` beside it, required by an `if` on `OTHER` and not allowed in
+the `else`.
 
 ### Rules a schema can't say: payload checks
 
