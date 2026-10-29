@@ -1,5 +1,5 @@
 import {
-  actualCollectionDateTime,
+  collectionDateTime,
   collectionSite,
   apiCode,
   brokerOrDealerEntry,
@@ -17,7 +17,7 @@ describe('create-collection-request schema: beta-2', () => {
   const isDutyOfCareConfirmed = true
   const validCollection = {
     carrier,
-    actualCollectionDateTime,
+    collectionDateTime,
     collectionSite,
     isDutyOfCareConfirmed
   }
@@ -26,7 +26,7 @@ describe('create-collection-request schema: beta-2', () => {
     expect(
       validateAjv({
         carrier,
-        actualCollectionDateTime,
+        collectionDateTime,
         collectionSite,
         isDutyOfCareConfirmed
       }).valid
@@ -41,7 +41,7 @@ describe('create-collection-request schema: beta-2', () => {
   test('rejects an additional property beyond the declared ones', () => {
     const payload = {
       carrier,
-      actualCollectionDateTime,
+      collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
       extra: 'not allowed'
@@ -70,7 +70,7 @@ describe('create-collection-request schema: beta-2', () => {
       expect(
         validateAjv({
           carrier,
-          actualCollectionDateTime,
+          collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed
         }).valid
@@ -112,7 +112,7 @@ describe('create-collection-request schema: beta-2', () => {
         expect(
           validateAjv({
             carrier,
-            actualCollectionDateTime,
+            collectionDateTime,
             collectionSite,
             isDutyOfCareConfirmed
           }).valid
@@ -124,7 +124,7 @@ describe('create-collection-request schema: beta-2', () => {
       test('validation fails and the duty of care confirmation is reported as required', () => {
         const { valid, errors } = validateAjv({
           carrier,
-          actualCollectionDateTime,
+          collectionDateTime,
           collectionSite
         })
 
@@ -144,7 +144,7 @@ describe('create-collection-request schema: beta-2', () => {
         expect(
           validateAjv({
             carrier,
-            actualCollectionDateTime,
+            collectionDateTime,
             collectionSite,
             isDutyOfCareConfirmed: false
           }).valid
@@ -156,7 +156,7 @@ describe('create-collection-request schema: beta-2', () => {
         (value) => {
           const { valid, errors } = validateAjv({
             carrier,
-            actualCollectionDateTime,
+            collectionDateTime,
             collectionSite,
             isDutyOfCareConfirmed: value
           })
@@ -174,34 +174,31 @@ describe('create-collection-request schema: beta-2', () => {
   })
 
   // collectionSite's own rules are covered by collection-site.test.js — these
-  // confirm it and actualCollectionDateTime are required, and that the $ref wiring
+  // confirm it and collectionDateTime are required, and that the $ref wiring
   // is live.
-  describe.each([['actualCollectionDateTime'], ['collectionSite']])(
-    '%s',
-    (field) => {
-      test('is required', () => {
-        const { [field]: excluded, ...payload } = validCollection
-        const { valid, errors } = validateAjv(payload)
+  describe.each([['collectionDateTime'], ['collectionSite']])('%s', (field) => {
+    test('is required', () => {
+      const { [field]: excluded, ...payload } = validCollection
+      const { valid, errors } = validateAjv(payload)
 
-        expect(valid).toBe(false)
-        expect(errors).toContainEqual(
-          expect.objectContaining({
-            keyword: 'required',
-            instancePath: '',
-            params: { missingProperty: field }
-          })
-        )
-      })
-    }
-  )
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '',
+          params: { missingProperty: field }
+        })
+      )
+    })
+  })
 
-  describe('actualCollectionDateTime', () => {
+  describe('collectionDateTime', () => {
     test.each([
       ['2026-01-15T09:30:00Z'],
       ['2026-01-15T09:30:00.123Z'],
       ['2026-01-15T09:30:00+01:00']
     ])('accepts the ISO 8601 date-time %j', (value) => {
-      const payload = { ...validCollection, actualCollectionDateTime: value }
+      const payload = { ...validCollection, collectionDateTime: value }
       expect(validateAjv(payload).valid).toBe(true)
     })
 
@@ -215,14 +212,14 @@ describe('create-collection-request schema: beta-2', () => {
     ])('rejects %j, which is not an ISO 8601 date-time', (value) => {
       const { valid, errors } = validateAjv({
         ...validCollection,
-        actualCollectionDateTime: value
+        collectionDateTime: value
       })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
         expect.objectContaining({
           keyword: 'format',
-          instancePath: '/actualCollectionDateTime'
+          instancePath: '/collectionDateTime'
         })
       )
     })
@@ -230,14 +227,14 @@ describe('create-collection-request schema: beta-2', () => {
     test('rejects a value that is not a string', () => {
       const { valid, errors } = validateAjv({
         ...validCollection,
-        actualCollectionDateTime: 1768469400000
+        collectionDateTime: 1768469400000
       })
 
       expect(valid).toBe(false)
       expect(errors).toContainEqual(
         expect.objectContaining({
           keyword: 'type',
-          instancePath: '/actualCollectionDateTime'
+          instancePath: '/collectionDateTime'
         })
       )
     })
@@ -266,7 +263,7 @@ describe('create-collection-request schema: beta-2', () => {
     test('is optional', () => {
       const payload = {
         carrier,
-        actualCollectionDateTime,
+        collectionDateTime,
         collectionSite,
         supportingReferences: [supportingReference],
         isDutyOfCareConfirmed
@@ -277,7 +274,7 @@ describe('create-collection-request schema: beta-2', () => {
     test('accepts a declared broker or dealer', () => {
       const payload = {
         carrier,
-        actualCollectionDateTime,
+        collectionDateTime,
         collectionSite,
         brokerOrDealer,
         isDutyOfCareConfirmed
@@ -290,7 +287,7 @@ describe('create-collection-request schema: beta-2', () => {
     test('rejects a payload whose broker or dealer is invalid', () => {
       const payload = {
         carrier,
-        actualCollectionDateTime,
+        collectionDateTime,
         collectionSite,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items },
         isDutyOfCareConfirmed
@@ -306,7 +303,7 @@ describe('create-collection-request schema: beta-2', () => {
     test('is optional', () => {
       const payload = {
         carrier,
-        actualCollectionDateTime,
+        collectionDateTime,
         collectionSite,
         brokerOrDealer,
         isDutyOfCareConfirmed
@@ -317,7 +314,7 @@ describe('create-collection-request schema: beta-2', () => {
     test('accepts valid supportingReferences', () => {
       const payload = {
         carrier,
-        actualCollectionDateTime,
+        collectionDateTime,
         collectionSite,
         supportingReferences: [supportingReference],
         isDutyOfCareConfirmed
@@ -333,7 +330,7 @@ describe('create-collection-request schema: beta-2', () => {
     test('is optional', () => {
       const payload = {
         carrier,
-        actualCollectionDateTime,
+        collectionDateTime,
         collectionSite,
         brokerOrDealer,
         isDutyOfCareConfirmed
@@ -344,7 +341,7 @@ describe('create-collection-request schema: beta-2', () => {
     test('accepts valid specialHandlingRequirements', () => {
       const payload = {
         carrier,
-        actualCollectionDateTime,
+        collectionDateTime,
         collectionSite,
         specialHandlingRequirements: 'Handle with care and keep upright.',
         isDutyOfCareConfirmed
@@ -355,7 +352,7 @@ describe('create-collection-request schema: beta-2', () => {
     test('rejects a payload whose specialHandlingRequirements is invalid', () => {
       const payload = {
         carrier,
-        actualCollectionDateTime,
+        collectionDateTime,
         collectionSite,
         specialHandlingRequirements: 'A'.repeat(501)
       }

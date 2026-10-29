@@ -8,10 +8,10 @@
       "$ref": "../common/carrier.schema.json",
       "description": "The carrier that collected the waste."
     },
-    "actualCollectionDateTime": {
+    "collectionDateTime": {
       "type": "string",
       "format": "date-time",
-      "description": "The time the waste was collected, as an ISO 8601 date-time."
+      "description": "The actual time the waste was collected, as an ISO 8601 date-time. The planned time was given when the movement was created."
     },
     "collectionSite": {
       "$ref": "../common/collection-site.schema.json",
@@ -37,7 +37,7 @@
   "required": [
     "carrier",
     "isDutyOfCareConfirmed",
-    "actualCollectionDateTime",
+    "collectionDateTime",
     "collectionSite"
   ],
   "additionalProperties": false
