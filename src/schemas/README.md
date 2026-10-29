@@ -152,9 +152,10 @@ everywhere:
 
 - **Noun first for siblings.** When fields beside each other qualify the same noun, the noun
   comes first, so they sort together: `<noun>`, `<noun>Source`, `<noun>Description`. This only
-  applies to siblings; a lone `totalWeight` stays as it is. The `reasonForNo<Identifier>`
-  fields are the exception: see
-  [below](#a-number-or-why-there-isnt-one-reasonfornoidentifier).
+  applies to siblings; a lone `totalWeight` stays as it is. The `reasonForNo<Identifier>` and
+  `other<Field>` fields are the exceptions: see
+  [below](#a-number-or-why-there-isnt-one-reasonfornoidentifier) and
+  [below](#none-of-the-above-otherfield).
 - **Event times are `<event>DateTime`.** The event already says it happened, so there's no
   `actual` prefix. A time that hasn't happened yet keeps its qualifier:
   `planned<Event>DateTime`.
@@ -267,6 +268,38 @@ Both properties' descriptions end with the same sentence: "Exactly one of '<iden
 
 When "exactly one" depends on another resource, the schema enforces only "not both", and a
 [payload check](#rules-a-schema-cant-say-payload-checks) enforces the rest.
+
+### "None of the above": `other<Field>`
+
+When an enum can't list every value a caller might need, it ends with `OTHER`, and the schema
+has an `other<Field>` beside it for the caller to say what it is, in free text. The field is
+required when the enum is `OTHER` and not allowed otherwise. It's the `if`/`then`/`else` under
+[Conditional rules](#conditional-rules-ifthenelse-not-oneof-or-anyof), with the `if` on the
+enum's value:
+
+```json
+"if": {
+  "properties": { "meansOfTransport": { "const": "OTHER" } },
+  "required": ["meansOfTransport"]
+},
+"then": {
+  "properties": { "otherMeansOfTransport": {} },
+  "required": ["otherMeansOfTransport"],
+  "description": "Required when 'meansOfTransport' is 'OTHER'"
+},
+"else": {
+  "properties": {
+    "otherMeansOfTransport": {
+      "not": {},
+      "description": "Not allowed unless 'meansOfTransport' is 'OTHER'"
+    }
+  }
+}
+```
+
+`<Field>` is the enum field's name, so the pair reads together: `meansOfTransport` /
+`otherMeansOfTransport`. Every enum with an `OTHER` value has one; an `OTHER` with nowhere to
+say what it is records nothing.
 
 ### Rules a schema can't say: payload checks
 
