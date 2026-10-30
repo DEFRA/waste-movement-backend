@@ -33,7 +33,7 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 5000,
-      "description": "Free text: why there is no consignment note code. Required when any waste item declares hazardous properties and 'code' is not provided; not allowed when 'code' is provided."
+      "description": "Why there is no consignment note code. Required when any waste item declares hazardous properties and 'code' is not provided; not allowed when 'code' is provided."
     }
   },
   "additionalProperties": false

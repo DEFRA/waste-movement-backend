@@ -304,7 +304,8 @@ When a caller may not have an identifier, the schema has the identifier and a
 the `then` forbids the reason when the identifier is given, and the `else` requires it when the
 identifier isn't.
 
-Both properties' descriptions end with the same sentence: "Exactly one of '<identifier>' or
+The reason's description starts "Why there is no <identifier>.", and both properties'
+descriptions end with the same sentence: "Exactly one of '<identifier>' or
 'reasonForNo<Identifier>' is required."
 
 When "exactly one" depends on another resource, the schema enforces only "not both", and a
