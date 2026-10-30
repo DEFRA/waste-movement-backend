@@ -107,6 +107,17 @@ export const collectionSite = {
   }
 }
 
+export const deliveryDateTime = '2026-01-15T12:12:28Z'
+
+export const deliverySite = {
+  organisationName: 'Hazardous Waste Delivery Site',
+  address: {
+    fullAddress: '3 Receiver Road, Test City',
+    postcode: 'TE1 3RC'
+  },
+  rpsNumbers: [123]
+}
+
 export const supportingReference = {
   label: 'PO_NUMBER',
   reference: 'PO-123456'

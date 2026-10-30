@@ -16,6 +16,8 @@ import {
 import {
   supportingReference,
   carrier,
+  deliveryDateTime,
+  deliverySite,
   hazardousWasteItem,
   wasteItem
 } from '../../schemas/beta-2/test-helpers.js'
@@ -51,6 +53,7 @@ describe('POST /beta-2/deliveries', () => {
   const movementId1 = '25HRA0B1'
   const movementId2 = '25HRA0B2'
   const url = '/beta-2/deliveries'
+  const deliveryDetails = { carrier, deliveryDateTime, deliverySite }
   const traceId = 'trace-id-123'
   const authHeaders = { Authorization: `Basic ${requestBasicAuthTest1}` }
   const tracedHeaders = { 'x-cdp-request-id': traceId }
@@ -99,7 +102,7 @@ describe('POST /beta-2/deliveries', () => {
       url,
       payload: {
         movementIds: [movementId1, movementId2],
-        carrier
+        ...deliveryDetails
       },
       headers: tracedAuthHeaders
     })
@@ -141,7 +144,7 @@ describe('POST /beta-2/deliveries', () => {
       url,
       payload: {
         movementIds: [movementId1],
-        carrier,
+        ...deliveryDetails,
         supportingReferences: [supportingReference]
       },
       headers: tracedAuthHeaders
@@ -179,7 +182,7 @@ describe('POST /beta-2/deliveries', () => {
     const { headers } = await server.inject({
       method: 'POST',
       url,
-      payload: { movementIds: [movementId1], carrier },
+      payload: { movementIds: [movementId1], ...deliveryDetails },
       headers: tracedAuthHeaders
     })
 
@@ -196,7 +199,7 @@ describe('POST /beta-2/deliveries', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
     expect(result).toEqual({
-      detail: '2 validation errors occurred',
+      detail: '4 validation errors occurred',
       errors: [
         {
           errorType: 'NotProvided',
@@ -207,6 +210,16 @@ describe('POST /beta-2/deliveries', () => {
           errorType: 'NotProvided',
           message: "'carrier' is required",
           pointer: '/carrier'
+        },
+        {
+          errorType: 'NotProvided',
+          message: "'deliveryDateTime' is required",
+          pointer: '/deliveryDateTime'
+        },
+        {
+          errorType: 'NotProvided',
+          message: "'deliverySite' is required",
+          pointer: '/deliverySite'
         }
       ],
       instance: '/beta-2/deliveries',
@@ -220,7 +233,7 @@ describe('POST /beta-2/deliveries', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { movementIds: [movementId1] },
+      payload: { movementIds: [movementId1], deliveryDateTime, deliverySite },
       headers: tracedAuthHeaders
     })
 
@@ -241,13 +254,202 @@ describe('POST /beta-2/deliveries', () => {
     })
   })
 
+  describe('delivery details', () => {
+    const withoutAddressField = (field) => {
+      const { [field]: excluded, ...address } = deliverySite.address
+      return { ...deliverySite, address }
+    }
+    const withoutSiteField = (field) => {
+      const { [field]: excluded, ...site } = deliverySite
+      return site
+    }
+    const withoutDetail = (field) => {
+      const { [field]: excluded, ...details } = deliveryDetails
+      return details
+    }
+
+    beforeEach(async () => {
+      await server.db
+        .collection('movements')
+        .insertOne({ movementId: movementId1 })
+    })
+
+    it.each([
+      ['all the delivery details', deliveryDetails],
+      [
+        'no full address',
+        {
+          ...deliveryDetails,
+          deliverySite: withoutAddressField('fullAddress')
+        }
+      ],
+      [
+        'no regulatory position statement',
+        { ...deliveryDetails, deliverySite: withoutSiteField('rpsNumbers') }
+      ]
+    ])('records a delivery with %s', async (_, details) => {
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url,
+        payload: { movementIds: [movementId1], ...details },
+        headers: tracedAuthHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+      expect(result.data.deliveries).toEqual([
+        {
+          deliveryId: '25KMT4Z9',
+          movementIds: [movementId1],
+          wasteType: 'NON_HAZARDOUS'
+        }
+      ])
+    })
+
+    it.each([
+      [
+        'date and time delivered is not provided',
+        withoutDetail('deliveryDateTime'),
+        {
+          errorType: 'NotProvided',
+          message: "'deliveryDateTime' is required",
+          pointer: '/deliveryDateTime'
+        }
+      ],
+      [
+        'site name is not provided',
+        {
+          ...deliveryDetails,
+          deliverySite: withoutSiteField('organisationName')
+        },
+        {
+          errorType: 'NotProvided',
+          message: "'organisationName' is required",
+          pointer: '/deliverySite/organisationName'
+        }
+      ],
+      [
+        'postcode is not provided',
+        { ...deliveryDetails, deliverySite: withoutAddressField('postcode') },
+        {
+          errorType: 'NotProvided',
+          message: "'postcode' is required",
+          pointer: '/deliverySite/address/postcode'
+        }
+      ],
+      [
+        'date and time delivered is empty',
+        { ...deliveryDetails, deliveryDateTime: '' },
+        {
+          errorType: 'InvalidFormat',
+          message: "must match format 'date-time'",
+          pointer: '/deliveryDateTime'
+        }
+      ],
+      [
+        'site name is empty',
+        {
+          ...deliveryDetails,
+          deliverySite: { ...deliverySite, organisationName: '' }
+        },
+        {
+          errorType: 'OutOfRange',
+          message: 'must NOT have fewer than 1 characters',
+          pointer: '/deliverySite/organisationName'
+        }
+      ],
+      [
+        'postcode is empty',
+        {
+          ...deliveryDetails,
+          deliverySite: { ...deliverySite, address: { postcode: '' } }
+        },
+        expect.objectContaining({
+          errorType: 'InvalidFormat',
+          pointer: '/deliverySite/address/postcode'
+        })
+      ],
+      [
+        'date and time delivered is not recognised',
+        { ...deliveryDetails, deliveryDateTime: '14:30-12-12-25' },
+        {
+          errorType: 'InvalidFormat',
+          message: "must match format 'date-time'",
+          pointer: '/deliveryDateTime'
+        }
+      ],
+      [
+        'postcode W$12 2GQ is not recognised',
+        {
+          ...deliveryDetails,
+          deliverySite: { ...deliverySite, address: { postcode: 'W$12 2GQ' } }
+        },
+        expect.objectContaining({
+          errorType: 'InvalidFormat',
+          pointer: '/deliverySite/address/postcode'
+        })
+      ],
+      [
+        'postcode WS12 is not recognised',
+        {
+          ...deliveryDetails,
+          deliverySite: { ...deliverySite, address: { postcode: 'WS12' } }
+        },
+        expect.objectContaining({
+          errorType: 'InvalidFormat',
+          pointer: '/deliverySite/address/postcode'
+        })
+      ],
+      [
+        'regulatory position statement -343 is not greater than 0',
+        {
+          ...deliveryDetails,
+          deliverySite: { ...deliverySite, rpsNumbers: [-343] }
+        },
+        {
+          errorType: 'OutOfRange',
+          message: 'must be >= 1',
+          pointer: '/deliverySite/rpsNumbers/0'
+        }
+      ],
+      [
+        'regulatory position statement RPS123 is not an integer',
+        {
+          ...deliveryDetails,
+          deliverySite: { ...deliverySite, rpsNumbers: ['RPS123'] }
+        },
+        {
+          errorType: 'InvalidType',
+          message: 'must be integer',
+          pointer: '/deliverySite/rpsNumbers/0'
+        }
+      ]
+    ])('returns a 400 when %s', async (_, details, expectedError) => {
+      const { statusCode, result } = await server.inject({
+        method: 'POST',
+        url,
+        payload: { movementIds: [movementId1], ...details },
+        headers: tracedAuthHeaders
+      })
+
+      expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
+      expect(result.errors).toEqual([expectedError])
+      expect(await server.db.collection('deliveries').countDocuments()).toEqual(
+        0
+      )
+    })
+  })
+
   // apiCode is sent in the x-api-code header and resolved by the
   // external API, so the backend rejects it in the body.
   it('returns a 400 when apiCode is sent in the body', async () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { apiCode: apiCode1, movementIds: [movementId1], carrier },
+      payload: {
+        apiCode: apiCode1,
+        movementIds: [movementId1],
+        ...deliveryDetails
+      },
       headers: tracedAuthHeaders
     })
 
@@ -272,7 +474,7 @@ describe('POST /beta-2/deliveries', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { movementIds: [movementId1], carrier },
+      payload: { movementIds: [movementId1], ...deliveryDetails },
       headers: { ...authHeaders, ...tracedHeaders }
     })
 
@@ -296,7 +498,7 @@ describe('POST /beta-2/deliveries', () => {
       url,
       payload: {
         movementIds: [movementId1, movementId2],
-        carrier
+        ...deliveryDetails
       },
       headers: tracedAuthHeaders
     })
@@ -323,7 +525,7 @@ describe('POST /beta-2/deliveries', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { movementIds: [movementId1], carrier },
+      payload: { movementIds: [movementId1], ...deliveryDetails },
       headers: tracedAuthHeaders
     })
 
@@ -340,7 +542,7 @@ describe('POST /beta-2/deliveries', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { movementIds: [movementId1], carrier },
+      payload: { movementIds: [movementId1], ...deliveryDetails },
       headers: tracedHeaders
     })
 
@@ -370,7 +572,7 @@ describe('POST /beta-2/deliveries', () => {
     const { statusCode, result } = await server.inject({
       method: 'POST',
       url,
-      payload: { movementIds: [movementId1], carrier },
+      payload: { movementIds: [movementId1], ...deliveryDetails },
       headers: tracedAuthHeaders
     })
 
@@ -475,7 +677,7 @@ describe('POST /beta-2/deliveries', () => {
         const { statusCode, result } = await server.inject({
           method: 'POST',
           url,
-          payload: { movementIds: submitted, carrier },
+          payload: { movementIds: submitted, ...deliveryDetails },
           headers: tracedAuthHeaders
         })
 
@@ -504,7 +706,7 @@ describe('POST /beta-2/deliveries', () => {
       const { statusCode, result } = await server.inject({
         method: 'POST',
         url,
-        payload: { movementIds: ['261B23B4', '269X8Y7Z'], carrier },
+        payload: { movementIds: ['261B23B4', '269X8Y7Z'], ...deliveryDetails },
         headers: tracedAuthHeaders
       })
 
@@ -525,7 +727,7 @@ describe('POST /beta-2/deliveries', () => {
         server.inject({
           method: 'POST',
           url,
-          payload: { movementIds, carrier },
+          payload: { movementIds, ...deliveryDetails },
           headers: tracedAuthHeaders
         })
 
@@ -576,7 +778,7 @@ describe('POST /beta-2/deliveries', () => {
       const { statusCode, result } = await server.inject({
         method: 'POST',
         url,
-        payload: { movementIds: ['269X8Y7Z', '261B23B4'], carrier },
+        payload: { movementIds: ['269X8Y7Z', '261B23B4'], ...deliveryDetails },
         headers: tracedAuthHeaders
       })
 
@@ -595,7 +797,7 @@ describe('POST /beta-2/deliveries', () => {
         url,
         payload: {
           movementIds: ['261B23B4', '269X8Y7Z', '261B23B4', '269X8Y7Z'],
-          carrier
+          ...deliveryDetails
         },
         headers: tracedAuthHeaders
       })
@@ -616,7 +818,7 @@ describe('POST /beta-2/deliveries', () => {
       it.each([
         {
           description: 'movementIds is not provided',
-          payload: { carrier },
+          payload: { ...deliveryDetails },
           error: {
             errorType: 'NotProvided',
             message: "'movementIds' is required",
@@ -625,7 +827,7 @@ describe('POST /beta-2/deliveries', () => {
         },
         {
           description: 'movementIds is an empty string',
-          payload: { movementIds: '', carrier },
+          payload: { movementIds: '', ...deliveryDetails },
           error: {
             errorType: 'InvalidType',
             message: 'must be array',
@@ -634,7 +836,7 @@ describe('POST /beta-2/deliveries', () => {
         },
         {
           description: 'movementIds is an empty list',
-          payload: { movementIds: [], carrier },
+          payload: { movementIds: [], ...deliveryDetails },
           error: {
             errorType: 'OutOfRange',
             message: 'must NOT have fewer than 1 items',
@@ -665,7 +867,7 @@ describe('POST /beta-2/deliveries', () => {
           const { statusCode, result } = await server.inject({
             method: 'POST',
             url,
-            payload: { movementIds: submitted, carrier },
+            payload: { movementIds: submitted, ...deliveryDetails },
             headers: tracedAuthHeaders
           })
 
