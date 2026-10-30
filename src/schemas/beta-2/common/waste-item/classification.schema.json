@@ -65,7 +65,7 @@
     },
     "hazardous": {
       "$ref": "hazardous.schema.json",
-      "description": "Whether the waste item has hazardous properties, and if so which. Required, even when there are none. A movement is hazardous when any of its waste items declares hazardous properties."
+      "description": "Whether the waste item has hazardous properties, and if so which. Required, even when there are none. A Movement is hazardous when any of its waste items declares hazardous properties."
     }
   },
   "required": ["wasteDescription", "ewcCodes", "pops", "hazardous"],

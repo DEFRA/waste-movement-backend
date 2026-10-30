@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Broker or dealer involvement",
-  "description": "Declares whether any broker or dealer was involved in the movement, and their details. isPresent gates the items array: when true at least one entry is required, when false or absent entries are forbidden.",
+  "description": "Declares whether any broker or dealer was involved in the Movement, and their details. isPresent gates the items array: when true at least one entry is required, when false or absent entries are forbidden.",
   "examples": [
     {
       "isPresent": true,
@@ -45,7 +45,7 @@
   "properties": {
     "isPresent": {
       "type": "boolean",
-      "description": "Whether a broker or dealer was involved in arranging the movement. Absent is equivalent to false."
+      "description": "Whether a broker or dealer was involved in arranging the Movement. Absent is equivalent to false."
     },
     "items": {
       "type": "array",

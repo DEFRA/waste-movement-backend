@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Waste items",
-  "description": "The items of waste in a movement. At least one is required.",
+  "description": "The items of waste in a Movement. At least one is required.",
   "examples": [
     [
       {

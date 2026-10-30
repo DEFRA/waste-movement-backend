@@ -1,6 +1,6 @@
 {
   "twoMovements": {
-    "summary": "Two movements delivered together",
+    "summary": "Two Movements delivered together",
     "value": {
       "data": {
         "deliveries": [
@@ -17,7 +17,7 @@
     }
   },
   "mixedWasteTypes": {
-    "summary": "Two non-hazardous movements and one hazardous movement delivered together",
+    "summary": "Two non-hazardous Movements and one hazardous Movement delivered together",
     "value": {
       "data": {
         "deliveries": [
