@@ -14,8 +14,7 @@ describe('Feature: Recording supporting references', () => {
     'PO_NUMBER',
     'JOB_NUMBER',
     'INVOICE_NUMBER',
-    'WASTE_TICKET_NUMBER',
-    'OTHER'
+    'WASTE_TICKET_NUMBER'
   ]
 
   const supportingReferences = [supportingReference]
@@ -42,6 +41,48 @@ describe('Feature: Recording supporting references', () => {
         expect(validateAjv(payload).valid).toBe(true)
       }
     )
+  })
+
+  describe('Scenario: A supporting reference labelled OTHER says what kind of reference it is', () => {
+    test('the supporting references are accepted when a reference labelled OTHER has an other label', () => {
+      const payload = [
+        {
+          ...supportingReference,
+          label: 'OTHER',
+          otherLabel: 'Skip hire number'
+        }
+      ]
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test("the supporting references are rejected when a reference labelled OTHER doesn't say what kind it is", () => {
+      const { valid, errors } = validateAjv([
+        { ...supportingReference, label: 'OTHER' }
+      ])
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '/0',
+          params: { missingProperty: 'otherLabel' }
+        })
+      )
+    })
+
+    test('the supporting references are rejected when a reference with a recognised label also has an other label', () => {
+      const { valid, errors } = validateAjv([
+        { ...supportingReference, otherLabel: 'Skip hire number' }
+      ])
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'not',
+          instancePath: '/0/otherLabel'
+        })
+      )
+    })
   })
 
   describe("Scenario: A supporting reference's label and reference aren't provided as a pair", () => {
@@ -79,6 +120,13 @@ describe('Feature: Recording supporting references', () => {
   // "recognised label".
   // -------------------------------------------------------------------------
   describe('Additional coverage: Recording supporting references', () => {
+    test('rejects an empty other label', () => {
+      const payload = [
+        { ...supportingReference, label: 'OTHER', otherLabel: '' }
+      ]
+      expect(validateAjv(payload).valid).toBe(false)
+    })
+
     test('rejects an empty array', () => {
       expect(validateAjv([]).valid).toBe(false)
     })
