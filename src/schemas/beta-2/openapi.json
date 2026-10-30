@@ -153,7 +153,7 @@
       "recordCollectionResponse": {
         "$ref": "./collection/record-collection-response.schema.json"
       },
-      "deliveryResponse": {
+      "recordDeliveryResponse": {
         "$ref": "./delivery/record-delivery-response.schema.json"
       },
       "recordReceiptResponse": {
@@ -410,7 +410,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/deliveryResponse"
+                  "$ref": "#/components/schemas/recordDeliveryResponse"
                 },
                 "examples": {
                   "twoMovements": {
