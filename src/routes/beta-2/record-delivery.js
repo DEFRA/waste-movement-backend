@@ -27,9 +27,9 @@ const recordDelivery = {
   method: 'POST',
   path: '/deliveries',
   options: {
-    description: 'Record a delivery',
+    description: 'Record a Delivery',
     notes:
-      'Records a delivery event and returns one Delivery for all non-hazardous Movements, plus one per hazardous Movement.',
+      'Records a Delivery and returns one Delivery for all non-hazardous Movements, plus one per hazardous Movement.',
     app: { journeyStep: 'delivery-recorded' },
     validate: {
       payload: validateRequest('delivery/record-delivery-request')

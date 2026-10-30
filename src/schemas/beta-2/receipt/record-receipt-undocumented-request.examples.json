@@ -1,6 +1,6 @@
 {
   "withReason": {
-    "summary": "Receipt with no prior delivery, with the reason why, of waste containing POPs",
+    "summary": "Receipt with no prior Delivery, with the reason why, of waste containing POPs",
     "value": {
       "reasonForNoDeliveryId": "No delivery was recorded prior to receipt; waste received directly from the producer.",
       "receiptDateTime": "2026-10-14T09:30:00Z",

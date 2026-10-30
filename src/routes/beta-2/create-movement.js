@@ -25,7 +25,7 @@ const createMovement = {
   method: 'POST',
   path: '/movements',
   options: {
-    description: 'Create a new waste movement',
+    description: 'Create a Movement',
     app: { journeyStep: 'movement-created' },
     validate: {
       payload: withPayloadChecks(

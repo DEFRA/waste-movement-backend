@@ -14,7 +14,7 @@
   "properties": {
     "deliveryId": {
       "$ref": "../common/delivery-id.schema.json",
-      "description": "The Delivery ID for this delivery."
+      "description": "The Delivery ID for this Delivery."
     },
     "movementIds": {
       "type": "array",
@@ -24,7 +24,7 @@
     },
     "wasteType": {
       "$ref": "../common/waste-type.schema.json",
-      "description": "Whether the movements in this delivery carry hazardous or non-hazardous waste."
+      "description": "Whether the Movements in this Delivery carry hazardous or non-hazardous waste."
     }
   },
   "additionalProperties": false

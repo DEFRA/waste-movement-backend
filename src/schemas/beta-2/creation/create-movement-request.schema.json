@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Create movement request",
-  "description": "Payload for POST /beta-2/movements. A consignmentNote is required when any waste item declares hazardous properties; the service checks that, as the rule spans the waste items and the consignment note.",
+  "description": "Payload for `POST /movements`. A consignmentNote is required when any waste item declares hazardous properties; the service checks that, as the rule spans the waste items and the consignment note.",
   "type": "object",
   "properties": {
     "producer": {
@@ -11,7 +11,7 @@
     "collectionDateTime": {
       "type": "string",
       "format": "date-time",
-      "description": "The planned time the waste will be collected, as an ISO 8601 date-time. The actual time is given when the collection is recorded."
+      "description": "The planned time the waste will be collected, as an ISO 8601 date-time. The actual time is given when the Collection is recorded."
     },
     "collectionSite": {
       "$ref": "../common/collection-site.schema.json",
@@ -35,25 +35,25 @@
     },
     "wasteItems": {
       "$ref": "../common/waste-item/waste-items.schema.json",
-      "description": "The items of waste in the movement. At least one is required. Treatments are not accepted when creating a movement.",
+      "description": "The items of waste in the Movement. At least one is required. Treatments are not accepted when creating a Movement.",
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
           "treatments": {
             "not": {},
-            "description": "Not accepted when creating a movement yet"
+            "description": "Not accepted when creating a Movement yet"
           }
         }
       }
     },
     "brokerOrDealer": {
       "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json",
-      "description": "Any broker or dealer involved in the movement."
+      "description": "Any broker or dealer involved in the Movement."
     },
     "supportingReferences": {
       "$ref": "../common/supporting-references.schema.json",
-      "description": "References that help identify the movement, such as a PO or job number."
+      "description": "References that help identify the Movement, such as a PO or job number."
     },
     "specialHandlingRequirements": {
       "$ref": "../common/special-handling-requirements.schema.json",
@@ -61,7 +61,7 @@
     },
     "consignmentNote": {
       "$ref": "../common/consignment-note.schema.json",
-      "description": "The hazardous waste consignment note. Required when any waste item declares hazardous properties. Replaces hazardousWasteConsignmentCode and reasonForNoConsignmentCode."
+      "description": "The hazardous waste consignment note. Required when any waste item declares hazardous properties."
     }
   },
   "required": [

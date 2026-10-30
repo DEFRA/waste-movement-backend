@@ -7,7 +7,7 @@ const validateAjv = validatorFor(
 describe('Feature: Recording special handling requirements on a Movement', () => {
   // The feature file set 500 characters. It now has the long-text limit every
   // beta-2 free-text description shares, which is also ROW's published limit
-  // — see "Free text has a length limit" in src/schemas/README.md.
+  // — see "Free text has a maxLength" in src/schemas/README.md.
   const maxLength = longText
 
   describe('Scenario: A Movement is successfully created with special handling requirements', () => {

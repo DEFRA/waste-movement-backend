@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Record receipt request",
-  "description": "Payload for POST /beta-2/deliveries/{deliveryId}/receipt.",
+  "description": "Payload for `POST /deliveries/{deliveryId}/receipt`.",
   "type": "object",
   "properties": {
     "receiptDateTime": {
@@ -26,11 +26,11 @@
     },
     "brokerOrDealer": {
       "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json",
-      "description": "Any broker or dealer involved in the movement."
+      "description": "Any broker or dealer involved in the Movement."
     },
     "supportingReferences": {
       "$ref": "../common/supporting-references.schema.json",
-      "description": "References that help identify the receipt, such as a PO or job number."
+      "description": "References that help identify the Receipt, such as a PO or job number."
     }
   },
   "required": [

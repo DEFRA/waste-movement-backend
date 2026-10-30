@@ -1,10 +1,10 @@
 import { validatorFor } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
-  'beta-2/collection/create-collection-response.schema.json'
+  'beta-2/collection/record-collection-response.schema.json'
 )
 
-describe('Feature: Create collection response', () => {
+describe('Feature: Record collection response', () => {
   const body = { data: null, validation: { warnings: [] } }
 
   test('a response with null data is accepted', () => {

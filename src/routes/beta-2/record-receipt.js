@@ -26,8 +26,8 @@ const recordReceipt = {
   method: 'POST',
   path: '/deliveries/{deliveryId}/receipt',
   options: {
-    description: 'Record receipt of waste against a delivery',
-    notes: 'Records receipt of the waste delivered under the given delivery.',
+    description: 'Record receipt of waste against a Delivery',
+    notes: 'Records receipt of the waste delivered under the given Delivery.',
     app: { journeyStep: 'receipt-recorded' },
     validate: {
       payload: withPayloadChecks(

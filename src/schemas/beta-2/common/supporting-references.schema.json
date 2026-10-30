@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Supporting references",
-  "description": "label/reference pairs for the movement. Both reference and label are required for every entry.",
+  "description": "References for the record, each a 'reference' with a 'label' saying what kind it is. When no label fits, 'label' is 'OTHER' and 'otherLabel' says what kind it is.",
   "examples": [
     [
       {

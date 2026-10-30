@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Create collection request",
-  "description": "Payload for POST /beta-2/movements/{movementId}/collection.",
+  "title": "Record collection request",
+  "description": "Payload for `POST /movements/{movementId}/collection`.",
   "type": "object",
   "properties": {
     "carrier": {
@@ -11,7 +11,7 @@
     "collectionDateTime": {
       "type": "string",
       "format": "date-time",
-      "description": "The actual time the waste was collected, as an ISO 8601 date-time. The planned time was given when the movement was created."
+      "description": "The actual time the waste was collected, as an ISO 8601 date-time. The planned time was given when the Movement was created."
     },
     "collectionSite": {
       "$ref": "../common/collection-site.schema.json",
@@ -19,7 +19,7 @@
     },
     "brokerOrDealer": {
       "$ref": "../common/broker-or-dealer/broker-or-dealer.schema.json",
-      "description": "Any broker or dealer involved in the collection."
+      "description": "Any broker or dealer involved in the Collection."
     },
     "isDutyOfCareConfirmed": {
       "type": "boolean",
@@ -27,7 +27,7 @@
     },
     "supportingReferences": {
       "$ref": "../common/supporting-references.schema.json",
-      "description": "References that help identify the collection, such as a PO or job number."
+      "description": "References that help identify the Collection, such as a PO or job number."
     },
     "specialHandlingRequirements": {
       "$ref": "../common/special-handling-requirements.schema.json",

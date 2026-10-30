@@ -5,7 +5,7 @@ import { recordDelivery as recordDeliveryBeta1 } from '../routes/beta-1/record-d
 import { recordReceipt as recordReceiptBeta1 } from '../routes/beta-1/record-receipt.js'
 import { recordReceiptWithoutDelivery as recordReceiptWithoutDeliveryBeta1 } from '../routes/beta-1/record-receipt-without-delivery.js'
 import { createMovement as createMovementBeta2 } from '../routes/beta-2/create-movement.js'
-import { createCollection as createCollectionBeta2 } from '../routes/beta-2/create-collection.js'
+import { recordCollection as recordCollectionBeta2 } from '../routes/beta-2/record-collection.js'
 import { recordDelivery as recordDeliveryBeta2 } from '../routes/beta-2/record-delivery.js'
 import { recordReceipt as recordReceiptBeta2 } from '../routes/beta-2/record-receipt.js'
 import { recordReceiptUndocumented as recordReceiptUndocumentedBeta2 } from '../routes/beta-2/record-receipt-undocumented.js'
@@ -60,7 +60,7 @@ const router = {
           prefix: '/beta-2',
           routes: [
             createMovementBeta2,
-            createCollectionBeta2,
+            recordCollectionBeta2,
             recordDeliveryBeta2,
             recordReceiptBeta2,
             recordReceiptUndocumentedBeta2

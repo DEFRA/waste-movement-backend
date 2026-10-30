@@ -56,7 +56,7 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 5000,
-      "description": "Reason no registrationNumber is held. Free text for now — enum values TBC pending BA/policy input. Exactly one of 'registrationNumber' or 'reasonForNoRegistrationNumber' is required."
+      "description": "Why there is no registration number. Exactly one of 'registrationNumber' or 'reasonForNoRegistrationNumber' is required."
     },
     "contactDetails": {
       "$ref": "../contact-details.schema.json",

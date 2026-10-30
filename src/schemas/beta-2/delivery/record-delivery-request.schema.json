@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Record delivery request",
-  "description": "Payload for POST /beta-2/deliveries.",
+  "description": "Payload for `POST /deliveries`.",
   "type": "object",
   "properties": {
     "movementIds": {
@@ -10,7 +10,7 @@
         "$ref": "../common/movement-id.schema.json"
       },
       "minItems": 1,
-      "description": "One or more Movement IDs delivered together at this delivery."
+      "description": "One or more Movement IDs delivered together in this Delivery."
     },
     "carrier": {
       "$ref": "../common/carrier.schema.json",
@@ -18,7 +18,7 @@
     },
     "supportingReferences": {
       "$ref": "../common/supporting-references.schema.json",
-      "description": "References that help identify the delivery, such as a PO or job number."
+      "description": "References that help identify the Delivery, such as a PO or job number."
     }
   },
   "required": ["movementIds", "carrier"],

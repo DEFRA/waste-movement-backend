@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Record delivery response",
-  "description": "Response returned when a delivery is recorded.",
+  "description": "Response returned when a Delivery is recorded.",
   "type": "object",
   "required": ["data", "validation"],
   "properties": {

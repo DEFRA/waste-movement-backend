@@ -1,18 +1,18 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Create movement response",
-  "description": "Response returned when a movement is created.",
+  "description": "Response returned when a Movement is created.",
   "type": "object",
   "required": ["data", "validation"],
   "properties": {
     "data": {
       "type": "object",
-      "description": "The created movement.",
+      "description": "The created Movement.",
       "required": ["movementId"],
       "properties": {
         "movementId": {
           "$ref": "../common/movement-id.schema.json",
-          "description": "The Movement ID minted for the new movement."
+          "description": "The Movement ID minted for the new Movement."
         }
       },
       "additionalProperties": false

@@ -221,7 +221,7 @@ function findOtherWithoutFreeText(node, pointer = '') {
 const screamingSnake = /^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$/
 
 // Short text and long text, and the email address limit: see "Free text has
-// a length limit" in README.md. Other formats (date-time) bound themselves.
+// a maxLength" in README.md. Other formats (date-time) bound themselves.
 const freeTextLimits = [255, 5000]
 const emailAddressMaxLength = 254
 

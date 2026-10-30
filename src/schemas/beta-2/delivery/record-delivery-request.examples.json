@@ -1,6 +1,6 @@
 {
   "twoMovements": {
-    "summary": "Two movements delivered together",
+    "summary": "Two Movements delivered together",
     "value": {
       "movementIds": ["25HRA0B2", "25HRA0B3"],
       "carrier": {
@@ -26,7 +26,7 @@
     }
   },
   "mixedWasteTypes": {
-    "summary": "Two non-hazardous movements and one hazardous movement delivered together",
+    "summary": "Two non-hazardous Movements and one hazardous Movement delivered together",
     "value": {
       "movementIds": ["25HRA0B2", "25HRZ9X7", "25HRA0B3"],
       "carrier": {

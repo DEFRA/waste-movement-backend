@@ -53,11 +53,11 @@
       "items": {
         "type": "string",
         "pattern": "^\\d{6}$",
-        "description": "A European Waste Catalogue (EWC) code: six digits, with no spaces. Only the format is checked here; the service also checks the code is one of those served by GET /reference-data/ewc-codes, which is too long a list to inline, and reports an unrecognised code as an InvalidValue error."
+        "description": "A European Waste Catalogue (EWC) code: six digits, with no spaces. Only the format is checked here; the service also checks the code is one of those served by `GET /reference-data/ewc-codes`, which is too long a list to inline, and reports an unrecognised code as an InvalidValue error."
       },
       "minItems": 1,
       "maxItems": 5,
-      "description": "The EWC codes that describe the waste: at least one, and up to five to allow for dual and mirror codes. Each must be six digits and a code from GET /reference-data/ewc-codes; the service checks the second."
+      "description": "The EWC codes that describe the waste: at least one, and up to five to allow for dual and mirror codes. Each must be six digits and a code from `GET /reference-data/ewc-codes`; the service checks the second."
     },
     "pops": {
       "$ref": "pops.schema.json",
@@ -65,7 +65,7 @@
     },
     "hazardous": {
       "$ref": "hazardous.schema.json",
-      "description": "Whether the waste item has hazardous properties, and if so which. Required, even when there are none. A movement is hazardous when any of its waste items declares hazardous properties."
+      "description": "Whether the waste item has hazardous properties, and if so which. Required, even when there are none. A Movement is hazardous when any of its waste items declares hazardous properties."
     }
   },
   "required": ["wasteDescription", "ewcCodes", "pops", "hazardous"],

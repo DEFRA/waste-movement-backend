@@ -20,15 +20,15 @@
   "tags": [
     {
       "name": "Movement",
-      "description": "Create and manage a waste movement record."
+      "description": "Create and manage Movements."
     },
     {
       "name": "Collection",
-      "description": "Record a collection event — waste passing from a producer to a driver."
+      "description": "Record a Collection — waste passing from a producer to a driver."
     },
     {
       "name": "Delivery",
-      "description": "Record a delivery event, generating one or more Delivery IDs."
+      "description": "Record a Delivery, generating one or more Delivery IDs."
     },
     {
       "name": "Receipt",
@@ -93,7 +93,7 @@
         "$ref": "./creation/create-movement-request.schema.json"
       },
       "recordCollectionRequest": {
-        "$ref": "./collection/create-collection-request.schema.json"
+        "$ref": "./collection/record-collection-request.schema.json"
       },
       "recordDeliveryRequest": {
         "$ref": "./delivery/record-delivery-request.schema.json"
@@ -151,9 +151,9 @@
         "$ref": "./creation/create-movement-response.schema.json"
       },
       "recordCollectionResponse": {
-        "$ref": "./collection/create-collection-response.schema.json"
+        "$ref": "./collection/record-collection-response.schema.json"
       },
-      "deliveryResponse": {
+      "recordDeliveryResponse": {
         "$ref": "./delivery/record-delivery-response.schema.json"
       },
       "recordReceiptResponse": {
@@ -215,8 +215,8 @@
     "/movements": {
       "post": {
         "tags": ["Movement"],
-        "summary": "Create a waste movement",
-        "description": "Creates a new waste movement and returns its Movement ID.",
+        "summary": "Create a Movement",
+        "description": "Creates a new Movement and returns its Movement ID.",
         "operationId": "createMovement",
         "requestBody": {
           "required": true,
@@ -262,14 +262,14 @@
             "links": {
               "RecordCollection": {
                 "operationId": "recordCollection",
-                "description": "The returned `movementId` identifies the movement whose collection is recorded.",
+                "description": "The returned `movementId` identifies the Movement whose Collection is recorded.",
                 "parameters": {
                   "movementId": "$response.body#/data/movementId"
                 }
               },
               "RecordDelivery": {
                 "operationId": "recordDelivery",
-                "description": "The returned `movementId` can be included in the `movementIds` of a delivery.",
+                "description": "The returned `movementId` can be included in the `movementIds` of a Delivery.",
                 "requestBody": {
                   "movementIds": ["$response.body#/data/movementId"]
                 }
@@ -296,8 +296,8 @@
       ],
       "post": {
         "tags": ["Collection"],
-        "summary": "Record the collection for a movement",
-        "description": "Records a collection event for the given movement.",
+        "summary": "Record the Collection for a Movement",
+        "description": "Records the Collection for the given Movement.",
         "operationId": "recordCollection",
         "requestBody": {
           "required": true,
@@ -308,10 +308,10 @@
               },
               "examples": {
                 "withBrokerAndReferences": {
-                  "$ref": "./collection/create-collection-request.examples.json#/withBrokerAndReferences"
+                  "$ref": "./collection/record-collection-request.examples.json#/withBrokerAndReferences"
                 },
                 "minimal": {
-                  "$ref": "./collection/create-collection-request.examples.json#/minimal"
+                  "$ref": "./collection/record-collection-request.examples.json#/minimal"
                 }
               }
             }
@@ -332,10 +332,10 @@
                 },
                 "examples": {
                   "withBrokerAndReferences": {
-                    "$ref": "./collection/create-collection-response.examples.json#/withBrokerAndReferences"
+                    "$ref": "./collection/record-collection-response.examples.json#/withBrokerAndReferences"
                   },
                   "minimal": {
-                    "$ref": "./collection/create-collection-response.examples.json#/minimal"
+                    "$ref": "./collection/record-collection-response.examples.json#/minimal"
                   }
                 }
               }
@@ -378,8 +378,8 @@
     "/deliveries": {
       "post": {
         "tags": ["Delivery"],
-        "summary": "Record a delivery",
-        "description": "Records a delivery event. All the non-hazardous Movements share one new Delivery ID; each hazardous Movement gets its own Delivery, whose Delivery ID is its Movement ID.",
+        "summary": "Record a Delivery",
+        "description": "Records a Delivery. All the non-hazardous Movements share one new Delivery ID; each hazardous Movement gets its own Delivery, whose Delivery ID is its Movement ID.",
         "operationId": "recordDelivery",
         "requestBody": {
           "required": true,
@@ -410,7 +410,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/deliveryResponse"
+                  "$ref": "#/components/schemas/recordDeliveryResponse"
                 },
                 "examples": {
                   "twoMovements": {
@@ -425,7 +425,7 @@
             "links": {
               "RecordReceipt": {
                 "operationId": "recordReceipt",
-                "description": "Each returned `deliveryId` identifies a delivery whose receipt is recorded.",
+                "description": "Each returned `deliveryId` identifies a Delivery whose Receipt is recorded.",
                 "parameters": {
                   "deliveryId": "$response.body#/data/deliveries/0/deliveryId"
                 }
@@ -448,7 +448,7 @@
       "post": {
         "tags": ["Receipt"],
         "summary": "Record receipt of undocumented waste",
-        "description": "Fallback for recording receipt with no prior Delivery, e.g. waste received with no movement trail. Not linked to any Movement; `reasonForNoDeliveryId` must explain why. The server creates an empty Delivery behind the scenes and returns its `deliveryId`, so the receipt stays addressable.",
+        "description": "Fallback for recording receipt with no prior Delivery, e.g. waste received with no movement trail. Not linked to any Movement; `reasonForNoDeliveryId` must explain why. The server creates an empty Delivery behind the scenes and returns its `deliveryId`, so the Receipt stays addressable.",
         "operationId": "recordReceiptUndocumented",
         "requestBody": {
           "required": true,
@@ -506,8 +506,8 @@
       ],
       "post": {
         "tags": ["Receipt"],
-        "summary": "Record receipt of waste against a delivery",
-        "description": "Records receipt of the waste delivered under the given delivery.",
+        "summary": "Record receipt of waste against a Delivery",
+        "description": "Records receipt of the waste delivered under the given Delivery.",
         "operationId": "recordReceipt",
         "requestBody": {
           "required": true,
@@ -526,7 +526,7 @@
         },
         "responses": {
           "201": {
-            "description": "Receipt recorded against the delivery. Body carries the Delivery ID and any validation warnings.",
+            "description": "Receipt recorded against the Delivery. Body carries the Delivery ID and any validation warnings.",
             "headers": {
               "x-request-id": {
                 "$ref": "#/components/headers/RequestId"

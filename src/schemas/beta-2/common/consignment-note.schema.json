@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Consignment note",
-  "description": "The hazardous waste consignment note for a movement: either its code, or a reason for having no code, but not both. A consignment note is required when any waste item declares hazardous properties, which the service checks.",
+  "description": "The hazardous waste consignment note for a Movement: either its code, or a reason for having no code, but not both. A consignment note is required when any waste item declares hazardous properties, which the service checks.",
   "examples": [
     {
       "code": "CJTILE/A0001"
@@ -33,7 +33,7 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 5000,
-      "description": "Free text: why there is no consignment note code. Required when any waste item declares hazardous properties and 'code' is not provided; not allowed when 'code' is provided."
+      "description": "Why there is no consignment note code. Required when any waste item declares hazardous properties and 'code' is not provided; not allowed when 'code' is provided."
     }
   },
   "additionalProperties": false

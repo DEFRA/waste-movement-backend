@@ -104,7 +104,7 @@
     "reasonForNoRegistrationNumber": {
       "type": "string",
       "enum": ["ON_SITE", "HOUSEHOLD", "ONE_OFF", "MARINE"],
-      "description": "Why the carrier has no registration number. Exactly one of 'registrationNumber' or 'reasonForNoRegistrationNumber' is required."
+      "description": "Why there is no registration number. Exactly one of 'registrationNumber' or 'reasonForNoRegistrationNumber' is required."
     },
     "meansOfTransport": {
       "type": "string",
