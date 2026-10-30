@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Create movement request",
-  "description": "Payload for POST /beta-2/movements. A consignmentNote is required when any waste item declares hazardous properties; the service checks that, as the rule spans the waste items and the consignment note.",
+  "description": "Payload for `POST /movements`. A consignmentNote is required when any waste item declares hazardous properties; the service checks that, as the rule spans the waste items and the consignment note.",
   "type": "object",
   "properties": {
     "producer": {

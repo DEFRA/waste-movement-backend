@@ -378,7 +378,8 @@ touching the same lines. The alternative — one 2,900-line `openapi.yaml` — i
 deliberately moving away from.
 
 Give every schema and every property a `description`. It's prose next to the rule it describes,
-and it's what generated documentation is built from.
+and it's what generated documentation is built from. Name an endpoint as `` `POST /movements` ``:
+in backticks, without the version prefix, which the spec's server URL already carries.
 
 ### Closing a schema built from others
 
