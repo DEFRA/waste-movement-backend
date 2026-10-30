@@ -18,6 +18,8 @@ import {
   carrier,
   collectionSite,
   consignmentNote,
+  deliveryDateTime,
+  deliverySite,
   hazardousWasteItem,
   receiver,
   supportingReference,
@@ -31,6 +33,7 @@ describe('beta-2', () => {
   let wasteTrackingStub
   const version = 'beta-2'
   const intendedCarriers = [carrier]
+  const deliveryDetails = { carrier, deliveryDateTime, deliverySite }
   const intendedReceivers = [receiver]
   const wasteItems = [wasteItem]
   // Receipts need at least one treatment (on every waste item, for an
@@ -299,7 +302,7 @@ describe('beta-2', () => {
       '/beta-2/deliveries',
       {
         method: 'POST',
-        body: { movementIds: [movementId], carrier }
+        body: { movementIds: [movementId], ...deliveryDetails }
       }
     )
 
@@ -356,7 +359,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           movementIds: [nonHazardousId1, hazardousId, nonHazardousId2],
-          carrier
+          ...deliveryDetails
         }
       }
     )
@@ -414,7 +417,7 @@ describe('beta-2', () => {
       '/beta-2/deliveries',
       {
         method: 'POST',
-        body: { movementIds: [movementId], carrier }
+        body: { movementIds: [movementId], ...deliveryDetails }
       }
     )
     const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
@@ -529,7 +532,7 @@ describe('beta-2', () => {
         method: 'POST',
         body: {
           movementIds: [movementId],
-          carrier,
+          ...deliveryDetails,
           supportingReferences: [supportingReference]
         }
       }
@@ -548,7 +551,7 @@ describe('beta-2', () => {
       '/beta-2/deliveries',
       {
         method: 'POST',
-        body: { movementIds: [movementId], carrier }
+        body: { movementIds: [movementId], ...deliveryDetails }
       }
     )
     const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
@@ -834,7 +837,7 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { movementIds: ['25ZZZZZ0'], carrier }
+        body: { movementIds: ['25ZZZZZ0'], ...deliveryDetails }
       })
 
       expectProblemResponse(response, {
@@ -936,7 +939,10 @@ describe('beta-2', () => {
       const createDeliveryRes = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/deliveries',
-        { method: 'POST', body: { movementIds: [movementId], carrier } }
+        {
+          method: 'POST',
+          body: { movementIds: [movementId], ...deliveryDetails }
+        }
       )
       const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
 
@@ -973,7 +979,10 @@ describe('beta-2', () => {
       const createDeliveryRes = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/deliveries',
-        { method: 'POST', body: { movementIds: [movementId], carrier } }
+        {
+          method: 'POST',
+          body: { movementIds: [movementId], ...deliveryDetails }
+        }
       )
       const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
 
@@ -1037,7 +1046,10 @@ describe('beta-2', () => {
       const createDeliveryRes = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/deliveries',
-        { method: 'POST', body: { movementIds: [movementId], carrier } }
+        {
+          method: 'POST',
+          body: { movementIds: [movementId], ...deliveryDetails }
+        }
       )
       const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
 
@@ -1068,7 +1080,10 @@ describe('beta-2', () => {
       const createDeliveryRes = await betaHttpRequest(
         testService.baseUrl,
         '/beta-2/deliveries',
-        { method: 'POST', body: { movementIds: [movementId], carrier } }
+        {
+          method: 'POST',
+          body: { movementIds: [movementId], ...deliveryDetails }
+        }
       )
       const { deliveryId } = createDeliveryRes.body.data.deliveries[0]
 

@@ -16,11 +16,20 @@
       "$ref": "../common/carrier.schema.json",
       "description": "The carrier that delivered the waste."
     },
+    "deliveryDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The actual time the waste was delivered, as an ISO 8601 date-time with a timezone."
+    },
+    "deliverySite": {
+      "$ref": "../common/delivery-site.schema.json",
+      "description": "The place the waste was delivered to."
+    },
     "supportingReferences": {
       "$ref": "../common/supporting-references.schema.json",
       "description": "References that help identify the Delivery, such as a PO or job number."
     }
   },
-  "required": ["movementIds", "carrier"],
+  "required": ["movementIds", "carrier", "deliveryDateTime", "deliverySite"],
   "additionalProperties": false
 }
