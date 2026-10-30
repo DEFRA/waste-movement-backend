@@ -9,7 +9,8 @@ import {
   receiver,
   treatment,
   validatorFor,
-  wasteItem
+  wasteItem,
+  longText
 } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
@@ -548,5 +549,35 @@ describe('record-receipt-undocumented-request schema', () => {
         })
       )
     })
+  })
+
+  describe('Scenario: Free text longer than its length limit is rejected', () => {
+    test.each([
+      [
+        'reasonForNoDeliveryId',
+        longText,
+        { receiptDateTime, carrier, receiver, wasteItems }
+      ]
+    ])(
+      '%s is accepted at %i characters and rejected at one more',
+      (field, limit, base) => {
+        expect(validateAjv({ ...base, [field]: 'A'.repeat(limit) }).valid).toBe(
+          true
+        )
+
+        const { valid, errors } = validateAjv({
+          ...base,
+          [field]: 'A'.repeat(limit + 1)
+        })
+        expect(valid).toBe(false)
+        expect(errors).toContainEqual(
+          expect.objectContaining({
+            keyword: 'maxLength',
+            instancePath: `/${field}`,
+            params: { limit }
+          })
+        )
+      }
+    )
   })
 })

@@ -47,6 +47,7 @@
         "organisationName": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 255,
           "description": "Producer organisation name."
         },
         "authorisationNumber": {
@@ -56,6 +57,7 @@
         "reasonForNoAuthorisationNumber": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 5000,
           "description": "Reason no authorisationNumber is held. Free text for now — enum values TBC pending BA/policy input. Exactly one of 'authorisationNumber' or 'reasonForNoAuthorisationNumber' is required."
         },
         "sicCode": {

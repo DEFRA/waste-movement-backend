@@ -13,6 +13,7 @@
     "fullAddress": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 5000,
       "description": "Full address line."
     },
     "postcode": {

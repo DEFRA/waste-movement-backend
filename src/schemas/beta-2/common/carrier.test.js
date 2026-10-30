@@ -1,4 +1,4 @@
-import { carrier, validatorFor } from '../test-helpers.js'
+import { carrier, validatorFor, shortText } from '../test-helpers.js'
 
 const validateAjv = validatorFor('beta-2/common/carrier.schema.json')
 
@@ -256,5 +256,37 @@ describe('Feature: Schema - declaring a carrier of the waste', () => {
     test('rejects an unknown field on a carrier', () => {
       expect(validateAjv({ ...carrier, nickname: 'Carry' }).valid).toBe(false)
     })
+  })
+
+  describe('Scenario: Free text longer than its length limit is rejected', () => {
+    test.each([
+      ['organisationName', shortText, carrier],
+      ['vehicleRegistration', shortText, carrier],
+      [
+        'otherMeansOfTransport',
+        shortText,
+        { ...withoutField('vehicleRegistration'), meansOfTransport: 'OTHER' }
+      ]
+    ])(
+      '%s is accepted at %i characters and rejected at one more',
+      (field, limit, base) => {
+        expect(validateAjv({ ...base, [field]: 'A'.repeat(limit) }).valid).toBe(
+          true
+        )
+
+        const { valid, errors } = validateAjv({
+          ...base,
+          [field]: 'A'.repeat(limit + 1)
+        })
+        expect(valid).toBe(false)
+        expect(errors).toContainEqual(
+          expect.objectContaining({
+            keyword: 'maxLength',
+            instancePath: `/${field}`,
+            params: { limit }
+          })
+        )
+      }
+    )
   })
 })

@@ -1,5 +1,5 @@
 import { validEwcCodes } from '@defra/waste-movement-utils'
-import { classification, validatorFor } from '../../test-helpers.js'
+import { classification, validatorFor, longText } from '../../test-helpers.js'
 
 const validateAjv = validatorFor(
   'beta-2/common/waste-item/classification.schema.json'
@@ -175,5 +175,29 @@ describe('Feature: Schema - classifying a waste item', () => {
         })
       )
     })
+  })
+
+  describe('Scenario: Free text longer than its length limit is rejected', () => {
+    test.each([['wasteDescription', longText, classification]])(
+      '%s is accepted at %i characters and rejected at one more',
+      (field, limit, base) => {
+        expect(validateAjv({ ...base, [field]: 'A'.repeat(limit) }).valid).toBe(
+          true
+        )
+
+        const { valid, errors } = validateAjv({
+          ...base,
+          [field]: 'A'.repeat(limit + 1)
+        })
+        expect(valid).toBe(false)
+        expect(errors).toContainEqual(
+          expect.objectContaining({
+            keyword: 'maxLength',
+            instancePath: `/${field}`,
+            params: { limit }
+          })
+        )
+      }
+    )
   })
 })

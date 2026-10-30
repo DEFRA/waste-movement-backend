@@ -1,5 +1,6 @@
 import {
   contactDetails as validContactDetails,
+  emailAddressMaxLength,
   validatorFor
 } from '../test-helpers.js'
 
@@ -63,5 +64,32 @@ describe('contact-details schema', () => {
   test('rejects contact details with an extra property', () => {
     const payload = { ...validContactDetails, extra: true }
     expect(validateAjv(payload).valid).toBe(false)
+  })
+
+  describe('Scenario: An email address longer than its length limit is rejected', () => {
+    const domain = '@example.com'
+    const emailAddressOf = (length) =>
+      'a'.repeat(length - domain.length) + domain
+
+    test('accepts an email address of the maximum length', () => {
+      const payload = { emailAddress: emailAddressOf(emailAddressMaxLength) }
+      expect(validateAjv(payload).valid).toBe(true)
+    })
+
+    test('rejects an email address one character longer', () => {
+      const payload = {
+        emailAddress: emailAddressOf(emailAddressMaxLength + 1)
+      }
+      const { valid, errors } = validateAjv(payload)
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'maxLength',
+          instancePath: '/emailAddress',
+          params: { limit: emailAddressMaxLength }
+        })
+      )
+    })
   })
 })

@@ -1,6 +1,8 @@
 import {
   brokerOrDealerEntry as brokerOrDealer,
-  validatorFor
+  validatorFor,
+  shortText,
+  longText
 } from '../../test-helpers.js'
 
 const validateAjv = validatorFor(
@@ -239,5 +241,35 @@ describe('Feature: Declaring any brokers or dealers involved when creating a was
 
       expect(validateAjv(payload).valid).toBe(true)
     })
+  })
+
+  describe('Scenario: Free text longer than its length limit is rejected', () => {
+    test.each([
+      ['organisationName', shortText, brokerOrDealer],
+      [
+        'reasonForNoRegistrationNumber',
+        longText,
+        withoutField('registrationNumber')
+      ]
+    ])(
+      '%s is accepted at %i characters and rejected at one more',
+      (field, limit, base) => {
+        expect(
+          validateAjv(involving({ ...base, [field]: 'A'.repeat(limit) })).valid
+        ).toBe(true)
+
+        const { valid, errors } = validateAjv(
+          involving({ ...base, [field]: 'A'.repeat(limit + 1) })
+        )
+        expect(valid).toBe(false)
+        expect(errors).toContainEqual(
+          expect.objectContaining({
+            keyword: 'maxLength',
+            instancePath: `/items/0/${field}`,
+            params: { limit }
+          })
+        )
+      }
+    )
   })
 })

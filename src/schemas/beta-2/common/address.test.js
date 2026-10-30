@@ -1,4 +1,8 @@
-import { address as validAddress, validatorFor } from '../test-helpers.js'
+import {
+  address as validAddress,
+  validatorFor,
+  longText
+} from '../test-helpers.js'
 
 const validateAjv = validatorFor('beta-2/common/address.schema.json')
 
@@ -48,5 +52,29 @@ describe('address schema', () => {
 
   test('rejects an address with an extra property', () => {
     expect(validateAjv({ ...validAddress, extra: true }).valid).toBe(false)
+  })
+
+  describe('Scenario: Free text longer than its length limit is rejected', () => {
+    test.each([['fullAddress', longText, validAddress]])(
+      '%s is accepted at %i characters and rejected at one more',
+      (field, limit, base) => {
+        expect(validateAjv({ ...base, [field]: 'A'.repeat(limit) }).valid).toBe(
+          true
+        )
+
+        const { valid, errors } = validateAjv({
+          ...base,
+          [field]: 'A'.repeat(limit + 1)
+        })
+        expect(valid).toBe(false)
+        expect(errors).toContainEqual(
+          expect.objectContaining({
+            keyword: 'maxLength',
+            instancePath: `/${field}`,
+            params: { limit }
+          })
+        )
+      }
+    )
   })
 })

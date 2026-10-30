@@ -170,7 +170,35 @@ function findMisnamedBooleans(node, pointer = '') {
   ]
 }
 
+/** [pointer, format, maxLength] for every string with no pattern, enum or const. */
+function findFreeText(node, pointer = '') {
+  if (!node || typeof node !== 'object') {
+    return []
+  }
+  const isFreeText =
+    node.type === 'string' &&
+    !['pattern', 'enum', 'const'].some((key) => key in node)
+  return [
+    ...(isFreeText ? [[pointer, node.format, node.maxLength]] : []),
+    ...Object.entries(node).flatMap(([key, value]) =>
+      findFreeText(value, `${pointer}/${key}`)
+    )
+  ]
+}
+
 const screamingSnake = /^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$/
+
+// Short text and long text, and the email address limit: see "Free text has
+// a length limit" in README.md. Other formats (date-time) bound themselves.
+const freeTextLimits = [255, 5000]
+const emailAddressMaxLength = 254
+
+// The service writes these, not the caller: issue.schema.json is only ever in
+// a response.
+const freeTextLimitExceptions = new Set([
+  'beta-2/common/issue.schema.json#/properties/pointer',
+  'beta-2/common/issue.schema.json#/properties/message'
+])
 
 // errorType's values (NotProvided, BusinessRuleViolation, …) are
 // waste-movement-utils' validation error categories, which the legacy routes
@@ -266,6 +294,28 @@ describe('schema conventions', () => {
     '%s starts every boolean field name with is',
     (_, schema) => {
       expect(findMisnamedBooleans(schema)).toEqual([])
+    }
+  )
+
+  // Free text has one of two length limits, so a caller can size their own
+  // fields once: short text (names, labels, identifiers) or long text
+  // (descriptions, reasons, addresses).
+  test.each(beta2Schemas)(
+    '%s limits every free-text field to a length tier',
+    (file, schema) => {
+      const id = schemaIdFor(file)
+      const unlimited = findFreeText(schema).filter(
+        ([pointer, format, maxLength]) => {
+          if (freeTextLimitExceptions.has(`${id}#${pointer}`)) {
+            return false
+          }
+          if (format === 'email') {
+            return maxLength !== emailAddressMaxLength
+          }
+          return !format && !freeTextLimits.includes(maxLength)
+        }
+      )
+      expect(unlimited).toEqual([])
     }
   )
 
