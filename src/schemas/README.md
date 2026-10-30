@@ -469,9 +469,9 @@ Known exceptions, kept on purpose or pending a decision (see
 ### Whole bodies are named after their route
 
 A schema for a whole request or response body is named after the route file it belongs to, with
-a `-request` or `-response` suffix — `routes/beta-2/create-collection.js` validates against
-`collection/create-collection-request.schema.json` and
-`collection/create-collection-response.schema.json`. Every route has exactly one pair, so a
+a `-request` or `-response` suffix — `routes/beta-2/record-collection.js` validates against
+`collection/record-collection-request.schema.json` and
+`collection/record-collection-response.schema.json`. Every route has exactly one pair, so a
 route's whole contract can be found from its file name. Two routes that return the same shape
 still get a file each; the second is a `title`, a `description` and a `$ref` to the first
 (`record-receipt-undocumented-response` → `record-receipt-response`).
@@ -551,7 +551,7 @@ src/schemas/
     openapi.json     the published spec — $refs everything below
     common/          resources used by more than one endpoint
     creation/        create-movement-request / -response (each with its .examples.json)
-    collection/      create-collection-request / -response, and the movementId path params
+    collection/      record-collection-request / -response, and the movementId path params
     delivery/        record-delivery-request / -response, and delivery-item
     receipt/         record-receipt-request / -response,
                      record-receipt-undocumented-request / -response,

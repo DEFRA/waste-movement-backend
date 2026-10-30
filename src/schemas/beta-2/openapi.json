@@ -93,7 +93,7 @@
         "$ref": "./creation/create-movement-request.schema.json"
       },
       "recordCollectionRequest": {
-        "$ref": "./collection/create-collection-request.schema.json"
+        "$ref": "./collection/record-collection-request.schema.json"
       },
       "recordDeliveryRequest": {
         "$ref": "./delivery/record-delivery-request.schema.json"
@@ -151,7 +151,7 @@
         "$ref": "./creation/create-movement-response.schema.json"
       },
       "recordCollectionResponse": {
-        "$ref": "./collection/create-collection-response.schema.json"
+        "$ref": "./collection/record-collection-response.schema.json"
       },
       "deliveryResponse": {
         "$ref": "./delivery/record-delivery-response.schema.json"
@@ -308,10 +308,10 @@
               },
               "examples": {
                 "withBrokerAndReferences": {
-                  "$ref": "./collection/create-collection-request.examples.json#/withBrokerAndReferences"
+                  "$ref": "./collection/record-collection-request.examples.json#/withBrokerAndReferences"
                 },
                 "minimal": {
-                  "$ref": "./collection/create-collection-request.examples.json#/minimal"
+                  "$ref": "./collection/record-collection-request.examples.json#/minimal"
                 }
               }
             }
@@ -332,10 +332,10 @@
                 },
                 "examples": {
                   "withBrokerAndReferences": {
-                    "$ref": "./collection/create-collection-response.examples.json#/withBrokerAndReferences"
+                    "$ref": "./collection/record-collection-response.examples.json#/withBrokerAndReferences"
                   },
                   "minimal": {
-                    "$ref": "./collection/create-collection-response.examples.json#/minimal"
+                    "$ref": "./collection/record-collection-response.examples.json#/minimal"
                   }
                 }
               }

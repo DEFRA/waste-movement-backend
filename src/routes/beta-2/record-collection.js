@@ -16,18 +16,18 @@ const logger = createLogger({ apiVersion })
 const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
 const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
 
-const createCollection = {
+const recordCollection = {
   method: 'POST',
   path: '/movements/{movementId}/collection',
   options: {
     description: 'Create a new waste collection',
     app: { journeyStep: 'collection-recorded' },
     validate: {
-      payload: validateRequest('collection/create-collection-request'),
+      payload: validateRequest('collection/record-collection-request'),
       params: validateRequest('collection/movement-id-params')
     },
     response: {
-      status: { 201: validateResponse('collection/create-collection-response') }
+      status: { 201: validateResponse('collection/record-collection-response') }
     }
   },
   handler: async (request, h) => {
@@ -64,4 +64,4 @@ const createCollection = {
   }
 }
 
-export { createCollection }
+export { recordCollection }
