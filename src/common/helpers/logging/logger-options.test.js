@@ -2,14 +2,16 @@ import { loggerOptions } from './logger-options.js'
 import {
   getClientId,
   getClientName,
-  getOrganisationId
+  getOrganisationId,
+  getOrganisationName
 } from '../../../plugins/request-custom-logger.js'
 import { getTraceId } from '@defra/hapi-tracing'
 
 jest.mock('../../../plugins/request-custom-logger.js', () => ({
   getClientId: jest.fn(),
   getClientName: jest.fn(),
-  getOrganisationId: jest.fn()
+  getOrganisationId: jest.fn(),
+  getOrganisationName: jest.fn()
 }))
 
 jest.mock('@defra/hapi-tracing', () => ({
@@ -44,6 +46,22 @@ describe('loggerOptions', () => {
         reference: 'org-123'
       }
     })
+  })
+  it('adds the organisation name to event.reason when it is known', () => {
+    getOrganisationId.mockReturnValue('org-123')
+    getOrganisationName.mockReturnValue('Acme Waste Ltd')
+
+    expect(loggerOptions.mixin()).toEqual({
+      event: {
+        reference: 'org-123',
+        reason: 'Acme Waste Ltd'
+      }
+    })
+  })
+  it('logs no organisation name without an organisation id', () => {
+    getOrganisationName.mockReturnValue('Acme Waste Ltd')
+
+    expect(loggerOptions.mixin()).toEqual({})
   })
   it('keeps the mixin event.reference when a line logs its own event', () => {
     expect(
