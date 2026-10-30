@@ -455,8 +455,7 @@ doesn't say whether the time is planned or actual; the field's description does.
 movement gives the planned collection time, and recording the Collection gives the actual one,
 both as `collectionDateTime`, and each description says which it is and where the other is given.
 
-Known exceptions, kept on purpose or pending a decision (see
-`docs/beta-2-spec-consistency-review.md`):
+Known exceptions, kept on purpose or pending a decision:
 
 - `receiver.siteName`, not `organisationName`, because a receiver is identified as a site.
 - `receiver.receiptAddress`, not `address`, until site naming is decided.
