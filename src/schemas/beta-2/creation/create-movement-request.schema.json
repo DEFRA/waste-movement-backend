@@ -61,7 +61,7 @@
     },
     "consignmentNote": {
       "$ref": "../common/consignment-note.schema.json",
-      "description": "The hazardous waste consignment note. Required when any waste item declares hazardous properties. Replaces hazardousWasteConsignmentCode and reasonForNoConsignmentCode."
+      "description": "The hazardous waste consignment note. Required when any waste item declares hazardous properties."
     }
   },
   "required": [
