@@ -8,7 +8,7 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 5000,
-      "description": "Mandatory explanation for why this Receipt is being recorded without a Delivery ID.",
+      "description": "Why this Receipt has no Delivery ID. Required, because this route is for Receipts without one; a Receipt with a Delivery ID is recorded at POST /beta-2/deliveries/{deliveryId}/receipt.",
       "examples": [
         "No delivery was recorded prior to receipt; waste received directly from the producer."
       ]

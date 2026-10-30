@@ -311,6 +311,9 @@ descriptions end with the same sentence: "Exactly one of '<identifier>' or
 When "exactly one" depends on another resource, the schema enforces only "not both", and a
 [payload check](#rules-a-schema-cant-say-payload-checks) enforces the rest.
 
+`reasonForNoDeliveryId` stands alone: its route is for Receipts with no Delivery ID, which is
+otherwise a path parameter.
+
 ### "None of the above": `other<Field>`
 
 When an enum can't list every value a caller might need, it ends with `OTHER`, and the schema
