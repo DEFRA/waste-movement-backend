@@ -8,7 +8,7 @@ export const validatorFor = (schemaId) => (payload) => {
 
 export const apiCode = '25b14080-5e77-4f91-9957-2482a0cb8775'
 
-// The free-text length tiers: see "Free text has a length limit" in
+// The free-text length tiers: see "Free text has a maxLength" in
 // src/schemas/README.md.
 export const shortText = 255
 export const longText = 5000
