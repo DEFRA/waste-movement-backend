@@ -94,6 +94,7 @@
     "organisationName": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 255,
       "description": "Name of the carrier organisation."
     },
     "registrationNumber": {
@@ -121,11 +122,13 @@
     "vehicleRegistration": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 255,
       "description": "Registration of the vehicle carrying the waste. Required when meansOfTransport is ROAD; forbidden otherwise."
     },
     "otherMeansOfTransport": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 255,
       "description": "Description of the means of transport. Required when meansOfTransport is OTHER; forbidden otherwise."
     },
     "contactDetails": {

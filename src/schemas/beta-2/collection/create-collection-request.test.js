@@ -5,7 +5,8 @@ import {
   brokerOrDealerEntry,
   carrier,
   supportingReference,
-  validatorFor
+  validatorFor,
+  longText
 } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
@@ -354,7 +355,7 @@ describe('create-collection-request schema: beta-2', () => {
         carrier,
         collectionDateTime,
         collectionSite,
-        specialHandlingRequirements: 'A'.repeat(501)
+        specialHandlingRequirements: 'A'.repeat(longText + 1)
       }
       expect(validateAjv(payload).valid).toBe(false)
     })

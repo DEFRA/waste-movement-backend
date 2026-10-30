@@ -118,6 +118,42 @@ This is about optional fields. A response with nothing to return sends `"data": 
 schema says so with `"type": "null"` (Collection, which mints no ID), not a `["object", "null"]`
 list.
 
+### Free text has a length limit
+
+Every request field that takes free text (a string with no `pattern`, `enum` or `const`) has a
+`maxLength`, set by what kind of text it holds:
+
+| Kind                    | What it holds                                                | Tier       | `maxLength` |
+| ----------------------- | ------------------------------------------------------------ | ---------- | ----------- |
+| Name                    | what something is called                                     | Short text | 255         |
+| Label                   | a category the enum doesn't list: the `other<Field>` fields  | Short text | 255         |
+| Identifier or reference | a token copied from elsewhere, not written                   | Short text | 255         |
+| Description             | prose, a sentence or more                                    | Long text  | 5000        |
+| Reason                  | the `reasonForNo<Identifier>` fields: why a value is missing | Long text  | 5000        |
+| Address                 | `fullAddress`, several lines in one string                   | Long text  | 5000        |
+| Email address           | `format: email`                                              | —          | 254         |
+
+Don't repeat the limit in the description: `maxLength` already shows it in the published spec.
+
+**Why limit at all.** Adding a limit later breaks a caller who already sends more; raising or
+removing one never does, so every field gets one now, while the API is in beta. Integrators also
+size their own columns and form fields from `maxLength`, and with none they have to guess.
+
+**Why these numbers.** They're generous on purpose, so no real value meets them and no field
+needs a number of its own; a limit that turns out too low can be raised safely.
+
+- **5000** is the Receipt of Waste (ROW) API's published limit for free text (its FAQ: "Size limit
+  is 5,000 characters maximum"), so a caller moving from ROW doesn't meet a lower one.
+- **255** is new: ROW never limited names or references. It leaves room for the longest
+  registered company name (Companies House allows 160) and long chemical names.
+- **254** is the longest email address SMTP allows (RFC 5321).
+
+A field with a `pattern` (postcode, phone number, registration numbers, IDs) is already bounded
+by it, and other formats (`date-time`) bound themselves.
+
+`conventions.test.js` fails on any beta-2 string that should have one of these limits and
+doesn't. `common/issue.schema.json` is exempt, because it's only ever in a response.
+
 ### Enum values are `SCREAMING_SNAKE`
 
 Every value in an `enum`, or in a `const` that picks one of them, is upper case with words
@@ -538,7 +574,9 @@ data (the movement exists, its current state), it stays in service code.
 **Adding a resource** — create `beta-2/<category>/<name>.schema.json` with the 2020-12 `$schema`,
 no `$id`, a `title` and `description`, a `description` on every property, and
 `"additionalProperties": false` on every object (see
-[Closing a schema built from others](#closing-a-schema-built-from-others) for the exceptions).
+[Closing a schema built from others](#closing-a-schema-built-from-others) for the exceptions),
+and a `maxLength` on every free-text string (see
+[Free text has a length limit](#free-text-has-a-length-limit)).
 Add `<name>.test.js` beside it. There's no registration step — the loader walks the directory,
 and the file's path becomes the key routes validate against.
 

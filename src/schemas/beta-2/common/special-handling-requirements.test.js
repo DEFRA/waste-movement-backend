@@ -1,32 +1,31 @@
-import { validatorFor } from '../test-helpers.js'
+import { longText, validatorFor } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
   'beta-2/common/special-handling-requirements.schema.json'
 )
 
 describe('Feature: Recording special handling requirements on a Movement', () => {
-  // The 500 character limit comes from the feature file and is deliberately
-  // shorter than Phase 1's 5000 character `specialHandlingRequirements`. Like
-  // the other beta-2 rules, it is owned here rather than by
-  // waste-movement-utils — see src/schemas/README.md.
-  const maxLength = 500
+  // The feature file set 500 characters. It now has the long-text limit every
+  // beta-2 free-text description shares, which is also ROW's published limit
+  // — see "Free text has a length limit" in src/schemas/README.md.
+  const maxLength = longText
 
   describe('Scenario: A Movement is successfully created with special handling requirements', () => {
     test('the special handling requirements are accepted when they are shorter than the character limit', () => {
       expect(validateAjv('Handle with care and keep upright.').valid).toBe(true)
     })
 
-    test('the special handling requirements are accepted when they are exactly 500 characters', () => {
+    test('the special handling requirements are accepted when they are exactly the long-text limit', () => {
       expect(validateAjv('A'.repeat(maxLength)).valid).toBe(true)
     })
   })
 
   describe("Scenario: A Movement isn't created when special handling requirements exceeds the character limit", () => {
-    test('the special handling requirements are rejected when they are longer than 500 characters', () => {
+    test('the special handling requirements are rejected when they are longer than the long-text limit', () => {
       expect(validateAjv('A'.repeat(maxLength + 1)).valid).toBe(false)
     })
 
-    test('the rejection reports that the 500 character limit was exceeded', () => {
+    test('the rejection reports that the long-text limit was exceeded', () => {
       const { errors } = validateAjv('A'.repeat(maxLength + 1))
       expect(errors).toEqual([
         expect.objectContaining({

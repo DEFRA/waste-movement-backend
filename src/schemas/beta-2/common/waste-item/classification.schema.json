@@ -45,6 +45,7 @@
     "wasteDescription": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 5000,
       "description": "A free-text description of the waste. An empty string is treated as not provided."
     },
     "ewcCodes": {

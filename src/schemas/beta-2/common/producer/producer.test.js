@@ -2,7 +2,9 @@ import {
   commercialProducer,
   householdProducer,
   municipalProducer,
-  validatorFor
+  validatorFor,
+  shortText,
+  longText
 } from '../../test-helpers.js'
 
 const validateAjv = validatorFor('beta-2/common/producer/producer.schema.json')
@@ -239,5 +241,33 @@ describe('Feature: Producer payload validation for the create endpoint', () => {
       }
       expect(validateAjv(withAuthorisationNumber).valid).toBe(true)
     })
+  })
+
+  describe('Scenario: Free text longer than its length limit is rejected', () => {
+    test.each([
+      ['organisationName', shortText, commercialProducer],
+      ['organisationName', shortText, municipalProducer],
+      ['reasonForNoAuthorisationNumber', longText, municipalProducer]
+    ])(
+      '%s is accepted at %i characters and rejected at one more',
+      (field, limit, base) => {
+        expect(validateAjv({ ...base, [field]: 'A'.repeat(limit) }).valid).toBe(
+          true
+        )
+
+        const { valid, errors } = validateAjv({
+          ...base,
+          [field]: 'A'.repeat(limit + 1)
+        })
+        expect(valid).toBe(false)
+        expect(errors).toContainEqual(
+          expect.objectContaining({
+            keyword: 'maxLength',
+            instancePath: `/${field}`,
+            params: { limit }
+          })
+        )
+      }
+    )
   })
 })

@@ -14,7 +14,8 @@ import {
   carrier,
   collectionDateTime,
   collectionSite,
-  supportingReference
+  supportingReference,
+  longText
 } from '../../schemas/beta-2/test-helpers.js'
 
 jest.mock('@defra/cdp-auditing', () => ({
@@ -283,7 +284,7 @@ describe('collection Route Tests version: beta-2', () => {
   it('returns an error when specialHandlingRequirements is too long', async () => {
     const invalidPayload = {
       isDutyOfCareConfirmed,
-      specialHandlingRequirements: 'A'.repeat(501)
+      specialHandlingRequirements: 'A'.repeat(longText + 1)
     }
     const getMovementRecordSpy = jest.spyOn(
       movementService,

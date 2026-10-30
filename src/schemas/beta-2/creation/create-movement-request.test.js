@@ -12,7 +12,8 @@ import {
   supportingReference,
   treatment,
   validatorFor,
-  wasteItem
+  wasteItem,
+  longText
 } from '../test-helpers.js'
 
 const validateAjv = validatorFor(
@@ -671,7 +672,7 @@ describe('create-movement-request schema', () => {
         intendedCarriers,
         intendedReceivers,
         wasteItems,
-        specialHandlingRequirements: 'A'.repeat(501)
+        specialHandlingRequirements: 'A'.repeat(longText + 1)
       }
       expect(validateAjv(payload).valid).toBe(false)
     })

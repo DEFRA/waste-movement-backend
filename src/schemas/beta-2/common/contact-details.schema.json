@@ -16,6 +16,7 @@
     "emailAddress": {
       "type": "string",
       "format": "email",
+      "maxLength": 254,
       "description": "Contact email address."
     },
     "phoneNumber": {

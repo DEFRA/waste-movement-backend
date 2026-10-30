@@ -1,4 +1,8 @@
-import { supportingReference, validatorFor } from '../test-helpers.js'
+import {
+  supportingReference,
+  validatorFor,
+  shortText
+} from '../test-helpers.js'
 
 const validateAjv = validatorFor(
   'beta-2/common/supporting-references.schema.json'
@@ -54,13 +58,17 @@ describe('Feature: Recording supporting references', () => {
   })
 
   describe("Scenario: A supporting reference's reference exceeds the maximum length", () => {
-    test('the supporting references are rejected when a reference is longer than 50 characters', () => {
-      const payload = [{ ...supportingReference, reference: 'A'.repeat(51) }]
+    test('the supporting references are rejected when a reference is longer than the short-text limit', () => {
+      const payload = [
+        { ...supportingReference, reference: 'A'.repeat(shortText + 1) }
+      ]
       expect(validateAjv(payload).valid).toBe(false)
     })
 
-    test('the supporting references are accepted when a reference is exactly 50 characters', () => {
-      const payload = [{ ...supportingReference, reference: 'A'.repeat(50) }]
+    test('the supporting references are accepted when a reference is exactly the short-text limit', () => {
+      const payload = [
+        { ...supportingReference, reference: 'A'.repeat(shortText) }
+      ]
       expect(validateAjv(payload).valid).toBe(true)
     })
   })

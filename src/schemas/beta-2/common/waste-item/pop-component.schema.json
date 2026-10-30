@@ -44,6 +44,7 @@
     "code": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 255,
       "description": "The POP's code, from GET /reference-data/pop-names. Only checked for being non-empty here; the service checks it against the reference data and reports an unrecognised code as an InvalidValue error."
     },
     "unit": {

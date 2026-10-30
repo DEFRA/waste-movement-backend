@@ -44,6 +44,7 @@
     "name": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 255,
       "description": "The hazardous component's name, as free text. Not checked against any reference data."
     },
     "unit": {

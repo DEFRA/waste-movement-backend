@@ -8,6 +8,12 @@ export const validatorFor = (schemaId) => (payload) => {
 
 export const apiCode = '25b14080-5e77-4f91-9957-2482a0cb8775'
 
+// The free-text length tiers: see "Free text has a length limit" in
+// src/schemas/README.md.
+export const shortText = 255
+export const longText = 5000
+export const emailAddressMaxLength = 254
+
 export const address = {
   fullAddress: '10 Industrial Way, Test City',
   postcode: 'TE1 2PQ'

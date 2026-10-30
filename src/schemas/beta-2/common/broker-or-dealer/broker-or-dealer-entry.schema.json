@@ -45,6 +45,7 @@
     "organisationName": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 255,
       "description": "Name of the broker or dealer organisation who arranged this Movement."
     },
     "registrationNumber": {
@@ -54,6 +55,7 @@
     "reasonForNoRegistrationNumber": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 5000,
       "description": "Reason no registrationNumber is held. Free text for now — enum values TBC pending BA/policy input. Exactly one of 'registrationNumber' or 'reasonForNoRegistrationNumber' is required."
     },
     "contactDetails": {
