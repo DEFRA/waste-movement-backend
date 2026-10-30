@@ -20,7 +20,7 @@ const recordCollection = {
   method: 'POST',
   path: '/movements/{movementId}/collection',
   options: {
-    description: 'Create a new waste collection',
+    description: 'Record the Collection for a Movement',
     app: { journeyStep: 'collection-recorded' },
     validate: {
       payload: validateRequest('collection/record-collection-request'),

@@ -34,7 +34,7 @@ const recordReceiptUndocumented = {
     notes:
       'Fallback for recording receipt with no prior Delivery, e.g. waste received with no movement ' +
       'trail. Not linked to any Movement; `reasonForNoDeliveryId` must explain why. Creates an empty Delivery behind ' +
-      'the scenes and returns its Delivery ID, so the receipt stays addressable.',
+      'the scenes and returns its Delivery ID, so the Receipt stays addressable.',
     app: { journeyStep: 'undocumented-receipt-recorded' },
     validate: {
       payload: withPayloadChecks(
