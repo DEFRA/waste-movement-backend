@@ -6,7 +6,8 @@ import { createLogger } from '../../common/helpers/logging/logger.js'
 const logger = createLogger()
 
 // Maps an AJV keyword to the shared ERROR_TYPE category for the response.
-function toErrorType(error) {
+// NOSONAR below: each `case` counts towards complexity, but this is a flat lookup.
+function toErrorType(error) /* NOSONAR */ {
   switch (error.keyword) {
     case 'required':
       return ERROR_TYPE.NOT_PROVIDED
