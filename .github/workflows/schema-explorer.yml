@@ -1,0 +1,71 @@
+name: Schema Explorer
+
+# Rebuilds the schema explorer (a page for every beta-* version under src/schemas, and one for the
+# legacy ReceiptOfWaste routes) and publishes it to GitHub Pages whenever the schemas (or the
+# generator) change on main.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/schemas/**'
+      - 'scripts/schema-explorer/**'
+      - '.github/workflows/schema-explorer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: schema-explorer-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build schema explorer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      # The "Try it" view embeds validators compiled with the API's own ajv and
+      # ajv-formats, and for the legacy (Joi) routes a bundle built by esbuild
+      # (a dev dependency), so install everything.
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      # The explorer copies the API's validation; don't publish it if they differ.
+      - name: Check the explorer validates like the API
+        run: npm run test:schema-explorer
+
+      - name: Generate pages
+        run: npm run docs:schemas
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .schema-explorer
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
