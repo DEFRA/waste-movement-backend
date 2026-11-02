@@ -14,3 +14,6 @@ coverage
 
 # @shelf/jest-mongodb generated file
 globalConfig.json
+
+# Schemathesis reports and caches
+test/schemathesis/out
