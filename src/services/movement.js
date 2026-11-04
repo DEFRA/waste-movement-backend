@@ -5,6 +5,16 @@ const logger = createLogger()
 const movementDataByVersion = new Map()
 
 /**
+ * Mints a new unique movement id.
+ *
+ * @returns {Promise<string>}
+ */
+export const createMovementId = async () => {
+  const wasteTrackingResponse = await httpClients.wasteTracking.get('/next')
+  return wasteTrackingResponse.payload.wasteTrackingId
+}
+
+/**
  * The movement data access for one API version, reading and writing that
  * version's own collection, e.g. `beta-2-movements`. Returns the same object
  * for the same version, so tests can spy on its functions.
@@ -76,16 +86,6 @@ const buildMovementData = (apiVersion) => {
           }
         )
         .toArray()
-    },
-
-    /**
-     * Mints a new unique movement id.
-     *
-     * @returns {Promise<string>}
-     */
-    createMovementId: async () => {
-      const wasteTrackingResponse = await httpClients.wasteTracking.get('/next')
-      return wasteTrackingResponse.payload.wasteTrackingId
     },
 
     /**

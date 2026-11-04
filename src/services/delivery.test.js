@@ -1,4 +1,4 @@
-import { deliveryDataCreate } from './delivery.js'
+import { createDeliveryId, deliveryDataCreate } from './delivery.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { httpClients } from '../common/helpers/http-client.js'
 
@@ -7,8 +7,7 @@ const {
   deliveryExists,
   findDeliveryMovementIds,
   createDeliveryRecords,
-  createDeliveryRecord,
-  createDeliveryId
+  createDeliveryRecord
 } = deliveryDataCreate(apiVersion)
 
 jest.mock('../common/helpers/http-client.js', () => ({

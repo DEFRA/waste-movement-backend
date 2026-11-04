@@ -9,7 +9,10 @@ import {
   jsonSchemaRequestValidatorFor,
   jsonSchemaResponseValidatorFor
 } from '../../schemas/validate/hapi-validator.js'
-import { deliveryDataCreate } from '../../services/delivery.js'
+import {
+  createDeliveryId,
+  deliveryDataCreate
+} from '../../services/delivery.js'
 import { movementDataCreate } from '../../services/movement.js'
 import { badRequest } from '@hapi/boom'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
@@ -56,7 +59,7 @@ const recordDelivery = {
         throw badRequest(message)
       }
 
-      const deliveryId = await deliveryData.createDeliveryId()
+      const deliveryId = await createDeliveryId()
       // For now, all movements submitted together are bundled into a single
       // delivery and treated as non-hazardous. Splitting a submission into
       // multiple deliveries by waste type is not yet supported.

@@ -9,7 +9,10 @@ import {
   jsonSchemaRequestValidatorFor,
   jsonSchemaResponseValidatorFor
 } from '../../schemas/validate/hapi-validator.js'
-import { deliveryDataCreate } from '../../services/delivery.js'
+import {
+  createDeliveryId,
+  deliveryDataCreate
+} from '../../services/delivery.js'
 import { movementDataCreate } from '../../services/movement.js'
 import { isHazardous } from '../../common/helpers/waste-reference-data-checks.js'
 import { badRequest } from '@hapi/boom'
@@ -128,7 +131,7 @@ const splitIntoDeliveries = async (movementIds, movementsById) => {
 
   return [
     {
-      deliveryId: await deliveryData.createDeliveryId(),
+      deliveryId: await createDeliveryId(),
       movementIds: nonHazardousIds,
       wasteType: WASTE_TYPE.NON_HAZARDOUS
     },

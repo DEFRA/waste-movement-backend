@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import { movementDataCreate } from '../../services/movement.js'
+import * as movementService from '../../services/movement.js'
 import { config } from '../../config.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
@@ -26,7 +26,7 @@ import {
   wasteItem
 } from '../../schemas/beta-2/test-helpers.js'
 
-const movementCreate = movementDataCreate('beta-2')
+const movementCreate = movementService.movementDataCreate('beta-2')
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -563,7 +563,7 @@ describe('movement Route Tests version: beta-2', () => {
     // Earlier tests stub createMovementRecord; this one needs the real write.
     jest.spyOn(movementCreate, 'createMovementRecord').mockRestore()
     jest
-      .spyOn(movementCreate, 'createMovementId')
+      .spyOn(movementService, 'createMovementId')
       .mockResolvedValueOnce('26CLS001')
 
     const { statusCode } = await server.inject({
@@ -768,7 +768,7 @@ describe('movement Route Tests version: beta-2', () => {
   })
 
   it('returns a 500 when the response body does not match the response schema', async () => {
-    jest.spyOn(movementCreate, 'createMovementId').mockResolvedValueOnce(12345)
+    jest.spyOn(movementService, 'createMovementId').mockResolvedValueOnce(12345)
     jest
       .spyOn(movementCreate, 'createMovementRecord')
       .mockResolvedValueOnce(goodPayload)
@@ -1639,7 +1639,7 @@ describe('movement Route Tests version: beta-2', () => {
         // Earlier tests stub createMovementRecord; this one needs the real write.
         jest.spyOn(movementCreate, 'createMovementRecord').mockRestore()
         jest
-          .spyOn(movementCreate, 'createMovementId')
+          .spyOn(movementService, 'createMovementId')
           .mockResolvedValueOnce('26HAZ001')
 
         const { statusCode } = await submit(

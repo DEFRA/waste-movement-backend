@@ -1,5 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import { movementDataCreate } from '../../services/movement.js'
+import {
+  createMovementId,
+  movementDataCreate
+} from '../../services/movement.js'
 import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
@@ -39,7 +42,7 @@ const createMovement = {
     try {
       const traceId = getTraceId() || randomUUID()
       const orgId = getOrganisationId(request)
-      const movementId = await movementData.createMovementId()
+      const movementId = await createMovementId()
 
       await backOff(
         () =>

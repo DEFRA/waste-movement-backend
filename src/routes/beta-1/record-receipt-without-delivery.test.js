@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import { deliveryDataCreate } from '../../services/delivery.js'
+import * as deliveryService from '../../services/delivery.js'
 import { config } from '../../config.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
@@ -12,7 +12,7 @@ import {
   organisationHeaders
 } from '../../test/data/organisation-headers.js'
 
-const delivery = deliveryDataCreate('beta-1')
+const delivery = deliveryService.deliveryDataCreate('beta-1')
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 const reason =
@@ -201,7 +201,7 @@ describe('POST /beta-1/receipts', () => {
   })
 
   it('returns a 500 when the response body does not match the response schema', async () => {
-    jest.spyOn(delivery, 'createDeliveryId').mockResolvedValueOnce(42)
+    jest.spyOn(deliveryService, 'createDeliveryId').mockResolvedValueOnce(42)
     // Stubbed so the bad id isn't rejected by the deliveries collection first.
     jest.spyOn(delivery, 'createDeliveryRecord').mockResolvedValueOnce({})
 

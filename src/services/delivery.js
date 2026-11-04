@@ -5,6 +5,16 @@ const logger = createLogger()
 const deliveryDataByVersion = new Map()
 
 /**
+ * Mints a new unique delivery id.
+ *
+ * @returns {Promise<string>}
+ */
+export const createDeliveryId = async () => {
+  const wasteTrackingResponse = await httpClients.wasteTracking.get('/next')
+  return wasteTrackingResponse.payload.wasteTrackingId
+}
+
+/**
  * The delivery data access for one API version, reading and writing that
  * version's own collection, e.g. `beta-2-deliveries`. Returns the same object
  * for the same version, so tests can spy on its functions.
@@ -22,16 +32,6 @@ const buildDeliveryData = (apiVersion) => {
   const collectionName = `${apiVersion}-deliveries`
 
   return {
-    /**
-     * Mints a new unique delivery id.
-     *
-     * @returns {Promise<string>}
-     */
-    createDeliveryId: async () => {
-      const wasteTrackingResponse = await httpClients.wasteTracking.get('/next')
-      return wasteTrackingResponse.payload.wasteTrackingId
-    },
-
     /**
      * Checks whether a delivery with the given id exists.
      *

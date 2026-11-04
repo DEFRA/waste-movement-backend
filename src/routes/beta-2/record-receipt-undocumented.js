@@ -8,7 +8,10 @@ import {
   jsonSchemaRequestValidatorFor,
   jsonSchemaResponseValidatorFor
 } from '../../schemas/validate/hapi-validator.js'
-import { deliveryDataCreate } from '../../services/delivery.js'
+import {
+  createDeliveryId,
+  deliveryDataCreate
+} from '../../services/delivery.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { wasteReferenceDataChecks } from '../../common/helpers/waste-reference-data-checks.js'
 import {
@@ -52,7 +55,7 @@ const recordReceiptUndocumented = {
     try {
       const traceId = getTraceId() || randomUUID()
       const orgId = getOrganisationId(request)
-      const deliveryId = await deliveryData.createDeliveryId()
+      const deliveryId = await createDeliveryId()
 
       await backOff(
         () =>

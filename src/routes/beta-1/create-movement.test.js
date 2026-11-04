@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import { movementDataCreate } from '../../services/movement.js'
+import * as movementService from '../../services/movement.js'
 import { config } from '../../config.js'
 import {
   apiCode1,
@@ -16,7 +16,7 @@ import {
   organisationHeaders
 } from '../../test/data/organisation-headers.js'
 
-const movementCreate = movementDataCreate('beta-1')
+const movementCreate = movementService.movementDataCreate('beta-1')
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -225,7 +225,7 @@ describe('movement Route Tests version: beta-1', () => {
   })
 
   it('returns a 500 when the response body does not match the response schema', async () => {
-    jest.spyOn(movementCreate, 'createMovementId').mockResolvedValueOnce(12345)
+    jest.spyOn(movementService, 'createMovementId').mockResolvedValueOnce(12345)
     jest
       .spyOn(movementCreate, 'createMovementRecord')
       .mockResolvedValueOnce(goodPayload)
