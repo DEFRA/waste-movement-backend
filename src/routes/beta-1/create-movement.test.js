@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import * as movementCreate from '../../services/movement.js'
+import { movementDataCreate } from '../../services/movement.js'
 import { config } from '../../config.js'
 import {
   apiCode1,
@@ -15,6 +15,8 @@ import {
   forwardedOrganisationId,
   organisationHeaders
 } from '../../test/data/organisation-headers.js'
+
+const movementCreate = movementDataCreate('beta-1')
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 

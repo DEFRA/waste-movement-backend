@@ -1,12 +1,15 @@
-import {
-  createDeliveryId,
-  createDeliveryRecord,
-  createDeliveryRecords,
-  deliveryExists,
-  findDeliveryMovementIds
-} from './delivery.js'
+import { deliveryDataCreate } from './delivery.js'
 import { createTestMongoDb } from '../test/create-test-mongo-db.js'
 import { httpClients } from '../common/helpers/http-client.js'
+
+const apiVersion = 'beta-2'
+const {
+  deliveryExists,
+  findDeliveryMovementIds,
+  createDeliveryRecords,
+  createDeliveryRecord,
+  createDeliveryId
+} = deliveryDataCreate(apiVersion)
 
 jest.mock('../common/helpers/http-client.js', () => ({
   httpClients: {
@@ -28,7 +31,7 @@ describe('delivery', () => {
     client = testMongo.client
     db = testMongo.db
     replicaSet = testMongo.replicaSet
-    await db.createCollection('deliveries')
+    await db.createCollection(`${apiVersion}-deliveries`)
 
     jest.useFakeTimers({
       doNotFake: [
@@ -50,7 +53,7 @@ describe('delivery', () => {
   })
 
   beforeEach(async () => {
-    deliveriesCollection = db.collection('deliveries')
+    deliveriesCollection = db.collection(`${apiVersion}-deliveries`)
     await deliveriesCollection.deleteMany({})
     httpClients.wasteTracking.get.mockReset()
   })
@@ -218,7 +221,7 @@ describe('delivery', () => {
     describe('when a write fails part-way through the batch', () => {
       // Rejects the second delivery, after the first has been written.
       const setValidator = (validator) =>
-        db.command({ collMod: 'deliveries', validator })
+        db.command({ collMod: `${apiVersion}-deliveries`, validator })
 
       beforeEach(() =>
         setValidator({ deliveryId: { $ne: deliveries[1].deliveryId } })

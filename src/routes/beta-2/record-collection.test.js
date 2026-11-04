@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import * as movementService from '../../services/movement.js'
+import { movementDataCreate } from '../../services/movement.js'
 import { config } from '../../config.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
@@ -17,6 +17,8 @@ import {
   supportingReference,
   longText
 } from '../../schemas/beta-2/test-helpers.js'
+
+const movementService = movementDataCreate('beta-2')
 
 jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockReturnValue(true)

@@ -1,10 +1,13 @@
-import {
-  createMovementRecord,
+import { movementDataCreate } from './movement.js'
+import { createTestMongoDb } from '../test/create-test-mongo-db.js'
+
+const apiVersion = 'beta-2'
+const {
+  getMovementRecord,
   findMovementIds,
   findMovements,
-  getMovementRecord
-} from './movement.js'
-import { createTestMongoDb } from '../test/create-test-mongo-db.js'
+  createMovementRecord
+} = movementDataCreate(apiVersion)
 
 describe('movement service', () => {
   let client
@@ -35,8 +38,34 @@ describe('movement service', () => {
   })
 
   beforeEach(async () => {
-    movementsCollection = db.collection('movements')
+    movementsCollection = db.collection(`${apiVersion}-movements`)
     await movementsCollection.deleteMany({})
+  })
+
+  describe('movementDataCreate', () => {
+    it('returns the same object for the same version', () => {
+      expect(movementDataCreate(apiVersion)).toBe(
+        movementDataCreate(apiVersion)
+      )
+    })
+
+    it("keeps each version's movements in its own collection", async () => {
+      const beta1MovementData = movementDataCreate('beta-1')
+      await beta1MovementData.createMovementRecord(db, {
+        movementId: '25HRA0B1'
+      })
+
+      expect(
+        await db
+          .collection('beta-1-movements')
+          .findOne({ movementId: '25HRA0B1' })
+      ).not.toBeNull()
+      expect(await getMovementRecord(db, '25HRA0B1')).toBeNull()
+
+      await db
+        .collection('beta-1-movements')
+        .deleteMany({ movementId: '25HRA0B1' })
+    })
   })
 
   describe('getMovementRecord', () => {
@@ -68,7 +97,7 @@ describe('movement service', () => {
     })
 
     beforeEach(async () => {
-      movementsCollection = db.collection('movements')
+      movementsCollection = db.collection(`${apiVersion}-movements`)
       await movementsCollection.deleteMany({})
     })
 

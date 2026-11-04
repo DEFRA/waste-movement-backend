@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import * as delivery from '../../services/delivery.js'
+import { deliveryDataCreate } from '../../services/delivery.js'
 import { config } from '../../config.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
@@ -11,6 +11,8 @@ import {
   forwardedOrganisationId,
   organisationHeaders
 } from '../../test/data/organisation-headers.js'
+
+const delivery = deliveryDataCreate('beta-1')
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 const reason =
@@ -68,7 +70,7 @@ describe('POST /beta-1/receipts', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks()
-    await server.db.collection('deliveries').deleteMany({})
+    await server.db.collection('beta-1-deliveries').deleteMany({})
   })
 
   it('mints an empty delivery, acknowledges receipt against it and returns 201 with the envelope shape', async () => {
@@ -87,7 +89,7 @@ describe('POST /beta-1/receipts', () => {
     expect(headers['x-request-id']).toBeDefined()
 
     const deliveryInDb = await server.db
-      .collection('deliveries')
+      .collection('beta-1-deliveries')
       .findOne({ deliveryId: '25KMT4Z9' })
 
     expect(deliveryInDb).toMatchObject({

@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import * as delivery from '../../services/delivery.js'
+import { deliveryDataCreate } from '../../services/delivery.js'
 import { config } from '../../config.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
@@ -9,6 +9,8 @@ import {
 import { createServer } from '../../server.js'
 import { breakNextResponse } from '../../test/break-next-response.js'
 import { organisationHeaders } from '../../test/data/organisation-headers.js'
+
+const delivery = deliveryDataCreate('beta-1')
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -65,11 +67,11 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks()
-    await server.db.collection('deliveries').deleteMany({})
+    await server.db.collection('beta-1-deliveries').deleteMany({})
   })
 
   it('acknowledges receipt against an existing delivery and returns 201 with the envelope shape', async () => {
-    await server.db.collection('deliveries').insertOne({ deliveryId })
+    await server.db.collection('beta-1-deliveries').insertOne({ deliveryId })
 
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
@@ -87,7 +89,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
   })
 
   it('echoes the inbound x-cdp-request-id as x-request-id', async () => {
-    await server.db.collection('deliveries').insertOne({ deliveryId })
+    await server.db.collection('beta-1-deliveries').insertOne({ deliveryId })
 
     const { headers } = await server.inject({
       method: 'POST',
@@ -149,7 +151,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
   // apiCode1 is in ORG_API_CODES: beta routes must ignore it and rely only on
   // the organisation forwarded by the external API.
   it('returns a 400 when no organisation was forwarded (unknown or disabled API code)', async () => {
-    await server.db.collection('deliveries').insertOne({ deliveryId })
+    await server.db.collection('beta-1-deliveries').insertOne({ deliveryId })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -207,7 +209,7 @@ describe('POST /beta-1/deliveries/{deliveryId}/receipt', () => {
   })
 
   it('returns a 500 when the response body does not match the response schema', async () => {
-    await server.db.collection('deliveries').insertOne({ deliveryId })
+    await server.db.collection('beta-1-deliveries').insertOne({ deliveryId })
     breakNextResponse(server, (body) => ({ ...body, data: {} }))
 
     const { statusCode, result } = await server.inject({

@@ -58,7 +58,7 @@ describe('beta-1', () => {
 
     const { movementId } = body.data
     const movement = await testService.db
-      .collection('movements')
+      .collection('beta-1-movements')
       .findOne({ movementId })
 
     expect(movement).toEqual({
@@ -92,7 +92,7 @@ describe('beta-1', () => {
     expectStandardHeaders(headers)
 
     const movement = await testService.db
-      .collection('movements')
+      .collection('beta-1-movements')
       .findOne({ movementId })
 
     expect(movement).toMatchObject({
@@ -127,7 +127,7 @@ describe('beta-1', () => {
 
     const { deliveryId } = body.data.deliveries[0]
     const delivery = await testService.db
-      .collection('deliveries')
+      .collection('beta-1-deliveries')
       .findOne({ deliveryId })
 
     expect(delivery).toMatchObject({
@@ -172,7 +172,7 @@ describe('beta-1', () => {
     expectStandardHeaders(headers)
 
     const delivery = await testService.db
-      .collection('deliveries')
+      .collection('beta-1-deliveries')
       .findOne({ deliveryId })
 
     expect(delivery).toMatchObject({
@@ -204,7 +204,7 @@ describe('beta-1', () => {
 
     const { deliveryId } = body.data
     const delivery = await testService.db
-      .collection('deliveries')
+      .collection('beta-1-deliveries')
       .findOne({ deliveryId })
 
     expect(delivery).toMatchObject({

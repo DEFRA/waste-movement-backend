@@ -9,11 +9,8 @@ import {
   jsonSchemaRequestValidatorFor,
   jsonSchemaResponseValidatorFor
 } from '../../schemas/validate/hapi-validator.js'
-import {
-  createDeliveryId,
-  createDeliveryRecord
-} from '../../services/delivery.js'
-import { findMovementIds } from '../../services/movement.js'
+import { deliveryDataCreate } from '../../services/delivery.js'
+import { movementDataCreate } from '../../services/movement.js'
 import { badRequest } from '@hapi/boom'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 
@@ -21,6 +18,8 @@ const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
 const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
 const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
+const deliveryData = deliveryDataCreate(apiVersion)
+const movementData = movementDataCreate(apiVersion)
 
 const recordDelivery = {
   method: 'POST',
@@ -42,7 +41,10 @@ const recordDelivery = {
       const traceId = getTraceId() || randomUUID()
       const orgId = getOrganisationId(request)
 
-      const foundMovementIds = await findMovementIds(request.db, movementIds)
+      const foundMovementIds = await movementData.findMovementIds(
+        request.db,
+        movementIds
+      )
       const missingMovementIds = movementIds.filter(
         (movementId) => !foundMovementIds.includes(movementId)
       )
@@ -54,7 +56,7 @@ const recordDelivery = {
         throw badRequest(message)
       }
 
-      const deliveryId = await createDeliveryId()
+      const deliveryId = await deliveryData.createDeliveryId()
       // For now, all movements submitted together are bundled into a single
       // delivery and treated as non-hazardous. Splitting a submission into
       // multiple deliveries by waste type is not yet supported.
@@ -62,7 +64,7 @@ const recordDelivery = {
 
       await backOff(
         () =>
-          createDeliveryRecord(request.db, {
+          deliveryData.createDeliveryRecord(request.db, {
             deliveryId,
             movementIds,
             wasteType,

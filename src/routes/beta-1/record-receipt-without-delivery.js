@@ -8,16 +8,14 @@ import {
   jsonSchemaRequestValidatorFor,
   jsonSchemaResponseValidatorFor
 } from '../../schemas/validate/hapi-validator.js'
-import {
-  createDeliveryId,
-  createDeliveryRecord
-} from '../../services/delivery.js'
+import { deliveryDataCreate } from '../../services/delivery.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 
 const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
 const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
 const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
+const deliveryData = deliveryDataCreate(apiVersion)
 
 const recordReceiptWithoutDelivery = {
   method: 'POST',
@@ -41,11 +39,11 @@ const recordReceiptWithoutDelivery = {
     try {
       const traceId = getTraceId() || randomUUID()
       const orgId = getOrganisationId(request)
-      const deliveryId = await createDeliveryId()
+      const deliveryId = await deliveryData.createDeliveryId()
 
       await backOff(
         () =>
-          createDeliveryRecord(request.db, {
+          deliveryData.createDeliveryRecord(request.db, {
             deliveryId,
             movementIds: [],
             orgId

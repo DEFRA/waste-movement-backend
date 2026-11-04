@@ -1,7 +1,7 @@
 import Hapi from '@hapi/hapi'
 import Boom from '@hapi/boom'
 import { betaJourneyLogger } from './beta-journey-logger.js'
-import { findDeliveryMovementIds } from '../services/delivery.js'
+import { deliveryDataCreate } from '../services/delivery.js'
 import { createLogger } from '../common/helpers/logging/logger.js'
 
 jest.mock('../common/helpers/logging/logger.js', () => {
@@ -11,9 +11,12 @@ jest.mock('../common/helpers/logging/logger.js', () => {
 
 const mockLogger = createLogger()
 
-jest.mock('../services/delivery.js', () => ({
-  findDeliveryMovementIds: jest.fn()
-}))
+jest.mock('../services/delivery.js', () => {
+  const deliveryData = { findDeliveryMovementIds: jest.fn() }
+  return { deliveryDataCreate: () => deliveryData }
+})
+
+const { findDeliveryMovementIds } = deliveryDataCreate('beta-2')
 
 // A route in the given journey step. Its handler fails with the Boom error in
 // payload.fail, if given, else sets the journey entries in payload.journey.

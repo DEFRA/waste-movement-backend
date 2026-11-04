@@ -1,8 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import {
-  createMovementId,
-  createMovementRecord
-} from '../../services/movement.js'
+import { movementDataCreate } from '../../services/movement.js'
 import { HTTP_STATUS, backoffOptions } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { backOff } from 'exponential-backoff'
@@ -18,6 +15,7 @@ const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
 const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
 const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
+const movementData = movementDataCreate(apiVersion)
 
 const createMovement = {
   method: 'POST',
@@ -35,10 +33,11 @@ const createMovement = {
     try {
       const traceId = getTraceId() || randomUUID()
       const orgId = getOrganisationId(request)
-      const movementId = await createMovementId()
+      const movementId = await movementData.createMovementId()
 
       await backOff(
-        () => createMovementRecord(request.db, { movementId, orgId }),
+        () =>
+          movementData.createMovementRecord(request.db, { movementId, orgId }),
         backoffOptions(createLogger)
       )
       const responseBody = {

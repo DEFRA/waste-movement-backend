@@ -9,11 +9,8 @@ import {
   jsonSchemaRequestValidatorFor,
   jsonSchemaResponseValidatorFor
 } from '../../schemas/validate/hapi-validator.js'
-import {
-  createDeliveryId,
-  createDeliveryRecords
-} from '../../services/delivery.js'
-import { findMovements } from '../../services/movement.js'
+import { deliveryDataCreate } from '../../services/delivery.js'
+import { movementDataCreate } from '../../services/movement.js'
 import { isHazardous } from '../../common/helpers/waste-reference-data-checks.js'
 import { badRequest } from '@hapi/boom'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
@@ -22,6 +19,8 @@ const apiVersion = 'beta-2'
 const logger = createLogger({ apiVersion })
 const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
 const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
+const deliveryData = deliveryDataCreate(apiVersion)
+const movementData = movementDataCreate(apiVersion)
 
 const recordDelivery = {
   method: 'POST',
@@ -46,7 +45,10 @@ const recordDelivery = {
       const traceId = getTraceId() || randomUUID()
       const orgId = getOrganisationId(request)
 
-      const movements = await findMovements(request.db, movementIds)
+      const movements = await movementData.findMovements(
+        request.db,
+        movementIds
+      )
       const movementsById = new Map(
         movements.map((movement) => [movement.movementId, movement])
       )
@@ -65,7 +67,7 @@ const recordDelivery = {
 
       const recordedDeliveries = await backOff(
         () =>
-          createDeliveryRecords(
+          deliveryData.createDeliveryRecords(
             request.db,
             request.mongoClient,
             deliveries.map((delivery) => ({ ...delivery, orgId }))
@@ -102,7 +104,7 @@ const recordDelivery = {
  * the non-hazardous movements, then one Delivery per hazardous movement whose
  * Delivery ID is its own Movement ID. A movement is hazardous when any of its
  * waste items declares hazardous properties; one stored without waste items
- * (beta-1, or created before they were stored) is treated as non-hazardous.
+ * (created before they were stored) is treated as non-hazardous.
  *
  * @param {string[]} movementIds - deduplicated, in submission order
  * @param {Map<string, { wasteItems?: { classification: object }[] }>} movementsById
@@ -126,7 +128,7 @@ const splitIntoDeliveries = async (movementIds, movementsById) => {
 
   return [
     {
-      deliveryId: await createDeliveryId(),
+      deliveryId: await deliveryData.createDeliveryId(),
       movementIds: nonHazardousIds,
       wasteType: WASTE_TYPE.NON_HAZARDOUS
     },

@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import * as movementCreate from '../../services/movement.js'
+import { movementDataCreate } from '../../services/movement.js'
 import { config } from '../../config.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
@@ -25,6 +25,8 @@ import {
   treatment,
   wasteItem
 } from '../../schemas/beta-2/test-helpers.js'
+
+const movementCreate = movementDataCreate('beta-2')
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -581,7 +583,7 @@ describe('movement Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     const recordInDb = await server.db
-      .collection('movements')
+      .collection('beta-2-movements')
       .findOne({ movementId: '26CLS001' }, { projection: { _id: 0 } })
 
     expect(recordInDb).toEqual({
@@ -1649,7 +1651,7 @@ describe('movement Route Tests version: beta-2', () => {
 
         expect(statusCode).toEqual(HTTP_STATUS.CREATED)
         const recordInDb = await server.db
-          .collection('movements')
+          .collection('beta-2-movements')
           .findOne({ movementId: '26HAZ001' })
 
         expect(recordInDb.wasteItems[0].classification.hazardous).toEqual({
