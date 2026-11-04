@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { getMovementRecord } from '../../services/movement.js'
+import { movementDataCreate } from '../../services/movement.js'
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
 import { getTraceId } from '@defra/hapi-tracing'
 import { createLogger } from '../../common/helpers/logging/logger.js'
@@ -15,6 +15,7 @@ const apiVersion = 'beta-2'
 const logger = createLogger({ apiVersion })
 const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
 const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
+const movementData = movementDataCreate(apiVersion)
 
 const recordCollection = {
   method: 'POST',
@@ -36,7 +37,10 @@ const recordCollection = {
     try {
       const traceId = getTraceId() || randomUUID()
       getOrganisationId(request)
-      const movementRecord = await getMovementRecord(request.db, movementId)
+      const movementRecord = await movementData.getMovementRecord(
+        request.db,
+        movementId
+      )
 
       if (!movementRecord) {
         return notFound('movementId not found')

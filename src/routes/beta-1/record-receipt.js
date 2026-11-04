@@ -7,7 +7,7 @@ import {
   jsonSchemaRequestValidatorFor,
   jsonSchemaResponseValidatorFor
 } from '../../schemas/validate/hapi-validator.js'
-import { deliveryExists } from '../../services/delivery.js'
+import { deliveryDataCreate } from '../../services/delivery.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { notFound } from '@hapi/boom'
 
@@ -15,6 +15,7 @@ const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
 const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
 const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
+const deliveryData = deliveryDataCreate(apiVersion)
 
 const recordReceipt = {
   method: 'POST',
@@ -37,7 +38,7 @@ const recordReceipt = {
       const traceId = getTraceId() || randomUUID()
       getOrganisationId(request)
 
-      const found = await deliveryExists(request.db, deliveryId)
+      const found = await deliveryData.deliveryExists(request.db, deliveryId)
 
       if (!found) {
         const message = `No delivery exists with delivery ID: ${deliveryId}`

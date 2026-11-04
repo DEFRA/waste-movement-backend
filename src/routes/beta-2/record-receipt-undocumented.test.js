@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import * as delivery from '../../services/delivery.js'
+import * as deliveryService from '../../services/delivery.js'
 import { config } from '../../config.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
@@ -28,6 +28,8 @@ import {
   treatment,
   wasteItem
 } from '../../schemas/beta-2/test-helpers.js'
+
+const delivery = deliveryService.deliveryDataCreate('beta-2')
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 // A receipt needs at least one treatment on every waste item.
@@ -87,7 +89,7 @@ describe('POST /beta-2/receipts', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks()
-    await server.db.collection('deliveries').deleteMany({})
+    await server.db.collection('beta-2-deliveries').deleteMany({})
   })
 
   it('mints an empty delivery, acknowledges receipt against it and returns 201 with the envelope shape', async () => {
@@ -112,7 +114,7 @@ describe('POST /beta-2/receipts', () => {
     expect(headers['x-request-id']).toBeDefined()
 
     const deliveryInDb = await server.db
-      .collection('deliveries')
+      .collection('beta-2-deliveries')
       .findOne({ deliveryId: '25KMT4Z9' })
 
     expect(deliveryInDb).toMatchObject({
@@ -502,7 +504,7 @@ describe('POST /beta-2/receipts', () => {
   })
 
   it('returns a 500 when the response body does not match the response schema', async () => {
-    jest.spyOn(delivery, 'createDeliveryId').mockResolvedValueOnce(42)
+    jest.spyOn(deliveryService, 'createDeliveryId').mockResolvedValueOnce(42)
     // Stubbed so the bad id isn't rejected by the deliveries collection first.
     jest.spyOn(delivery, 'createDeliveryRecord').mockResolvedValueOnce({})
 
@@ -556,7 +558,7 @@ describe('POST /beta-2/receipts', () => {
   })
 
   const storedReceipts = () =>
-    server.db.collection('deliveries').countDocuments()
+    server.db.collection('beta-2-deliveries').countDocuments()
 
   // An earlier test leaves createDeliveryRecord mocked to fail, and
   // clearAllMocks doesn't undo that, so the scenarios restore the real one.

@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import * as delivery from '../../services/delivery.js'
+import { deliveryDataCreate } from '../../services/delivery.js'
 import { config } from '../../config.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
@@ -18,6 +18,8 @@ import {
   physicalDetails,
   treatment
 } from '../../schemas/beta-2/test-helpers.js'
+
+const delivery = deliveryDataCreate('beta-2')
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 const treatments = [treatment]
@@ -81,11 +83,11 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     if (jest.isMockFunction(delivery.findDeliveryMovementIds)) {
       delivery.findDeliveryMovementIds.mockRestore()
     }
-    await server.db.collection('deliveries').deleteMany({})
+    await server.db.collection('beta-2-deliveries').deleteMany({})
   })
 
   it('acknowledges receipt against an existing delivery and returns 201 with the envelope shape', async () => {
-    await server.db.collection('deliveries').insertOne({ deliveryId })
+    await server.db.collection('beta-2-deliveries').insertOne({ deliveryId })
 
     const { statusCode, result, headers } = await server.inject({
       method: 'POST',
@@ -110,7 +112,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
 
   // Scenario: A Receipt is created when more than one treatment is declared.
   it('acknowledges receipt when more than one treatment is declared', async () => {
-    await server.db.collection('deliveries').insertOne({ deliveryId })
+    await server.db.collection('beta-2-deliveries').insertOne({ deliveryId })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -133,7 +135,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
   })
 
   it('acknowledges receipt when a brokerOrDealer and supportingReferences are provided', async () => {
-    await server.db.collection('deliveries').insertOne({ deliveryId })
+    await server.db.collection('beta-2-deliveries').insertOne({ deliveryId })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -205,7 +207,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
   })
 
   it('echoes the inbound x-cdp-request-id as x-request-id', async () => {
-    await server.db.collection('deliveries').insertOne({ deliveryId })
+    await server.db.collection('beta-2-deliveries').insertOne({ deliveryId })
 
     const { headers } = await server.inject({
       method: 'POST',
@@ -454,7 +456,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
   })
 
   it('returns a 400 when no organisation was forwarded (unknown or disabled API code)', async () => {
-    await server.db.collection('deliveries').insertOne({ deliveryId })
+    await server.db.collection('beta-2-deliveries').insertOne({ deliveryId })
 
     const { statusCode, result } = await server.inject({
       method: 'POST',
@@ -532,7 +534,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
   })
 
   it('returns a 500 when the response body does not match the response schema', async () => {
-    await server.db.collection('deliveries').insertOne({ deliveryId })
+    await server.db.collection('beta-2-deliveries').insertOne({ deliveryId })
     breakNextResponse(server, (body) => ({ ...body, data: {} }))
 
     const { statusCode, result } = await server.inject({
@@ -575,7 +577,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
       })
 
     const expectCreated = async (payload) => {
-      await server.db.collection('deliveries').insertOne({ deliveryId })
+      await server.db.collection('beta-2-deliveries').insertOne({ deliveryId })
 
       const { statusCode, result } = await submit(payload)
 
@@ -584,7 +586,7 @@ describe('POST /beta-2/deliveries/{deliveryId}/receipt', () => {
     }
 
     const expectRejected = async (payload, errors) => {
-      await server.db.collection('deliveries').insertOne({ deliveryId })
+      await server.db.collection('beta-2-deliveries').insertOne({ deliveryId })
 
       const { statusCode, result } = await submit(payload)
 

@@ -10,7 +10,7 @@ import {
 } from '../../schemas/validate/hapi-validator.js'
 import {
   createDeliveryId,
-  createDeliveryRecord
+  deliveryDataCreate
 } from '../../services/delivery.js'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 import { wasteReferenceDataChecks } from '../../common/helpers/waste-reference-data-checks.js'
@@ -24,6 +24,7 @@ const apiVersion = 'beta-2'
 const logger = createLogger({ apiVersion })
 const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
 const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
+const deliveryData = deliveryDataCreate(apiVersion)
 const receiptDateTime = ['receiptDateTime']
 
 const recordReceiptUndocumented = {
@@ -58,7 +59,7 @@ const recordReceiptUndocumented = {
 
       await backOff(
         () =>
-          createDeliveryRecord(request.db, {
+          deliveryData.createDeliveryRecord(request.db, {
             deliveryId,
             movementIds: [],
             orgId

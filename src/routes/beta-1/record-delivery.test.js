@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import * as delivery from '../../services/delivery.js'
+import * as deliveryService from '../../services/delivery.js'
 import { config } from '../../config.js'
 import { apiCode1, base64EncodedOrgApiCodes } from '../../test/data/apiCodes.js'
 import {
@@ -11,6 +11,8 @@ import {
   forwardedOrganisationId,
   organisationHeaders
 } from '../../test/data/organisation-headers.js'
+
+const delivery = deliveryService.deliveryDataCreate('beta-1')
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -68,13 +70,13 @@ describe('POST /beta-1/deliveries', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks()
-    await server.db.collection('movements').deleteMany({})
-    await server.db.collection('deliveries').deleteMany({})
+    await server.db.collection('beta-1-movements').deleteMany({})
+    await server.db.collection('beta-1-deliveries').deleteMany({})
   })
 
   it('records a delivery and returns 201 with the envelope shape', async () => {
     await server.db
-      .collection('movements')
+      .collection('beta-1-movements')
       .insertMany([{ movementId: movementId1 }, { movementId: movementId2 }])
 
     const { statusCode, result, headers } = await server.inject({
@@ -100,7 +102,7 @@ describe('POST /beta-1/deliveries', () => {
     expect(headers['x-request-id']).toBeDefined()
 
     const recordInDb = await server.db
-      .collection('deliveries')
+      .collection('beta-1-deliveries')
       .findOne({ deliveryId: '25KMT4Z9' })
 
     expect(recordInDb).toMatchObject({
@@ -113,7 +115,7 @@ describe('POST /beta-1/deliveries', () => {
 
   it('echoes the inbound x-cdp-request-id as x-request-id', async () => {
     await server.db
-      .collection('movements')
+      .collection('beta-1-movements')
       .insertOne({ movementId: movementId1 })
 
     const { headers } = await server.inject({
@@ -178,7 +180,7 @@ describe('POST /beta-1/deliveries', () => {
 
   it('returns a 400 when a movementId does not exist', async () => {
     await server.db
-      .collection('movements')
+      .collection('beta-1-movements')
       .insertOne({ movementId: movementId1 })
 
     const { statusCode, result } = await server.inject({
@@ -203,7 +205,7 @@ describe('POST /beta-1/deliveries', () => {
 
   it('returns a 500 when persistence fails', async () => {
     await server.db
-      .collection('movements')
+      .collection('beta-1-movements')
       .insertOne({ movementId: movementId1 })
 
     jest
@@ -246,9 +248,9 @@ describe('POST /beta-1/deliveries', () => {
 
   it('returns a 500 when the response body does not match the response schema', async () => {
     await server.db
-      .collection('movements')
+      .collection('beta-1-movements')
       .insertOne({ movementId: movementId1 })
-    jest.spyOn(delivery, 'createDeliveryId').mockResolvedValueOnce(42)
+    jest.spyOn(deliveryService, 'createDeliveryId').mockResolvedValueOnce(42)
     // Stubbed so the bad id isn't rejected by the deliveries collection first.
     jest.spyOn(delivery, 'createDeliveryRecord').mockResolvedValueOnce({})
 

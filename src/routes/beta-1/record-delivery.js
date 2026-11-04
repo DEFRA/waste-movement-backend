@@ -11,9 +11,9 @@ import {
 } from '../../schemas/validate/hapi-validator.js'
 import {
   createDeliveryId,
-  createDeliveryRecord
+  deliveryDataCreate
 } from '../../services/delivery.js'
-import { findMovementIds } from '../../services/movement.js'
+import { movementDataCreate } from '../../services/movement.js'
 import { badRequest } from '@hapi/boom'
 import { handleBetaRouteError } from '../../common/helpers/bulk-route-helpers.js'
 
@@ -21,6 +21,8 @@ const apiVersion = 'beta-1'
 const logger = createLogger({ apiVersion })
 const validateRequest = jsonSchemaRequestValidatorFor(apiVersion)
 const validateResponse = jsonSchemaResponseValidatorFor(apiVersion)
+const deliveryData = deliveryDataCreate(apiVersion)
+const movementData = movementDataCreate(apiVersion)
 
 const recordDelivery = {
   method: 'POST',
@@ -42,7 +44,10 @@ const recordDelivery = {
       const traceId = getTraceId() || randomUUID()
       const orgId = getOrganisationId(request)
 
-      const foundMovementIds = await findMovementIds(request.db, movementIds)
+      const foundMovementIds = await movementData.findMovementIds(
+        request.db,
+        movementIds
+      )
       const missingMovementIds = movementIds.filter(
         (movementId) => !foundMovementIds.includes(movementId)
       )
@@ -62,7 +67,7 @@ const recordDelivery = {
 
       await backOff(
         () =>
-          createDeliveryRecord(request.db, {
+          deliveryData.createDeliveryRecord(request.db, {
             deliveryId,
             movementIds,
             wasteType,

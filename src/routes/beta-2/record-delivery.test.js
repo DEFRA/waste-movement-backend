@@ -1,5 +1,5 @@
 import { HTTP_STATUS } from '@defra/waste-movement-utils'
-import * as delivery from '../../services/delivery.js'
+import { deliveryDataCreate } from '../../services/delivery.js'
 import { httpClients } from '../../common/helpers/http-client.js'
 import { config } from '../../config.js'
 import { createTestMongoDb } from '../../test/create-test-mongo-db.js'
@@ -21,6 +21,8 @@ import {
   hazardousWasteItem,
   wasteItem
 } from '../../schemas/beta-2/test-helpers.js'
+
+const delivery = deliveryDataCreate('beta-2')
 
 const backoffOptionsConfig = { numOfAttempts: 3, startingDelay: 1 }
 
@@ -88,13 +90,13 @@ describe('POST /beta-2/deliveries', () => {
     jest.clearAllMocks()
     // Some tests stub the delivery service; the rest need the real one.
     jest.spyOn(delivery, 'createDeliveryRecords').mockRestore()
-    await server.db.collection('movements').deleteMany({})
-    await server.db.collection('deliveries').deleteMany({})
+    await server.db.collection('beta-2-movements').deleteMany({})
+    await server.db.collection('beta-2-deliveries').deleteMany({})
   })
 
   it('records a delivery and returns 201 with the envelope shape', async () => {
     await server.db
-      .collection('movements')
+      .collection('beta-2-movements')
       .insertMany([{ movementId: movementId1 }, { movementId: movementId2 }])
 
     const { statusCode, result, headers } = await server.inject({
@@ -123,7 +125,7 @@ describe('POST /beta-2/deliveries', () => {
     expect(headers['x-request-id']).toBeDefined()
 
     const recordInDb = await server.db
-      .collection('deliveries')
+      .collection('beta-2-deliveries')
       .findOne({ deliveryId: '25KMT4Z9' })
 
     expect(recordInDb).toMatchObject({
@@ -136,7 +138,7 @@ describe('POST /beta-2/deliveries', () => {
 
   it('records a delivery when supportingReferences are provided', async () => {
     await server.db
-      .collection('movements')
+      .collection('beta-2-movements')
       .insertOne({ movementId: movementId1 })
 
     const { statusCode, result } = await server.inject({
@@ -176,7 +178,7 @@ describe('POST /beta-2/deliveries', () => {
 
   it('echoes the inbound x-cdp-request-id as x-request-id', async () => {
     await server.db
-      .collection('movements')
+      .collection('beta-2-movements')
       .insertOne({ movementId: movementId1 })
 
     const { headers } = await server.inject({
@@ -270,7 +272,7 @@ describe('POST /beta-2/deliveries', () => {
 
     beforeEach(async () => {
       await server.db
-        .collection('movements')
+        .collection('beta-2-movements')
         .insertOne({ movementId: movementId1 })
     })
 
@@ -433,9 +435,9 @@ describe('POST /beta-2/deliveries', () => {
 
       expect(statusCode).toEqual(HTTP_STATUS.BAD_REQUEST)
       expect(result.errors).toEqual([expectedError])
-      expect(await server.db.collection('deliveries').countDocuments()).toEqual(
-        0
-      )
+      expect(
+        await server.db.collection('beta-2-deliveries').countDocuments()
+      ).toEqual(0)
     })
   })
 
@@ -490,7 +492,7 @@ describe('POST /beta-2/deliveries', () => {
 
   it('returns a 400 when a movementId does not exist', async () => {
     await server.db
-      .collection('movements')
+      .collection('beta-2-movements')
       .insertOne({ movementId: movementId1 })
 
     const { statusCode, result } = await server.inject({
@@ -515,7 +517,7 @@ describe('POST /beta-2/deliveries', () => {
 
   it('returns a 500 when persistence fails', async () => {
     await server.db
-      .collection('movements')
+      .collection('beta-2-movements')
       .insertOne({ movementId: movementId1 })
 
     jest
@@ -558,7 +560,7 @@ describe('POST /beta-2/deliveries', () => {
 
   it('returns a 500 when the response body does not match the response schema', async () => {
     await server.db
-      .collection('movements')
+      .collection('beta-2-movements')
       .insertOne({ movementId: movementId1 })
     // Stubbed so the bad id isn't rejected by the deliveries collection first.
     jest.spyOn(delivery, 'createDeliveryRecords').mockResolvedValueOnce([
@@ -599,7 +601,7 @@ describe('POST /beta-2/deliveries', () => {
     })
 
     const seedMovements = (nonHazardousIds, hazardousIds) =>
-      server.db.collection('movements').insertMany([
+      server.db.collection('beta-2-movements').insertMany([
         ...nonHazardousIds.map((movementId) => ({
           movementId,
           wasteItems: [wasteItem]
@@ -612,7 +614,7 @@ describe('POST /beta-2/deliveries', () => {
 
     const findDeliveries = () =>
       server.db
-        .collection('deliveries')
+        .collection('beta-2-deliveries')
         .find({}, { projection: { _id: 0, createdAt: 0 } })
         .toArray()
 
@@ -698,7 +700,7 @@ describe('POST /beta-2/deliveries', () => {
 
     it('treats a movement as hazardous when any one of its waste items declares hazardous properties', async () => {
       await seedMovements(['261B23B4'], [])
-      await server.db.collection('movements').insertOne({
+      await server.db.collection('beta-2-movements').insertOne({
         movementId: '269X8Y7Z',
         wasteItems: [wasteItem, hazardousWasteItem]
       })
@@ -733,7 +735,7 @@ describe('POST /beta-2/deliveries', () => {
 
       it('delivers a non-hazardous EWC code declared as having hazardous properties on its own', async () => {
         await seedMovements(['261B23B4'], [])
-        await server.db.collection('movements').insertOne({
+        await server.db.collection('beta-2-movements').insertOne({
           movementId: '269X8Y7Z',
           wasteItems: [
             withDeclaration(wasteItem, { isPresent: true, codes: ['HP_4'] })
@@ -751,7 +753,7 @@ describe('POST /beta-2/deliveries', () => {
 
       it('delivers a hazardous EWC code declared as having no hazardous properties with the non-hazardous movements', async () => {
         await seedMovements(['261B23B4'], [])
-        await server.db.collection('movements').insertOne({
+        await server.db.collection('beta-2-movements').insertOne({
           movementId: '262C34C5',
           wasteItems: [
             withDeclaration(hazardousWasteItem, { isPresent: false })
@@ -767,12 +769,11 @@ describe('POST /beta-2/deliveries', () => {
       })
     })
 
-    // beta-1 movements, and beta-2 ones created before waste items were
-    // stored, have no wasteItems.
+    // Movements created before waste items were stored have no wasteItems.
     it('aggregates a movement stored without waste items as non-hazardous', async () => {
       await seedMovements([], ['269X8Y7Z'])
       await server.db
-        .collection('movements')
+        .collection('beta-2-movements')
         .insertOne({ movementId: '261B23B4' })
 
       const { statusCode, result } = await server.inject({

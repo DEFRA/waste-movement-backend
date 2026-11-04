@@ -1,7 +1,8 @@
 import { createLogger } from '../common/helpers/logging/logger.js'
-import { findDeliveryMovementIds } from '../services/delivery.js'
+import { deliveryDataCreate } from '../services/delivery.js'
 
 const logger = createLogger()
+const deliveryData = deliveryDataCreate('beta-2')
 
 // CDP's schema caps transaction.id at 256 characters
 const MAX_ID_LENGTH = 256
@@ -45,7 +46,7 @@ const journeyEntries = async (request) => {
   }
 
   const deliveredIds = asIds(
-    await findDeliveryMovementIds(request.db, deliveryId)
+    await deliveryData.findDeliveryMovementIds(request.db, deliveryId)
   )
 
   return deliveredIds.length > 0
