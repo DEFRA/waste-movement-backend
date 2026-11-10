@@ -99,7 +99,7 @@
     },
     "registrationNumber": {
       "$ref": "registration-number.schema.json",
-      "description": "Waste carrier registration number, in a valid UK home-nation format (England and NRW CBDU/CBDL, SEPA WCR/SCO/SEA/SNO/SWE and PCT, NI ROC UT/LT). Exactly one of 'registrationNumber' or 'reasonForNoRegistrationNumber' is required."
+      "description": "Waste carrier registration number, in a valid UK home-nation format (England and NRW CBDU/CBDL, SEPA EAS/R, WCR/SCO/SEA/SNO/SWE and PCT, NI ROC UT/LT). Exactly one of 'registrationNumber' or 'reasonForNoRegistrationNumber' is required."
     },
     "reasonForNoRegistrationNumber": {
       "type": "string",
