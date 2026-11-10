@@ -13,6 +13,7 @@ import {
   brokerOrDealerEntry,
   carrier,
   collectionDateTime,
+  collectionType,
   collectionSite,
   supportingReference,
   longText
@@ -44,7 +45,8 @@ describe('collection Route Tests version: beta-2', () => {
     carrier,
     collectionDateTime,
     collectionSite,
-    isDutyOfCareConfirmed
+    isDutyOfCareConfirmed,
+    type: collectionType
   }
   const goodMovementId = '25HRA0B2'
 
@@ -81,7 +83,7 @@ describe('collection Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: null,
+      data: { collectionId: expect.any(String) },
       validation: { warnings: [] }
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
@@ -93,6 +95,7 @@ describe('collection Route Tests version: beta-2', () => {
       collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
+      type: collectionType,
       brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] }
     }
     const getMovementRecordSpy = jest
@@ -111,7 +114,7 @@ describe('collection Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: null,
+      data: { collectionId: expect.any(String) },
       validation: { warnings: [] }
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
@@ -123,6 +126,7 @@ describe('collection Route Tests version: beta-2', () => {
       collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
+      type: collectionType,
       brokerOrDealer: { isPresent: true }
     }
     const getMovementRecordSpy = jest.spyOn(
@@ -158,6 +162,7 @@ describe('collection Route Tests version: beta-2', () => {
       collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
+      type: collectionType,
       brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
     }
     const getMovementRecordSpy = jest.spyOn(
@@ -193,6 +198,7 @@ describe('collection Route Tests version: beta-2', () => {
       collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
+      type: collectionType,
       supportingReferences: [supportingReference]
     }
     const getMovementRecordSpy = jest
@@ -211,7 +217,7 @@ describe('collection Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: null,
+      data: { collectionId: expect.any(String) },
       validation: { warnings: [] }
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
@@ -223,6 +229,7 @@ describe('collection Route Tests version: beta-2', () => {
       collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
+      type: collectionType,
       supportingReferences: [{ ...supportingReference, label: 'Not A Label' }]
     }
     const getMovementRecordSpy = jest.spyOn(
@@ -259,6 +266,7 @@ describe('collection Route Tests version: beta-2', () => {
       collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
+      type: collectionType,
       specialHandlingRequirements: 'Handle with care and keep upright.'
     }
     const getMovementRecordSpy = jest
@@ -277,7 +285,7 @@ describe('collection Route Tests version: beta-2', () => {
 
     expect(statusCode).toEqual(HTTP_STATUS.CREATED)
     expect(result).toEqual({
-      data: null,
+      data: { collectionId: expect.any(String) },
       validation: { warnings: [] }
     })
     expect(getMovementRecordSpy).toHaveBeenCalledTimes(1)
@@ -286,6 +294,7 @@ describe('collection Route Tests version: beta-2', () => {
   it('returns an error when specialHandlingRequirements is too long', async () => {
     const invalidPayload = {
       isDutyOfCareConfirmed,
+      type: collectionType,
       specialHandlingRequirements: 'A'.repeat(longText + 1)
     }
     const getMovementRecordSpy = jest.spyOn(
@@ -369,7 +378,8 @@ describe('collection Route Tests version: beta-2', () => {
     const invalidPayload = {
       collectionDateTime,
       collectionSite,
-      isDutyOfCareConfirmed
+      isDutyOfCareConfirmed,
+      type: collectionType
     }
     const getMovementRecordSpy = jest.spyOn(
       movementService,
@@ -440,6 +450,7 @@ describe('collection Route Tests version: beta-2', () => {
     const invalidPayload = {
       apiCode: apiCode1,
       isDutyOfCareConfirmed,
+      type: collectionType,
       carrier,
       collectionDateTime,
       collectionSite
@@ -481,7 +492,12 @@ describe('collection Route Tests version: beta-2', () => {
   // Scenario: A Collection isn't created when a carrier fails to submit a duty
   // of care.
   it('returns an error when the duty of care confirmation is missing and does not create a collection', async () => {
-    const invalidPayload = { carrier, collectionDateTime, collectionSite }
+    const invalidPayload = {
+      carrier,
+      collectionDateTime,
+      collectionSite,
+      type: collectionType
+    }
     const getMovementRecordSpy = jest.spyOn(
       movementService,
       'getMovementRecord'
@@ -781,6 +797,36 @@ describe('collection Route Tests version: beta-2', () => {
           )
         }
       )
+    })
+  })
+
+  describe('type', () => {
+    it.each([['STATIC'], ['TRANSIT']])(
+      'creates a collection with a type of %j',
+      async (value) => {
+        await expectCollectionCreated({ ...goodPayload, type: value })
+      }
+    )
+
+    it('rejects a collection with no type, saying it is required', async () => {
+      const { type, ...payload } = goodPayload
+      await expectCollectionRejected(payload, [
+        {
+          errorType: 'NotProvided',
+          message: "'type' is required",
+          pointer: '/type'
+        }
+      ])
+    })
+
+    it('rejects a type that is not STATIC or TRANSIT', async () => {
+      await expectCollectionRejected({ ...goodPayload, type: 'MOBILE' }, [
+        {
+          errorType: 'InvalidValue',
+          message: "must be one of: 'STATIC', 'TRANSIT'",
+          pointer: '/type'
+        }
+      ])
     })
   })
 })
