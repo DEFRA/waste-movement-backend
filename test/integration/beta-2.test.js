@@ -244,7 +244,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: null,
+      data: { collectionId: expect.any(String) },
       validation: { warnings: [] }
     })
     expectStandardHeaders(headers)
@@ -283,7 +283,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: null,
+      data: { collectionId: expect.any(String) },
       validation: { warnings: [] }
     })
     expectStandardHeaders(headers)
@@ -520,7 +520,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: null,
+      data: { collectionId: expect.any(String) },
       validation: { warnings: [] }
     })
     expectStandardHeaders(headers)
@@ -692,7 +692,12 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, collectionDateTime, collectionSite }
+        body: {
+          carrier,
+          collectionDateTime,
+          collectionSite,
+          type: collectionType
+        }
       })
 
       expectProblemResponse(response, {

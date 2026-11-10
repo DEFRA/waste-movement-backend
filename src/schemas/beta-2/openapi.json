@@ -319,7 +319,7 @@
         },
         "responses": {
           "201": {
-            "description": "Collection recorded. Body carries any validation warnings.",
+            "description": "Collection recorded. Body carries the new `collectionId` and any validation warnings.",
             "headers": {
               "x-request-id": {
                 "$ref": "#/components/headers/RequestId"

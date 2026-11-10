@@ -47,7 +47,7 @@ const recordCollection = {
       }
 
       const response = {
-        data: null,
+        data: { collectionId: randomUUID() },
         validation: { warnings: [] }
       }
 
