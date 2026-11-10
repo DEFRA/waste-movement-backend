@@ -92,6 +92,8 @@ export const carrier = {
   }
 }
 
+export const collectionType = 'STATIC'
+
 export const collectionDateTime = '2026-01-15T09:30:00Z'
 
 export const receiptDateTime = '2026-01-15T14:45:00Z'

@@ -14,6 +14,7 @@ import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-bod
 import {
   receiptDateTime,
   collectionDateTime,
+  collectionType,
   brokerOrDealerEntry,
   carrier,
   collectionSite,
@@ -234,7 +235,8 @@ describe('beta-2', () => {
           carrier,
           collectionDateTime,
           collectionSite,
-          isDutyOfCareConfirmed
+          isDutyOfCareConfirmed,
+          type: collectionType
         }
       }
     )
@@ -271,6 +273,7 @@ describe('beta-2', () => {
           collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
+          type: collectionType,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -508,6 +511,7 @@ describe('beta-2', () => {
           collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
+          type: collectionType,
           specialHandlingRequirements: 'Handle with care and keep upright.'
         }
       }
@@ -619,7 +623,8 @@ describe('beta-2', () => {
           carrier,
           collectionDateTime,
           collectionSite,
-          isDutyOfCareConfirmed
+          isDutyOfCareConfirmed,
+          type: collectionType
         }
       })
 
@@ -643,7 +648,8 @@ describe('beta-2', () => {
           carrier,
           collectionDateTime,
           collectionSite,
-          isDutyOfCareConfirmed
+          isDutyOfCareConfirmed,
+          type: collectionType
         }
       })
 
@@ -715,6 +721,7 @@ describe('beta-2', () => {
           collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
+          type: collectionType,
           brokerOrDealer: { isPresent: true }
         }
       })
@@ -744,6 +751,7 @@ describe('beta-2', () => {
           collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
+          type: collectionType,
           brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
         }
       })
@@ -773,6 +781,7 @@ describe('beta-2', () => {
           collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
+          type: collectionType,
           supportingReferences: [
             { ...supportingReference, label: 'Not A Label' }
           ]

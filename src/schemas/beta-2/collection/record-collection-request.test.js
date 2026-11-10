@@ -1,5 +1,6 @@
 import {
   collectionDateTime,
+  collectionType,
   collectionSite,
   apiCode,
   brokerOrDealerEntry,
@@ -20,7 +21,8 @@ describe('record-collection-request schema: beta-2', () => {
     carrier,
     collectionDateTime,
     collectionSite,
-    isDutyOfCareConfirmed
+    isDutyOfCareConfirmed,
+    type: collectionType
   }
 
   test('accepts a payload with a carrier and isDutyOfCareConfirmed', () => {
@@ -29,7 +31,8 @@ describe('record-collection-request schema: beta-2', () => {
         carrier,
         collectionDateTime,
         collectionSite,
-        isDutyOfCareConfirmed
+        isDutyOfCareConfirmed,
+        type: collectionType
       }).valid
     ).toBe(true)
   })
@@ -45,6 +48,7 @@ describe('record-collection-request schema: beta-2', () => {
       collectionDateTime,
       collectionSite,
       isDutyOfCareConfirmed,
+      type: collectionType,
       extra: 'not allowed'
     }
     expect(validateAjv(payload).valid).toBe(false)
@@ -73,7 +77,8 @@ describe('record-collection-request schema: beta-2', () => {
           carrier,
           collectionDateTime,
           collectionSite,
-          isDutyOfCareConfirmed
+          isDutyOfCareConfirmed,
+          type: collectionType
         }).valid
       ).toBe(true)
     })
@@ -81,7 +86,8 @@ describe('record-collection-request schema: beta-2', () => {
     test('rejects a list of carriers', () => {
       const { valid, errors } = validateAjv({
         carrier: [carrier],
-        isDutyOfCareConfirmed
+        isDutyOfCareConfirmed,
+        type: collectionType
       })
 
       expect(valid).toBe(false)
@@ -115,7 +121,8 @@ describe('record-collection-request schema: beta-2', () => {
             carrier,
             collectionDateTime,
             collectionSite,
-            isDutyOfCareConfirmed
+            isDutyOfCareConfirmed,
+            type: collectionType
           }).valid
         ).toBe(true)
       })
@@ -147,7 +154,8 @@ describe('record-collection-request schema: beta-2', () => {
             carrier,
             collectionDateTime,
             collectionSite,
-            isDutyOfCareConfirmed: false
+            isDutyOfCareConfirmed: false,
+            type: collectionType
           }).valid
         ).toBe(true)
       })
@@ -159,7 +167,8 @@ describe('record-collection-request schema: beta-2', () => {
             carrier,
             collectionDateTime,
             collectionSite,
-            isDutyOfCareConfirmed: value
+            isDutyOfCareConfirmed: value,
+            type: collectionType
           })
 
           expect(valid).toBe(false)
@@ -241,6 +250,41 @@ describe('record-collection-request schema: beta-2', () => {
     })
   })
 
+  describe('type', () => {
+    test.each([['STATIC'], ['TRANSIT']])('accepts %j', (value) => {
+      expect(validateAjv({ ...validCollection, type: value }).valid).toBe(true)
+    })
+
+    test('is required', () => {
+      const { type, ...payload } = validCollection
+      const { valid, errors } = validateAjv(payload)
+
+      expect(valid).toBe(false)
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          keyword: 'required',
+          instancePath: '',
+          params: { missingProperty: 'type' }
+        })
+      )
+    })
+
+    test.each([['MOBILE'], ['static'], ['']])(
+      'rejects %j, which is not STATIC or TRANSIT',
+      (value) => {
+        const { valid, errors } = validateAjv({
+          ...validCollection,
+          type: value
+        })
+
+        expect(valid).toBe(false)
+        expect(errors).toContainEqual(
+          expect.objectContaining({ keyword: 'enum', instancePath: '/type' })
+        )
+      }
+    )
+  })
+
   describe('collectionSite', () => {
     test('rejects a payload whose collectionSite is invalid', () => {
       const { address, ...invalidCollectionSite } = collectionSite
@@ -267,7 +311,8 @@ describe('record-collection-request schema: beta-2', () => {
         collectionDateTime,
         collectionSite,
         supportingReferences: [supportingReference],
-        isDutyOfCareConfirmed
+        isDutyOfCareConfirmed,
+        type: collectionType
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -278,7 +323,8 @@ describe('record-collection-request schema: beta-2', () => {
         collectionDateTime,
         collectionSite,
         brokerOrDealer,
-        isDutyOfCareConfirmed
+        isDutyOfCareConfirmed,
+        type: collectionType
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -291,7 +337,8 @@ describe('record-collection-request schema: beta-2', () => {
         collectionDateTime,
         collectionSite,
         brokerOrDealer: { isPresent: false, items: brokerOrDealer.items },
-        isDutyOfCareConfirmed
+        isDutyOfCareConfirmed,
+        type: collectionType
       }
       expect(validateAjv(payload).valid).toBe(false)
     })
@@ -307,7 +354,8 @@ describe('record-collection-request schema: beta-2', () => {
         collectionDateTime,
         collectionSite,
         brokerOrDealer,
-        isDutyOfCareConfirmed
+        isDutyOfCareConfirmed,
+        type: collectionType
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -318,7 +366,8 @@ describe('record-collection-request schema: beta-2', () => {
         collectionDateTime,
         collectionSite,
         supportingReferences: [supportingReference],
-        isDutyOfCareConfirmed
+        isDutyOfCareConfirmed,
+        type: collectionType
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -334,7 +383,8 @@ describe('record-collection-request schema: beta-2', () => {
         collectionDateTime,
         collectionSite,
         brokerOrDealer,
-        isDutyOfCareConfirmed
+        isDutyOfCareConfirmed,
+        type: collectionType
       }
       expect(validateAjv(payload).valid).toBe(true)
     })
@@ -345,7 +395,8 @@ describe('record-collection-request schema: beta-2', () => {
         collectionDateTime,
         collectionSite,
         specialHandlingRequirements: 'Handle with care and keep upright.',
-        isDutyOfCareConfirmed
+        isDutyOfCareConfirmed,
+        type: collectionType
       }
       expect(validateAjv(payload).valid).toBe(true)
     })

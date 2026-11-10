@@ -4,6 +4,11 @@
   "description": "Payload for `POST /movements/{movementId}/collection`.",
   "type": "object",
   "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["STATIC", "TRANSIT"],
+      "description": "The kind of Collection: STATIC or TRANSIT."
+    },
     "carrier": {
       "$ref": "../common/carrier.schema.json",
       "description": "The carrier that collected the waste."
@@ -35,6 +40,7 @@
     }
   },
   "required": [
+    "type",
     "carrier",
     "isDutyOfCareConfirmed",
     "collectionDateTime",
