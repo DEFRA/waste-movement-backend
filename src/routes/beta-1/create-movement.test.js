@@ -24,12 +24,19 @@ jest.mock('@defra/cdp-auditing', () => ({
   audit: jest.fn().mockReturnValue(true)
 }))
 
+// The real options, so the route's retry callback runs, with fewer, faster attempts
 jest.mock('@defra/waste-movement-utils', () => {
   const originalModule = jest.requireActual('@defra/waste-movement-utils')
 
   return {
     ...originalModule,
-    backoffOptions: () => backoffOptionsConfig
+    backoffOptions: (logger) => ({
+      ...originalModule.backoffOptions(
+        logger,
+        backoffOptionsConfig.numOfAttempts
+      ),
+      startingDelay: backoffOptionsConfig.startingDelay
+    })
   }
 })
 
@@ -123,6 +130,27 @@ describe('movement Route Tests version: beta-1', () => {
     expect(createMovementRecordSpy).toHaveBeenCalledTimes(
       backoffOptionsConfig.numOfAttempts
     )
+  })
+
+  it('retries a failed write and creates the movement', async () => {
+    jest.spyOn(movementCreate, 'createMovementRecord').mockRestore()
+    const createMovementRecordSpy = jest
+      .spyOn(movementCreate, 'createMovementRecord')
+      .mockRejectedValueOnce(new Error(errorMessage))
+
+    const { statusCode } = await server.inject({
+      method: 'POST',
+      url: `/${endpointVersion}/movements`,
+      payload: goodPayload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`,
+        ...organisationHeaders
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.CREATED)
+    expect(createMovementRecordSpy).toHaveBeenCalledTimes(2)
   })
 
   it('returns an error when validation fails and does not create a movement', async () => {

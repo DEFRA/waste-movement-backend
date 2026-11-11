@@ -41,7 +41,7 @@ const createMovement = {
       await backOff(
         () =>
           movementData.createMovementRecord(request.db, { movementId, orgId }),
-        backoffOptions(createLogger)
+        backoffOptions(logger)
       )
       const responseBody = {
         data: { movementId },
