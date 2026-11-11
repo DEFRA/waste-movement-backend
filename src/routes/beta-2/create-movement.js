@@ -51,7 +51,7 @@ const createMovement = {
             orgId,
             wasteItems: request.payload.wasteItems
           }),
-        backoffOptions(createLogger)
+        backoffOptions(logger)
       )
       const responseBody = {
         data: { movementId },
