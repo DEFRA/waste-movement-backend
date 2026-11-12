@@ -1,6 +1,7 @@
 import {
   HTTP_STATUS,
-  generateAllValidationWarnings
+  generateAllValidationWarnings,
+  logSixDigitEasAuthorisationNumber
 } from '@defra/waste-movement-utils'
 import { MongoServerError } from 'mongodb'
 import { createLogger } from './logging/logger.js'
@@ -60,6 +61,8 @@ function generateResponseWithValidationWarnings(payload, wasteTrackingIds) {
       wasteTrackingId,
       logger
     )
+
+    logSixDigitEasAuthorisationNumber(item, wasteTrackingId, logger)
 
     if (warnings.length > 0) {
       response.validation = { warnings }
