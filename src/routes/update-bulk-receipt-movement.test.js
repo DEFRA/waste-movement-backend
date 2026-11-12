@@ -220,6 +220,30 @@ describe('Update Bulk Receipt Movement Route Tests', () => {
     assertOrgIdWasLogged(loggerInfoSpy)
   })
 
+  it('logs a receiver authorisation number of EAS/P with six digits', async () => {
+    const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
+
+    payload[0].receiver.authorisationNumber = 'EAS/P/123456'
+
+    const { statusCode } = await server.inject({
+      method: 'PUT',
+      url: `/bulk/${updateBulkId}/movements/receive`,
+      payload,
+      headers: {
+        'x-cdp-request-id': traceId,
+        Authorization: `Basic ${requestBasicAuthTest1}`
+      }
+    })
+
+    expect(statusCode).toEqual(HTTP_STATUS.OK)
+    expect(loggerInfoSpy).toHaveBeenCalledWith(
+      `${METRIC_NAMES.RECEIVER_AUTHORISATION_NUMBER_SIX_DIGIT_EAS} - EAS/P/123456 (wasteTrackingId: "26E4C7Z2")`
+    )
+    expect(loggerInfoSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining('(wasteTrackingId: "266XHTDL")')
+    )
+  })
+
   it('should return NO_MOVEMENTS_UPDATED when provided with a bulk id which has already been used by the PUT endpoint in the waste-inputs collection', async () => {
     const loggerInfoSpy = jest.spyOn(createLogger(), 'info')
 
