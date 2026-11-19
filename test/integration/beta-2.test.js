@@ -14,6 +14,7 @@ import { expectResponseBodyHasCorrectShape } from './helpers/expect-response-bod
 import {
   receiptDateTime,
   collectionDateTime,
+  collectionType,
   brokerOrDealerEntry,
   carrier,
   collectionSite,
@@ -234,7 +235,8 @@ describe('beta-2', () => {
           carrier,
           collectionDateTime,
           collectionSite,
-          isDutyOfCareConfirmed
+          isDutyOfCareConfirmed,
+          type: collectionType
         }
       }
     )
@@ -242,7 +244,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: null,
+      data: { collectionId: expect.any(String) },
       validation: { warnings: [] }
     })
     expectStandardHeaders(headers)
@@ -271,6 +273,7 @@ describe('beta-2', () => {
           collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
+          type: collectionType,
           brokerOrDealer: { isPresent: true, items: [brokerOrDealerEntry] },
           supportingReferences: [supportingReference]
         }
@@ -280,7 +283,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: null,
+      data: { collectionId: expect.any(String) },
       validation: { warnings: [] }
     })
     expectStandardHeaders(headers)
@@ -508,6 +511,7 @@ describe('beta-2', () => {
           collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
+          type: collectionType,
           specialHandlingRequirements: 'Handle with care and keep upright.'
         }
       }
@@ -516,7 +520,7 @@ describe('beta-2', () => {
     expect(status).toEqual(HTTP_STATUS.CREATED)
     expectResponseBodyHasCorrectShape({ body, shape: 'SUCCESS' })
     expect(body).toEqual({
-      data: null,
+      data: { collectionId: expect.any(String) },
       validation: { warnings: [] }
     })
     expectStandardHeaders(headers)
@@ -619,7 +623,8 @@ describe('beta-2', () => {
           carrier,
           collectionDateTime,
           collectionSite,
-          isDutyOfCareConfirmed
+          isDutyOfCareConfirmed,
+          type: collectionType
         }
       })
 
@@ -643,7 +648,8 @@ describe('beta-2', () => {
           carrier,
           collectionDateTime,
           collectionSite,
-          isDutyOfCareConfirmed
+          isDutyOfCareConfirmed,
+          type: collectionType
         }
       })
 
@@ -686,7 +692,12 @@ describe('beta-2', () => {
       const response = await betaHttpRequest(testService.baseUrl, endpoint, {
         method: 'POST',
         requestId: randomUUID(),
-        body: { carrier, collectionDateTime, collectionSite }
+        body: {
+          carrier,
+          collectionDateTime,
+          collectionSite,
+          type: collectionType
+        }
       })
 
       expectProblemResponse(response, {
@@ -715,6 +726,7 @@ describe('beta-2', () => {
           collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
+          type: collectionType,
           brokerOrDealer: { isPresent: true }
         }
       })
@@ -744,6 +756,7 @@ describe('beta-2', () => {
           collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
+          type: collectionType,
           brokerOrDealer: { isPresent: false, items: [brokerOrDealerEntry] }
         }
       })
@@ -773,6 +786,7 @@ describe('beta-2', () => {
           collectionDateTime,
           collectionSite,
           isDutyOfCareConfirmed,
+          type: collectionType,
           supportingReferences: [
             { ...supportingReference, label: 'Not A Label' }
           ]

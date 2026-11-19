@@ -6,9 +6,18 @@
   "required": ["data", "validation"],
   "properties": {
     "data": {
-      "type": "null",
-      "description": "No resource id is returned for a Collection; always null.",
-      "examples": [null]
+      "type": "object",
+      "description": "The Collection that was recorded.",
+      "required": ["collectionId"],
+      "properties": {
+        "collectionId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the recorded Collection.",
+          "examples": ["3f2b8c1e-6d4a-4f7e-9b2c-8a1d5e7f0c9b"]
+        }
+      },
+      "additionalProperties": false
     },
     "validation": {
       "$ref": "../common/validation.schema.json",

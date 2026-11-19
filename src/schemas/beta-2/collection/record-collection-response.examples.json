@@ -2,7 +2,9 @@
   "withBrokerAndReferences": {
     "summary": "With broker or dealer, supporting references and special handling",
     "value": {
-      "data": null,
+      "data": {
+        "collectionId": "3f2b8c1e-6d4a-4f7e-9b2c-8a1d5e7f0c9b"
+      },
       "validation": {
         "warnings": []
       }
@@ -11,7 +13,9 @@
   "minimal": {
     "summary": "Empty body",
     "value": {
-      "data": null,
+      "data": {
+        "collectionId": "3f2b8c1e-6d4a-4f7e-9b2c-8a1d5e7f0c9b"
+      },
       "validation": {
         "warnings": []
       }

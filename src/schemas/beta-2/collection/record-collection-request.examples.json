@@ -2,6 +2,7 @@
   "withBrokerAndReferences": {
     "summary": "With broker or dealer, supporting references and special handling",
     "value": {
+      "type": "STATIC",
       "carrier": {
         "organisationName": "Carrier Demo Ltd",
         "registrationNumber": "CBDU123456",
@@ -61,6 +62,7 @@
   "minimal": {
     "summary": "carrier only",
     "value": {
+      "type": "STATIC",
       "carrier": {
         "organisationName": "Carrier Demo Ltd",
         "registrationNumber": "CBDU123456",
