@@ -9,6 +9,9 @@ coverage
 .cache
 .eslintcache
 
+# Schema explorer build output (npm run docs:schemas)
+.schema-explorer
+
 # Environment variables (secrets)
 .env
 
